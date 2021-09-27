@@ -27,3 +27,7 @@ class User(models.Model):
     class Meta:
         db_table = 'cs_users'
         managed = False
+
+    @classmethod
+    def retrieve_or_create(cls, user_id):
+        pass
