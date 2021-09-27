@@ -1,0 +1,12 @@
+asgiref==3.3.1
+Django==3.1.4
+django-cors-headers==3.5.0
+django-redis==4.9.0
+django-rest-framework-mongoengine==3.3.1
+djangorestframework==3.11.1
+djangorestframework-jwt==1.11.0
+mysqlclient==2.0.1
+pytz==2020.4
+sqlparse==0.4.1
+gunicorn==19.9.0
+slack_sdk==3.0.0rc1
