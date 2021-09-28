@@ -4,7 +4,7 @@ from cystack_models.models.teams.collections import Collection
 from cystack_models.models.teams.groups import Group
 
 
-class CollectioGroup(models.Model):
+class CollectionGroup(models.Model):
     read_only = models.BooleanField(default=False)
     hide_passwords = models.BooleanField(default=False)
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="collections_groups")
