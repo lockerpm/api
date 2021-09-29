@@ -20,7 +20,7 @@ class Cipher(models.Model):
     folders = models.TextField(blank=True, null=True, default="")
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ciphers", null=True)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="teams", null=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="ciphers", null=True)
 
     class Meta:
         db_table = 'cs_ciphers'

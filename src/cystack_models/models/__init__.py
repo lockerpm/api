@@ -1,14 +1,12 @@
 # ------------------------ User Models ---------------------------- #
 from cystack_models.models.users.users import User
 
-
-# ------------------------ Cipher Models --------------------------- #
-from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
 
 
 # ------------------------ Team Models ----------------------------- #
 from cystack_models.models.teams.teams import Team
+from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.members.member_roles import MemberRole
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.teams.collections import Collection

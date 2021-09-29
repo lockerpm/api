@@ -1,13 +1,16 @@
 import jwt
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
+from core.settings import CORE_CONFIG
 from shared.authentications.general_auth import AppGeneralAuthentication
 from shared.constants.token import TOKEN_PREFIX, TOKEN_TYPE_AUTHENTICATION
-from cystack_models.models.users.users import User
 
 
 class LockerTokenAuthentication(AppGeneralAuthentication):
+    user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+
     def authenticate(self, request):
         token_value = self._get_token(request)
 
@@ -27,9 +30,9 @@ class LockerTokenAuthentication(AppGeneralAuthentication):
 
             # Get profile in token
             user_id = int(user_id)
-            user = User.retrieve_or_create(user_id=user_id)
-
+            user = self.user_repository.retrieve_or_create_by_id(user_id=user_id)
             return user, token_value
 
-        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.exceptions.InvalidAlgorithmError, ValueError):
+        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.exceptions.InvalidAlgorithmError,
+                ValueError, ObjectDoesNotExist):
             return None

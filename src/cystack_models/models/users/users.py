@@ -7,8 +7,9 @@ class User(models.Model):
     user_id = models.IntegerField(primary_key=True)
     creation_date = models.FloatField()
     revision_date = models.FloatField(null=True)
+    activated = models.FloatField(default=False)
     account_revision_date = models.FloatField(null=True)
-    master_password = models.CharField(max_length=300)
+    master_password = models.CharField(max_length=300, null=True)
     master_password_hint = models.CharField(max_length=128, blank=True, null=True, default="")
     master_password_score = models.FloatField(default=0)
     security_stamp = models.CharField(max_length=50, null=True)
@@ -17,13 +18,9 @@ class User(models.Model):
     private_key = models.TextField(null=True)
     kdf = models.IntegerField(default=0)
     kdf_iterations = models.IntegerField(default=DEFAULT_KDF_ITERATIONS)
+    api_key = models.CharField(max_length=32, null=True)
     timeout = models.IntegerField(default=15)
     timeout_action = models.CharField(default="lock", max_length=16)
 
     class Meta:
         db_table = 'cs_users'
-        managed = False
-
-    @classmethod
-    def retrieve_or_create(cls, user_id):
-        pass

@@ -5,8 +5,8 @@ from cystack_models.models.teams.collections import Collection
 
 
 class CollectionMember(models.Model):
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="collections_groups")
-    member = models.ForeignKey(TeamMember, on_delete=models.CASCADE, related_name="collections_groups")
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="collections_members")
+    member = models.ForeignKey(TeamMember, on_delete=models.CASCADE, related_name="collections_members")
     read_only = models.BooleanField(default=False)
     hide_passwords = models.BooleanField(default=False)
 

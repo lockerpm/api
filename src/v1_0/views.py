@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+from v1_0.users.views import UserPwdViewSet
