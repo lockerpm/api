@@ -3,8 +3,6 @@ from typing import Dict
 
 from django.db import models
 
-from shared.log.cylog import CyLog
-
 from shared.utils.app import now
 from shared.constants.members import *
 from cystack_models.models.users.users import User
@@ -31,31 +29,31 @@ class TeamMember(models.Model):
         db_table = 'cs_team_members'
         unique_together = ('user', 'team', 'role')
 
-    # @classmethod
-    # def create_multiple(cls, team: Team, *members: [Dict]):
-    #     """
-    #     Create multiple members of the team
-    #     :param team: (Team) Team object
-    #     :param members: (list) Members data
-    #     :return:
-    #     """
-    #     for member in members:
-    #         try:
-    #             cls.create(
-    #                 team=team,
-    #                 user=member["user"],
-    #                 role_id=member["role"].name,
-    #                 is_primary=member.get("is_primary", False),
-    #                 is_default=member.get("is_default", False),
-    #             )
-    #         except:
-    #             continue
-    #
-    # @classmethod
-    # def create(cls, team: Team, user: User, role_id: str, is_primary=False, is_default=False):
-    #     new_member = TeamMember.objects.create(
-    #         user=user, role_id=role_id, team=team, access_time=now(),
-    #         is_primary=is_primary,
-    #         is_default=is_default
-    #     )
-    #     return new_member
+    @classmethod
+    def create_multiple(cls, team: Team, *members: [Dict]):
+        """
+        Create multiple members of the team
+        :param team: (Team) Team object
+        :param members: (list) Members data
+        :return:
+        """
+        for member in members:
+            try:
+                cls.create(
+                    team=team,
+                    user=member["user"],
+                    role_id=member["role"].name,
+                    is_primary=member.get("is_primary", False),
+                    is_default=member.get("is_default", False),
+                )
+            except:
+                continue
+
+    @classmethod
+    def create(cls, team: Team, user: User, role_id: str, is_primary=False, is_default=False):
+        new_member = TeamMember.objects.create(
+            user=user, role_id=role_id, team=team, access_time=now(),
+            is_primary=is_primary,
+            is_default=is_default
+        )
+        return new_member

@@ -1,0 +1,3 @@
+KDF_TYPE = {
+    0: 'PBKDF2_SHA256'
+}
