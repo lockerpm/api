@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from rest_framework.exceptions import AuthenticationFailed
 
+from core.settings import CORE_CONFIG
 from shared.general_view import AppGeneralViewSet
 
 
@@ -12,9 +13,10 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     """
     This is a general view for Password Manager app
     """
+    session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
 
-    # def check_bw_auth(self, request, renew=False):
-    #     valid_token = request.user.fetch_bw_access_token(renew=renew)
-    #     if not valid_token:
-    #         raise AuthenticationFailed
-    #     return valid_token
+    def check_pwd_session_auth(self, request, renew=False):
+        valid_token = self.session_repository.fetch_access_token(user=request.user, renew=renew)
+        if not valid_token:
+            raise AuthenticationFailed
+        return valid_token

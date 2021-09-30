@@ -17,3 +17,7 @@ class ISessionRepository(ABC):
     @abstractmethod
     def filter_refresh_tokens(self, device_identifier: str):
         pass
+
+    @abstractmethod
+    def fetch_access_token(self, user: User, renew: bool = False):
+        pass
