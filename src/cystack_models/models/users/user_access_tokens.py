@@ -19,7 +19,7 @@ class UserAccessToken(models.Model):
         expired_time = data.get("expired_time")
         if not expired_time:
             expired_time = now() + data.get("expires_in", 3600)
-        grant_type = data.get("grant_type", "")
+        grant_type = data.get("grant_type", "refresh_token")
         new_token = cls(
             access_token=access_token, expired_time=expired_time, grant_type=grant_type,
             refresh_token=refresh_token

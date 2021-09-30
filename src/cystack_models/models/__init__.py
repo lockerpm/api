@@ -1,5 +1,8 @@
 # ------------------------ User Models ---------------------------- #
 from cystack_models.models.users.users import User
+from cystack_models.models.users.user_refresh_tokens import UserRefreshToken
+from cystack_models.models.users.user_access_tokens import UserAccessToken
+from cystack_models.models.users.user_score import UserScore
 
 from cystack_models.models.ciphers.folders import Folder
 

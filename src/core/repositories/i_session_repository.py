@@ -13,3 +13,7 @@ class ISessionRepository(ABC):
     @abstractmethod
     def get_full_access_token(self, access_token: UserAccessToken) -> str:
         pass
+
+    @abstractmethod
+    def filter_refresh_tokens(self, device_identifier: str):
+        pass
