@@ -11,6 +11,7 @@ class Collection(models.Model):
     creation_date = models.FloatField()
     revision_date = models.FloatField(null=True)
     external_id = models.CharField(max_length=300, null=True)
+    is_default = models.BooleanField(default=False)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="collections")
 
     class Meta:

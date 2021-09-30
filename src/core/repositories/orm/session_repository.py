@@ -4,6 +4,8 @@ from django.conf import settings
 
 from core.repositories import ISessionRepository
 from shared.utils.app import now
+from cystack_models.models.users.users import User
+
 from cystack_models.models.users.user_refresh_tokens import UserRefreshToken
 from cystack_models.models.users.user_access_tokens import UserAccessToken
 
@@ -46,3 +48,10 @@ class SessionRepository(ISessionRepository):
 
     def filter_refresh_tokens(self, device_identifier: str):
         return UserRefreshToken.objects.filter(device_identifier=device_identifier).order_by('-created_time')
+
+    def fetch_access_token(self, user: User, renew: bool = False):
+        refresh_token = user.user_refresh_tokens.all().order_by('-created_time').first()
+        if not refresh_token:
+            return None
+        access_token = self.fetch_valid_token(refresh_token=refresh_token, renew=renew)
+        return access_token
