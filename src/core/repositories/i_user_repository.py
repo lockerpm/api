@@ -32,3 +32,11 @@ class IUserRepository(ABC):
     @abstractmethod
     def get_many_by_ids(self, user_ids: list):
         pass
+
+    @abstractmethod
+    def is_activated(self, user: User) -> bool:
+        pass
+
+    @abstractmethod
+    def retrieve_or_create_user_score(self, user: User):
+        pass

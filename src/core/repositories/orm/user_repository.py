@@ -44,3 +44,13 @@ class UserRepository(IUserRepository):
 
     def get_many_by_ids(self, user_ids: list):
         return User.objects.filter(user_id__in=user_ids)
+
+    def is_activated(self, user: User) -> bool:
+        return user.activated
+
+    def retrieve_or_create_user_score(self, user: User):
+        try:
+            return user.user_score
+        except AttributeError:
+            from cystack_models.models.users.user_score import UserScore
+            return UserScore.create(user=user)

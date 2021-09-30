@@ -6,6 +6,7 @@ CORE_CONFIG = {
 
     },
     "repositories": {
-        "IUserRepository": UserRepository
+        "IUserRepository": UserRepository,
+        "ISessionRepository": SessionRepository,
     }
 }

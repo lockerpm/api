@@ -28,3 +28,11 @@ class UserPwdSerializer(serializers.Serializer):
                 "kdf_iterations": ["KDF iterations must be between 5000 and 1000000"]
             })
         return data
+
+
+class UserSessionSerializer(serializers.Serializer):
+    client_id = serializers.ChoiceField(choices=["web", "browser", "desktop", "mobile"])
+    device_identifier = serializers.CharField()
+    device_name = serializers.CharField(required=False, allow_blank=True)
+    device_type = serializers.IntegerField(required=False)
+    password = serializers.CharField()
