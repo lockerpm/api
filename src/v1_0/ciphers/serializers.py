@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
 from core.settings import CORE_CONFIG
+from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 
@@ -21,6 +22,7 @@ class LoginUriVaultSerializer(serializers.Serializer):
 
 
 class LoginVaultSerializer(serializers.Serializer):
+    autofillOnPageLoad = serializers.BooleanField(required=False, allow_null=True, default=None)
     username = serializers.CharField(allow_null=True, allow_blank=True)
     password = serializers.CharField(allow_null=True, allow_blank=True)
     totp = serializers.CharField(allow_null=True, allow_blank=True)
@@ -74,6 +76,7 @@ class VaultItemSerializer(serializers.Serializer):
     favorite = serializers.BooleanField(default=False)
     fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
     score = serializers.FloatField(default=0, min_value=0)
+    reprompt = serializers.ChoiceField(choices=[0, 1], default=0)
     name = serializers.CharField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
     type = serializers.IntegerField()
@@ -107,7 +110,11 @@ class VaultItemSerializer(serializers.Serializer):
         if vault_type == 4 and not identity:
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
 
-        # Check team id, folder ids
+        # Check folder id
+        if user.folders.filter(id=data.get("folderId")).exists() is False:
+            raise serializers.ValidationError(detail={"folderId": ["This folder does not exist"]})
+
+        # Check team id, collection ids
         organization_id = data.get("organizationId")
         collection_ids = data.get("collectionIds", [])
         if organization_id:
@@ -149,3 +156,49 @@ class VaultItemSerializer(serializers.Serializer):
             data["collectionIds"] = []
 
         return data
+
+    def _get_cipher_detail(self):
+        validated_data = self.validated_data
+        cipher_type = validated_data.get("type")
+        # detail = {
+        #     "edit": True,
+        #     "viewPassword": True,
+        #     "type": cipher_type,
+        #     "userId": self.context["request"].user.user_id,
+        #     "organizationId": validated_data.get("organizationId"),
+        #     "folderId": validated_data.get("folderId"),
+        #     "favorite": validated_data.get("favorite", False),
+        #     "reprompt": validated_data.get("reprompt", 0),
+        #     "attachments": None,
+        #     "fields": validated_data.get("fields"),
+        #     "score": validated_data.get("score", 0),
+        #     "collectionIds": validated_data.get("collectionIds")
+        # }
+        detail = {
+            "edit": True,
+            "view_password": True,
+            "type": cipher_type,
+            "user_id": self.context["request"].user.user_id,
+            "organization_id": validated_data.get("organizationId"),
+            "team_id": validated_data.get("organizationId"),
+            "folder_id": validated_data.get("folder_id"),
+            "favorite": validated_data.get("favorite", False),
+            "reprompt": validated_data.get("reprompt", 0),
+            "attachments": None,
+            "fields": validated_data.get("fields"),
+            "score": validated_data.get("score", 0),
+            "collection_ids": validated_data.get("collectionIds")
+        }
+        # Login data
+        if cipher_type == CIPHER_TYPE_LOGIN:
+            detail["data"] = validated_data.get("login")
+        elif cipher_type == CIPHER_TYPE_CARD:
+            detail["data"] = validated_data.get("card")
+        elif cipher_type == CIPHER_TYPE_IDENTITY:
+            detail["data"] = validated_data.get("identity")
+        elif cipher_type == CIPHER_TYPE_NOTE:
+            detail["data"] = validated_data.get("secureNote")
+        return detail
+
+    def save(self, **kwargs):
+        return self._get_cipher_detail()

@@ -31,4 +31,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         valid_token = self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
+        cipher_detail = serializer.save()
+
+        # We create new cipher object from cipher detail data.
+        # Then, we update revision date of user (personal or members of the organization)
+        # If cipher belongs to the organization, we also update collections of the cipher.
