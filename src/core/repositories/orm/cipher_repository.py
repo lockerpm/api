@@ -5,6 +5,7 @@ from core.repositories import ICipherRepository
 from shared.utils.app import now
 from shared.constants.members import *
 from cystack_models.models.ciphers.ciphers import Cipher
+from cystack_models.models.teams.teams import Team
 from cystack_models.models.users.users import User
 
 
@@ -14,6 +15,9 @@ class CipherRepository(ICipherRepository):
 
     def get_folder_ids(self, cipher: Cipher):
         pass
+
+    def get_multiple_by_ids(self, cipher_ids: list):
+        return Cipher.objects.filter(id__in=cipher_ids)
 
     def save_new_cipher(self, cipher_data):
         """
@@ -53,21 +57,49 @@ class CipherRepository(ICipherRepository):
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
-        if team_id:
-            # First, create collections for this cipher
-            cipher.collections_ciphers.model.create_multiple(cipher.id, *collection_ids)
-            # Finding all members collections
-            member_user_ids = cipher.team.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
-                Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]) |
-                Q(collections_members__collection_id__in=collection_ids)
-            ).values_list('user_id', flat=True)
-            # Update revision date of list members
-            User.objects.filter(user_id__in=member_user_ids).update(revision_date=now())
-        else:
-            cipher.user.revision_date = now()
-            cipher.user.save()
+        self._bump_account_revision_date(user=cipher.user, team=cipher.team, **{
+            "collection_ids": collection_ids,
+            "role_name": [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
+        })
 
         return cipher
 
     def save_update_cipher(self, cipher_data):
         pass
+
+    def delete_multiple_cipher(self, cipher_ids: list, user_deleted: User = None):
+        """
+        Delete multiple ciphers by ids
+        :param cipher_ids: (list) List cipher ids
+        :param user_deleted: (obj) User deleted
+        :return:
+        """
+        # Update deleted_date of the ciphers
+        cipher = Cipher.objects.filter(id__in=cipher_ids, deleted_date__isnull=True)
+        team_ids = cipher.exclude(team__isnull=True).values_list('team_id', flat=True)
+        cipher.update(revision_date=now(), deleted_date=now())
+        # Bump revision date: teams and user
+        if team_ids:
+            teams = Team.objects.filter(id__in=team_ids)
+            for team in teams:
+                self._bump_account_revision_date(team=team)
+        self._bump_account_revision_date(user=user_deleted)
+
+    def _bump_account_revision_date(self, user: User = None, team=None, **team_filters):
+        if team:
+            # Finding all members
+            team_members = team.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
+            collection_ids = team_filters.get("collection_ids", [])
+            role_name = team_filters.get("role_name", [])
+            # Filter by collection ids
+            if collection_ids:
+                team_members = team_members.filter(
+                    Q(role_name__in=role_name) | Q(collections_members__collection_id__in=collection_ids)
+                )
+
+            # Get list user ids and update revision date of them
+            member_user_ids = team_members.values_list('user_id', flat=True)
+            User.objects.filter(user_id__in=member_user_ids).update(revision_date=now())
+        elif user:
+            user.revision_date = now()
+            user.save()

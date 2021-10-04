@@ -19,3 +19,7 @@ class ITeamRepository(ABC):
     @abstractmethod
     def get_list_collection_ids(self, team: Team):
         pass
+
+    @abstractmethod
+    def get_multiple_team_by_ids(self, team_ids: list):
+        pass

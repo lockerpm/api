@@ -188,3 +188,15 @@ class VaultItemSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         return self._get_cipher_detail()
+
+
+class MutipleItemIdsSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.CharField(), allow_empty=False, allow_null=False, required=True)
+
+    def validate(self, data):
+        ids = data.get("ids")
+        if not ids:
+            raise serializers.ValidationError(detail={"ids": ["This field is required"]})
+        if len(ids) > 200:
+            raise serializers.ValidationError(detail={"ids": ["You can only delete up to 500 items at a time"]})
+        return data

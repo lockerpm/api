@@ -13,9 +13,17 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def get_multiple_by_ids(self, cipher_ids: list):
+        pass
+
+    @abstractmethod
     def save_new_cipher(self, cipher_data):
         pass
 
     @abstractmethod
     def save_update_cipher(self, cipher_data):
+        pass
+
+    @abstractmethod
+    def delete_multiple_cipher(self, cipher_ids):
         pass

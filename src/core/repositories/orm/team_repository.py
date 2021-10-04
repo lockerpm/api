@@ -15,3 +15,6 @@ class TeamRepository(ITeamRepository):
 
     def get_list_collection_ids(self, team: Team):
         return list(team.collections.values_list('id', flat=True))
+
+    def get_multiple_team_by_ids(self, team_ids: list):
+        return Team.objects.filter(id__in=team_ids)
