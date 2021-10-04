@@ -160,20 +160,6 @@ class VaultItemSerializer(serializers.Serializer):
     def _get_cipher_detail(self):
         validated_data = self.validated_data
         cipher_type = validated_data.get("type")
-        # detail = {
-        #     "edit": True,
-        #     "viewPassword": True,
-        #     "type": cipher_type,
-        #     "userId": self.context["request"].user.user_id,
-        #     "organizationId": validated_data.get("organizationId"),
-        #     "folderId": validated_data.get("folderId"),
-        #     "favorite": validated_data.get("favorite", False),
-        #     "reprompt": validated_data.get("reprompt", 0),
-        #     "attachments": None,
-        #     "fields": validated_data.get("fields"),
-        #     "score": validated_data.get("score", 0),
-        #     "collectionIds": validated_data.get("collectionIds")
-        # }
         detail = {
             "edit": True,
             "view_password": True,

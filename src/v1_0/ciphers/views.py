@@ -28,7 +28,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def vaults(self, request, *args, **kwargs):
-        valid_token = self.check_pwd_session_auth(request=request)
+        self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         cipher_detail = serializer.save()
@@ -36,3 +36,5 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # We create new cipher object from cipher detail data.
         # Then, we update revision date of user (personal or members of the organization)
         # If cipher belongs to the organization, we also update collections of the cipher.
+        new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
+        return Response(status=200, data={"id": new_cipher.id})

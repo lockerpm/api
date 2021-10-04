@@ -15,3 +15,7 @@ class ICipherRepository(ABC):
     @abstractmethod
     def save_new_cipher(self, cipher_data):
         pass
+
+    @abstractmethod
+    def save_update_cipher(self, cipher_data):
+        pass
