@@ -11,3 +11,21 @@ class CollectionCipher(models.Model):
     class Meta:
         db_table = 'cs_collections_ciphers'
         unique_together = ('collection', 'cipher')
+
+    @classmethod
+    def retrieve_or_create(cls, cipher_id, collection_id):
+        try:
+            collection_cipher = cls.objects.get(collection_id=collection_id, cipher_id=cipher_id)
+        except cls.DoesNotExist:
+            collection_cipher = cls(collection_id=collection_id, cipher_id=cipher_id)
+            collection_cipher.save()
+        return collection_cipher
+
+    @classmethod
+    def create_multiple(cls, cipher_id, *collection_ids):
+        collection_ciphers = []
+        for collection_id in collection_ids:
+            collection_ciphers.append(
+                cls(cipher_id=cipher_id, collection_id=collection_id)
+            )
+        cls.objects.bulk_create(collection_ciphers, ignore_conflicts=True)
