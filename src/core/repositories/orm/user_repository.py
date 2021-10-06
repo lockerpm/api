@@ -3,6 +3,7 @@ from typing import Dict
 from django.core.exceptions import ObjectDoesNotExist
 
 from core.repositories import IUserRepository
+from shared.constants.members import PM_MEMBER_STATUS_INVITED
 from shared.utils.app import now
 from cystack_models.models import User
 
@@ -54,3 +55,14 @@ class UserRepository(IUserRepository):
         except AttributeError:
             from cystack_models.models.users.user_score import UserScore
             return UserScore.create(user=user)
+
+    def get_current_plan(self, user: User, scope=None):
+        try:
+            return user.pm_user_plan
+        except (ValueError, AttributeError):
+            from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+            return PMUserPlan.update_or_create(user)
+
+    def get_list_invitations(self, user: User):
+        member_invitations = user.team_members.filter(status=PM_MEMBER_STATUS_INVITED).order_by('access_time')
+        return member_invitations

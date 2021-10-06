@@ -25,7 +25,50 @@ urlpatterns += [
     # url(r'^users/session/revoke_all$', views.UserPwdViewSet.as_view({'post': 'revoke_all_sessions'})),
     # url(r'^users/profile$', views.UserPwdViewSet.as_view({'get': 'profile'})),
     # url(r'^users/(?P<pk>[0-9]+)/public_key$', views.UserPwdViewSet.as_view({'get': 'public_key'})),
-    # url(r'^users/invitations$', views.UserPwdViewSet.as_view({'get': 'invitation'})),
+    url(r'^users/invitations$', views.UserPwdViewSet.as_view({'get': 'invitations'})),
     # url(r'^users/invitations/(?P<pk>[0-9]+)$', views.UserPwdViewSet.as_view({'put': 'invitation_update'})),
+
+]
+
+
+# -------------------------------- Sync ----------------------------------- #
+urlpatterns += [
+    url(r'^sync', views.SyncPwdViewSet.as_view({'get': 'sync'})),
+]
+
+
+# -------------------------------- Ciphers ------------------------------- #
+urlpatterns += [
+    url(r'^ciphers/vaults$', views.CipherPwdViewSet.as_view({'post': 'vaults'})),
+    url(r'^ciphers/permanent_delete$', views.CipherPwdViewSet.as_view({'put': 'multiple_permanent_delete'})),
+    url(r'^ciphers/delete$', views.CipherPwdViewSet.as_view({'put': 'multiple_delete'})),
+    url(r'^ciphers/restore$', views.CipherPwdViewSet.as_view({'put': 'multiple_restore'})),
+    url(r'^ciphers/move$', views.CipherPwdViewSet.as_view({'put': 'multiple_move'})),
+    url(r'^ciphers/import$', views.CipherPwdViewSet.as_view({'post': 'import_data'})),
+    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'put': 'update'})),
+    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
+
+]
+
+
+# ------------------------------- Payment ------------------------------------- #
+urlpatterns += [
+    # url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
+    # url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
+
+    url(r'^payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
+    url(r'^payments/plan$',
+        views.PaymentPwdViewSet.as_view({'get': 'current_plan'})),
+    # url(r'^payments/plan/cancel$',
+    #     views.PaymentPwdViewSet.as_view({'post': 'cancel_plan'})),
+
+    # url(r'^payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'invoices'})),
+    # url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)$',
+    #     views.PaymentPwdViewSet.as_view({'get': 'retrieve_invoice', 'post': 'retry_invoice'})),
+    # url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/processing$',
+    #     views.PaymentPwdViewSet.as_view({'post': 'invoice_processing'})),
+    # url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/cancel$',
+    #     views.PaymentPwdViewSet.as_view({'post': 'invoice_cancel'})),
+
 
 ]

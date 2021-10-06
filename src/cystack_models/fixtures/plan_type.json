@@ -1,0 +1,14 @@
+[
+  {
+    "model": "cystack_models.PlanType",
+    "fields": {
+      "name": "Basic"
+    }
+  },
+  {
+    "model": "cystack_models.PlanType",
+    "fields": {
+      "name": "Custom"
+    }
+  }
+]

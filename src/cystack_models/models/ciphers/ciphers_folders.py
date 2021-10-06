@@ -26,3 +26,13 @@ class CipherFolder(models.Model):
             cipher_folder = cls(cipher_id=cipher_id, folder_id=folder_id)
             cipher_folder.save()
         return cipher_folder
+
+    @classmethod
+    def create_multiple(cls, folder_id, *ciphers):
+        cipher_folder = []
+        for cipher in ciphers:
+            cipher_folder.append(
+                cls(cipher=cipher, folder_id=folder_id)
+            )
+        cls.objects.bulk_create(cipher_folder, ignore_conflicts=True)
+

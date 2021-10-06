@@ -11,21 +11,23 @@ from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_
 from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer
+from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
 class UserPwdViewSet(PasswordManagerViewSet):
     permission_classes = (UserPwdPermission, )
     http_method_names = ["head", "options", "get", "post", "put"]
-    user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-    session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
+    # user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+    # session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
 
     def get_serializer_class(self):
         if self.action == "register":
             self.serializer_class = UserPwdSerializer
         elif self.action == "session":
             self.serializer_class = UserSessionSerializer
+        elif self.action == "invitations":
+            self.serializer_class = UserPwdInvitationSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
     @action(methods=["post"], detail=False)
@@ -171,8 +173,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
         pass
 
     @action(methods=["get"], detail=False)
-    def invitation(self, request, *args, **kwargs):
-        pass
+    def invitations(self, request, *args, **kwargs):
+        user = self.request.user
+        # self.check_pwd_session_auth(request=request)
+        member_invitations = self.user_repository.get_list_invitations(user=user)
+        serializer = self.get_serializer(member_invitations, many=True)
+        return Response(status=200, data=serializer.data)
 
     @action(methods=["put"], detail=False)
     def invitation_update(self, request, *args, **kwargs):
