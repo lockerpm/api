@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password, is_password_usable, make_password
@@ -7,6 +9,7 @@ from shared.constants.account import DEFAULT_KDF_ITERATIONS
 
 class User(models.Model):
     user_id = models.IntegerField(primary_key=True)
+    internal_id = models.CharField(max_length=64, null=True, default=uuid.uuid4)
     creation_date = models.FloatField()
     revision_date = models.FloatField(null=True)
     activated = models.BooleanField(default=False)

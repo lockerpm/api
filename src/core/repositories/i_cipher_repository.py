@@ -17,6 +17,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def get_multiple_by_user(self, user, only_personal=False):
+        pass
+
+    @abstractmethod
     def save_new_cipher(self, cipher_data):
         pass
 
@@ -25,5 +29,17 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
-    def delete_multiple_cipher(self, cipher_ids):
+    def delete_multiple_cipher(self, cipher_ids, user_deleted):
+        pass
+
+    @abstractmethod
+    def delete_permanent_multiple_cipher(self, cipher_ids, user_deleted):
+        pass
+
+    @abstractmethod
+    def restore_multiple_cipher(self, cipher_ids, user_restored):
+        pass
+
+    @abstractmethod
+    def move_multiple_cipher(self, cipher_ids, user_moved, folder_id):
         pass

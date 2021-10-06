@@ -13,9 +13,11 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     """
     This is a general view for Password Manager app
     """
+    user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
     session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
     cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]
+    team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]
 
     def check_pwd_session_auth(self, request, renew=False):
         valid_token = self.session_repository.fetch_access_token(user=request.user, renew=renew)

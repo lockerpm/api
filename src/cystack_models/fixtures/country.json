@@ -1,0 +1,2010 @@
+[
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Afghanistan",
+      "country_phone_code": "+93",
+      "country_code": "AF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Aland Islands",
+      "country_phone_code": "+358",
+      "country_code": "AX"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Albania",
+      "country_phone_code": "+355",
+      "country_code": "AL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Algeria",
+      "country_phone_code": "+213",
+      "country_code": "DZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "AmericanSamoa",
+      "country_phone_code": "+1684",
+      "country_code": "AS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Andorra",
+      "country_phone_code": "+376",
+      "country_code": "AD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Angola",
+      "country_phone_code": "+244",
+      "country_code": "AO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Anguilla",
+      "country_phone_code": "+1264",
+      "country_code": "AI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Antarctica",
+      "country_phone_code": "+672",
+      "country_code": "AQ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Antigua and Barbuda",
+      "country_phone_code": "+1268",
+      "country_code": "AG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Argentina",
+      "country_phone_code": "+54",
+      "country_code": "AR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Armenia",
+      "country_phone_code": "+374",
+      "country_code": "AM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Aruba",
+      "country_phone_code": "+297",
+      "country_code": "AW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Australia",
+      "country_phone_code": "+61",
+      "country_code": "AU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Austria",
+      "country_phone_code": "+43",
+      "country_code": "AT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Azerbaijan",
+      "country_phone_code": "+994",
+      "country_code": "AZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bahamas",
+      "country_phone_code": "+1242",
+      "country_code": "BS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bahrain",
+      "country_phone_code": "+973",
+      "country_code": "BH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bangladesh",
+      "country_phone_code": "+880",
+      "country_code": "BD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Barbados",
+      "country_phone_code": "+1246",
+      "country_code": "BB"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Belarus",
+      "country_phone_code": "+375",
+      "country_code": "BY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Belgium",
+      "country_phone_code": "+32",
+      "country_code": "BE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Belize",
+      "country_phone_code": "+501",
+      "country_code": "BZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Benin",
+      "country_phone_code": "+229",
+      "country_code": "BJ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bermuda",
+      "country_phone_code": "+1441",
+      "country_code": "BM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bhutan",
+      "country_phone_code": "+975",
+      "country_code": "BT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bolivia, Plurinational State of bolivia",
+      "country_phone_code": "+591",
+      "country_code": "BO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bosnia and Herzegovina",
+      "country_phone_code": "+387",
+      "country_code": "BA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Botswana",
+      "country_phone_code": "+267",
+      "country_code": "BW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Brazil",
+      "country_phone_code": "+55",
+      "country_code": "BR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "British Indian Ocean Territory",
+      "country_phone_code": "+246",
+      "country_code": "IO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Brunei Darussalam",
+      "country_phone_code": "+673",
+      "country_code": "BN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bulgaria",
+      "country_phone_code": "+359",
+      "country_code": "BG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Burkina Faso",
+      "country_phone_code": "+226",
+      "country_code": "BF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Burundi",
+      "country_phone_code": "+257",
+      "country_code": "BI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cambodia",
+      "country_phone_code": "+855",
+      "country_code": "KH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cameroon",
+      "country_phone_code": "+237",
+      "country_code": "CM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Canada",
+      "country_phone_code": "+1",
+      "country_code": "CA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cape Verde",
+      "country_phone_code": "+238",
+      "country_code": "CV"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cayman Islands",
+      "country_phone_code": "+345",
+      "country_code": "KY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Central African Republic",
+      "country_phone_code": "+236",
+      "country_code": "CF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Chad",
+      "country_phone_code": "+235",
+      "country_code": "TD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Chile",
+      "country_phone_code": "+56",
+      "country_code": "CL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "China",
+      "country_phone_code": "+86",
+      "country_code": "CN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Christmas Island",
+      "country_phone_code": "+61",
+      "country_code": "CX"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cocos (Keeling) Islands",
+      "country_phone_code": "+61",
+      "country_code": "CC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Colombia",
+      "country_phone_code": "+57",
+      "country_code": "CO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Comoros",
+      "country_phone_code": "+269",
+      "country_code": "KM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Congo",
+      "country_phone_code": "+242",
+      "country_code": "CG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Congo, The Democratic Republic of the Congo",
+      "country_phone_code": "+243",
+      "country_code": "CD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cook Islands",
+      "country_phone_code": "+682",
+      "country_code": "CK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Costa Rica",
+      "country_phone_code": "+506",
+      "country_code": "CR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cote d'Ivoire",
+      "country_phone_code": "+225",
+      "country_code": "CI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Croatia",
+      "country_phone_code": "+385",
+      "country_code": "HR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cuba",
+      "country_phone_code": "+53",
+      "country_code": "CU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Cyprus",
+      "country_phone_code": "+357",
+      "country_code": "CY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Czech Republic",
+      "country_phone_code": "+420",
+      "country_code": "CZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Denmark",
+      "country_phone_code": "+45",
+      "country_code": "DK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Djibouti",
+      "country_phone_code": "+253",
+      "country_code": "DJ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Dominica",
+      "country_phone_code": "+1767",
+      "country_code": "DM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Dominican Republic",
+      "country_phone_code": "+1849",
+      "country_code": "DO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Ecuador",
+      "country_phone_code": "+593",
+      "country_code": "EC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Egypt",
+      "country_phone_code": "+20",
+      "country_code": "EG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "El Salvador",
+      "country_phone_code": "+503",
+      "country_code": "SV"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Equatorial Guinea",
+      "country_phone_code": "+240",
+      "country_code": "GQ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Eritrea",
+      "country_phone_code": "+291",
+      "country_code": "ER"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Estonia",
+      "country_phone_code": "+372",
+      "country_code": "EE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Ethiopia",
+      "country_phone_code": "+251",
+      "country_code": "ET"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Falkland Islands (Malvinas)",
+      "country_phone_code": "+500",
+      "country_code": "FK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Faroe Islands",
+      "country_phone_code": "+298",
+      "country_code": "FO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Fiji",
+      "country_phone_code": "+679",
+      "country_code": "FJ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Finland",
+      "country_phone_code": "+358",
+      "country_code": "FI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "France",
+      "country_phone_code": "+33",
+      "country_code": "FR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "French Guiana",
+      "country_phone_code": "+594",
+      "country_code": "GF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "French Polynesia",
+      "country_phone_code": "+689",
+      "country_code": "PF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Gabon",
+      "country_phone_code": "+241",
+      "country_code": "GA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Gambia",
+      "country_phone_code": "+220",
+      "country_code": "GM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Georgia",
+      "country_phone_code": "+995",
+      "country_code": "GE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Germany",
+      "country_phone_code": "+49",
+      "country_code": "DE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Ghana",
+      "country_phone_code": "+233",
+      "country_code": "GH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Gibraltar",
+      "country_phone_code": "+350",
+      "country_code": "GI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Greece",
+      "country_phone_code": "+30",
+      "country_code": "GR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Greenland",
+      "country_phone_code": "+299",
+      "country_code": "GL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Grenada",
+      "country_phone_code": "+1473",
+      "country_code": "GD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guadeloupe",
+      "country_phone_code": "+590",
+      "country_code": "GP"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guam",
+      "country_phone_code": "+1671",
+      "country_code": "GU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guatemala",
+      "country_phone_code": "+502",
+      "country_code": "GT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guernsey",
+      "country_phone_code": "+44",
+      "country_code": "GG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guinea",
+      "country_phone_code": "+224",
+      "country_code": "GN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guinea-Bissau",
+      "country_phone_code": "+245",
+      "country_code": "GW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Guyana",
+      "country_phone_code": "+595",
+      "country_code": "GY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Haiti",
+      "country_phone_code": "+509",
+      "country_code": "HT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Holy See (Vatican City State)",
+      "country_phone_code": "+379",
+      "country_code": "VA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Honduras",
+      "country_phone_code": "+504",
+      "country_code": "HN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Hong Kong",
+      "country_phone_code": "+852",
+      "country_code": "HK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Hungary",
+      "country_phone_code": "+36",
+      "country_code": "HU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Iceland",
+      "country_phone_code": "+354",
+      "country_code": "IS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "India",
+      "country_phone_code": "+91",
+      "country_code": "IN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Indonesia",
+      "country_phone_code": "+62",
+      "country_code": "ID"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Iran, Islamic Republic of Persian Gulf",
+      "country_phone_code": "+98",
+      "country_code": "IR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Iraq",
+      "country_phone_code": "+964",
+      "country_code": "IQ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Ireland",
+      "country_phone_code": "+353",
+      "country_code": "IE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Isle of Man",
+      "country_phone_code": "+44",
+      "country_code": "IM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Israel",
+      "country_phone_code": "+972",
+      "country_code": "IL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Italy",
+      "country_phone_code": "+39",
+      "country_code": "IT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Jamaica",
+      "country_phone_code": "+1876",
+      "country_code": "JM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Japan",
+      "country_phone_code": "+81",
+      "country_code": "JP"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Jersey",
+      "country_phone_code": "+44",
+      "country_code": "JE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Jordan",
+      "country_phone_code": "+962",
+      "country_code": "JO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Kazakhstan",
+      "country_phone_code": "+77",
+      "country_code": "KZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Kenya",
+      "country_phone_code": "+254",
+      "country_code": "KE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Kiribati",
+      "country_phone_code": "+686",
+      "country_code": "KI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Korea, Democratic People's Republic of Korea",
+      "country_phone_code": "+850",
+      "country_code": "KP"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Korea, Republic of South Korea",
+      "country_phone_code": "+82",
+      "country_code": "KR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Kuwait",
+      "country_phone_code": "+965",
+      "country_code": "KW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Kyrgyzstan",
+      "country_phone_code": "+996",
+      "country_code": "KG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Laos",
+      "country_phone_code": "+856",
+      "country_code": "LA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Latvia",
+      "country_phone_code": "+371",
+      "country_code": "LV"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Lebanon",
+      "country_phone_code": "+961",
+      "country_code": "LB"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Lesotho",
+      "country_phone_code": "+266",
+      "country_code": "LS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Liberia",
+      "country_phone_code": "+231",
+      "country_code": "LR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Libyan Arab Jamahiriya",
+      "country_phone_code": "+218",
+      "country_code": "LY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Liechtenstein",
+      "country_phone_code": "+423",
+      "country_code": "LI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Lithuania",
+      "country_phone_code": "+370",
+      "country_code": "LT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Luxembourg",
+      "country_phone_code": "+352",
+      "country_code": "LU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Macao",
+      "country_phone_code": "+853",
+      "country_code": "MO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Macedonia",
+      "country_phone_code": "+389",
+      "country_code": "MK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Madagascar",
+      "country_phone_code": "+261",
+      "country_code": "MG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Malawi",
+      "country_phone_code": "+265",
+      "country_code": "MW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Malaysia",
+      "country_phone_code": "+60",
+      "country_code": "MY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Maldives",
+      "country_phone_code": "+960",
+      "country_code": "MV"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mali",
+      "country_phone_code": "+223",
+      "country_code": "ML"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Malta",
+      "country_phone_code": "+356",
+      "country_code": "MT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Marshall Islands",
+      "country_phone_code": "+692",
+      "country_code": "MH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Martinique",
+      "country_phone_code": "+596",
+      "country_code": "MQ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mauritania",
+      "country_phone_code": "+222",
+      "country_code": "MR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mauritius",
+      "country_phone_code": "+230",
+      "country_code": "MU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mayotte",
+      "country_phone_code": "+262",
+      "country_code": "YT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mexico",
+      "country_phone_code": "+52",
+      "country_code": "MX"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Micronesia, Federated States of Micronesia",
+      "country_phone_code": "+691",
+      "country_code": "FM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Moldova",
+      "country_phone_code": "+373",
+      "country_code": "MD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Monaco",
+      "country_phone_code": "+377",
+      "country_code": "MC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mongolia",
+      "country_phone_code": "+976",
+      "country_code": "MN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Montenegro",
+      "country_phone_code": "+382",
+      "country_code": "ME"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Montserrat",
+      "country_phone_code": "+1664",
+      "country_code": "MS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Morocco",
+      "country_phone_code": "+212",
+      "country_code": "MA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Mozambique",
+      "country_phone_code": "+258",
+      "country_code": "MZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Myanmar",
+      "country_phone_code": "+95",
+      "country_code": "MM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Namibia",
+      "country_phone_code": "+264",
+      "country_code": "NA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Nauru",
+      "country_phone_code": "+674",
+      "country_code": "NR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Nepal",
+      "country_phone_code": "+977",
+      "country_code": "NP"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Netherlands",
+      "country_phone_code": "+31",
+      "country_code": "NL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Netherlands Antilles",
+      "country_phone_code": "+599",
+      "country_code": "AN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "New Caledonia",
+      "country_phone_code": "+687",
+      "country_code": "NC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "New Zealand",
+      "country_phone_code": "+64",
+      "country_code": "NZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Nicaragua",
+      "country_phone_code": "+505",
+      "country_code": "NI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Niger",
+      "country_phone_code": "+227",
+      "country_code": "NE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Nigeria",
+      "country_phone_code": "+234",
+      "country_code": "NG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Niue",
+      "country_phone_code": "+683",
+      "country_code": "NU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Norfolk Island",
+      "country_phone_code": "+672",
+      "country_code": "NF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Northern Mariana Islands",
+      "country_phone_code": "+1670",
+      "country_code": "MP"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Norway",
+      "country_phone_code": "+47",
+      "country_code": "NO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Oman",
+      "country_phone_code": "+968",
+      "country_code": "OM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Pakistan",
+      "country_phone_code": "+92",
+      "country_code": "PK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Palau",
+      "country_phone_code": "+680",
+      "country_code": "PW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Palestinian Territory, Occupied",
+      "country_phone_code": "+970",
+      "country_code": "PS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Panama",
+      "country_phone_code": "+507",
+      "country_code": "PA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Papua New Guinea",
+      "country_phone_code": "+675",
+      "country_code": "PG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Paraguay",
+      "country_phone_code": "+595",
+      "country_code": "PY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Peru",
+      "country_phone_code": "+51",
+      "country_code": "PE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Philippines",
+      "country_phone_code": "+63",
+      "country_code": "PH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Pitcairn",
+      "country_phone_code": "+872",
+      "country_code": "PN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Poland",
+      "country_phone_code": "+48",
+      "country_code": "PL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Portugal",
+      "country_phone_code": "+351",
+      "country_code": "PT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Puerto Rico",
+      "country_phone_code": "+1939",
+      "country_code": "PR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Qatar",
+      "country_phone_code": "+974",
+      "country_code": "QA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Romania",
+      "country_phone_code": "+40",
+      "country_code": "RO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Russia",
+      "country_phone_code": "+7",
+      "country_code": "RU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Rwanda",
+      "country_phone_code": "+250",
+      "country_code": "RW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Reunion",
+      "country_phone_code": "+262",
+      "country_code": "RE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Barthelemy",
+      "country_phone_code": "+590",
+      "country_code": "BL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Helena, Ascension and Tristan Da Cunha",
+      "country_phone_code": "+290",
+      "country_code": "SH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Kitts and Nevis",
+      "country_phone_code": "+1869",
+      "country_code": "KN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Lucia",
+      "country_phone_code": "+1758",
+      "country_code": "LC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Martin",
+      "country_phone_code": "+590",
+      "country_code": "MF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Pierre and Miquelon",
+      "country_phone_code": "+508",
+      "country_code": "PM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saint Vincent and the Grenadines",
+      "country_phone_code": "+1784",
+      "country_code": "VC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Samoa",
+      "country_phone_code": "+685",
+      "country_code": "WS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "San Marino",
+      "country_phone_code": "+378",
+      "country_code": "SM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Sao Tome and Principe",
+      "country_phone_code": "+239",
+      "country_code": "ST"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Saudi Arabia",
+      "country_phone_code": "+966",
+      "country_code": "SA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Senegal",
+      "country_phone_code": "+221",
+      "country_code": "SN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Serbia",
+      "country_phone_code": "+381",
+      "country_code": "RS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Seychelles",
+      "country_phone_code": "+248",
+      "country_code": "SC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Sierra Leone",
+      "country_phone_code": "+232",
+      "country_code": "SL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Singapore",
+      "country_phone_code": "+65",
+      "country_code": "SG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Slovakia",
+      "country_phone_code": "+421",
+      "country_code": "SK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Slovenia",
+      "country_phone_code": "+386",
+      "country_code": "SI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Solomon Islands",
+      "country_phone_code": "+677",
+      "country_code": "SB"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Somalia",
+      "country_phone_code": "+252",
+      "country_code": "SO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "South Africa",
+      "country_phone_code": "+27",
+      "country_code": "ZA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "South Sudan",
+      "country_phone_code": "+211",
+      "country_code": "SS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "South Georgia and the South Sandwich Islands",
+      "country_phone_code": "+500",
+      "country_code": "GS"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Spain",
+      "country_phone_code": "+34",
+      "country_code": "ES"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Sri Lanka",
+      "country_phone_code": "+94",
+      "country_code": "LK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Sudan",
+      "country_phone_code": "+249",
+      "country_code": "SD"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Suriname",
+      "country_phone_code": "+597",
+      "country_code": "SR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Svalbard and Jan Mayen",
+      "country_phone_code": "+47",
+      "country_code": "SJ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Swaziland",
+      "country_phone_code": "+268",
+      "country_code": "SZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Sweden",
+      "country_phone_code": "+46",
+      "country_code": "SE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Switzerland",
+      "country_phone_code": "+41",
+      "country_code": "CH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Syrian Arab Republic",
+      "country_phone_code": "+963",
+      "country_code": "SY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Taiwan",
+      "country_phone_code": "+886",
+      "country_code": "TW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Tajikistan",
+      "country_phone_code": "+992",
+      "country_code": "TJ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Tanzania, United Republic of Tanzania",
+      "country_phone_code": "+255",
+      "country_code": "TZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Thailand",
+      "country_phone_code": "+66",
+      "country_code": "TH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Timor-Leste",
+      "country_phone_code": "+670",
+      "country_code": "TL"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Togo",
+      "country_phone_code": "+228",
+      "country_code": "TG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Tokelau",
+      "country_phone_code": "+690",
+      "country_code": "TK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Tonga",
+      "country_phone_code": "+676",
+      "country_code": "TO"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Trinidad and Tobago",
+      "country_phone_code": "+1868",
+      "country_code": "TT"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Tunisia",
+      "country_phone_code": "+216",
+      "country_code": "TN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Turkey",
+      "country_phone_code": "+90",
+      "country_code": "TR"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Turkmenistan",
+      "country_phone_code": "+993",
+      "country_code": "TM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Turks and Caicos Islands",
+      "country_phone_code": "+1649",
+      "country_code": "TC"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Tuvalu",
+      "country_phone_code": "+688",
+      "country_code": "TV"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Uganda",
+      "country_phone_code": "+256",
+      "country_code": "UG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Ukraine",
+      "country_phone_code": "+380",
+      "country_code": "UA"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "United Arab Emirates",
+      "country_phone_code": "+971",
+      "country_code": "AE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "United Kingdom",
+      "country_phone_code": "+44",
+      "country_code": "GB"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "United States",
+      "country_phone_code": "+1",
+      "country_code": "US"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Uruguay",
+      "country_phone_code": "+598",
+      "country_code": "UY"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Uzbekistan",
+      "country_phone_code": "+998",
+      "country_code": "UZ"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Vanuatu",
+      "country_phone_code": "+678",
+      "country_code": "VU"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Venezuela, Bolivarian Republic of Venezuela",
+      "country_phone_code": "+58",
+      "country_code": "VE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Vietnam",
+      "country_phone_code": "+84",
+      "country_code": "VN"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Virgin Islands, British",
+      "country_phone_code": "+1284",
+      "country_code": "VG"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Virgin Islands, U.S.",
+      "country_phone_code": "+1340",
+      "country_code": "VI"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Wallis and Futuna",
+      "country_phone_code": "+681",
+      "country_code": "WF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Yemen",
+      "country_phone_code": "+967",
+      "country_code": "YE"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Zambia",
+      "country_phone_code": "+260",
+      "country_code": "ZM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Zimbabwe",
+      "country_phone_code": "+263",
+      "country_code": "ZW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Kosovo",
+      "country_phone_code": "+383",
+      "country_code": "XK"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "United States Minor Outlying Islands",
+      "country_phone_code": "+699",
+      "country_code": "UM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "French Southern Territories",
+      "country_phone_code": "+262",
+      "country_code": "TF"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Sint Maarten",
+      "country_phone_code": "+1",
+      "country_code": "SX"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Heard Island and McDonald Islands",
+      "country_phone_code": "+0",
+      "country_code": "HM"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Western Sahara",
+      "country_phone_code": "+212",
+      "country_code": "EH"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Curacao",
+      "country_phone_code": "+599",
+      "country_code": "CW"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bouvet Island",
+      "country_phone_code": "+55",
+      "country_code": "BV"
+    }
+  },
+  {
+    "model": "cystack_models.Country",
+    "fields": {
+      "country_name": "Bonaire, Saint Eustatius and Saba",
+      "country_phone_code": "+599",
+      "country_code": "BQ"
+    }
+  }
+]

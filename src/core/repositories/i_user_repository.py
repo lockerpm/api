@@ -40,3 +40,14 @@ class IUserRepository(ABC):
     @abstractmethod
     def retrieve_or_create_user_score(self, user: User):
         pass
+
+    @abstractmethod
+    def get_current_plan(self, user: User, scope=None):
+        pass
+
+    @abstractmethod
+    def get_list_invitations(self, user: User):
+        pass
+
+    # @abstractmethod
+    # def get_from_cystack_id(self):

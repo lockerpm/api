@@ -36,3 +36,20 @@ class UserSessionSerializer(serializers.Serializer):
     device_name = serializers.CharField(required=False, allow_blank=True)
     device_type = serializers.IntegerField(required=False)
     password = serializers.CharField()
+
+
+class UserPwdInvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamMember
+        fields = ('id', 'access_time', 'role')
+        read_only_fields = ('id', 'access_time', 'role')
+
+    def to_representation(self, instance):
+        data = super(UserPwdInvitationSerializer, self).to_representation(instance)
+        data["status"] = instance.status
+        data["team"] = {
+            "id": instance.team.id,
+            "organization_id": instance.team.id,
+            "name": instance.team.name
+        }
+        return data

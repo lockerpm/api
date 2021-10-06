@@ -154,6 +154,7 @@ class VaultItemSerializer(serializers.Serializer):
         else:
             data["organizationId"] = None
             data["collectionIds"] = []
+            data["team"] = None
 
         return data
 
@@ -198,5 +199,23 @@ class MutipleItemIdsSerializer(serializers.Serializer):
         if not ids:
             raise serializers.ValidationError(detail={"ids": ["This field is required"]})
         if len(ids) > 200:
-            raise serializers.ValidationError(detail={"ids": ["You can only delete up to 500 items at a time"]})
+            raise serializers.ValidationError(detail={"ids": ["You can only select up to 200 items at a time"]})
+        return data
+
+
+class MultipleMoveSerializer(serializers.Serializer):
+    ids = serializers.ListField(child=serializers.CharField(), allow_empty=False, allow_null=False, required=True)
+    folderId = serializers.CharField(allow_null=True)
+
+    def validate(self, data):
+        user = self.context["request"].user
+        ids = data.get("ids")
+        if not ids:
+            raise serializers.ValidationError(detail={"ids": ["This field is required"]})
+        if len(ids) > 200:
+            raise serializers.ValidationError(detail={"ids": ["You can only select up to 200 items at a time"]})
+
+        folder_id = data.get("folderId")
+        if folder_id and user.folders.filter(id=folder_id).exists() is False:
+            raise serializers.ValidationError(detail={"folderId": ["This folder does not exist"]})
         return data
