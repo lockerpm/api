@@ -44,7 +44,7 @@ class CipherRepository(ICipherRepository):
 
         member_collections = CollectionMember.objects.filter(member__in=members).values_list('collection_id', flat=True)
         member_group_collections = CollectionGroup.objects.filter(
-            group__groups_members__in=members
+            group__groups_members__member__in=members
         ).values_list('collection_id', flat=True)
         team_collection_ids = list(member_collections) + list(member_group_collections)
         team_ciphers = Cipher.objects.filter(
@@ -73,7 +73,7 @@ class CipherRepository(ICipherRepository):
             creation_date=cipher_data.get("creation_date", now()),
             revision_date=cipher_data.get("revision_date", now()),
             deleted_date=cipher_data.get("deleted_date"),
-            reprompt=cipher_data.get("reprompt", 0),
+            reprompt=cipher_data.get("reprompt", 0) or 0,
             score=cipher_data.get("score", 0),
             type=cipher_data.get("type"),
             data=cipher_data.get("data"),
@@ -90,10 +90,11 @@ class CipherRepository(ICipherRepository):
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
-        self._bump_account_revision_date(user=cipher.user, team=cipher.team, **{
+        self._bump_account_revision_date(team=cipher.team, **{
             "collection_ids": collection_ids,
             "role_name": [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
         })
+        self._bump_account_revision_date(user=cipher.user)
 
         return cipher
 

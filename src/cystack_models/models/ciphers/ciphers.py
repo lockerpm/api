@@ -1,3 +1,4 @@
+import ast
 import uuid
 
 from django.db import models
@@ -25,4 +26,13 @@ class Cipher(models.Model):
     class Meta:
         db_table = 'cs_ciphers'
 
+    def get_data(self):
+        if not self.data:
+            return {}
+        return ast.literal_eval(str(self.data))
 
+    def is_favorite(self, user):
+        return self.ciphers_favorites.filter(user=user)
+
+    def get_folder(self, user):
+        return self.ciphers_folders.filter(folder__user=user)

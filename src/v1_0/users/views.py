@@ -77,6 +77,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 "is_pwd_manager": user.activated,
                 "default_team_id": default_team.id if default_team else None,
             })
+
         elif request.method == "PUT":
             timeout = request.data.get("timeout", user.timeout)
             timeout_action = request.data.get("timeout_action", user.timeout_action)
