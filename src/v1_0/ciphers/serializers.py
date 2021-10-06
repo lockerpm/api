@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -76,7 +78,7 @@ class VaultItemSerializer(serializers.Serializer):
     favorite = serializers.BooleanField(default=False)
     fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
     score = serializers.FloatField(default=0, min_value=0)
-    reprompt = serializers.ChoiceField(choices=[0, 1], default=0)
+    reprompt = serializers.ChoiceField(choices=[0, 1], default=0, allow_null=True)
     name = serializers.CharField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
     type = serializers.IntegerField()
@@ -96,22 +98,23 @@ class VaultItemSerializer(serializers.Serializer):
         secure_note = data.get("secureNote")
         card = data.get("card")
         identity = data.get("identity")
-        if vault_type == 1:
+        if vault_type == CIPHER_TYPE_LOGIN:
             if not login:
                 raise serializers.ValidationError(detail={"login": ["This field is required"]})
             if login.get("totp") and not data.get("organizationId"):
                 raise serializers.ValidationError(detail={
                     "organizationId": ["This field is required when using time OTP"]
                 })
-        if vault_type == 2 and not secure_note:
+        if vault_type == CIPHER_TYPE_NOTE and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
-        if vault_type == 3 and not card:
+        if vault_type == CIPHER_TYPE_CARD and not card:
             raise serializers.ValidationError(detail={"card": ["This field is required"]})
-        if vault_type == 4 and not identity:
+        if vault_type == CIPHER_TYPE_IDENTITY and not identity:
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
 
         # Check folder id
-        if user.folders.filter(id=data.get("folderId")).exists() is False:
+        folder_id = data.get("folderId")
+        if folder_id and user.folders.filter(id=folder_id).exists() is False:
             raise serializers.ValidationError(detail={"folderId": ["This folder does not exist"]})
 
         # Check team id, collection ids
@@ -160,6 +163,7 @@ class VaultItemSerializer(serializers.Serializer):
 
     def _get_cipher_detail(self):
         validated_data = self.validated_data
+        validated_data = json.loads(json.dumps(validated_data))
         cipher_type = validated_data.get("type")
         detail = {
             "edit": True,
@@ -178,13 +182,16 @@ class VaultItemSerializer(serializers.Serializer):
         }
         # Login data
         if cipher_type == CIPHER_TYPE_LOGIN:
-            detail["data"] = validated_data.get("login")
+            detail["data"] = dict(validated_data.get("login"))
         elif cipher_type == CIPHER_TYPE_CARD:
-            detail["data"] = validated_data.get("card")
+            detail["data"] = dict(validated_data.get("card"))
         elif cipher_type == CIPHER_TYPE_IDENTITY:
-            detail["data"] = validated_data.get("identity")
+            detail["data"] = dict(validated_data.get("identity"))
         elif cipher_type == CIPHER_TYPE_NOTE:
-            detail["data"] = validated_data.get("secureNote")
+            detail["data"] = dict(validated_data.get("secureNote"))
+        detail["data"]["name"] = validated_data.get("name")
+        if validated_data.get("notes"):
+            detail["data"]["notes"] = validated_data.get("notes")
         return detail
 
     def save(self, **kwargs):

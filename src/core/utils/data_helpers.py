@@ -1,5 +1,6 @@
 import json
 import humps
+from datetime import datetime
 
 
 def camel_snake_data(json_data, camel_to_snake=False, snake_to_camel=False):
@@ -18,3 +19,14 @@ def camel_snake_data(json_data, camel_to_snake=False, snake_to_camel=False):
         return json_data
     except json.decoder.JSONDecodeError:
         return json_data
+
+
+def convert_readable_date(timestamp):
+    """
+    Convert timestamp to readable date string
+    :param timestamp: (int)
+    :return:
+    """
+    if timestamp is None or timestamp < 0:
+        return None
+    return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%fZ')

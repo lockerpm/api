@@ -11,7 +11,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     permission_classes = (CipherPwdPermission, )
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
-    @property
     def get_serializer_class(self):
         if self.action in ["vaults", "update", "share"]:
             self.serializer_class = VaultItemSerializer
