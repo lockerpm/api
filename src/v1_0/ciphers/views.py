@@ -1,5 +1,7 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE
@@ -22,6 +24,14 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         elif self.action in ["multiple_move"]:
             self.serializer_class = MultipleMoveSerializer
         return super(CipherPwdViewSet, self).get_serializer_class()
+
+    def get_object(self):
+        try:
+            cipher = self.cipher_repository.get_by_id(cipher_id=self.kwargs.get("pk"))
+            # self.check_object_permissions(request=self.request, obj=cipher)
+            return cipher
+        except ObjectDoesNotExist:
+            raise NotFound
 
     @action(methods=["post"], detail=False)
     def vaults(self, request, *args, **kwargs):
@@ -100,7 +110,18 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
     def update(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
-        return Response(status=200, data={"success": True})
+        cipher = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cipher_detail = serializer.save(**{"cipher": cipher})
+        cipher = self.cipher_repository.save_update_cipher(cipher=cipher, cipher_data=cipher_detail)
+        PwdSync(
+            event=SYNC_EVENT_CIPHER_CREATE,
+            user_ids=[request.user.user_id],
+            team=serializer.validated_data.get("team"),
+            add_all=True
+        ).send()
+        return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
     def multiple_move(self, request, *args, **kwargs):

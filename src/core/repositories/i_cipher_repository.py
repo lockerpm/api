@@ -13,6 +13,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_id(self, cipher_id: str) -> Cipher:
+        pass
+
+    @abstractmethod
     def get_multiple_by_ids(self, cipher_ids: list):
         pass
 
@@ -21,11 +25,11 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
-    def save_new_cipher(self, cipher_data):
+    def save_new_cipher(self, cipher_data) -> Cipher:
         pass
 
     @abstractmethod
-    def save_update_cipher(self, cipher_data):
+    def save_update_cipher(self, cipher: Cipher, cipher_data) -> Cipher:
         pass
 
     @abstractmethod
