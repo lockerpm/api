@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE
-from v1_0.ciphers.serializers import VaultItemSerializer, MutipleItemIdsSerializer, MultipleMoveSerializer
+from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
+    MutipleItemIdsSerializer, MultipleMoveSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -12,8 +13,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
     def get_serializer_class(self):
-        if self.action in ["vaults", "update", "share"]:
+        if self.action in ["vaults", "share"]:
             self.serializer_class = VaultItemSerializer
+        elif self.action in ["update"]:
+            self.serializer_class = UpdateVaultItemSerializer
         elif self.action in ["multiple_delete", "multiple_restore", "multiple_permanent_delete"]:
             self.serializer_class = MutipleItemIdsSerializer
         elif self.action in ["multiple_move"]:

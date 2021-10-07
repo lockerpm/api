@@ -31,8 +31,24 @@ class Cipher(models.Model):
             return {}
         return ast.literal_eval(str(self.data))
 
-    def is_favorite(self, user):
-        return self.ciphers_favorites.filter(user=user)
+    def get_favorites(self):
+        if not self.favorites:
+            return {}
+        return ast.literal_eval(str(self.favorites))
 
-    def get_folder(self, user):
-        return self.ciphers_folders.filter(folder__user=user)
+    def set_favorite(self, user_id, is_favorite=False):
+        favorites = self.get_favorites()
+        favorites[user_id] = is_favorite
+        self.favorites = favorites
+        self.save()
+
+    def get_folders(self):
+        if not self.folders:
+            return {}
+        return ast.literal_eval(str(self.folders))
+
+    def set_folder(self, user_id, folder_id=None):
+        folders = self.get_folders()
+        folders[user_id] = folder_id
+        self.folders = folders
+        self.save()

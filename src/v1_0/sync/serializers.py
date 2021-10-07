@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
@@ -42,6 +43,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
+        user = self.context["user"]
         data = instance.get_data()
         cipher_detail = data.copy()
         cipher_detail.pop("name", None)
@@ -51,6 +53,8 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         secure_note = cipher_detail if instance.type == CIPHER_TYPE_NOTE else None
         card = cipher_detail if instance.type == CIPHER_TYPE_CARD else None
         identity = cipher_detail if instance.type == CIPHER_TYPE_IDENTITY else None
+        folder_id = instance.get_folders().get(user.user_id)
+        favorite = instance.get_favorites().get(user.user_id, False)
         data = {
             "object": "cipherDetails",
             "attachments": None,
@@ -59,9 +63,9 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "data": data,
             "deleted_date": instance.deleted_date,
             "edit": True,
-            "favorite": True,
+            "favorite": favorite,
             "fields": None,
-            "folder_id": None,
+            "folder_id": folder_id,
             "id": instance.id,
             "identity": identity,
             "login": login,
