@@ -198,6 +198,16 @@ class VaultItemSerializer(serializers.Serializer):
         return self._get_cipher_detail()
 
 
+class UpdateVaultItemSerializer(VaultItemSerializer):
+    def save(self, **kwargs):
+        cipher = kwargs.get("cipher")
+        validated_data = self.validated_data
+        if cipher.team_id is None and validated_data.get("organizationId"):
+            raise serializers.ValidationError(detail={"organizationId": [
+                "You can not change team of cipher when update. Please share this cipher to change team"
+            ]})
+        return self._get_cipher_detail()
+
 class MutipleItemIdsSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.CharField(), allow_empty=False, allow_null=False, required=True)
 

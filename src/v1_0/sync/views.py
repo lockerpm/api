@@ -25,11 +25,13 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
 
         ciphers = self.cipher_repository.get_multiple_by_user(user=user)
+        # from cystack_models.models import Cipher
+        # ciphers = Cipher.objects.filter()
 
         sync_data = {
             "object": "sync",
             "profile": SyncProfileSerializer(user, many=False).data,
-            "ciphers": SyncCipherSerializer(ciphers, many=True).data,
+            "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": user}).data,
             "collections": [],
             "folders": [],
             "domains": None,

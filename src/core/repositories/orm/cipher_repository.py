@@ -5,7 +5,6 @@ from core.repositories import ICipherRepository
 from shared.utils.app import now
 from shared.constants.members import *
 from cystack_models.models.ciphers.ciphers import Cipher
-from cystack_models.models.ciphers.ciphers_folders import CipherFolder
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.users.users import User
 from cystack_models.models.teams.collections_members import CollectionMember
@@ -83,10 +82,10 @@ class CipherRepository(ICipherRepository):
         cipher.save()
         # Create CipherFavorite
         if user_created_id and favorite:
-            cipher.ciphers_favorites.model.retrieve_or_create(cipher.id, user_created_id)
+            cipher.set_favorite(user_cipher_id, True)
         # Create CipherFolder
         if folder_id:
-            cipher.ciphers_folders.model.retrieve_or_create(cipher.id, folder_id)
+            cipher.set_folder(user_cipher_id, folder_id)
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
@@ -144,7 +143,7 @@ class CipherRepository(ICipherRepository):
         """
         # Filter list ciphers from trash
         ciphers = self.get_multiple_by_user(user=user_restored, only_edited=True).filter(
-            deleted_date__isnull=False
+            id__in=cipher_ids, deleted_date__isnull=False
         )
         # Restore all cipher by setting deleted_date as null
         ciphers.update(revision_date=now(), deleted_date=None)
@@ -156,13 +155,10 @@ class CipherRepository(ICipherRepository):
 
     def move_multiple_cipher(self, cipher_ids, user_moved, folder_id):
         # Filter list ciphers of users
-        ciphers = self.get_multiple_by_user(user=user_moved).filter(deleted_date__isnull=True)
+        ciphers = self.get_multiple_by_user(user=user_moved).filter(id__in=cipher_ids, deleted_date__isnull=True)
         # Move all cipher to new folder
-        # First, delete old cipher folder
-        CipherFolder.objects.filter(cipher__in=ciphers, folder__user=user_moved).delete()
-        # Create new cipher folder
-        if folder_id:
-            CipherFolder.create_multiple(folder_id=folder_id, *ciphers)
+        for cipher in ciphers:
+            cipher.set_folder(user_id=user_moved.user_id, folder_id=folder_id)
         # Bump revision date of user
         self._bump_account_revision_date(user=user_moved)
 
