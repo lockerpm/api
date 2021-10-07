@@ -18,6 +18,9 @@ class CipherRepository(ICipherRepository):
     def get_folder_ids(self, cipher: Cipher):
         pass
 
+    def get_by_id(self, cipher_id: str) -> Cipher:
+        return Cipher.objects.get(id=cipher_id)
+
     def get_multiple_by_ids(self, cipher_ids: list):
         return Cipher.objects.filter(id__in=cipher_ids)
 
@@ -97,8 +100,42 @@ class CipherRepository(ICipherRepository):
 
         return cipher
 
-    def save_update_cipher(self, cipher_data):
-        pass
+    def save_update_cipher(self, cipher: Cipher, cipher_data):
+        user_created_id = cipher_data.get("user_id")
+        user_cipher_id = cipher_data.get("user_id")
+        team_id = cipher_data.get("team_id")
+        collection_ids = cipher_data.get("collection_ids", [])
+
+        # If team_id is not null => This cipher belongs to team
+        if team_id:
+            user_cipher_id = None
+        # Create new cipher object
+        cipher.revision_date = now()
+        cipher.reprompt = cipher_data.get("reprompt", cipher.reprompt) or 0
+        cipher.score = cipher_data.get("score", cipher.score)
+        cipher.type = cipher_data.get("type", cipher.type)
+        cipher.data = cipher_data.get("data", cipher.get_data())
+        cipher.user_id = user_cipher_id
+        cipher.team_id = team_id
+        cipher.save()
+        # Set favorite
+        if user_created_id:
+            favorite = cipher_data.get("favorite", cipher.get_favorites().get(user_cipher_id, False))
+            cipher.set_favorite(user_id=user_cipher_id, is_favorite=favorite)
+
+        # Set folder id
+        folder_id = cipher_data.get("folder_id", cipher.get_folders().get(user_cipher_id))
+        cipher.set_folder(user_cipher_id, folder_id)
+
+        # Update revision date of user (if this cipher is personal)
+        # or all related cipher members (if this cipher belongs to a team)
+        self._bump_account_revision_date(team=cipher.team, **{
+            "collection_ids": collection_ids,
+            "role_name": [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
+        })
+        self._bump_account_revision_date(user=cipher.user)
+
+        return cipher
 
     def delete_multiple_cipher(self, cipher_ids: list, user_deleted: User = None):
         """
