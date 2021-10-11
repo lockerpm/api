@@ -21,5 +21,21 @@ class ITeamRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_id(self, team_id: str) -> Team:
+        pass
+
+    @abstractmethod
     def get_multiple_team_by_ids(self, team_ids: list):
+        pass
+
+    @abstractmethod
+    def get_multiple_team_by_user(self, user):
+        pass
+
+    @abstractmethod
+    def get_role_notify(self, team: Team, user) -> dict:
+        pass
+
+    @abstractmethod
+    def get_pm_plan(self, team: Team):
         pass

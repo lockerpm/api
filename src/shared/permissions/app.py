@@ -17,7 +17,7 @@ class AppBasePermission(BasePermission):
     def has_permission(self, request, view):
         if self.is_admin(request):
             return True
-        return self.is_auth(request)
+        return self.is_auth(request) and request.user.activated
 
     def has_object_permission(self, request, view, obj):
         member = self.get_team_member(user=request.user, obj=obj)

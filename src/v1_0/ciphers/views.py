@@ -100,7 +100,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
         # Check permission of user here
         ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
-        teams = self.team_repository.get_multiple_team_by_ids(ciphers.values_list('team_id', flat=True))
+        teams = self.team_repository.get_multiple_team_by_ids(team_ids=list(ciphers.values_list('team_id', flat=True)))
         for team in teams:
             self.check_object_permissions(request=request, obj=team)
         # We will set deleted_date of cipher to null
