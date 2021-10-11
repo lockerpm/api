@@ -51,6 +51,13 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Folders ------------------------------- #
+urlpatterns += [
+    url(r'^folders$', views.FolderPwdViewSet.as_view({'post': 'create'})),
+    url(r'^folders/(?P<pk>[0-9a-z\-]+)$', views.FolderPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+]
+
+
 # ------------------------------- Payment ------------------------------------- #
 urlpatterns += [
     # url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),

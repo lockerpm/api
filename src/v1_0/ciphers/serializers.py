@@ -172,7 +172,7 @@ class VaultItemSerializer(serializers.Serializer):
             "user_id": self.context["request"].user.user_id,
             "organization_id": validated_data.get("organizationId"),
             "team_id": validated_data.get("organizationId"),
-            "folder_id": validated_data.get("folder_id"),
+            "folder_id": validated_data.get("folderId"),
             "favorite": validated_data.get("favorite", False),
             "reprompt": validated_data.get("reprompt", 0),
             "attachments": None,
