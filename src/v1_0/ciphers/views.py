@@ -4,7 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
+    SYNC_EVENT_CIPHER_UPDATE
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -116,7 +117,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_detail = serializer.save(**{"cipher": cipher})
         cipher = self.cipher_repository.save_update_cipher(cipher=cipher, cipher_data=cipher_detail)
         PwdSync(
-            event=SYNC_EVENT_CIPHER_CREATE,
+            event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[request.user.user_id],
             team=serializer.validated_data.get("team"),
             add_all=True

@@ -10,6 +10,7 @@ CORE_CONFIG = {
         "ISessionRepository": SessionRepository,
         "ITeamRepository": TeamRepository,
         "ICipherRepository": CipherRepository,
-        "ITeamMemberRepository": TeamMemberRepository
+        "IFolderRepository": FolderRepository,
+        "ITeamMemberRepository": TeamMemberRepository,
     }
 }

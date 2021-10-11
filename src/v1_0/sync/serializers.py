@@ -6,6 +6,7 @@ from core.utils.data_helpers import convert_readable_date
 from shared.constants.ciphers import *
 from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.ciphers import Cipher
+from cystack_models.models.ciphers.folders import Folder
 
 
 class SyncProfileSerializer(serializers.ModelSerializer):
@@ -79,5 +80,20 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "secure_note": secure_note,
             "type": instance.type,
             "view_password": True
+        }
+        return data
+
+
+class SyncFolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Folder
+        fields = ('id', 'name', 'revision_date')
+
+    def to_representation(self, instance):
+        data = {
+            "object": "folder",
+            "id": instance.id,
+            "name": instance.name,
+            "revision_date": convert_readable_date(instance.revision_date)
         }
         return data

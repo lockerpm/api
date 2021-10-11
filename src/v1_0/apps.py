@@ -16,6 +16,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
     session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
     cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
+    folder_repository = CORE_CONFIG["repositories"]["IFolderRepository"]()
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]
     team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]
 
