@@ -11,3 +11,4 @@ sqlparse==0.4.1
 gunicorn==19.9.0
 slack_sdk==3.0.0rc1
 pyhumps==1.6.1
+stripe==2.40.0
