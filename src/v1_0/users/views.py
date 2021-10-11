@@ -11,15 +11,14 @@ from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_
 from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer
+from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
+    UserMasterPasswordHashSerializer, UserChangePasswordSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
 class UserPwdViewSet(PasswordManagerViewSet):
     permission_classes = (UserPwdPermission, )
     http_method_names = ["head", "options", "get", "post", "put"]
-    # user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-    # session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
 
     def get_serializer_class(self):
         if self.action == "register":
@@ -28,6 +27,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserSessionSerializer
         elif self.action == "invitations":
             self.serializer_class = UserPwdInvitationSerializer
+        elif self.action in ["delete_me", "purge_me", "revoke_all_sessions"]:
+            self.serializer_class = UserMasterPasswordHashSerializer
+        elif self.action == "password":
+            self.serializer_class = UserChangePasswordSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
     @action(methods=["post"], detail=False)
@@ -139,7 +142,19 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def password(self, request, *args, **kwargs):
-        pass
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        new_master_password_hash = validated_data.get("new_master_password_hash")
+        key = validated_data.get("key")
+        self.user_repository.change_master_password_hash(
+            user=user, new_master_password_hash=new_master_password_hash, key=key
+        )
+        self.user_repository.revoke_all_sessions(user=user)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def password_hint(self, request, *args, **kwargs):
@@ -155,15 +170,44 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def revoke_all_sessions(self, request, *args, **kwargs):
-        pass
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.user_repository.revoke_all_sessions(user)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def delete_me(self, request, *args, **kwargs):
-        pass
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Check if user is the only owner of any teams (except default team)
+        default_team = self.user_repository.get_default_team(user=user)
+        default_team_id = default_team.id if default_team else None
+
+        owner_teams = user.team_members.all().filter(
+            role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False
+        ).exclude(team_id=default_team_id)
+        if owner_teams.count() > 0:
+            raise ValidationError({"non_field_errors": [gen_error("1007")]})
+
+        # Clear data of default team
+        # CHANGE LATER ...
+
+        # Deactivated this account
+        self.user_repository.delete_account(user)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def purge_me(self, request, *args, **kwargs):
-        pass
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.user_repository.purge_account(user=user)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def profile(self, request, *args, **kwargs):

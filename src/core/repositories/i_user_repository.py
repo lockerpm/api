@@ -49,5 +49,18 @@ class IUserRepository(ABC):
     def get_list_invitations(self, user: User):
         pass
 
-    # @abstractmethod
-    # def get_from_cystack_id(self):
+    @abstractmethod
+    def delete_account(self, user: User):
+        pass
+
+    @abstractmethod
+    def purge_account(self, user: User):
+        pass
+
+    @abstractmethod
+    def revoke_all_sessions(self, user: User):
+        pass
+
+    @abstractmethod
+    def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str):
+        pass

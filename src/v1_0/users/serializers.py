@@ -53,3 +53,27 @@ class UserPwdInvitationSerializer(serializers.ModelSerializer):
             "name": instance.team.name
         }
         return data
+
+
+class UserMasterPasswordHashSerializer(serializers.Serializer):
+    master_password_hash = serializers.CharField()
+
+    def validate(self, data):
+        user = self.context["request"].user
+        master_password_hash = data.get("master_password_hash")
+        if user.check_master_password(master_password_hash) is False:
+            raise serializers.ValidationError(detail={"master_password_hash": ["The master password is not correct"]})
+        return data
+
+
+class UserChangePasswordSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    master_password_hash = serializers.CharField()
+    new_master_password_hash = serializers.CharField()
+
+    def validate(self, data):
+        user = self.context["request"].user
+        master_password_hash = data.get("master_password_hash")
+        if user.check_master_password(master_password_hash) is False:
+            raise serializers.ValidationError(detail={"master_password_hash": ["The master password is not correct"]})
+        return data

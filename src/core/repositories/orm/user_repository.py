@@ -66,3 +66,33 @@ class UserRepository(IUserRepository):
     def get_list_invitations(self, user: User):
         member_invitations = user.team_members.filter(status=PM_MEMBER_STATUS_INVITED).order_by('access_time')
         return member_invitations
+
+    def delete_account(self, user: User):
+        user.user_refresh_tokens.all().delete()
+        user.folders.all().delete()
+        user.ciphers.all().delete()
+        user.revision_date = None
+        user.activated = False
+        user.account_revision_date = None
+        user.master_password = None
+        user.master_password_hint = None
+        user.master_password_score = 0
+        user.security_stamp = None
+        user.key = None
+        user.public_key = None
+        user.private_key = None
+        user.save()
+
+    def purge_account(self, user: User):
+        user.folders.all().delete()
+        user.ciphers.all().delete()
+        return user
+
+    def revoke_all_sessions(self, user: User):
+        user.user_refresh_tokens.all().delete()
+        return user
+
+    def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str):
+        user.set_master_password(new_master_password_hash)
+        user.key = key
+        user.save()
