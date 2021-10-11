@@ -55,6 +55,13 @@ APP_CODE += [
         "code": "1006",
         "message": "This group is a base group. So, you can not delete it",
         "description": "Group này là một base group nên bạn không thể xóa"
+    },
+    {
+        "code": "1007",
+        "message": "Cannot delete this user because it is the sole owner of at least one organization. "
+                   "Please delete these organizations",
+        "description": "Không thể xóa account này thì account là owner của ít nhất một chương trình. "
+                       "Hãy xóa các chương trình mà bạn đã tạo."
     }
 ]
 
