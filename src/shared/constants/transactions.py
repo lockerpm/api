@@ -22,10 +22,11 @@ LIST_PAYMENT_METHOD = [PAYMENT_METHOD_CARD, PAYMENT_METHOD_WALLET, PAYMENT_METHO
 
 
 # ------------------- Payment status -------------------------------- #
-PAYMENT_STATUS_FAILED = "failed"        # Failed
-PAYMENT_STATUS_PAID = "paid"            # Successful
-PAYMENT_STATUS_PENDING = "pending"      # Contact pending
-PAYMENT_STATUS_PAST_DUE = "past_due"    # Subscription failed
+PAYMENT_STATUS_FAILED = "failed"            # Failed
+PAYMENT_STATUS_PAID = "paid"                # Successful
+PAYMENT_STATUS_PENDING = "pending"          # Contact pending
+PAYMENT_STATUS_PROCESSING = "processing"    # CyStack banking processing
+PAYMENT_STATUS_PAST_DUE = "past_due"        # Subscription failed
 
 
 # ------------------- Duration types -------------------------------- #
