@@ -1,5 +1,7 @@
 import uuid
+import requests
 
+from django.conf import settings
 from django.db import models
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password, is_password_usable, make_password
@@ -55,3 +57,15 @@ class User(models.Model):
             self._password = None
             self.save(update_fields=["password"])
         return check_password(raw_password, self.master_password, setter)
+
+    def get_from_cystack_id(self):
+        """
+        Request to API Gateway to get user information
+        :return:
+        """
+        url = "{}/micro_services/users/{}".format(settings.GATEWAY_API, self.user_id)
+        headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
+        res = requests.get(url=url, headers=headers, verify=False)
+        if res.status_code == 200:
+            return res.json()
+        return {}

@@ -1,3 +1,4 @@
+from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
 from cystack_models.factory.payment_method.i_payment_method import IPaymentMethod
 from cystack_models.models.payments.payments import Payment
@@ -19,6 +20,7 @@ class BankingPaymentMethod(IPaymentMethod):
         :param kwargs: (dict) Metadata: card, bank_id
         :return: New invoice
         """
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         currency = kwargs.get("currency", CURRENCY_VND)
         try:
             promo_code_str = coupon.id if coupon else None
@@ -32,7 +34,7 @@ class BankingPaymentMethod(IPaymentMethod):
             "duration": duration,
             "currency": currency,
             "promo_code": promo_code_str,
-            "customer": self.user.get_customer_data(),
+            "customer": user_repository.get_customer_data(user=self.user),
             "scope": self.scope,
             "bank_id": kwargs.get("bank_id"),
             "metadata": kwargs

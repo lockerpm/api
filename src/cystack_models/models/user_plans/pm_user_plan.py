@@ -1,13 +1,16 @@
 import stripe
+from django.conf import settings
 
 from django.db import models
 
+from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from shared.constants.transactions import *
 from shared.utils.app import now
 from cystack_models.interfaces.user_plans.user_plan import UserPlan
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from cystack_models.models.payments.promo_codes import PromoCode
 from cystack_models.models.users.users import User
+from cystack_models.models.payments.payments import Payment
 
 
 class PMUserPlan(UserPlan):
@@ -111,7 +114,7 @@ class PMUserPlan(UserPlan):
             if self.end_period:
                 return self.end_period
             # User is not still subscribe any subscription
-            return now() #+ Payment.get_duration_month_number(duration=duration) * 30 * 86400
+            return now() + Payment.get_duration_month_number(duration=duration) * 30 * 86400
         else:
             if stripe_subscription.status == "trialing":
                 return stripe_subscription.trial_end
@@ -151,3 +154,104 @@ class PMUserPlan(UserPlan):
         :param promo_code: (obj) Promo code object
         :return:
         """
+        current_time = now()
+        # Get new plan price
+        new_plan_price = new_plan.get_price(duration=new_duration, currency=currency)
+        # Number of month duration billing by new duration
+        duration_next_billing_month = Payment.get_duration_month_number(new_duration)
+        # Calc discount
+        error_promo = None
+        promo_code_obj = None
+        promo_description_en = None
+        promo_description_vi = None
+        if promo_code is not None and promo_code != "":
+            promo_code_obj = PromoCode.check_valid(value=promo_code, current_user=self.user)
+            if not promo_code_obj:
+                error_promo = {"promo_code": ["This coupon is expired or incorrect"]}
+            else:
+                if not (new_duration == DURATION_YEARLY and promo_code_obj.duration < 12):
+                    duration_next_billing_month = promo_code_obj.duration
+                promo_description_en = promo_code_obj.description_en
+                promo_description_vi = promo_code_obj.description_vi
+
+        # If user subscribes by Stripe => Using Stripe service
+        if self.pm_stripe_subscription:
+            total_amount, next_billing_time = PaymentMethodFactory.get_method(
+                user=self.user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+            ).calc_update_total_amount(new_plan=new_plan, new_duration=new_duration, new_quantity=new_quantity)
+        # Else, calc manually
+        else:
+            # Calc immediate amount and next billing time
+            # If this is the first time user register subscription
+            if not self.end_period or not self.start_period:
+                # Diff_price is price of the plan that user will subscribe
+                total_amount = new_plan_price * new_quantity
+                next_billing_time = self.get_next_billing_time(duration=new_duration)
+            # Else, update the existed subscription
+            else:
+                # Calc old amount with discount
+                old_price = self.pm_plan.get_price(duration=self.duration, currency=currency)
+                old_amount = old_price * self.number_members
+                if self.promo_code:
+                    discount = self.promo_code.get_discount(old_amount, duration=self.duration)
+                    old_amount = old_amount - discount
+                # If new plan has same duration, next billing time does not change
+                # Money used: (now - start) / (end - start) * old_price
+                # Money remain: old_price - money_used
+                # => Diff price: new_price - money_remain
+                if self.duration == new_duration:
+                    old_remain = old_amount * (
+                            1 - (current_time - self.start_period) / (self.end_period - self.start_period)
+                    )
+                    new_remain = new_plan_price * new_quantity * (
+                            (self.end_period - current_time) / (self.end_period - self.start_period)
+                    )
+                    total_amount = new_remain - old_remain
+                    next_billing_time = self.get_next_billing_time(duration=new_duration)
+                # Else, new plan has difference duration, the start of plan will be restarted
+                else:
+                    old_used = old_amount * (
+                            (current_time - self.start_period) / (self.end_period - self.start_period)
+                    )
+                    old_remain = old_amount - old_used
+                    total_amount = new_plan_price * new_quantity - old_remain
+                    next_billing_time = current_time + duration_next_billing_month * 30 * 86400
+
+        # Discount and immediate payment
+        total_amount = max(total_amount, 0)
+        discount = promo_code_obj.get_discount(total_amount, duration=new_duration) if promo_code_obj else 0.0
+        immediate_amount = max(round(total_amount - discount, 2), 0)
+        # Return result
+        result = {
+            "alias": new_plan.get_alias(),
+            "price": round(new_plan_price, 2),
+            "total_price": total_amount,
+            "discount": discount,
+            "duration": new_duration,
+            "currency": currency,
+            "immediate_payment": immediate_amount,
+            "next_billing_time": next_billing_time,
+            "promo_description": {
+                "en": promo_description_en,
+                "vi": promo_description_vi
+            },
+            "error_promo": error_promo
+        }
+        return result
+
+    def calc_current_payment_price(self, currency):
+        plan_price = self.pm_plan.get_price(duration=self.duration, currency=currency)
+        total_price = plan_price * self.number_members
+        # Calc discount
+        discount = 0.0
+        if self.promo_code is not None:
+            # If the promo code of this plan is still available
+            if self.user.payments.filter(promo_code=self.promo_code).count() < self.promo_code.duration:
+                discount = self.promo_code.get_discount(total_price, duration=self.duration)
+            # Else, remove promo code
+            else:
+                self.promo_code = None
+                self.save()
+
+        current_amount = max(round(total_price - discount, 2), 0)
+        return current_amount

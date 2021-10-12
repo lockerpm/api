@@ -53,6 +53,7 @@ class UpgradePlanSerializer(serializers.Serializer):
     def validate(self, data):
         current_user = self.context["request"].user
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        current_plan = user_repository.get_current_plan(user=current_user)
         # Validate plan
         plan_alias = data.get("plan_alias")
         key = data.get("key")
@@ -71,7 +72,8 @@ class UpgradePlanSerializer(serializers.Serializer):
             number_members = data.get("number_members")
             if not number_members:
                 raise serializers.ValidationError(detail={"number_members": ["This field is required"]})
-            max_allow_member = current_user.get_max_allow_member_pm_team(scope=settings.SCOPE_PWD_MANAGER)
+            max_allow_member = current_plan.get_max_allow_members()
+            print("MAX ALLOW MEMBNER: ", max_allow_member)
             if number_members < max_allow_member:
                 raise serializers.ValidationError(detail={
                     "number_members": ["The minimum number of members is {}".format(max_allow_member)]
@@ -93,7 +95,6 @@ class UpgradePlanSerializer(serializers.Serializer):
 
         # Check plan
         duration = data.get("duration")
-        current_plan = user_repository.get_current_plan(user=current_user)
         current_plan_alias = current_plan.get_plan_type_alias()
         if current_plan_alias == plan.get_alias() and current_plan.duration == duration:
             raise serializers.ValidationError(detail={"plan": ["Plan is not changed"]})
