@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
+from shared.constants.transactions import DURATION_MONTHLY
 from cystack_models.models.users.users import User
 
 
@@ -43,6 +44,10 @@ class IUserRepository(ABC):
 
     @abstractmethod
     def get_current_plan(self, user: User, scope=None):
+        pass
+
+    @abstractmethod
+    def update_plan(self, user: User, plan_type_alias: str, duration=DURATION_MONTHLY, scope=None, **kwargs):
         pass
 
     @abstractmethod

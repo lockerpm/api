@@ -5,9 +5,11 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from core.repositories import IUserRepository
 from shared.constants.members import PM_MEMBER_STATUS_INVITED
+from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
 from cystack_models.models import User
+from cystack_models.models.user_plans.pm_plans import PMPlan
 
 
 class UserRepository(IUserRepository):
@@ -64,6 +66,76 @@ class UserRepository(IUserRepository):
         except (ValueError, AttributeError):
             from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
             return PMUserPlan.update_or_create(user)
+
+    def update_plan(self, user: User, plan_type_alias: str, duration=DURATION_MONTHLY, scope=None, **kwargs):
+        """
+        Update the Password Manager plan of this user
+        :param user: (obj) User object
+        :param plan_type_alias: (str) Name of Pm Plan
+        :param duration: monthly/half_yearly/yearly
+        :param scope:
+        :param kwargs:
+        :return:
+        """
+        start_period = kwargs.get("start_period")
+        end_period = kwargs.get("end_period")
+        number_members = kwargs.get("number_members", 1)
+        promo_code = kwargs.get("promo_code")
+        if start_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
+            start_period = now(return_float=True)
+        if end_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
+            if duration == DURATION_HALF_YEARLY:
+                end_period = 6 * 30 * 86400 + start_period
+            elif duration == DURATION_YEARLY:
+                end_period = 365 * 86400 + start_period
+            else:
+                end_period = 30 * 86400 + start_period
+        pm_user_plan = self.get_current_plan(user=user, scope=scope)
+        pm_user_plan.pm_plan = PMPlan.objects.get(alias=plan_type_alias)
+        pm_user_plan.duration = duration
+        pm_user_plan.start_period = start_period
+        pm_user_plan.end_period = end_period
+        pm_user_plan.number_members = number_members
+        pm_user_plan.promo_code = promo_code
+        pm_user_plan.cancel_at_period_end = False
+        pm_user_plan.save()
+
+        if plan_type_alias == PLAN_TYPE_PM_FREE:
+            pm_user_plan.start_period = None
+            pm_user_plan.end_period = None
+            # Lock all primary teams
+            primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
+            for primary_owner in primary_owners:
+                primary_owner.team.lock_pm_team(lock=True)
+        else:
+            # Unlock all their PM teams
+            primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
+            for primary_owner in primary_owners:
+                primary_owner.team.lock_pm_team(lock=False)
+
+        pm_user_plan.save()
+        # Update plan rule here
+        if pm_user_plan.pm_plan.is_team_plan:
+            # Create Vault Org here
+            default_team = self.get_default_team(user=user)
+            default_collection_name = kwargs.get("collection_name")
+            key = kwargs.get("key")
+            # Save key for default team
+            # CHANGE LATER
+            # Create default collection
+            # CHANGE LATER
+            # Save ownerKey for primary member
+            # CHANGE LATER
+
+            # valid_token = self.fetch_bw_access_token(renew=True)
+            # self.create_bw_organization(
+            #     team=default_team,
+            #     key=kwargs.get("key"),
+            #     bw_token=valid_token.get_full_access_token(),
+            #     collection_name=kwargs.get("collection_name"),
+            # )
+
+        return pm_user_plan
 
     def get_max_allow_member_pm_team(self, user: User, scope=None):
         return self.get_current_plan(user, scope=scope).get_max_allow_members()

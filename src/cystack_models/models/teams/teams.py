@@ -43,3 +43,7 @@ class Team(models.Model):
         new_team.team_members.model.create_multiple(new_team, *members)
 
         return new_team
+
+    def lock_pm_team(self, lock):
+        self.locked = lock
+        self.save()
