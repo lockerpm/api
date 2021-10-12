@@ -41,7 +41,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         all_teams = self.team_repository.get_multiple_team_by_user(user=user).annotate(
             is_default=Case(*order_whens, output_field=IntegerField(), default=Value(0))
-        ).order_by('-is_default', '-created_time')
+        ).order_by('-is_default', '-creation_date')
         return all_teams
 
     def list(self, request, *args, **kwargs):

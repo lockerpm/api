@@ -26,18 +26,31 @@ class SyncTeamViewSet(MicroServiceViewSet):
         :return:
         """
         user = self.request.user
-        teams = request.data
-        team_ids = [team.get("id") for team in teams]
-        existed_teams = list(Team.objects.filter(id__in=team_ids).values_list('id', flat=True))
-        for team in teams:
-            if team.get("id") in existed_teams:
-                continue
-            team["members"] = [{
-                "user": user,
-                "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
-                "is_default": team.get("is_default", False),
-                "is_primary": True
-            }]
-            Team.create(**team)
 
+        # If the default team of the user existed => Return
+        user_default_team = self.user_repository.get_default_team(user=user)
+        if user_default_team:
+            return Response(status=200, data={"success": True})
+
+        teams = request.data
+        # Get default team from data
+        team_ids = [team.get("id") for team in teams]
+        default_teams = [team for team in teams if team.get("is_default") is True]
+        if len(default_teams) != 1:
+            return Response(status=200, data={"success": True})
+
+        # Check this default team is existed
+        existed_teams = list(Team.objects.filter(id__in=team_ids).values_list('id', flat=True))
+        default_team_data = default_teams[0]
+        if default_team_data.get("id") in existed_teams:
+            return Response(status=200, data={"success": True})
+
+        # Create default team here
+        default_team_data["members"] = [{
+            "user": user,
+            "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
+            "is_default": True,
+            "is_primary": True
+        }]
+        Team.create(**default_team_data)
         return Response(status=200, data={"success": True})

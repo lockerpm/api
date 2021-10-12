@@ -5,3 +5,4 @@ from v1_0.ciphers.views import CipherPwdViewSet
 from v1_0.folders.views import FolderPwdViewSet
 from v1_0.payments.views import PaymentPwdViewSet
 
+from v1_0.enterprise.teams.views import TeamPwdViewSet
