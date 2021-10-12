@@ -243,8 +243,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             user = invoice.user
             plan_metadata = invoice.get_metadata()
             plan_metadata.update({"promo_code": invoice.promo_code})
-            user.update_plan(
-                scope=settings.SCOPE_PWD_MANAGER, plan_type_alias=invoice.plan, duration=invoice.duration,
+            self.user_repository.update_plan(
+                user=user, plan_type_alias=invoice.plan, duration=invoice.duration, scope=settings.SCOPE_PWD_MANAGER,
                 **plan_metadata
             )
             # Send mail
