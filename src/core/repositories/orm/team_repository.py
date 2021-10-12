@@ -21,6 +21,9 @@ class TeamRepository(ITeamRepository):
     def get_by_id(self, team_id: str) -> Team:
         return Team.objects.get(id=team_id)
 
+    def get_vault_team_by_id(self, team_id) -> Team:
+        return Team.objects.get(id=team_id, key__isnull=False)
+
     def get_multiple_team_by_ids(self, team_ids: list):
         return Team.objects.filter(id__in=team_ids)
 

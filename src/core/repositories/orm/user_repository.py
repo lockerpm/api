@@ -1,3 +1,4 @@
+import uuid
 from typing import Dict
 
 import stripe
@@ -130,26 +131,29 @@ class UserRepository(IUserRepository):
         pm_user_plan.save()
         # Update plan rule here
         if pm_user_plan.pm_plan.is_team_plan:
-            # Create Vault Org here
-            default_team = self.get_default_team(user=user)
             default_collection_name = kwargs.get("collection_name")
             key = kwargs.get("key")
-            # Save key for default team
-            # CHANGE LATER
-            # Create default collection
-            # CHANGE LATER
-            # Save ownerKey for primary member
-            # CHANGE LATER
-
-            # valid_token = self.fetch_bw_access_token(renew=True)
-            # self.create_bw_organization(
-            #     team=default_team,
-            #     key=kwargs.get("key"),
-            #     bw_token=valid_token.get_full_access_token(),
-            #     collection_name=kwargs.get("collection_name"),
-            # )
-
+            # Create Vault Org here
+            self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
         return pm_user_plan
+
+    def __create_vault_team(self, user, key, collection_name):
+        # Retrieve or create default team
+        team = self.get_default_team(user=user, create_if_not_exist=True)
+        # if this team was created => Return this team
+        if team.key:
+            return team
+        # Save owner key for this team
+        team.key = key
+        team.revision_date = now()
+        team.save()
+        # Create default collection for this team
+        team.collections.model.create(team, **{"name": collection_name, "is_default": True})
+        # Save owner key for primary member
+        primary_member = team.team_members.get(user=user)
+        primary_member.key = key
+        primary_member.external_id = uuid.uuid4()
+        primary_member.save()
 
     def get_max_allow_member_pm_team(self, user: User, scope=None):
         return self.get_current_plan(user, scope=scope).get_max_allow_members()
