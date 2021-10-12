@@ -60,22 +60,18 @@ urlpatterns += [
 
 # ------------------------------- Payment ------------------------------------- #
 urlpatterns += [
-    # url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
-    # url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
+    url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
+    url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
 
     url(r'^payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
-    url(r'^payments/plan$',
-        views.PaymentPwdViewSet.as_view({'get': 'current_plan'})),
-    # url(r'^payments/plan/cancel$',
-    #     views.PaymentPwdViewSet.as_view({'post': 'cancel_plan'})),
+    url(r'^payments/plan$', views.PaymentPwdViewSet.as_view({'get': 'current_plan'})),
+    url(r'^payments/plan/cancel$', views.PaymentPwdViewSet.as_view({'post': 'cancel_plan'})),
 
-    # url(r'^payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'invoices'})),
-    # url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)$',
-    #     views.PaymentPwdViewSet.as_view({'get': 'retrieve_invoice', 'post': 'retry_invoice'})),
-    # url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/processing$',
-    #     views.PaymentPwdViewSet.as_view({'post': 'invoice_processing'})),
-    # url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/cancel$',
-    #     views.PaymentPwdViewSet.as_view({'post': 'invoice_cancel'})),
-
-
+    url(r'^payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'invoices'})),
+    url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)$',
+        views.PaymentPwdViewSet.as_view({'get': 'retrieve_invoice', 'post': 'retry_invoice'})),
+    url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/processing$',
+        views.PaymentPwdViewSet.as_view({'post': 'invoice_processing'})),
+    url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/cancel$',
+        views.PaymentPwdViewSet.as_view({'post': 'invoice_cancel'})),
 ]

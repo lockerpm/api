@@ -141,7 +141,6 @@ class PMUserPlan(UserPlan):
         :return:
         """
 
-
     def calc_update_price(self, new_plan, new_duration, new_quantity, currency, promo_code=None):
         """
         Calc amount when user update plan (via upgrade plan or change quantity)

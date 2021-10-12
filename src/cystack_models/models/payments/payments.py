@@ -1,3 +1,5 @@
+import ast
+
 from django.db import models
 from django.conf import settings
 
@@ -36,3 +38,8 @@ class Payment(models.Model):
 
     class Meta:
         db_table = 'cs_payments'
+
+    def get_metadata(self):
+        if not self.metadata:
+            return {}
+        return ast.literal_eval(str(self.metadata))

@@ -12,5 +12,6 @@ CORE_CONFIG = {
         "ICipherRepository": CipherRepository,
         "IFolderRepository": FolderRepository,
         "ITeamMemberRepository": TeamMemberRepository,
+        "IPaymentRepository": PaymentRepository
     }
 }

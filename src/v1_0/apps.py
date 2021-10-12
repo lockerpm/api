@@ -19,6 +19,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     folder_repository = CORE_CONFIG["repositories"]["IFolderRepository"]()
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
     team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]()
+    payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
 
     def check_pwd_session_auth(self, request, renew=False):
         valid_token = self.session_repository.fetch_access_token(user=request.user, renew=renew)
