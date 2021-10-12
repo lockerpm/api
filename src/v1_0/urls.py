@@ -81,3 +81,71 @@ urlpatterns += [
     url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/cancel$',
         views.PaymentPwdViewSet.as_view({'post': 'invoice_cancel'})),
 ]
+
+
+# -------------------------------- ENTERPRISE ------------------------------ #
+""" Teams Management """
+urlpatterns += [
+    url(r'^teams$', views.TeamPwdViewSet.as_view({'get': 'list'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)$', views.TeamPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/dashboard$', views.TeamPwdViewSet.as_view({'get': 'dashboard'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/delete$', views.TeamPwdViewSet.as_view({'post': 'destroy'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/purge$', views.TeamPwdViewSet.as_view({'post': 'purge'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/import$', views.TeamPwdViewSet.as_view({'post': 'import_data'})),
+]
+
+
+# """ Folder Management """
+# urlpatterns += [
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders$', views.TeamPwdFolderViewSet.as_view({'get': 'list', 'post': 'create'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)$',
+#         views.TeamPwdFolderViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
+#         views.TeamPwdFolderViewSet.as_view({'post': 'destroy'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/users$',
+#         views.TeamPwdFolderViewSet.as_view({'get': 'users', 'put': 'users'})),
+#     # url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/groups$',
+#     #     views.TeamPwdFolderViewSet.as_view({'get': 'groups', 'put': 'groups'})),
+# ]
+#
+#
+# """ Member Management """
+# urlpatterns += [
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members$', views.TeamPwdMemberViewSet.as_view({'get': 'list', 'post': 'create'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[0-9]+)$',
+#         views.TeamPwdMemberViewSet.as_view({'post': 'confirm', 'put': 'update', 'delete': 'destroy'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[0-9]+)/reinvite$',
+#         views.TeamPwdMemberViewSet.as_view({'post': 'reinvite'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[0-9]+)/public_key$',
+#         views.TeamPwdMemberViewSet.as_view({'get': 'public_key'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[0-9]+)/groups$',
+#         views.TeamPwdMemberViewSet.as_view({'get': 'group', 'put': 'group'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/invitation$',
+#         views.TeamPwdMemberViewSet.as_view({'post': 'invitation_member'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/revoke$',
+#         views.TeamPwdMemberViewSet.as_view({'post': 'revoke_invitation'})),
+#     url(r'^teams/members/invitation/confirmation$',
+#         views.TeamPwdMemberViewSet.as_view({'get': 'invitation_confirmation'})),
+# ]
+#
+#
+# """ Group Management """
+# urlpatterns += [
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups$', views.TeamPwdGroupViewSet.as_view({'get': 'list', 'post': 'create'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)$',
+#         views.TeamPwdGroupViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)/users$',
+#         views.TeamPwdGroupViewSet.as_view({'get': 'users', 'put': 'users'})),
+# ]
+#
+#
+# """ Event Logs """
+# urlpatterns += [
+#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/logs$', views.TeamPwdActivityLogViewSet.as_view({'get': 'list'})),
+# ]
+#
+# # -------------------------------- Members ----------------------------------- #
+# urlpatterns += [
+#     url(r'^members/share$', views.MemberPwdViewSet.as_view({'post': 'create_member_share'})),
+#     url(r'^invitations/share$', views.MemberPwdViewSet.as_view({'post': 'create_invitation_share'})),
+# ]

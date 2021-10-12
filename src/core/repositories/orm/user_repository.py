@@ -4,7 +4,7 @@ import stripe
 from django.core.exceptions import ObjectDoesNotExist
 
 from core.repositories import IUserRepository
-from shared.constants.members import PM_MEMBER_STATUS_INVITED
+from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
@@ -27,16 +27,30 @@ class UserRepository(IUserRepository):
     def get_by_id(self, user_id) -> User:
         return User.objects.get(user_id=user_id)
 
-    def get_default_team(self, user: User):
+    def get_default_team(self, user: User, create_if_not_exist=False):
         try:
             default_team = user.team_members.get(is_default=True).team
         except ObjectDoesNotExist:
-            return
-            # default_team = self._create_default_team(user)
+            if not create_if_not_exist:
+                return None
+            default_team = self._create_default_team(user)
         return default_team
 
     def _create_default_team(self, user: User):
-        pass
+        from cystack_models.models.teams.teams import Team
+        from cystack_models.models.members.member_roles import MemberRole
+        team_name = user.get_from_cystack_id().get("full_name", "My Team")
+        default_group = Team.create(**{
+            "members": [{
+                "user": self,
+                "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
+                "is_default": True,
+                "is_primary": True
+            }],
+            "name": team_name,
+            "description": ""
+        })
+        return default_group
 
     def get_by_email(self, email) -> User:
         pass
