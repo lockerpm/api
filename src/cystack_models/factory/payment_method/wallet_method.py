@@ -3,6 +3,7 @@ import requests
 from django.conf import settings
 
 # from shared.background.monitor_notify_background import MonitorNotifyBackground
+from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
 from cystack_models.factory.payment_method.i_payment_method import IPaymentMethod
 from cystack_models.models.payments.payments import Payment
@@ -32,6 +33,7 @@ class WalletPaymentMethod(IPaymentMethod):
         :param kwargs: (dict) Metadata: card, bank_id
         :return:
         """
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         currency = kwargs.get("currency", CURRENCY_VND)
         # First, call to CyStack ID to pay
         payment_data = {
@@ -53,7 +55,7 @@ class WalletPaymentMethod(IPaymentMethod):
                 "duration": duration,
                 "currency": currency,
                 "promo_code": coupon.id if coupon else None,
-                "customer": self.user.get_customer_data(),
+                "customer": user_repository.get_customer_data(user=self.user),
                 "scope": self.scope,
                 "metadata": kwargs
             })

@@ -46,6 +46,14 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def get_max_allow_member_pm_team(self, user: User, scope=None):
+        pass
+
+    @abstractmethod
+    def get_customer_data(self, user: User, token_card=None, id_card=None):
+        pass
+
+    @abstractmethod
     def get_list_invitations(self, user: User):
         pass
 
