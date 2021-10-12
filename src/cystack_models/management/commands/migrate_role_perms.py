@@ -2,9 +2,9 @@ from django.core.management import BaseCommand
 
 
 from shared.constants.members import *
-from endpoint_models.models.members.team_members import TeamMember
-from endpoint_models.models.permissions.permissions import Permission
-from endpoint_models.models.members.member_roles import MemberRole
+from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.permissions.permissions import Permission
+from cystack_models.models.members.member_roles import MemberRole
 
 
 class Command(BaseCommand):
@@ -23,9 +23,13 @@ class Command(BaseCommand):
             {"scope": "team", "codename": "create", "description": "Can create team", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "team", "codename": "update", "description": "Can update team", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "team", "codename": "destroy", "description": "Can delete team", "roles": ["owner"]},
-            {"scope": "team", "codename": "retrieve_secret", "description": "Can retrieve team secret key", "roles": ["owner", "admin", "manager", "member"]},
-            {"scope": "team", "codename": "create_secret", "description": "Can re-create team secret key", "roles": ["owner"]},
 
+            # Cipher perms
+            {"scope": "cipher", "codename": "list", "description": "Can get list ciphers", "roles": ["owner", "admin", "manager", "member"]},
+            {"scope": "cipher", "codename": "retrieve", "description": "Can retrieve a cipher", "roles": ["owner", "admin", "manager", "member"]},
+            {"scope": "cipher", "codename": "create", "description": "Can create a cipher", "roles": ["owner", "admin", "manager", "member"]},
+            {"scope": "cipher", "codename": "update", "description": "Can update a cipher",  "roles": ["owner", "admin", "manager"]},
+            {"scope": "cipher", "codename": "destroy", "description": "Can delete ciphers", "roles": ["owner", "admin", "manager"]}
         ]
         for perm in perms_list:
             if Permission.objects.filter(scope=perm.get("scope"), codename=perm.get("codename")).exists() is False:

@@ -25,6 +25,10 @@ class ITeamRepository(ABC):
         pass
 
     @abstractmethod
+    def get_vault_team_by_id(self, team_id: str) -> Team:
+        pass
+
+    @abstractmethod
     def get_multiple_team_by_ids(self, team_ids: list):
         pass
 

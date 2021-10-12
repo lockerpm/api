@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 
+from shared.utils.app import now
 from cystack_models.models.teams.teams import Team
 
 
@@ -16,3 +17,16 @@ class Collection(models.Model):
 
     class Meta:
         db_table = 'cs_collections'
+
+    @classmethod
+    def create(cls, team: Team, **data):
+        new_collection = cls(
+            team=team,
+            name=data.get("name"),
+            creation_date=data.get("creation_date", now()),
+            revision_date=data.get("revision_date", now()),
+            external_id=uuid.uuid4(),
+            is_default=data.get("is_default", False)
+        )
+        new_collection.save()
+        return new_collection
