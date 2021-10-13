@@ -39,7 +39,8 @@
       "half_yearly_price_vnd": 354000,
       "alias": "pm_family_discount",
       "max_number": 5,
-      "plan_type": "Basic"
+      "plan_type": "Basic",
+      "is_team_plan": true
     }
   },
   {
@@ -53,7 +54,8 @@
       "half_yearly_price_usd": 11.94,
       "half_yearly_price_vnd": 282000,
       "alias": "pm_business_premium",
-      "plan_type": "Basic"
+      "plan_type": "Basic",
+       "is_team_plan": true
     }
   }
 ]

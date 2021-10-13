@@ -41,5 +41,5 @@ class ITeamRepository(ABC):
         pass
 
     @abstractmethod
-    def get_pm_plan(self, team: Team):
+    def get_primary_member(self, team: Team):
         pass

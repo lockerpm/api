@@ -47,7 +47,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
     def list(self, request, *args, **kwargs):
         paging_param = self.request.query_params.get("paging", "1")
         if paging_param == "0":
-            self.serializer_class = None
+            self.pagination_class = None
         return super(TeamPwdViewSet, self).list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
