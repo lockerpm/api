@@ -50,10 +50,19 @@ class TeamMember(models.Model):
                 continue
 
     @classmethod
-    def create(cls, team: Team, user: User, role_id: str, is_primary=False, is_default=False):
+    def create(cls, team: Team, user: User, role_id: str, is_primary=False, is_default=False,
+               status=PM_MEMBER_STATUS_CONFIRMED):
         new_member = TeamMember.objects.create(
             user=user, role_id=role_id, team=team, access_time=now(),
             is_primary=is_primary,
-            is_default=is_default
+            is_default=is_default,
+            status=status
         )
+        return new_member
+
+    @classmethod
+    def create_with_collections(cls, team: Team, user: User, role_id: str, is_primary=False, is_default=False,
+                                status=PM_MEMBER_STATUS_CONFIRMED,  *collection_ids):
+        new_member = cls.create(team, user, role_id, is_primary, is_default, status)
+        new_member.collections_members.model.create_multiple(new_member, *collection_ids)
         return new_member

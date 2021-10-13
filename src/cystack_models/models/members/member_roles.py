@@ -10,7 +10,7 @@ class MemberRole(models.Model):
     class Meta:
         db_table = 'cs_member_roles'
 
-    def get_permission(self):
+    def get_permissions(self):
         """
         Get list permissions of the role. Result is a list what each element contains `scope.codename`
         :return:

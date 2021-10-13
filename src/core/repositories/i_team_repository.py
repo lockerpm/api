@@ -43,3 +43,7 @@ class ITeamRepository(ABC):
     @abstractmethod
     def get_primary_member(self, team: Team):
         pass
+
+    @abstractmethod
+    def get_member_obj(self, team: Team, user):
+        pass

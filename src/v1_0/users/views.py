@@ -3,14 +3,12 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
 
-from core.settings import CORE_CONFIG
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_CONFIRMED, MEMBER_ROLE_OWNER
-# from shared.constants.sync_event import SYNC_EVENT_MEMBER_ACCEPTED
-from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
+from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
+from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -220,14 +218,33 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["get"], detail=False)
     def invitations(self, request, *args, **kwargs):
         user = self.request.user
-        # self.check_pwd_session_auth(request=request)
+        self.check_pwd_session_auth(request=request)
         member_invitations = self.user_repository.get_list_invitations(user=user)
         serializer = self.get_serializer(member_invitations, many=True)
         return Response(status=200, data=serializer.data)
 
     @action(methods=["put"], detail=False)
     def invitation_update(self, request, *args, **kwargs):
-        pass
+        self.check_pwd_session_auth(request=request)
+        user = self.request.user
+        status = request.data.get("status")
+        if status not in ["accept", "reject"]:
+            raise ValidationError(detail={"status": ["This status is not valid"]})
+        try:
+            member_invitation = user.team_members.get(
+                id=kwargs.get("pk"), status=PM_MEMBER_STATUS_INVITED,
+                team__key__isnull=False, user__activated=True
+            )
+        except ObjectDoesNotExist:
+            raise NotFound
+
+        if status == "accept":
+            self.team_member_repository.accept_invitation(member=member_invitation)
+            primary_owner = self.team_member_repository.get_primary_member(team=member_invitation.team)
+            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id]).send()
+        else:
+            self.team_member_repository.reject_invitation(member=member_invitation)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def family(self, request, *args, **kwargs):
