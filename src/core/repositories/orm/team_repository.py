@@ -44,3 +44,9 @@ class TeamRepository(ITeamRepository):
 
     def get_primary_member(self, team: Team):
         return team.team_members.get(is_primary=True)
+
+    def get_member_obj(self, team: Team, user):
+        try:
+            return team.team_members.get(user=user)
+        except ObjectDoesNotExist:
+            return None

@@ -1,9 +1,11 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Value, When, Q, Case, IntegerField
+from django.db.models import Value, When, Q, Case, IntegerField, Count, Avg
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.constants.ciphers import *
+from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
@@ -67,4 +69,61 @@ class TeamPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["get"], detail=False)
     def dashboard(self, request, *args, **kwargs):
-        pass
+        self.check_pwd_session_auth(request=request)
+        team = self.get_object()
+
+        # Items statistic
+        ciphers = team.ciphers.all()
+        login_ciphers = ciphers.filter(type=CIPHER_TYPE_LOGIN)
+
+        item_statistic = {
+            "total": ciphers.count(),
+            "trash": ciphers.filter(deleted_date__isnull=False).count(),
+            "login": login_ciphers.count(),
+            "secure_note": ciphers.filter(type=CIPHER_TYPE_NOTE).count(),
+            "card": ciphers.filter(type=CIPHER_TYPE_CARD).count(),
+            "identity":  ciphers.filter(type=CIPHER_TYPE_IDENTITY).count()
+        }
+
+        # Member statistic
+        members = team.team_members.filter()
+        members_role_count = members.values('role_id').annotate(count=Count('role_id'))
+        members_role_statistic = {
+            MEMBER_ROLE_OWNER: 0,
+            MEMBER_ROLE_ADMIN: 0,
+            MEMBER_ROLE_MANAGER: 0,
+            MEMBER_ROLE_MEMBER: 0,
+        }
+        for mem in members_role_count:
+            members_role_statistic.update({mem["role_id"]: mem["count"]})
+        members_status_count = members.values('status').annotate(count=Count('status'))
+        members_status_statistic = {
+            PM_MEMBER_STATUS_CONFIRMED: 0,
+            PM_MEMBER_STATUS_ACCEPTED: 0,
+            PM_MEMBER_STATUS_INVITED: 0,
+        }
+        for mem in members_status_count:
+            members_status_statistic.update({mem["status"]: mem["count"]})
+
+        # Password statistic
+        ciphers_score_count = ciphers.values('score').annotate(count=Count('score')).order_by('-score')
+        ciphers_score_avg = ciphers.values('score').aggregate(avg=Avg('score'))
+        master_password_weak_count = members.filter(user__master_password_score__lte=1).count()
+
+        # Return Results
+        return Response(status=200, data={
+            "items": item_statistic,
+            "members": {
+                "total": members.count(),
+                "roles": members_role_statistic,
+                "status": members_status_statistic
+            },
+            "master_password": {
+                'weak': master_password_weak_count
+            },
+            "login": {
+                "total": login_ciphers.count(),
+                "scores": ciphers_score_count,
+                "avg_score": ciphers_score_avg.get("avg")
+            }
+        })

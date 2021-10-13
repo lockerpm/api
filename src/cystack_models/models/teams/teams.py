@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from shared.utils.app import random_n_digit, now
@@ -47,3 +48,9 @@ class Team(models.Model):
     def lock_pm_team(self, lock):
         self.locked = lock
         self.save()
+
+    def get_member_obj(self, user):
+        try:
+            return self.team_members.get(user=user)
+        except ObjectDoesNotExist:
+            return None

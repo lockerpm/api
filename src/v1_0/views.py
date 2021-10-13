@@ -6,3 +6,4 @@ from v1_0.folders.views import FolderPwdViewSet
 from v1_0.payments.views import PaymentPwdViewSet
 
 from v1_0.enterprise.teams.views import TeamPwdViewSet
+from v1_0.enterprise.members.views import MemberPwdViewSet
