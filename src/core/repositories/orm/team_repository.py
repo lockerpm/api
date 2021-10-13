@@ -42,5 +42,5 @@ class TeamRepository(ITeamRepository):
         except ObjectDoesNotExist:
             return {"role": None, "is_default": None}
 
-    def get_pm_plan(self, team: Team):
-        pass
+    def get_primary_member(self, team: Team):
+        return team.team_members.get(is_primary=True)
