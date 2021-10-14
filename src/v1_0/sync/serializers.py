@@ -4,7 +4,7 @@ from rest_framework import serializers
 from core.settings import CORE_CONFIG
 from core.utils.data_helpers import convert_readable_date
 from shared.constants.ciphers import *
-from shared.constants.members import MEMBER_ROLE_MEMBER
+from shared.constants.members import *
 from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
@@ -17,17 +17,67 @@ class SyncProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
+        team_members = instance.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False)
+        constant_team_data = {
+            "object": "profileOrganization",
+            "has_public_and_private_keys": True,
+            "identifier": None,
+            "maxCollections": 32767,
+            "maxStorageGb": None,
+            "permissions": {
+                "access_business_portal": False,
+                "access_event_logs": False,
+                "access_import_export": False,
+                "access_reports": False,
+                "manage_all_collections": False,
+                "manage_assigned_collections": False,
+                "manage_groups": False,
+                "manage_policies": False,
+                "manage_reset_password": False,
+                "manage_sso": False,
+                "manage_users": False
+            },
+            "provider_id": None,
+            "provider_name": None,
+            "reset_password_enrolled": False,
+            "seats": 32767,
+            "self_host": True,
+            "sso_bound": False,
+            "use_2fa": True,
+            "use_api": True,
+            "use_business_portal": True,
+            "use_directory": True,
+            "use_events": True,
+            "use_groups": True,
+            "use_policies": True,
+            "use_reset_password": True,
+            "use_sso": True,
+            "use_totp": True,
+            "user_id": instance.internal_id,
+            "users_get_premium": True,
+        }
+        organizations = []
+        for team_member in team_members:
+            team_member_data = constant_team_data
+            team_member_data.update({
+                "enabled": True if not team_member.team.locked else False,
+                "id": team_member.team_id,
+                "key": team_member.key,
+                "name": team_member.team.name,
+                "status": MAP_MEMBER_STATUS_TO_INT.get(team_member.status),
+                "type": MAP_MEMBER_TYPE_BW.get(team_member.role_id),
+            })
+            organizations.append(team_member_data)
         data = {
             "object": "profile",
             "culture": "en-US",
             "id": instance.internal_id,
             "email": "",
             "name": "",
-
             "key": instance.key,
             "private_key": instance.private_key,
             "master_password_hint": instance.master_password_hint,
-            "organizations": [],
+            "organizations": organizations,
 
             "email_verified": True,
             "force_password_reset": False,

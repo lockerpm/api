@@ -41,7 +41,9 @@ class TeamPwdViewSet(PasswordManagerViewSet):
             When(Q(team_members__is_default=True), then=Value(1)),
         ]
         user = self.request.user
-        all_teams = self.team_repository.get_multiple_team_by_user(user=user).annotate(
+        all_teams = self.team_repository.get_multiple_team_by_user(
+            user=user, status=PM_MEMBER_STATUS_CONFIRMED
+        ).annotate(
             is_default=Case(*order_whens, output_field=IntegerField(), default=Value(0))
         ).order_by('-is_default', '-creation_date')
         return all_teams

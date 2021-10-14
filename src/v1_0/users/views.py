@@ -240,7 +240,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         if status == "accept":
             self.team_member_repository.accept_invitation(member=member_invitation)
-            primary_owner = self.team_member_repository.get_primary_member(team=member_invitation.team)
+            primary_owner = self.team_repository.get_primary_member(team=member_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id]).send()
         else:
             self.team_member_repository.reject_invitation(member=member_invitation)
