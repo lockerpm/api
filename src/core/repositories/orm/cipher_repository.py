@@ -41,9 +41,10 @@ class CipherRepository(ICipherRepository):
 
         members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         if only_edited is True:
-            members = members.filter(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN])
+            members = members.filter(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER])
         if only_managed_team:
             members = members.filter(team__locked=False)
+        team_ids = list(members.values_list('team_id', flat=True))
 
         member_collections = CollectionMember.objects.filter(member__in=members).values_list('collection_id', flat=True)
         member_group_collections = CollectionGroup.objects.filter(
@@ -51,7 +52,8 @@ class CipherRepository(ICipherRepository):
         ).values_list('collection_id', flat=True)
         team_collection_ids = list(member_collections) + list(member_group_collections)
         team_ciphers = Cipher.objects.filter(
-            collections_ciphers__collection_id__in=team_collection_ids
+            Q(collections_ciphers__collection_id__in=team_collection_ids) |
+            Q(team_id__in=team_ids)
         )
         return (personal_ciphers | team_ciphers).distinct()
 
@@ -67,6 +69,7 @@ class CipherRepository(ICipherRepository):
         user_cipher_id = cipher_data.get("user_id")
         team_id = cipher_data.get("team_id")
         collection_ids = cipher_data.get("collection_ids", [])
+        print("Collections", collection_ids)
 
         # If team_id is not null => This cipher belongs to team
         if team_id:
@@ -90,6 +93,9 @@ class CipherRepository(ICipherRepository):
         # Create CipherFolder
         if folder_id:
             cipher.set_folder(user_cipher_id, folder_id)
+        # Create CipherCollections
+        if team_id:
+            cipher.collections_ciphers.model.create_multiple(cipher.id, *collection_ids)
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
@@ -126,6 +132,10 @@ class CipherRepository(ICipherRepository):
         # Set folder id
         folder_id = cipher_data.get("folder_id", cipher.get_folders().get(user_cipher_id))
         cipher.set_folder(user_cipher_id, folder_id)
+        # Create CipherCollections
+        if team_id:
+            cipher.collections_ciphers.all().delete()
+            cipher.collections_ciphers.model.create_multiple(cipher.id, *collection_ids)
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
