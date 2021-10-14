@@ -29,7 +29,14 @@ class Command(BaseCommand):
             {"scope": "cipher", "codename": "retrieve", "description": "Can retrieve a cipher", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "cipher", "codename": "create", "description": "Can create a cipher", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "cipher", "codename": "update", "description": "Can update a cipher",  "roles": ["owner", "admin", "manager"]},
-            {"scope": "cipher", "codename": "destroy", "description": "Can delete ciphers", "roles": ["owner", "admin", "manager"]}
+            {"scope": "cipher", "codename": "destroy", "description": "Can delete ciphers", "roles": ["owner", "admin", "manager"]},
+
+            # Collection perms
+            {"scope": "collection", "codename": "list", "description": "Can get list collections", "roles": ["owner", "admin", "manager", "member"]},
+            {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager", "member"]},
+            {"scope": "collection", "codename": "create", "description": "Can create a collection", "roles": ["owner", "admin"]},
+            {"scope": "collection", "codename": "update", "description": "Can update a collection", "roles": ["owner", "admin", "manager"]},
+            {"scope": "collection", "codename": "destroy", "description": "Can delete collections",   "roles": ["owner", "admin"]}
         ]
         for perm in perms_list:
             if Permission.objects.filter(scope=perm.get("scope"), codename=perm.get("codename")).exists() is False:

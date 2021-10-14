@@ -14,3 +14,14 @@ class CollectionSerializer(serializers.ModelSerializer):
         return data
 
 
+class UpdateCollectionSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    groups = serializers.ListField(
+        child=serializers.CharField(max_length=128), allow_empty=True, required=False, allow_null=True
+    )
+
+
+class UpdateUserCollectionSerializer(serializers.Serializer):
+    members = serializers.ListField(
+        child=serializers.CharField(max_length=128), allow_empty=True
+    )

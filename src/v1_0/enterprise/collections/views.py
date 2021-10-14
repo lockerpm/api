@@ -1,13 +1,18 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Value, When, Q, Case, IntegerField
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_collection_pwd_permission import TeamCollectionPwdPermission
 from cystack_models.models.teams.teams import Team
-from v1_0.enterprise.collections.serializers import CollectionSerializer
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_COLLECTION_CREATE, SYNC_EVENT_COLLECTION_UPDATE, \
+    SYNC_EVENT_COLLECTION_DELETE, SYNC_EVENT_VAULT
+from v1_0.enterprise.collections.serializers import CollectionSerializer, UpdateCollectionSerializer, \
+    UpdateUserCollectionSerializer
+from v1_0.enterprise.members.serializers import DetailMemberSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -18,7 +23,9 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
 
     def get_serializer_class(self):
         if self.action in ["users"]:
-            self.serializer_class = None
+            self.serializer_class = UpdateUserCollectionSerializer
+        elif self.action in ["update"]:
+            self.serializer_class = UpdateCollectionSerializer
 
         return super(TeamCollectionPwdViewSet, self).get_serializer_class()
 
@@ -43,18 +50,21 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
     def list(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
         team = self.get_object()
         collections = self.collection_repository.get_multiple_team_collections(team_id=team.id)
         serializer = self.get_serializer(collections, many=True)
         return Response(status=200, data=serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
         team = self.get_object()
         collection = self.get_collection(team=team)
         serializer = self.get_serializer(collection, many=False)
         return Response(status=200, data=serializer.data)
 
     def create(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
         team = self.get_object()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -63,5 +73,56 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         new_collection = self.collection_repository.save_new_collection(
             team=team, name=name, is_default=False
         )
+        PwdSync(event=SYNC_EVENT_COLLECTION_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
         return Response(status=200, data={"id": new_collection.id})
 
+    def update(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        team = self.get_object()
+        collection = self.get_collection(team=team)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        name = validated_data.get("name")
+        groups = validated_data.get("groups", [])
+        valid_groups = team.groups.filter(id__in=groups).values_list('id', flat=True)
+        collection = self.collection_repository.save_update_collection(collection=collection, name=name, groups=valid_groups)
+        PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        return Response(status=200, data={"id": collection.id, "name": collection.name})
+
+    def destroy(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        team = self.get_object()
+        collection = self.get_collection(team=team)
+        self.collection_repository.destroy_collection(collection=collection)
+        PwdSync(event=SYNC_EVENT_COLLECTION_DELETE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        return Response(status=204)
+
+    @action(methods=["get", "put"], detail=False)
+    def users(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        team = self.get_object()
+        collection = self.get_collection(team=team)
+
+        if request.method == "GET":
+            collection_members = collection.collections_members.all().values_list('id', flat=True)
+            members = team.team_members.filter(
+                Q(id__in=list(collection_members)) | Q(role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN])
+            ).distinct()
+            members_serializer = DetailMemberSerializer(members, many=True)
+            return Response(status=200, data=members_serializer.data)
+
+        elif request.method == "PUT":
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            members = validated_data.get("members", [])
+            members_obj = team.team_members.filter(
+                role_id__in=[MEMBER_ROLE_MEMBER, MEMBER_ROLE_MANAGER],
+                team__key__isnull=False,
+                id__in=members
+            )
+            members_data = members_obj.values('id', 'role')
+            self.collection_repository.save_update_user_collection(collection=collection, *members_data)
+            PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], team=team).send()
+            return Response(status=200, data={"success": True})

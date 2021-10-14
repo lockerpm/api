@@ -96,17 +96,18 @@ urlpatterns += [
 
 
 # """ Folder Management """
-# urlpatterns += [
-#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders$', views.TeamPwdFolderViewSet.as_view({'get': 'list', 'post': 'create'})),
-#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)$',
-#         views.TeamPwdFolderViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
-#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
-#         views.TeamPwdFolderViewSet.as_view({'post': 'destroy'})),
-#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/users$',
-#         views.TeamPwdFolderViewSet.as_view({'get': 'users', 'put': 'users'})),
-#     # url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/groups$',
-#     #     views.TeamPwdFolderViewSet.as_view({'get': 'groups', 'put': 'groups'})),
-# ]
+urlpatterns += [
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders$',
+        views.TeamCollectionPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)$',
+        views.TeamCollectionPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
+        views.TeamCollectionPwdViewSet.as_view({'post': 'destroy'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/users$',
+        views.TeamCollectionPwdViewSet.as_view({'get': 'users', 'put': 'users'})),
+    # url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/groups$',
+    #     views.TeamPwdFolderViewSet.as_view({'get': 'groups', 'put': 'groups'})),
+]
 
 
 # """ Member Management """

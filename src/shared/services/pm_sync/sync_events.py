@@ -7,6 +7,10 @@ SYNC_EVENT_FOLDER_CREATE = "folder_create"
 SYNC_EVENT_FOLDER_UPDATE = "folder_update"
 SYNC_EVENT_FOLDER_DELETE = "folder_delete"
 
+SYNC_EVENT_COLLECTION_CREATE = "collection_create"
+SYNC_EVENT_COLLECTION_UPDATE = "collection_update"
+SYNC_EVENT_COLLECTION_DELETE = "collection_delete"
+
 SYNC_EVENT_GROUP_CREATE = "group_create"
 SYNC_EVENT_GROUP_UPDATE = "group_update"
 SYNC_EVENT_GROUP_DELETE = "group_delete"

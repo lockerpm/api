@@ -11,7 +11,8 @@ from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_
 from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
-from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer
+from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
+    SyncCollectionSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -26,6 +27,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
 
         ciphers = self.cipher_repository.get_multiple_by_user(user=user)
         folders = self.folder_repository.get_multiple_by_user(user=user)
+        collections = self.collection_repository.get_multiple_user_collections(user=user)
         # from cystack_models.models import Cipher
         # ciphers = Cipher.objects.filter()
 
@@ -33,7 +35,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             "object": "sync",
             "profile": SyncProfileSerializer(user, many=False).data,
             "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": user}).data,
-            "collections": [],
+            "collections": SyncCollectionSerializer(collections, many=True, context={"user": user}).data,
             "folders": SyncFolderSerializer(folders, many=True).data,
             "domains": None,
             "policies": [],
