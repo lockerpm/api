@@ -191,7 +191,6 @@ class VaultItemSerializer(serializers.Serializer):
         detail["data"]["name"] = validated_data.get("name")
         if validated_data.get("notes"):
             detail["data"]["notes"] = validated_data.get("notes")
-        print(detail)
         return detail
 
 
