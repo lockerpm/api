@@ -130,6 +130,24 @@ class MemberPwdViewSet(PasswordManagerViewSet):
 
     def destroy(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request)
+        team = self.get_object()
+        member_id = kwargs.get("member_id")
+        user = self.request.user
+        try:
+            member = team.team_members.get(id=member_id)
+        except TeamMember.DoesNotExist:
+            raise NotFound
+        deleted_member_user_id = member.user_id
+        # Not allow delete themselves
+        if member.user == user or member.role.name == MEMBER_ROLE_OWNER:
+            return Response(status=403)
+        member.delete()
+        # Return response data to API Gateway to send mail
+        return Response(status=200, data={
+            "team_id": team.id,
+            "team_name": team.name,
+            "member_user_id": deleted_member_user_id
+        })
 
     @action(methods=["post"], detail=False)
     def invitation_member(self, request, *args, **kwargs):

@@ -36,9 +36,19 @@ class SessionRepository(ISessionRepository):
         payload = {
             "nbf": created_time,
             "exp": expired_time,
-            "user_id": refresh_token.user.user_id,
+            "iss": "https://locker.io",
+            # "user_id": refresh_token.user.user_id,
             "client_id": refresh_token.client_id,
-            "sub": refresh_token.id
+            "sub": refresh_token.user.internal_id,
+            "auth_time": created_time,
+            "idp": "cystack",
+            "email_verified": refresh_token.user.activated,
+            "scope": ["api", "offline_access"],
+            "jti": refresh_token.id,
+            "device": refresh_token.device_identifier,
+            "orgowner": "",
+            "iat": created_time,
+            "amr": ["Application"]
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256').decode('utf-8')
         return token

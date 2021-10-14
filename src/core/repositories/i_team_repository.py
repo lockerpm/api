@@ -33,7 +33,7 @@ class ITeamRepository(ABC):
         pass
 
     @abstractmethod
-    def get_multiple_team_by_user(self, user):
+    def get_multiple_team_by_user(self, user, status=None):
         pass
 
     @abstractmethod
