@@ -28,9 +28,15 @@ class TeamRepository(ITeamRepository):
         return Team.objects.filter(id__in=team_ids)
 
     def get_multiple_team_by_user(self, user, status=None):
-        teams = Team.objects.filter(team_members__user=user, key__isnull=False)
-        if status:
-            teams = teams.filter(team_members__status=status)
+        if not status:
+            teams = Team.objects.filter(team_members__user=user, key__isnull=False)
+        else:
+            teams = Team.objects.filter(
+                team_members__user=user, key__isnull=False,
+                team_members__status=status
+            )
+        # if status:
+        #     teams = teams.filter(team_members__status=status)
         return teams
 
     def get_role_notify(self, team: Team, user) -> dict:

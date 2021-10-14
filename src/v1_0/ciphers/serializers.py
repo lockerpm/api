@@ -127,7 +127,7 @@ class VaultItemSerializer(serializers.Serializer):
                 )
                 # Get team object and check team is locked?
                 team_obj = team_member.team
-                if not team_repository.is_activated(team=team_obj):
+                if not team_obj.key:
                     raise serializers.ValidationError(detail={"organizationId": [
                         "This team does not exist", "Team này không tồn tại"
                     ]})
@@ -161,9 +161,8 @@ class VaultItemSerializer(serializers.Serializer):
 
         return data
 
-    def _get_cipher_detail(self):
+    def save(self, **kwargs):
         validated_data = self.validated_data
-        validated_data = json.loads(json.dumps(validated_data))
         cipher_type = validated_data.get("type")
         detail = {
             "edit": True,
@@ -192,10 +191,8 @@ class VaultItemSerializer(serializers.Serializer):
         detail["data"]["name"] = validated_data.get("name")
         if validated_data.get("notes"):
             detail["data"]["notes"] = validated_data.get("notes")
+        print(detail)
         return detail
-
-    def save(self, **kwargs):
-        return self._get_cipher_detail()
 
 
 class UpdateVaultItemSerializer(VaultItemSerializer):
@@ -206,7 +203,8 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
             raise serializers.ValidationError(detail={"organizationId": [
                 "You can not change team of cipher when update. Please share this cipher to change team"
             ]})
-        return self._get_cipher_detail()
+        return super(UpdateVaultItemSerializer, self).save(**kwargs)
+
 
 class MutipleItemIdsSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.CharField(), allow_empty=False, allow_null=False, required=True)

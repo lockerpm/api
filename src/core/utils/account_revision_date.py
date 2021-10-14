@@ -14,7 +14,7 @@ def bump_account_revision_date(user: User = None, team=None, **team_filters):
         # Filter by collection ids
         if collection_ids:
             team_members = team_members.filter(
-                Q(role_name__in=role_name) | Q(collections_members__collection_id__in=collection_ids)
+                Q(role_id__in=role_name) | Q(collections_members__collection_id__in=collection_ids)
             )
 
         # Get list user ids and update revision date of them
