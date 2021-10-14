@@ -15,3 +15,7 @@ class ITeamMemberRepository(ABC):
     @abstractmethod
     def reject_invitation(self, member: TeamMember):
         pass
+
+    @abstractmethod
+    def create_invitation_token(self, member: TeamMember) -> str:
+        pass

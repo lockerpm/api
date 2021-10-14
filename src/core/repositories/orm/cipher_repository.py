@@ -1,6 +1,7 @@
 from django.db.models import Q
 
 from core.repositories import ICipherRepository
+from core.utils.account_revision_date import bump_account_revision_date
 
 from shared.utils.app import now
 from shared.constants.members import *
@@ -92,12 +93,11 @@ class CipherRepository(ICipherRepository):
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
-        self._bump_account_revision_date(team=cipher.team, **{
+        bump_account_revision_date(team=cipher.team, **{
             "collection_ids": collection_ids,
             "role_name": [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
         })
-        self._bump_account_revision_date(user=cipher.user)
-
+        bump_account_revision_date(user=cipher.user)
         return cipher
 
     def save_update_cipher(self, cipher: Cipher, cipher_data):
@@ -129,11 +129,11 @@ class CipherRepository(ICipherRepository):
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
-        self._bump_account_revision_date(team=cipher.team, **{
+        bump_account_revision_date(team=cipher.team, **{
             "collection_ids": collection_ids,
             "role_name": [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
         })
-        self._bump_account_revision_date(user=cipher.user)
+        bump_account_revision_date(user=cipher.user)
 
         return cipher
 
@@ -151,8 +151,8 @@ class CipherRepository(ICipherRepository):
         # Bump revision date: teams and user
         teams = Team.objects.filter(id__in=team_ids)
         for team in teams:
-            self._bump_account_revision_date(team=team)
-        self._bump_account_revision_date(user=user_deleted)
+            bump_account_revision_date(team=team)
+        bump_account_revision_date(user=user_deleted)
 
     def delete_permanent_multiple_cipher(self, cipher_ids: list, user_deleted: User):
         """
@@ -168,8 +168,8 @@ class CipherRepository(ICipherRepository):
         # Bump revision date: teams and user
         teams = Team.objects.filter(id__in=team_ids)
         for team in teams:
-            self._bump_account_revision_date(team=team)
-        self._bump_account_revision_date(user=user_deleted)
+            bump_account_revision_date(team=team)
+        bump_account_revision_date(user=user_deleted)
 
     def restore_multiple_cipher(self, cipher_ids: list, user_restored: User):
         """
@@ -187,8 +187,8 @@ class CipherRepository(ICipherRepository):
         # Bump revision date: teams and user
         teams = ciphers.exclude(team__isnull=True).values_list('team', flat=True)
         for team in teams:
-            self._bump_account_revision_date(team=team)
-        self._bump_account_revision_date(user=user_restored)
+            bump_account_revision_date(team=team)
+        bump_account_revision_date(user=user_restored)
 
     def move_multiple_cipher(self, cipher_ids, user_moved, folder_id):
         # Filter list ciphers of users
@@ -197,23 +197,4 @@ class CipherRepository(ICipherRepository):
         for cipher in ciphers:
             cipher.set_folder(user_id=user_moved.user_id, folder_id=folder_id)
         # Bump revision date of user
-        self._bump_account_revision_date(user=user_moved)
-
-    def _bump_account_revision_date(self, user: User = None, team=None, **team_filters):
-        if team:
-            # Finding all members
-            team_members = team.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
-            collection_ids = team_filters.get("collection_ids", [])
-            role_name = team_filters.get("role_name", [])
-            # Filter by collection ids
-            if collection_ids:
-                team_members = team_members.filter(
-                    Q(role_name__in=role_name) | Q(collections_members__collection_id__in=collection_ids)
-                )
-
-            # Get list user ids and update revision date of them
-            member_user_ids = team_members.values_list('user_id', flat=True)
-            User.objects.filter(user_id__in=member_user_ids).update(revision_date=now())
-        elif user:
-            user.revision_date = now()
-            user.save()
+        bump_account_revision_date(user=user_moved)

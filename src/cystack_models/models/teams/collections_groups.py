@@ -13,3 +13,17 @@ class CollectionGroup(models.Model):
     class Meta:
         db_table = 'cs_collections_groups'
         unique_together = ('collection', 'group', )
+
+    @classmethod
+    def create_multiple(cls, collection: Collection, *groups):
+        collection_groups = []
+        for group in groups:
+            collection_groups.append(
+                cls(
+                    collection=collection,
+                    group_id=group.get("id"),
+                    hide_passwords=group.get("hide_passwords", False),
+                    read_only=group.get("read_only", False)
+                )
+            )
+        cls.objects.bulk_create(collection_groups, ignore_conflicts=True)

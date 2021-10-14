@@ -24,3 +24,13 @@ class CollectionMember(models.Model):
                 cls(collection_id=collection_id, member=member, read_only=read_only, hide_passwords=False)
             )
         cls.objects.bulk_create(collections_member, ignore_conflicts=True)
+
+    @classmethod
+    def create_multiple_by_collection(cls, collection, *members):
+        collection_members = []
+        for member in members:
+            read_only = True if member.get("role") == MEMBER_ROLE_MEMBER else False
+            collection_members.append(
+                cls(collection=collection, member_id=member.get("id"), read_only=read_only, hide_passwords=False)
+            )
+        cls.objects.bulk_create(collection_members, ignore_conflicts=True)

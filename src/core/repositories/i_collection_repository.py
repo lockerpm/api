@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cystack_models.models.teams.teams import Team
+from cystack_models.models.users.users import User
 from cystack_models.models.teams.collections import Collection
 
 
@@ -14,5 +15,22 @@ class ICollectionRepository(ABC):
         pass
 
     @abstractmethod
+    def get_multiple_user_collections(self, user: User):
+        pass
+
+    @abstractmethod
     def save_new_collection(self, team: Team, name: str, is_default: bool = False) -> Collection:
         pass
+
+    @abstractmethod
+    def save_update_collection(self, collection: Collection, name: str, *groups) -> Collection:
+        pass
+
+    @abstractmethod
+    def save_update_user_collection(self, collection: Collection, *users):
+        pass
+
+    @abstractmethod
+    def destroy_collection(self, collection: Collection):
+        pass
+

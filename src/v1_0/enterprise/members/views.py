@@ -135,7 +135,67 @@ class MemberPwdViewSet(PasswordManagerViewSet):
     def invitation_member(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request)
         team = self.get_object()
+        added_members = []
+        members = request.data.get("members", [])
+        # Validate members
+        if not isinstance(members, list):
+            raise ValidationError(detail={"members": ["Members are not valid. This field must be an array"]})
+        # Check the maximum number of members
+        current_total_members = team.team_members.all().count()
+        primary_user = self.team_repository.get_primary_member(team=team).user
+        max_allow_members = self.user_repository.get_current_plan(
+            user=primary_user, scope=settings.SCOPE_PWD_MANAGER
+        ).get_max_allow_members()
+        if max_allow_members and current_total_members + len(members) > max_allow_members:
+            raise ValidationError({"non_field_errors": [gen_error("3002")]})
 
+        # Get list collection ids of this team
+        collection_ids = list(team.collections.values_list('id', flat=True))
+        # Loop list members data
+        for member in members:
+            try:
+                # If this invitation exists => pass
+                team.team_members.get(email=member["email"])
+            except TeamMember.DoesNotExist:
+                # Create new email invitation
+                collections = member.get("collections", [])
+                valid_collections = [collection_id for collection_id in collections if collection_id in collection_ids]
+                role = member["role"]
+                member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collections
+                member_obj = team.team_members.model.create_with_collections(
+                    team=team, role_id=role, status=PM_MEMBER_STATUS_INVITED, email=member["email"], *member_collections
+                )
+                token = self.team_member_repository.create_invitation_token(member=member_obj)
+                added_members.append({
+                    "team_id": team.id,
+                    "team_name": team.name,
+                    "token": token,
+                    "email": member_obj.email
+                })
+        return Response(status=200, data=added_members)
+
+    @action(methods=["post"], detail=False)
+    def revoke_invitation(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        team = self.get_object()
+        email = request.data.get("email")
+        try:
+            invitation = TeamMember.objects.get(team=team, email=email)
+            invitation.delete()
+            return Response(status=200, data={"success": True})
+        except TeamMember.DoesNotExist:
+            raise NotFound
+
+    @action(methods=["post"], detail=False)
+    def reinvite(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        team = self.get_object()
+        try:
+            member = TeamMember.objects.get(team=team, id=kwargs.get("member_id"), status=PM_MEMBER_STATUS_INVITED)
+        except TeamMember.DoesNotExist:
+            raise NotFound
+        # Re-invite this member
+        return Response(status=200, data={"user_id": member.user_id, "email": member.email})
 
     @action(methods=["post"], detail=False)
     def confirm(self, request, *args, **kwargs):
@@ -167,3 +227,36 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         public_key = member.user.public_key
         return Response(status=200, data={"public_key": public_key})
+
+    @action(methods=["get"], detail=False)
+    def invitation_confirmation(self, request, *args, **kwargs):
+        email = self.request.query_params.get("email", None)
+        user_id = self.request.query_params.get("user_id", None)
+        if (email is None) or (user_id is None):
+            raise NotFound
+        member_user = self.user_repository.retrieve_or_create_by_id(user_id=user_id)
+        # Filter invitations of the teams
+        invitations = TeamMember.objects.filter(email=email, team__key__isnull=False, status=PM_MEMBER_STATUS_INVITED)
+        team_ids = invitations.values_list('team_id', flat=True)
+
+        for invitation in invitations:
+            team = invitation.team
+            # Check max number members
+            current_total_members = team.team_members.all().count()
+            primary_user = self.team_repository.get_primary_member(team=team).user
+            max_allow_members = self.user_repository.get_current_plan(
+                user=primary_user, scope=settings.SCOPE_PWD_MANAGER
+            ).get_max_allow_members()
+            if max_allow_members and current_total_members + 1 > max_allow_members:
+                continue
+
+            invitation.email = None
+            invitation.token_invitation = None
+            invitation.user = member_user
+            invitation.save()
+
+        return Response(status=200, data={"success": True, "team_ids": list(team_ids)})
+
+    @action(methods=["get", "put"], detail=False)
+    def group(self, request, *args, **kwargs):
+        pass

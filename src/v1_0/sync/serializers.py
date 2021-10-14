@@ -4,9 +4,11 @@ from rest_framework import serializers
 from core.settings import CORE_CONFIG
 from core.utils.data_helpers import convert_readable_date
 from shared.constants.ciphers import *
+from shared.constants.members import MEMBER_ROLE_MEMBER
 from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
+from cystack_models.models.teams.collections import Collection
 
 
 class SyncProfileSerializer(serializers.ModelSerializer):
@@ -95,5 +97,27 @@ class SyncFolderSerializer(serializers.ModelSerializer):
             "id": instance.id,
             "name": instance.name,
             "revision_date": convert_readable_date(instance.revision_date)
+        }
+        return data
+
+
+class SyncCollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        user = self.context["user"]
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        role = team_repository.get_role_notify(team=instance.team, user=user).get("role")
+        data = {
+            "object": "collectionDetails",
+            "id": instance.id,
+            "name": instance.name,
+            "organization_id": instance.team_id,
+            "hide_passwords": False,
+            "read_only": True if role == MEMBER_ROLE_MEMBER else False,
+            "external_id": None,
+
         }
         return data
