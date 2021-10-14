@@ -69,8 +69,6 @@ class CipherRepository(ICipherRepository):
         user_cipher_id = cipher_data.get("user_id")
         team_id = cipher_data.get("team_id")
         collection_ids = cipher_data.get("collection_ids", [])
-        print("Collections", collection_ids)
-
         # If team_id is not null => This cipher belongs to team
         if team_id:
             user_cipher_id = None
