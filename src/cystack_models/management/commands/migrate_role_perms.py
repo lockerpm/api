@@ -36,7 +36,14 @@ class Command(BaseCommand):
             {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "collection", "codename": "create", "description": "Can create a collection", "roles": ["owner", "admin"]},
             {"scope": "collection", "codename": "update", "description": "Can update a collection", "roles": ["owner", "admin", "manager"]},
-            {"scope": "collection", "codename": "destroy", "description": "Can delete collections",   "roles": ["owner", "admin"]}
+            {"scope": "collection", "codename": "destroy", "description": "Can delete collections",   "roles": ["owner", "admin"]},
+
+            # Groups perms
+            {"scope": "group", "codename": "list", "description": "Can get list group", "roles": ["owner", "admin", "manager"]},
+            {"scope": "group", "codename": "retrieve", "description": "Can retrieve a group", "roles": ["owner", "admin", "manager"]},
+            {"scope": "group", "codename": "create", "description": "Can create a group", "roles": ["owner", "admin"]},
+            {"scope": "group", "codename": "update", "description": "Can update a group", "roles": ["owner", "admin"]},
+            {"scope": "group", "codename": "destroy", "description": "Can delete groups", "roles": ["owner", "admin"]}
         ]
         for perm in perms_list:
             if Permission.objects.filter(scope=perm.get("scope"), codename=perm.get("codename")).exists() is False:
