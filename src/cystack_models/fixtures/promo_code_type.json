@@ -1,0 +1,16 @@
+[
+  {
+    "model": "cystack_models.PromoCodeType",
+    "fields":{
+      "name": "amount_off",
+      "description": "Promotion by discounting an amount"
+    }
+  },
+  {
+    "model": "cystack_models.PromoCodeType",
+    "fields":{
+      "name": "percentage_off",
+      "description": "Promotion by percentage discount on total orders"
+    }
+  }
+]

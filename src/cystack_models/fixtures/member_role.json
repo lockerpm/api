@@ -1,0 +1,26 @@
+[
+  {
+    "model": "cystack_models.MemberRole",
+    "fields": {
+      "name": "owner"
+    }
+  },
+  {
+    "model": "cystack_models.MemberRole",
+    "fields": {
+      "name": "admin"
+    }
+  },
+  {
+    "model": "cystack_models.MemberRole",
+    "fields": {
+      "name": "manager"
+    }
+  },
+  {
+    "model": "cystack_models.MemberRole",
+    "fields": {
+      "name": "member"
+    }
+  }
+]
