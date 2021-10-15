@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -39,7 +41,11 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        team = serializer.validated_data.get("team")
         cipher_detail = serializer.save()
+        cipher_detail.pop("team", None)
+        cipher_detail = json.loads(json.dumps(cipher_detail))
+        # print("VALIDED: ", validated_data)
 
         # We create new cipher object from cipher detail data.
         # Then, we update revision date of user (personal or members of the organization)
@@ -48,7 +54,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         PwdSync(
             event=SYNC_EVENT_CIPHER_CREATE,
             user_ids=[request.user.user_id],
-            team=serializer.validated_data.get("team"),
+            team=team,
             add_all=True
         ).send()
         return Response(status=200, data={"id": new_cipher.id})
@@ -114,12 +120,15 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher = self.get_object()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        team = serializer.validated_data.get("team")
         cipher_detail = serializer.save(**{"cipher": cipher})
+        cipher_detail.pop("team", None)
+        cipher_detail = json.loads(json.dumps(cipher_detail))
         cipher = self.cipher_repository.save_update_cipher(cipher=cipher, cipher_data=cipher_detail)
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[request.user.user_id],
-            team=serializer.validated_data.get("team"),
+            team=team,
             add_all=True
         ).send()
         return Response(status=200, data={"id": cipher.id})
