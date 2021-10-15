@@ -1,0 +1,27 @@
+from rest_framework import serializers
+
+from cystack_models.models.teams.collections import Collection
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ('id', 'name', 'creation_date', 'revision_date', 'is_default')
+        read_only_fields = ('id', 'creation_date', 'revision_date', 'is_default')
+
+    def to_representation(self, instance):
+        data = super(CollectionSerializer, self).to_representation(instance)
+        return data
+
+
+class UpdateCollectionSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    groups = serializers.ListField(
+        child=serializers.CharField(max_length=128), allow_empty=True, required=False, allow_null=True
+    )
+
+
+class UpdateUserCollectionSerializer(serializers.Serializer):
+    members = serializers.ListField(
+        child=serializers.CharField(max_length=128), allow_empty=True
+    )
