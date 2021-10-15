@@ -27,3 +27,17 @@ class CollectionGroup(models.Model):
                 )
             )
         cls.objects.bulk_create(collection_groups, ignore_conflicts=True)
+
+    @classmethod
+    def create_multiple_by_group(cls, group: Group, *collections):
+        collection_groups = []
+        for collection in collections:
+            collection_groups.append(
+                cls(
+                    group=group,
+                    collection_id=collection.get("id"),
+                    hide_passwords=collection.get("hide_passwords", False),
+                    read_only=collection.get("read_only", False)
+                )
+            )
+        cls.objects.bulk_create(collection_groups, ignore_conflicts=True)

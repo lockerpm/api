@@ -20,6 +20,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
     team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]()
     collection_repository = CORE_CONFIG["repositories"]["ICollectionRepository"]()
+    group_repository = CORE_CONFIG["repositories"]["IGroupRepository"]()
     payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
 
     def check_pwd_session_auth(self, request, renew=False):
