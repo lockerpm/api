@@ -40,4 +40,5 @@ class GroupRepository(IGroupRepository):
     def save_update_user_group(self, group: Group, member_ids: list) -> Group:
         group.groups_members.all().delete()
         group.groups_members.model.create_multiple(group, *member_ids)
+        bump_account_revision_date(team=group.team)
         return group
