@@ -5,7 +5,7 @@ import sys
 
 
 def main():
-    valid_env = ['prod', 'env']
+    valid_env = ['prod', 'env', 'staging']
     env = os.getenv("ENVIRONMENT")
     if env not in valid_env:
         env = 'dev'
