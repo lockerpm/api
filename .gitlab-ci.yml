@@ -1,0 +1,43 @@
+stages:
+  - build
+  - deploy
+
+build_staging:
+  stage: build
+  script:
+    - cystack-deployer
+  tags:
+    - cs_responding
+  only:
+    - develop
+    - tags
+
+deploy_staging:
+  stage: deploy
+  script:
+    - cystack-deployer
+  tags:
+    - cs_responding
+  only:
+    - develop
+    - tags
+
+build:
+  stage: build
+  script:
+    - cystack-deployer
+  tags:
+    - cs_responding
+  only:
+    - main
+    - tags
+
+deploy:
+  stage: deploy
+  script:
+    - cystack-deployer
+  tags:
+    - cs_responding
+  only:
+    - main
+    - tags
