@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
@@ -248,7 +249,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 **plan_metadata
             )
             # Send mail
-            # MonitorNotifyBackground().notify_pay_successfully(invoice)
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                func_name="pay_successfully", **{"payment": invoice}
+            )
         else:
             self.payment_repository.set_failed(payment=invoice, failure_reason=failure_reason)
         return Response(status=200, data={"success": True})

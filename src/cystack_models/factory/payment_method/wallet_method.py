@@ -2,7 +2,7 @@ import requests
 
 from django.conf import settings
 
-# from shared.background.monitor_notify_background import MonitorNotifyBackground
+from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
 from cystack_models.factory.payment_method.i_payment_method import IPaymentMethod
@@ -63,7 +63,9 @@ class WalletPaymentMethod(IPaymentMethod):
             # Upgrade user plan
             self.user.update_plan(scope=self.scope, plan_type_alias=plan_type, duration=duration, **kwargs)
             # Send mail
-            # MonitorNotifyBackground().notify_pay_successfully(payment=new_invoice)
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                func_name="pay_successfully", **{"payment": new_invoice}
+            )
 
             return {"success": True}
         return {"success": False}
