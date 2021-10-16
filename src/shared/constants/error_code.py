@@ -107,6 +107,16 @@ APP_CODE += [
 ]
 
 
+# ---------------------------- Cipher ------------------------------------------- #
+APP_CODE += [
+    {
+        "code": "5000",
+        "message": "This cipher already belongs to an organization",
+        "vi_message": "Bản ghi đã thuộc về một team"
+    }
+]
+
+
 # ------------------------------ TRANSACTION --------------------------------#
 APP_CODE += [
     {
