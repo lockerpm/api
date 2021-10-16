@@ -161,10 +161,6 @@ class VaultItemSerializer(serializers.Serializer):
 
         return data
 
-    def create(self, validated_data):
-        print(validated_data)
-        return 1
-
     def save(self, **kwargs):
         validated_data = self.validated_data
         cipher_type = validated_data.get("type")
@@ -196,7 +192,6 @@ class VaultItemSerializer(serializers.Serializer):
         if validated_data.get("notes"):
             detail["data"]["notes"] = validated_data.get("notes")
 
-        print(detail)
         return detail
 
 
@@ -209,6 +204,16 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
                 "You can not change team of cipher when update. Please share this cipher to change team"
             ]})
         return super(UpdateVaultItemSerializer, self).save(**kwargs)
+
+
+class ShareVaultItemSerializer(VaultItemSerializer):
+    def save(self, **kwargs):
+        validated_data = self.validated_data
+        if not validated_data.get("organizationId"):
+            raise serializers.ValidationError(detail={"organizationId": [
+                "This field is required", "Trường này là bắt buộc"
+            ]})
+        return super(ShareVaultItemSerializer, self).save(**kwargs)
 
 
 class MutipleItemIdsSerializer(serializers.Serializer):

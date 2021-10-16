@@ -15,9 +15,12 @@ class CipherPwdPermission(LockerPermission):
         return role_pattern in role_permissions
 
     def get_role_pattern(self, view):
-        # map_action_to_perm = {
-        #     "share_users": "retrieve",
-        # }
-        # if view.action in list(map_action_to_perm.keys()):
-        #     return "{}.{}".format(self.scope, map_action_to_perm.get(view.action))
+        map_action_to_perm = {
+            "multiple_delete": "destroy",
+            "multiple_permanent_delete": "destroy",
+            "multiple_restore": "destroy",
+            "vaults": "create"
+        }
+        if view.action in list(map_action_to_perm.keys()):
+            return "{}.{}".format(self.scope, map_action_to_perm.get(view.action))
         return super(CipherPwdPermission, self).get_role_pattern(view)
