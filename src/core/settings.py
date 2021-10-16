@@ -8,12 +8,13 @@ CORE_CONFIG = {
     "repositories": {
         "IUserRepository": UserRepository,
         "ISessionRepository": SessionRepository,
+        "IPaymentRepository": PaymentRepository,
         "ITeamRepository": TeamRepository,
         "ICipherRepository": CipherRepository,
         "IFolderRepository": FolderRepository,
         "ITeamMemberRepository": TeamMemberRepository,
         "ICollectionRepository": CollectionRepository,
         "IGroupRepository": GroupRepository,
-        "IPaymentRepository": PaymentRepository
+        "IEventRepository": EventRepository
     }
 }

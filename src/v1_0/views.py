@@ -9,4 +9,4 @@ from v1_0.enterprise.teams.views import TeamPwdViewSet
 from v1_0.enterprise.members.views import MemberPwdViewSet
 from v1_0.enterprise.collections.views import TeamCollectionPwdViewSet
 from v1_0.enterprise.groups.views import GroupPwdViewSet
-
+from v1_0.enterprise.activity_logs.views import ActivityLogViewSet

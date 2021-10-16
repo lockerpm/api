@@ -1,4 +1,5 @@
 import ast
+from datetime import datetime
 
 from django.db import models
 from django.conf import settings
@@ -169,3 +170,6 @@ class Payment(models.Model):
         if not self.metadata:
             return {}
         return ast.literal_eval(str(self.metadata))
+
+    def get_created_time_str(self):
+        return datetime.utcfromtimestamp(self.created_time).strftime('%H:%M:%S %d-%m-%Y')
