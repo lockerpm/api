@@ -15,13 +15,14 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     """
     user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
     session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
+    payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
     cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
     folder_repository = CORE_CONFIG["repositories"]["IFolderRepository"]()
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
     team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]()
     collection_repository = CORE_CONFIG["repositories"]["ICollectionRepository"]()
     group_repository = CORE_CONFIG["repositories"]["IGroupRepository"]()
-    payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
+    event_repository = CORE_CONFIG["repositories"]["IEventRepository"]()
 
     def check_pwd_session_auth(self, request, renew=False):
         valid_token = self.session_repository.fetch_access_token(user=request.user, renew=renew)
