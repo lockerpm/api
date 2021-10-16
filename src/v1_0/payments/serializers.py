@@ -73,7 +73,6 @@ class UpgradePlanSerializer(serializers.Serializer):
             if not number_members:
                 raise serializers.ValidationError(detail={"number_members": ["This field is required"]})
             max_allow_member = current_plan.get_max_allow_members()
-            print("MAX ALLOW MEMBNER: ", max_allow_member)
             if number_members < max_allow_member:
                 raise serializers.ValidationError(detail={
                     "number_members": ["The minimum number of members is {}".format(max_allow_member)]
