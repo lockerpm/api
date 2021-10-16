@@ -3,7 +3,7 @@ from django.db.models import Q
 from core.repositories import ICipherRepository
 from core.utils.account_revision_date import bump_account_revision_date
 
-from shared.utils.app import now
+from shared.utils.app import now, diff_list
 from shared.constants.members import *
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.teams.teams import Team
@@ -132,8 +132,11 @@ class CipherRepository(ICipherRepository):
         cipher.set_folder(user_cipher_id, folder_id)
         # Create CipherCollections
         if team_id:
-            cipher.collections_ciphers.all().delete()
-            cipher.collections_ciphers.model.create_multiple(cipher.id, *collection_ids)
+            existed_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
+            removed_collection_ids = diff_list(existed_collection_ids, collection_ids)
+            added_collection_ids = diff_list(collection_ids, existed_collection_ids)
+            cipher.collections_ciphers.filter(collection_id__in=removed_collection_ids).delete()
+            cipher.collections_ciphers.model.create_multiple(cipher.id, *added_collection_ids)
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)
@@ -144,6 +147,9 @@ class CipherRepository(ICipherRepository):
         bump_account_revision_date(user=cipher.user)
 
         return cipher
+
+    def save_share_cipher(self, cipher: Cipher, cipher_data) -> Cipher:
+        return self.save_update_cipher(cipher, cipher_data)
 
     def delete_multiple_cipher(self, cipher_ids: list, user_deleted: User = None):
         """
@@ -169,7 +175,7 @@ class CipherRepository(ICipherRepository):
         :param user_deleted: (obj) User deleted
         :return:
         """
-        ciphers = self.get_multiple_by_user(user=user_deleted, only_edited=True)
+        ciphers = self.get_multiple_by_user(user=user_deleted, only_edited=True).filter(id__in=cipher_ids)
         team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
         # Delete ciphers objects
         ciphers.delete()

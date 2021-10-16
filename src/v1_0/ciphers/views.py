@@ -3,13 +3,14 @@ import json
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
     SYNC_EVENT_CIPHER_UPDATE
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
-    MutipleItemIdsSerializer, MultipleMoveSerializer
+    MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -18,10 +19,12 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
     def get_serializer_class(self):
-        if self.action in ["vaults", "share"]:
+        if self.action in ["vaults"]:
             self.serializer_class = VaultItemSerializer
         elif self.action in ["update"]:
             self.serializer_class = UpdateVaultItemSerializer
+        elif self.action in ["share"]:
+            self.serializer_class = ShareVaultItemSerializer
         elif self.action in ["multiple_delete", "multiple_restore", "multiple_permanent_delete"]:
             self.serializer_class = MutipleItemIdsSerializer
         elif self.action in ["multiple_move"]:
@@ -31,7 +34,11 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     def get_object(self):
         try:
             cipher = self.cipher_repository.get_by_id(cipher_id=self.kwargs.get("pk"))
-            # self.check_object_permissions(request=self.request, obj=cipher)
+            if cipher.team:
+                self.check_object_permissions(request=self.request, obj=cipher.team)
+            else:
+                if cipher.user != self.request.user:
+                    raise NotFound
             return cipher
         except ObjectDoesNotExist:
             raise NotFound
@@ -45,7 +52,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_detail = serializer.save()
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
-        # print("VALIDED: ", validated_data)
 
         # We create new cipher object from cipher detail data.
         # Then, we update revision date of user (personal or members of the organization)
@@ -154,4 +160,20 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     @action(methods=["put"], detail=False)
     def share(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
-        return Response(status=200, data={"success": True})
+        cipher = self.get_object()
+        if cipher.team_id:
+            raise ValidationError({"non_field_errors": [gen_error("5000")]})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        team = serializer.validated_data.get("team")
+        cipher_detail = serializer.save()
+        cipher_detail.pop("team", None)
+        cipher_detail = json.loads(json.dumps(cipher_detail))
+        cipher = self.cipher_repository.save_share_cipher(cipher=cipher, cipher_data=cipher_detail)
+        PwdSync(
+            event=SYNC_EVENT_CIPHER_UPDATE,
+            user_ids=[request.user.user_id],
+            team=team,
+            add_all=True
+        ).send()
+        return Response(status=200, data={"id": cipher.id})
