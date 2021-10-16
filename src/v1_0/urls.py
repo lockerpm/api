@@ -140,11 +140,12 @@ urlpatterns += [
 ]
 
 
-# """ Event Logs """
-# urlpatterns += [
-#     url(r'^teams/(?P<pk>[0-9a-z\-]+)/logs$', views.TeamPwdActivityLogViewSet.as_view({'get': 'list'})),
-# ]
-#
+""" Event Logs """
+urlpatterns += [
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/logs$', views.ActivityLogViewSet.as_view({'get': 'list'})),
+]
+
+
 # # -------------------------------- Members ----------------------------------- #
 # urlpatterns += [
 #     url(r'^members/share$', views.MemberPwdViewSet.as_view({'post': 'create_member_share'})),

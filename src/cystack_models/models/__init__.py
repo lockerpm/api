@@ -38,3 +38,7 @@ from cystack_models.models.teams.collections_members import CollectionMember
 # ------------------------ Permission Models ----------------------- #
 from cystack_models.models.permissions.permissions import Permission
 from cystack_models.models.permissions.role_permissions import RolePermission
+
+
+# ------------------------ Activity Log Models --------------------- #
+from cystack_models.models.events.events import Event
