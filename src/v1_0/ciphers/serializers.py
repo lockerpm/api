@@ -1,13 +1,11 @@
-import json
-
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from rest_framework.exceptions import PermissionDenied
 
 from core.settings import CORE_CONFIG
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
+from v1_0.folders.serializers import FolderSerializer
 
 
 class ItemFieldSerializer(serializers.Serializer):
@@ -243,4 +241,27 @@ class MultipleMoveSerializer(serializers.Serializer):
         folder_id = data.get("folderId")
         if folder_id and user.folders.filter(id=folder_id).exists() is False:
             raise serializers.ValidationError(detail={"folderId": ["This folder does not exist"]})
+        return data
+
+
+class FolderRelationshipSerializer(serializers.Serializer):
+    key = serializers.IntegerField(min_value=0)
+    value = serializers.IntegerField(min_value=0)
+
+
+class ImportCipherSerializer(serializers.Serializer):
+    ciphers = VaultItemSerializer(many=True)
+    folders = FolderSerializer(many=True)
+    folderRelationships = FolderRelationshipSerializer(many=True)
+
+    def validate(self, data):
+        ciphers = data.get("ciphers", [])
+        folders = data.get("folders", [])
+        folder_relationships = data.get("folderRelationships", [])
+        if len(ciphers) > 1000:
+            raise serializers.ValidationError(detail={"ciphers": ["You cannot import this much data at once"]})
+        if len(folder_relationships) > 1000:
+            raise serializers.ValidationError(detail={"folderRelationships": ["You cannot import this much data at once"]})
+        if len(folders) > 200:
+            raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
         return data
