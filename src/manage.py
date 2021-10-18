@@ -6,7 +6,7 @@ import sys
 
 def main():
     valid_env = ['prod', 'env', 'staging']
-    env = os.getenv("ENVIRONMENT")
+    env = os.getenv("PROD_ENV")
     if env not in valid_env:
         env = 'dev'
 
