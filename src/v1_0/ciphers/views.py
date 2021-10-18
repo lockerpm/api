@@ -10,9 +10,9 @@ from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
-    SYNC_EVENT_CIPHER_UPDATE
+    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
-    MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer
+    MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -31,6 +31,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = MutipleItemIdsSerializer
         elif self.action in ["multiple_move"]:
             self.serializer_class = MultipleMoveSerializer
+        elif self.action in ["import_data"]:
+            self.serializer_class = ImportCipherSerializer
         return super(CipherPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -187,7 +189,16 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def import_data(self, request, *args, **kwargs):
+        user = self.request.user
         self.check_pwd_session_auth(request=request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        ciphers = validated_data.get("ciphers", [])
+        folders = validated_data.get("folders", [])
+        folder_relationships = validated_data.get("folderRelationships", [])
+        self.cipher_repository.import_multiple_cipher(user, ciphers, folders, folder_relationships)
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)

@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Value, When, Q, Case, IntegerField, Count, Avg
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -9,7 +9,6 @@ from shared.constants.event import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.group_pwd_permission import GroupPwdPermission
-from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_GROUP_CREATE, SYNC_EVENT_GROUP_DELETE, SYNC_EVENT_GROUP_UPDATE
 from v1_0.enterprise.groups.serializers import GroupSerializer, UpdateGroupSerializer
 from v1_0.enterprise.members.serializers import DetailMemberSerializer

@@ -11,9 +11,7 @@ from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE
 from cystack_models.models.payments.payments import Payment
-from v1_0.ciphers.serializers import VaultItemSerializer, MutipleItemIdsSerializer, MultipleMoveSerializer
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer
