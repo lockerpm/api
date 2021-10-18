@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.ciphers import *
+from shared.constants.event import EVENT_TEAM_PURGED_DATA, EVENT_TEAM_UPDATED
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
-    SYNC_EVENT_CIPHER_UPDATE
 from v1_0.enterprise.teams.serializers import ListTeamSerializer, UpdateTeamPwdSerializer
 from v1_0.apps import PasswordManagerViewSet
 
@@ -58,12 +58,27 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         return super(TeamPwdViewSet, self).retrieve(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
+        team = self.get_object()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_TEAM_UPDATED, "ip_address": ip
+        })
         return super(TeamPwdViewSet, self).update(request, *args, **kwargs)
 
     @action(methods=["post"], detail=False)
     def purge(self, request, *args, **kwargs):
-        pass
+        user = self.request.user
+        ip = request.data.get("ip")
+        self.check_pwd_session_auth(request=request)
+        team = self.get_object()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_TEAM_PURGED_DATA, "ip_address": ip
+        })
+        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def import_data(self, request, *args, **kwargs):
