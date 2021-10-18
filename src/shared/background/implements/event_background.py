@@ -27,3 +27,15 @@ class EventBackground(ILockerBackground):
         finally:
             if self.background:
                 connection.close()
+
+    def create_by_ciphers(self, ciphers, **data):
+        try:
+            if ciphers:
+                self.event_repository.save_new_event_by_ciphers(ciphers, **data)
+            else:
+                self.create(**data)
+        except Exception as e:
+            self.log_error(func_name="create_by_ciphers")
+        finally:
+            if self.background:
+                connection.close()

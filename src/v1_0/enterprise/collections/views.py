@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.constants.event import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_collection_pwd_permission import TeamCollectionPwdPermission
@@ -64,6 +66,8 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=serializer.data)
 
     def create(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         serializer = self.get_serializer(data=request.data)
@@ -74,9 +78,15 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
             team=team, name=name, is_default=False
         )
         PwdSync(event=SYNC_EVENT_COLLECTION_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_COLLECTION_CREATED, "collection_id": new_collection.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": new_collection.id})
 
     def update(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         collection = self.get_collection(team=team)
@@ -88,14 +98,24 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         valid_groups = team.groups.filter(id__in=groups).values_list('id', flat=True)
         collection = self.collection_repository.save_update_collection(collection=collection, name=name, groups=valid_groups)
         PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_COLLECTION_UPDATED, "collection_id": collection.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": collection.id, "name": collection.name})
 
     def destroy(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         collection = self.get_collection(team=team)
         self.collection_repository.destroy_collection(collection=collection)
         PwdSync(event=SYNC_EVENT_COLLECTION_DELETE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_COLLECTION_DELETED, "collection_id": collection.id, "ip_address": ip
+        })
         return Response(status=204)
 
     @action(methods=["get", "put"], detail=False)

@@ -24,19 +24,14 @@ EVENT_GROUP_CREATED = 1400
 EVENT_GROUP_UPDATED = 1401
 EVENT_GROUP_DELETED = 1402
 
-OrganizationUser_Invited = 1500,
-OrganizationUser_Confirmed = 1501,
-OrganizationUser_Updated = 1502,
-OrganizationUser_Removed = 1503,
-OrganizationUser_UpdatedGroups = 1504,
-OrganizationUser_UnlinkedSso = 1505,
-OrganizationUser_ResetPassword_Enroll = 1506,
-OrganizationUser_ResetPassword_Withdraw = 1507,
-OrganizationUser_AdminResetPassword = 1508,
-OrganizationUser_ResetSsoLink = 1509,
+EVENT_MEMBER_INVITED = 1500
+EVENT_MEMBER_CONFIRMED = 1501
+EVENT_MEMBER_UPDATED = 1502
+EVENT_MEMBER_REMOVED = 1503
+EVENT_MEMBER_UPDATED_GROUP = 1504
 
-Organization_Updated = 1600,
-Organization_PurgedVault = 1601,
+EVENT_TEAM_UPDATED = 1600
+EVENT_TEAM_PURGED_DATA = 1601
 
 
 LOG_TYPES = {
@@ -46,7 +41,7 @@ LOG_TYPES = {
         "en": "Logged in"
     },
     EVENT_USER_CHANGE_PASSWORD: {
-        "vi": "",
+        "vi": "Đã thay đổi mật khẩu chính của tài khoản",
         "en": "Changed account password"
     },
     1002: {
@@ -62,7 +57,7 @@ LOG_TYPES = {
         "en": "Recovered account from two-step login"
     },
     EVENT_USER_LOGIN_FAILED: {
-        "vi": "",
+        "vi": "Cố gắng đăng nhập với mật khẩu không chính xác",
         "en": "Login attempted failed with incorrect password"
     },
     1006: {
@@ -70,21 +65,21 @@ LOG_TYPES = {
         "en": "Login attempt failed with incorrect two-step login"
     },
     EVENT_USER_EXPORT_VAULT: {
-        "vi": "",
+        "vi": "Xuất kho dữ liệu",
         "en": "Exported Vault"
     },
 
     # Item Events
     EVENT_CIPHER_CREATED: {
-        "vi": "",
+        "vi": "Tạo bản ghi mã hóa {}",
         "en": "Created item {}"
     },
     EVENT_CIPHER_UPDATED: {
-        "vi": "",
+        "vi": "Chỉnh sửa bản ghi {}",
         "en": "Edited item {}"
     },
     EVENT_CIPHER_DELETED: {
-        "vi": "",
+        "vi": "Xóa vĩnh viễn bản ghi {}",
         "en": "Permanently Deleted item {}"
     },
     1103: {
@@ -96,15 +91,15 @@ LOG_TYPES = {
         "en": "Deleted attachment for item {}"
     },
     EVENT_CIPHER_SHARED: {
-        "vi": "",
+        "vi": "Chia sẻ bản ghi {}",
         "en": "Shared item {}"
     },
     EVENT_CIPHER_UPDATE_COLLECTION: {
-        "vi": "",
+        "vi": "Chỉnh sửa collections của bản ghi {}",
         "en": "Edited collections for item {}"
     },
     EVENT_CIPHER_VIEWED: {
-        "vi": "",
+        "vi": "Hiển thị bản ghi {}",
         "en": "Viewed item {}"
     },
     1108: {
@@ -136,77 +131,75 @@ LOG_TYPES = {
         "en": "Auto-filled item {}"
     },
     EVENT_CIPHER_SOFT_DELETED: {
-        "vi": "",
+        "vi": "Đưa bản ghi {} vào thùng rác",
         "en": "Sent item {} to trash"
     },
     EVENT_CIPHER_RESTORE: {
-        "vi": "",
+        "vi": "Khôi phục bản ghi {}",
         "en": "Restored item {}"
     },
 
     # Collections event
     EVENT_COLLECTION_CREATED: {
-        "vi": "",
+        "vi": "Tạo collection {}",
         "en": "Created collection {}"
     },
     EVENT_COLLECTION_UPDATED: {
-        "vi": "",
+        "vi": "Cập nhật collection {}",
         "en": "Edited collection {}"
     },
     EVENT_COLLECTION_DELETED: {
-        "vi": "",
+        "vi": "Xóa collection {}",
         "en": "Deleted collection {}"
     },
 
     # Groups Event
     EVENT_GROUP_CREATED: {
-        "vi": "",
+        "vi": "Tạo nhóm {}",
         "en": "Created group {}"
     },
     EVENT_GROUP_UPDATED: {
-        "vi": "",
+        "vi": "Chỉnh sửa nhóm {}",
         "en": "Edited group {}"
     },
     EVENT_GROUP_DELETED: {
-        "vi": "",
+        "vi": "Xóa nhóm {}",
         "en": "Deleted group {}"
     },
 
-    # Organziation events
-    1500: {
-        "vi": "",
+    # Member events
+    EVENT_MEMBER_INVITED: {
+        "vi": "Mời thành viên {}",
         "en": "Invited user {}"
     },
-    1501: {
-        "vi": "",
+    EVENT_MEMBER_CONFIRMED: {
+        "vi": "Xác nhận thành viên {}",
         "en": "Confirmed user {}"
     },
-    1502: {
-        "vi": "",
+    EVENT_MEMBER_UPDATED: {
+        "vi": "Cập nhật thành viên {}",
         "en": "Edited user {}"
     },
-    1503: {
-        "vi": "",
+    EVENT_MEMBER_REMOVED: {
+        "vi": "Xóa thành viên {}",
         "en": "Removed user {}"
     },
-    1504: {
-        "vi": "",
+    EVENT_MEMBER_UPDATED_GROUP: {
+        "vi": "Cập nhật nhóm của thành viên {}",
         "en": "Edited groups for user {}"
     },
     1505: {
         "vi": "",
         "en": "Unlinked SSO"
     },
-    1600: {
-        "vi": "",
+
+    # Team events
+    EVENT_TEAM_UPDATED: {
+        "vi": "Cập nhật cài đặt của tổ chức",
         "en": "Edited organization settings"
     },
-    1601: {
-        "vi": "",
+    EVENT_TEAM_PURGED_DATA: {
+        "vi": "Xóa dữ liệu tổ chức",
         "en": "Purged organization vault"
     },
-    1700: {
-        "vi": "",
-        "en": "Updated a Policy"
-    }
 }
