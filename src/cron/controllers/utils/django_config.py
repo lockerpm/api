@@ -8,7 +8,7 @@ from cron.controllers.utils.logger import logger
 def django_config():
     try:
         valid_env = ['prod', 'env', 'staging']
-        env = os.getenv("ENVIRONMENT")
+        env = os.getenv("PROD_ENV")
         if env not in valid_env:
             env = 'prod'
         setting = "server_config.settings.%s" % env
