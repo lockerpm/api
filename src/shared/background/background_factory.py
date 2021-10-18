@@ -8,4 +8,6 @@ class LockerBackgroundFactory:
     def get_background(cls, bg_name, background: bool = True) -> ILockerBackground:
         if bg_name == BG_NOTIFY:
             return NotifyBackground(background)
+        elif bg_name == BG_EVENT:
+            return EventBackground(background)
         raise Exception('Background name {} is not supported'.format(bg_name))

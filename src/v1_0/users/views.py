@@ -5,7 +5,9 @@ from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
+from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
+from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync
@@ -101,6 +103,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def session(self, request, *args, **kwargs):
         user = self.request.user
+        user_teams = list(self.team_repository.get_multiple_team_by_user(
+            user=user, status=PM_MEMBER_STATUS_CONFIRMED
+        ).values_list('id', flat=True))
+        ip = request.data.get("ip")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -109,7 +115,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
         device_name = validated_data.get("device_name")
         device_type = validated_data.get("device_type")
         password = validated_data.get("password")
+
         if user.check_master_password(raw_password=password) is False:
+            # Create event here
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+                "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
+            })
             raise ValidationError(detail={"password": ["Password is not correct"]})
         # First, check CyStack database to get existed access token
         refresh_token_obj = self.session_repository.filter_refresh_tokens(device_identifier=device_identifier).first()
@@ -136,6 +148,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "kdf": user.kdf,
             "kdf_iterations": user.kdf_iterations
         }
+        # Create event login successfully
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+            "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_USER_LOGIN, "ip_address": ip
+        })
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)
