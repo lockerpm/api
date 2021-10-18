@@ -23,7 +23,7 @@ def pm_subscription():
             LockerBackgroundFactory.get_background(
                 bg_name=BG_NOTIFY, background=False
             ).run(func_name="downgrade_plan", **{
-                "user_id": user.user_id, "pld_plan": current_plan_name, "downgrade_time": now(),
+                "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
                 "scope": settings.SCOPE_PWD_MANAGER
             })
             continue
@@ -47,7 +47,7 @@ def pm_subscription():
             LockerBackgroundFactory.get_background(
                 bg_name=BG_NOTIFY, background=False
             ).run(func_name="downgrade_plan", **{
-                "user_id": user.user_id, "pld_plan": current_plan_name, "downgrade_time": now(),
+                "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
                 "scope": settings.SCOPE_PWD_MANAGER
             })
 

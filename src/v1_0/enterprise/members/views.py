@@ -112,7 +112,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                 member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collections
                 member_user = self.user_repository.retrieve_or_create_by_id(user_id=member["user_id"])
                 member_obj = team.team_members.model.create_with_collections(
-                    team=team, user=member_user, role_id=role, status=PM_MEMBER_STATUS_INVITED, *member_collections
+                    team=team, user=member_user, role_id=role, status=PM_MEMBER_STATUS_INVITED,
+                    collection_ids=member_collections
                 )
                 added_members.append(member_obj.user_id)
 
@@ -181,7 +182,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                 role = member["role"]
                 member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collections
                 member_obj = team.team_members.model.create_with_collections(
-                    team=team, role_id=role, status=PM_MEMBER_STATUS_INVITED, email=member["email"], *member_collections
+                    team=team, role_id=role, status=PM_MEMBER_STATUS_INVITED, email=member["email"],
+                    collection_ids=member_collections
                 )
                 token = self.team_member_repository.create_invitation_token(member=member_obj)
                 added_members.append({
