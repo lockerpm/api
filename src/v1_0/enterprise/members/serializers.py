@@ -24,4 +24,5 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             data["collections"] = list(instance.collections_members.values_list('collection_id', flat=True))
         else:
             data["collections"] = list(instance.team.collections.values_list('id', flat=True))
+        data["pwd_user_id"] = instance.user.internal_id if instance.user else None
         return data
