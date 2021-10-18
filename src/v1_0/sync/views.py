@@ -1,15 +1,7 @@
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound, AuthenticationFailed
 from rest_framework.decorators import action
 
-from core.settings import CORE_CONFIG
 from core.utils.data_helpers import camel_snake_data
-from core.utils.core_helpers import secure_random_string
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_CONFIRMED, MEMBER_ROLE_OWNER
-# from shared.constants.sync_event import SYNC_EVENT_MEMBER_ACCEPTED
-from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
-from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
     SyncCollectionSerializer
@@ -24,13 +16,9 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     def sync(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-
         ciphers = self.cipher_repository.get_multiple_by_user(user=user)
         folders = self.folder_repository.get_multiple_by_user(user=user)
         collections = self.collection_repository.get_multiple_user_collections(user=user)
-        # from cystack_models.models import Cipher
-        # ciphers = Cipher.objects.filter()
-
         sync_data = {
             "object": "sync",
             "profile": SyncProfileSerializer(user, many=False).data,

@@ -1,13 +1,17 @@
+import json
+import uuid
+
 from django.db.models import Q
 
 from core.repositories import ICipherRepository
 from core.utils.account_revision_date import bump_account_revision_date
-
+from shared.constants.ciphers import *
 from shared.utils.app import now, diff_list
 from shared.constants.members import *
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.users.users import User
+from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.collections_members import CollectionMember
 from cystack_models.models.teams.collections_groups import CollectionGroup
 
@@ -212,3 +216,65 @@ class CipherRepository(ICipherRepository):
             cipher.set_folder(user_id=user_moved.user_id, folder_id=folder_id)
         # Bump revision date of user
         bump_account_revision_date(user=user_moved)
+
+    def import_multiple_cipher(self, user: User, ciphers, folders, folder_relationships):
+
+        # Init id for folders
+        exited_folder_ids = list(Folder.objects.filter(user=user).values_list('id', flat=True))
+        for folder in folders:
+            while True:
+                new_folder_id = str(uuid.uuid4())
+                if new_folder_id not in exited_folder_ids:
+                    break
+            folder["id"] = new_folder_id
+
+        # Create the folder associations based on the newly created folder ids
+        for folder_relationship in folder_relationships:
+            try:
+                cipher = ciphers[folder_relationship["key"]]
+                folder = folders[folder_relationship["value"]]
+            except (KeyError, ValueError):
+                continue
+
+            cipher["folders"] = "{%d: '%s'}" % (user.user_id, folder.get("id"))
+
+        # Create multiple folders
+        import_folders = []
+        for folder in folders:
+            import_folders.append(
+                Folder(id=folder["id"], name=folder["name"], user=user, creation_date=now(), revision_date=now())
+            )
+        Folder.objects.bulk_create(import_folders, batch_size=100, ignore_conflicts=True)
+
+        # Create multiple ciphers
+        import_ciphers = []
+        for cipher_data in ciphers:
+            cipher_type = cipher_data.get("type")
+            if cipher_type == CIPHER_TYPE_LOGIN:
+                cipher_data["data"] = dict(cipher_data.get("login"))
+            elif cipher_type == CIPHER_TYPE_CARD:
+                cipher_data["data"] = dict(cipher_data.get("card"))
+            elif cipher_type == CIPHER_TYPE_IDENTITY:
+                cipher_data["data"] = dict(cipher_data.get("identity"))
+            elif cipher_type == CIPHER_TYPE_NOTE:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            cipher_data["data"]["name"] = cipher_data.get("name")
+            if cipher_data.get("notes"):
+                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data = json.loads(json.dumps(cipher_data))
+            import_ciphers.append(
+                Cipher(
+                    creation_date=cipher_data.get("creation_date", now()),
+                    revision_date=cipher_data.get("revision_date", now()),
+                    deleted_date=cipher_data.get("deleted_date"),
+                    reprompt=cipher_data.get("reprompt", 0) or 0,
+                    score=cipher_data.get("score", 0),
+                    type=cipher_data.get("type"),
+                    data=cipher_data.get("data"),
+                    user_id=user.user_id,
+                    folders=cipher_data.get("folders", ""),
+                    team_id=cipher_data.get("organizationId")
+                )
+            )
+        Cipher.objects.bulk_create(import_ciphers, batch_size=100, ignore_conflicts=True)
+        bump_account_revision_date(user=user)

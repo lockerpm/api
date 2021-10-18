@@ -8,6 +8,7 @@ from core.utils.core_helpers import secure_random_string
 from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
+from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync
@@ -217,7 +218,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
             raise ValidationError({"non_field_errors": [gen_error("1007")]})
 
         # Clear data of default team
-        # CHANGE LATER ...
+        default_team.team_members.all().order_by('id').delete()
+        default_team.groups.order_by('id').delete()
+        default_team.collections.all().order_by('id').delete()
+        default_team.ciphers.all().order_by('id').delete()
+        default_team.delete()
 
         # Deactivated this account
         self.user_repository.delete_account(user)
@@ -231,14 +236,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         self.user_repository.purge_account(user=user)
         return Response(status=200, data={"success": True})
-
-    @action(methods=["get"], detail=False)
-    def profile(self, request, *args, **kwargs):
-        pass
-
-    @action(methods=["get"], detail=False)
-    def public_key(self, request, *args, **kwargs):
-        pass
 
     @action(methods=["get"], detail=False)
     def invitations(self, request, *args, **kwargs):
@@ -274,4 +271,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["get"], detail=False)
     def family(self, request, *args, **kwargs):
-        pass
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+        # Get all team that user is a confirmed members and owner's plan is Family discount
+        team_ids = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
+            user__pm_user_plan__pm_plan__alias=PLAN_TYPE_PM_FAMILY_DISCOUNT,
+            role_id=MEMBER_ROLE_OWNER,
+            is_default=True, is_primary=True
+        ).values_list('team_id', flat=True)
+        return Response(status=200, data=list(team_ids))
