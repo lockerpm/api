@@ -10,7 +10,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
-    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_MEMBER_INVITATION
+    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from v1_0.enterprise.members.serializers import DetailMemberSerializer
@@ -143,7 +143,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         # Not allow delete themselves
         if member.user == user or member.role.name == MEMBER_ROLE_OWNER:
             return Response(status=403)
+        member_user_id = member.user_id
         member.delete()
+        # Sync data of member
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
         # Return response data to API Gateway to send mail
         return Response(status=200, data={
             "team_id": team.id,
@@ -235,6 +238,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         member.key = org_key
         member.status = PM_MEMBER_STATUS_CONFIRMED
         member.save()
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
