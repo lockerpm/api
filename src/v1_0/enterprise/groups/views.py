@@ -70,7 +70,7 @@ class GroupPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_GROUP_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_COLLECTION_DELETED, "collection_id": collection.id, "ip_address": ip
+            "type": EVENT_GROUP_CREATED, "collection_id": new_group.id, "ip_address": ip
         })
         return Response(status=200, data={"id": new_group.id})
 
@@ -90,6 +90,8 @@ class GroupPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         group = self.get_group(team=team)
@@ -103,13 +105,25 @@ class GroupPwdViewSet(PasswordManagerViewSet):
             group=group, name=name, access_all=access_all, collections=collections
         )
         PwdSync(event=SYNC_EVENT_GROUP_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_GROUP_UPDATED, "collection_id": group.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": updated_group.id})
 
     def destroy(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         group = self.get_group(team=team)
+        group_id = group.id
         group.delete()
+        PwdSync(event=SYNC_EVENT_GROUP_DELETE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_GROUP_DELETED, "collection_id": group_id, "ip_address": ip
+        })
         return Response(status=204)
 
     @action(methods=["get", "put"], detail=False)
