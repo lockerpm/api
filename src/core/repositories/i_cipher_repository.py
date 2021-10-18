@@ -51,3 +51,8 @@ class ICipherRepository(ABC):
     @abstractmethod
     def move_multiple_cipher(self, cipher_ids, user_moved, folder_id):
         pass
+
+    @abstractmethod
+    def import_multiple_cipher(self, user, ciphers, folders, folder_relationships):
+        pass
+
