@@ -18,5 +18,5 @@ COPY ./src/ /app
 
 USER cystack
 
-CMD gunicorn -w 3 -b 0.0.0.0:8000 server_config.wsgi:application
+CMD python manage.py migrate; gunicorn -w 3 -b 0.0.0.0:8000 server_config.wsgi:application
 

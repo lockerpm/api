@@ -43,7 +43,11 @@ class Command(BaseCommand):
             {"scope": "group", "codename": "retrieve", "description": "Can retrieve a group", "roles": ["owner", "admin", "manager"]},
             {"scope": "group", "codename": "create", "description": "Can create a group", "roles": ["owner", "admin"]},
             {"scope": "group", "codename": "update", "description": "Can update a group", "roles": ["owner", "admin"]},
-            {"scope": "group", "codename": "destroy", "description": "Can delete groups", "roles": ["owner", "admin"]}
+            {"scope": "group", "codename": "destroy", "description": "Can delete groups", "roles": ["owner", "admin"]},
+
+            # Groups perms
+            {"scope": "event", "codename": "list", "description": "Can get list event", "roles": ["owner", "admin", "manager"]},
+            {"scope": "event", "codename": "retrieve", "description": "Can retrieve an event", "roles": ["owner", "admin", "manager"]},
         ]
         for perm in perms_list:
             if Permission.objects.filter(scope=perm.get("scope"), codename=perm.get("codename")).exists() is False:
