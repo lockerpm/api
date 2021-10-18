@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
-from shared.constants.ciphers import *
+from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.constants.event import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.group_pwd_permission import GroupPwdPermission
@@ -53,6 +54,8 @@ class GroupPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=serializer.data)
 
     def create(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         serializer = self.get_serializer(data=request.data)
@@ -65,6 +68,10 @@ class GroupPwdViewSet(PasswordManagerViewSet):
             team=team, name=name, access_all=access_all, collections=collections
         )
         PwdSync(event=SYNC_EVENT_GROUP_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_COLLECTION_DELETED, "collection_id": collection.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": new_group.id})
 
     def retrieve(self, request, *args, **kwargs):
