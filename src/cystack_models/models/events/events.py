@@ -54,7 +54,7 @@ class Event(models.Model):
         for team_id in team_ids:
             events.append(cls(
                 type=data["type"],
-                acting_user_id=data.get(""),
+                acting_user_id=data.get("acting_user_id"),
                 user_id=data.get("user_id"),
                 cipher_id=data.get("cipher_id"),
                 collection_id=data.get("collection_id"),
