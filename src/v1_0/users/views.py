@@ -158,6 +158,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def password(self, request, *args, **kwargs):
         user = self.request.user
+        user_teams = list(self.team_repository.get_multiple_team_by_user(
+            user=user, status=PM_MEMBER_STATUS_CONFIRMED
+        ).values_list('id', flat=True))
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -169,6 +173,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
             user=user, new_master_password_hash=new_master_password_hash, key=key
         )
         self.user_repository.revoke_all_sessions(user=user)
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+            "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_USER_CHANGE_PASSWORD, "ip_address": ip
+        })
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
@@ -258,9 +266,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
         if status == "accept":
             self.team_member_repository.accept_invitation(member=member_invitation)
             primary_owner = self.team_repository.get_primary_member(team=member_invitation.team)
-            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id]).send()
+            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
         else:
             self.team_member_repository.reject_invitation(member=member_invitation)
+            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)

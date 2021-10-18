@@ -15,3 +15,7 @@ class IEventRepository(ABC):
     @abstractmethod
     def save_new_event_by_multiple_teams(self, team_ids: list, **data):
         pass
+
+    @abstractmethod
+    def save_new_event_by_ciphers(self, ciphers, **data):
+        pass

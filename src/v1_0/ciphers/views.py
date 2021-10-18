@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.background import BG_EVENT, LockerBackgroundFactory
+from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
@@ -45,6 +47,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def vaults(self, request, *args, **kwargs):
+        ip = request.data.get("ip")
+        user = self.request.user
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -63,10 +67,16 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=team,
             add_all=True
         ).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": new_cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_CIPHER_CREATED, "cipher_id": new_cipher.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": new_cipher.id})
 
     @action(methods=["put"], detail=False)
     def multiple_delete(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -80,10 +90,17 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             self.check_object_permissions(request=request, obj=team)
         self.cipher_repository.delete_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
         PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
+            "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_CIPHER_SOFT_DELETED, "ciphers": ciphers, "ip_address": ip
+        })
+
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)
     def multiple_permanent_delete(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -100,10 +117,16 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Finally, we send sync event to all relational users
         self.cipher_repository.delete_permanent_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
         PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
+            "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_CIPHER_DELETED, "ciphers": ciphers, "ip_address": ip
+        })
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)
     def multiple_restore(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -119,9 +142,15 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Then bump revision date of users and send sync event to all relational users
         self.cipher_repository.restore_multiple_cipher(cipher_ids=cipher_ids, user_restored=request.user)
         PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
+            "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_CIPHER_RESTORE, "ciphers": ciphers, "ip_address": ip
+        })
         return Response(status=200, data={"success": True})
 
     def update(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         cipher = self.get_object()
         serializer = self.get_serializer(data=request.data)
@@ -137,6 +166,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=team,
             add_all=True
         ).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_CIPHER_UPDATED, "cipher_id": cipher.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
@@ -159,6 +192,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["put"], detail=False)
     def share(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         cipher = self.get_object()
         if cipher.team_id:
@@ -176,4 +211,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=team,
             add_all=True
         ).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_CIPHER_SHARED, "cipher_id": cipher.id, "ip_address": ip
+        })
         return Response(status=200, data={"id": cipher.id})
