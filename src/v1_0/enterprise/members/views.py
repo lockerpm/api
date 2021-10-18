@@ -10,7 +10,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
-    SYNC_EVENT_CIPHER_UPDATE
+    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_MEMBER_INVITATION
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from v1_0.enterprise.members.serializers import DetailMemberSerializer
@@ -115,6 +115,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                     team=team, user=member_user, role_id=role, status=PM_MEMBER_STATUS_INVITED,
                     collection_ids=member_collections
                 )
+                PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=[member_obj.user_id]).send()
                 added_members.append(member_obj.user_id)
 
         result = {

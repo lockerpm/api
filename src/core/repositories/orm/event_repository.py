@@ -12,3 +12,6 @@ class EventRepository(IEventRepository):
 
     def save_new_event_by_multiple_teams(self, team_ids: list, **data):
         return Event.create_multiple_by_team_ids(team_ids, **data)
+
+    def save_new_event_by_ciphers(self, ciphers, **data):
+        return Event.create_multiple_by_ciphers(ciphers, **data)

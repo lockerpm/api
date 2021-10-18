@@ -70,3 +70,26 @@ class Event(models.Model):
                 user_provider_id=data.get("user_provider_id")
             ))
         cls.objects.bulk_create(events, ignore_conflicts=True)
+
+    @classmethod
+    def create_multiple_by_ciphers(cls, ciphers, **data):
+        events = []
+        for cipher in ciphers:
+            events.append(cls(
+                type=data["type"],
+                acting_user_id=data.get("acting_user_id"),
+                user_id=data.get("user_id"),
+                cipher_id=cipher.id,
+                collection_id=data.get("collection_id"),
+                creation_date=data.get("creation_date", now()),
+                device_type=data.get("device_type"),
+                group_id=data.get("group_id"),
+                ip_address=data.get("ip_address"),
+                team_id=cipher.team_id,
+                team_member_id=data.get("team_member_id"),
+                policy_id=data.get("policy_id"),
+                provider_id=data.get("provider_id"),
+                team_provider_id=data.get("team_provider_id"),
+                user_provider_id=data.get("user_provider_id")
+            ))
+        cls.objects.bulk_create(events, ignore_conflicts=True)
