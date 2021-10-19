@@ -19,3 +19,7 @@ class ITeamMemberRepository(ABC):
     @abstractmethod
     def create_invitation_token(self, member: TeamMember) -> str:
         pass
+
+    @abstractmethod
+    def update_member(self, member: TeamMember, role_id: str, collection_ids: list) -> TeamMember:
+        pass

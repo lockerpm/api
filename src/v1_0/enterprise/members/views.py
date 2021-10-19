@@ -10,7 +10,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
-    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER
+    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER, SYNC_EVENT_VAULT
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from v1_0.enterprise.members.serializers import DetailMemberSerializer
@@ -127,8 +127,31 @@ class MemberPwdViewSet(PasswordManagerViewSet):
 
     def update(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
+        user = self.request.user
+        team = self.get_object()
+        member_id = kwargs.get("member_id")
+        try:
+            member_obj = team.team_members.get(id=member_id)
+        except TeamMember.DoesNotExist:
+            raise NotFound
+        role = request.data.get("role")
+        collections = request.data.get("collections")
 
-        return Response(status=200, data={})
+        team_collection_ids = list(team.collections.values_list('id', flat=True))
+        valid_collection_ids = [collection_id for collection_id in collections if collection_id in team_collection_ids]
+        # Validate data
+        if role not in [MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER]:
+            raise ValidationError(detail={"role": ["Role is not valid"]})
+        # Not allow edit yourself and Not allow edit primary owner
+        if member_obj.user == user or member_obj.is_primary is True:
+            return Response(status=403)
+
+        # Update role and collections
+        member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collection_ids
+        self.team_member_repository.update_member(member=member_obj, role_id=role, collection_ids=member_collections)
+        # Sync data for updated member
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[member_obj.user_id]).send()
+        return Response(status=200, data={"success": True})
 
     def destroy(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request)
