@@ -26,3 +26,9 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             data["collections"] = list(instance.team.collections.values_list('id', flat=True))
         data["pwd_user_id"] = instance.user.internal_id if instance.user else None
         return data
+
+
+class MemberGroupSerializer(serializers.Serializer):
+    group_ids = serializers.ListField(
+        child=serializers.CharField(max_length=128), allow_empty=True
+    )

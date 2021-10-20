@@ -23,3 +23,11 @@ class ITeamMemberRepository(ABC):
     @abstractmethod
     def update_member(self, member: TeamMember, role_id: str, collection_ids: list) -> TeamMember:
         pass
+
+    @abstractmethod
+    def get_list_groups(self, member: TeamMember):
+        pass
+
+    @abstractmethod
+    def update_list_groups(self, member: TeamMember, group_ids: list) -> TeamMember:
+        pass

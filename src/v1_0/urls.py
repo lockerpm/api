@@ -93,7 +93,7 @@ urlpatterns += [
 ]
 
 
-# """ Folder Management """
+""" Folder Management """
 urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders$',
         views.TeamCollectionPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
@@ -108,7 +108,7 @@ urlpatterns += [
 ]
 
 
-# """ Member Management """
+""" Member Management """
 urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members$', views.MemberPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)$',
@@ -118,7 +118,7 @@ urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)/public_key$',
         views.MemberPwdViewSet.as_view({'get': 'public_key'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)/groups$',
-        views.MemberPwdViewSet.as_view({'get': 'group', 'put': 'group'})),
+        views.MemberPwdViewSet.as_view({'get': 'groups', 'put': 'groups'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/invitation$',
         views.MemberPwdViewSet.as_view({'post': 'invitation_member'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/revoke$',
@@ -128,7 +128,7 @@ urlpatterns += [
 ]
 
 
-# """ Group Management """
+""" Group Management """
 urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups$', views.GroupPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)$',

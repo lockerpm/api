@@ -13,7 +13,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVEN
     SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER, SYNC_EVENT_VAULT
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
-from v1_0.enterprise.members.serializers import DetailMemberSerializer
+from v1_0.enterprise.members.serializers import DetailMemberSerializer, MemberGroupSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -24,7 +24,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
 
     def get_serializer_class(self):
         if self.action in ["group"]:
-            self.serializer_class = None
+            self.serializer_class = MemberGroupSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -306,5 +306,27 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"success": True, "team_ids": list(team_ids)})
 
     @action(methods=["get", "put"], detail=False)
-    def group(self, request, *args, **kwargs):
-        pass
+    def groups(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        team = self.get_object()
+        member_id = kwargs.get("member_id")
+        try:
+            member = team.team_members.get(id=member_id)
+        except TeamMember.DoesNotExist:
+            raise NotFound
+
+        if request.method == "GET":
+            group_ids = list(
+                self.team_member_repository.get_list_groups(member=member).values_list('group_id', flat=True)
+            )
+            return Response(status=200, data=group_ids)
+
+        elif request.method == "PUT":
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            group_ids = validated_data.get("group_ids", [])
+            team_group_ids = list(team.groups.values_list('id', flat=True))
+            valid_group_ids = [group_id for group_id in group_ids if group_id in team_group_ids]
+            self.team_member_repository.update_list_groups(member, valid_group_ids)
+            return Response(status=200, data={"success": True})

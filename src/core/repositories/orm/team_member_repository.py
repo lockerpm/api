@@ -68,3 +68,17 @@ class TeamMemberRepository(ITeamMemberRepository):
         bump_account_revision_date(user=member.user)
 
         return member
+
+    def get_list_groups(self, member: TeamMember):
+        return member.groups_members.all().order_by('group_id')
+
+    def update_list_groups(self, member: TeamMember, group_ids: list) -> TeamMember:
+        role_id = member.role_id
+        if role_id in [MEMBER_ROLE_MEMBER, MEMBER_ROLE_MANAGER]:
+            existed_groups = list(self.get_list_groups(member).values_list('group_id', flat=True))
+            removed_groups = diff_list(existed_groups, group_ids)
+            member.groups_members.filter(group_id__in=removed_groups).delete()
+            member.groups_members.model.create_multiple_by_member(member, *group_ids)
+        # Bump account revision date
+        bump_account_revision_date(team=member.team)
+        return member
