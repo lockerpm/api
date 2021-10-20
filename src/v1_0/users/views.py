@@ -125,7 +125,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             })
             raise ValidationError(detail={"password": ["Password is not correct"]})
         # First, check CyStack database to get existed access token
-        refresh_token_obj = self.session_repository.filter_refresh_tokens(device_identifier=device_identifier).first()
+        refresh_token_obj = self.session_repository.filter_refresh_tokens(
+            user=user, device_identifier=device_identifier
+        ).first()
         # If database does not have refresh token object => Create new one
         if not refresh_token_obj:
             refresh_token_obj = user.user_refresh_tokens.model.retrieve_or_create(user, **{
