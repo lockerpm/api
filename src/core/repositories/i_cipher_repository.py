@@ -21,7 +21,7 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
-    def get_multiple_by_user(self, user, only_personal=False):
+    def get_multiple_by_user(self, user, only_personal=False, only_managed_team=False, only_edited=False):
         pass
 
     @abstractmethod
