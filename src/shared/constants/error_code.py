@@ -120,6 +120,11 @@ APP_CODE += [
 # ------------------------------ TRANSACTION --------------------------------#
 APP_CODE += [
     {
+        "code": "7002",
+        "message": "You need upgrade your plan to execute this operator",
+        "description": "Bạn cần nâng cấp gói để thực hiện hạn động này"
+    },
+    {
         "code": "7003",
         "message": "You don't need pay to execute this operator",
         "description": "Bạn không cần trả tiền để thực hiện hành động này"

@@ -26,7 +26,7 @@ class GroupRepository(IGroupRepository):
         new_collection_ids = [collection.get("id") for collection in collections]
         existed_collection_ids = list(group.collections_groups.values_list('collection_id', flat=True))
         removed_collection_ids = diff_list(existed_collection_ids, new_collection_ids)
-        added_collection_ids = diff_list(new_collection_ids, new_collection_ids)
+        added_collection_ids = diff_list(new_collection_ids, existed_collection_ids)
         if removed_collection_ids:
             group.collections_groups.filter(
                 collection_id__in=removed_collection_ids
