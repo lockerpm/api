@@ -106,7 +106,7 @@ class GroupPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_GROUP_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_GROUP_UPDATED, "collection_id": group.id, "ip_address": ip
+            "type": EVENT_GROUP_UPDATED, "group_id": group.id, "ip_address": ip
         })
         return Response(status=200, data={"id": updated_group.id})
 
