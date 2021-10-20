@@ -12,6 +12,8 @@ from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.folders import Folder
+from cystack_models.models.teams.collections import Collection
+from cystack_models.models.teams.collections_ciphers import CollectionCipher
 from cystack_models.models.teams.collections_members import CollectionMember
 from cystack_models.models.teams.collections_groups import CollectionGroup
 
@@ -218,13 +220,12 @@ class CipherRepository(ICipherRepository):
         bump_account_revision_date(user=user_moved)
 
     def import_multiple_cipher(self, user: User, ciphers, folders, folder_relationships):
-
         # Init id for folders
-        exited_folder_ids = list(Folder.objects.filter(user=user).values_list('id', flat=True))
+        existed_folder_ids = list(Folder.objects.filter(user=user).values_list('id', flat=True))
         for folder in folders:
             while True:
                 new_folder_id = str(uuid.uuid4())
-                if new_folder_id not in exited_folder_ids:
+                if new_folder_id not in existed_folder_ids:
                     break
             folder["id"] = new_folder_id
 
@@ -278,3 +279,89 @@ class CipherRepository(ICipherRepository):
             )
         Cipher.objects.bulk_create(import_ciphers, batch_size=100, ignore_conflicts=True)
         bump_account_revision_date(user=user)
+
+    def import_multiple_cipher_team(self, team: Team, ciphers, collections, collection_relationships):
+        # Init id for collections
+        existed_collection_ids = list(team.collections.values_list('id', flat=True))
+        for collection in collections:
+            while True:
+                new_collection_id = str(uuid.uuid4())
+                if new_collection_id not in existed_collection_ids:
+                    break
+            collection["id"] = new_collection_id
+
+        # Init id for ciphers
+        existed_cipher_ids = list(team.ciphers.values_list('id', flat=True))
+        for cipher in ciphers:
+            while True:
+                new_cipher_id = str(uuid.uuid4())
+                if new_cipher_id not in existed_cipher_ids:
+                    break
+            cipher["id"] = new_cipher_id
+
+        # Create the collection associations based on the newly created collection ids
+        collection_ciphers = []
+        for collection_relationship in collection_relationships:
+            try:
+                cipher = ciphers[collection_relationship["key"]]
+                collection = collections[collection_relationship["value"]]
+            except (KeyError, ValueError):
+                continue
+            collection_ciphers.append({"cipher_id": cipher.get("id"), "collection_id": collection.get("id")})
+
+        # Create multiple collections
+        import_collections = []
+        for collection in collections:
+            import_collections.append(
+                Collection(
+                    id=collection.get("id"), team=team, name=collection.get("name"),
+                    creation_date=now(return_float=True), revision_date=now(return_float=True),
+                    external_id=None, is_default=False
+                )
+            )
+        Collection.objects.bulk_create(import_collections, batch_size=100, ignore_conflicts=True)
+
+        # Create multiple ciphers
+        import_ciphers = []
+        for cipher_data in ciphers:
+            cipher_type = cipher_data.get("type")
+            if cipher_type == CIPHER_TYPE_LOGIN:
+                cipher_data["data"] = dict(cipher_data.get("login"))
+            elif cipher_type == CIPHER_TYPE_CARD:
+                cipher_data["data"] = dict(cipher_data.get("card"))
+            elif cipher_type == CIPHER_TYPE_IDENTITY:
+                cipher_data["data"] = dict(cipher_data.get("identity"))
+            elif cipher_type == CIPHER_TYPE_NOTE:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            cipher_data["data"]["name"] = cipher_data.get("name")
+            if cipher_data.get("notes"):
+                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data = json.loads(json.dumps(cipher_data))
+            import_ciphers.append(
+                Cipher(
+                    creation_date=cipher_data.get("creation_date", now()),
+                    revision_date=cipher_data.get("revision_date", now()),
+                    deleted_date=cipher_data.get("deleted_date"),
+                    reprompt=cipher_data.get("reprompt", 0) or 0,
+                    score=cipher_data.get("score", 0),
+                    type=cipher_data.get("type"),
+                    data=cipher_data.get("data"),
+                    team_id=team.id,
+                    folders=cipher_data.get("folders", ""),
+                )
+            )
+        Cipher.objects.bulk_create(import_ciphers, batch_size=100, ignore_conflicts=True)
+
+        # Create collection cipher
+        import_collection_ciphers = []
+        for collection_cipher in collection_ciphers:
+            import_collections.append(
+                CollectionCipher(
+                    cipher_id=collection_cipher.get("cipher_id"),
+                    collection_id=collection_cipher.get("collection_id")
+                )
+            )
+        CollectionCipher.objects.bulk_create(import_collection_ciphers, batch_size=100, ignore_conflicts=True)
+
+        # Bump account revision date
+        bump_account_revision_date(team=team)
