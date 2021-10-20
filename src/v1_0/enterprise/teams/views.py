@@ -10,7 +10,8 @@ from shared.constants.event import EVENT_TEAM_PURGED_DATA, EVENT_TEAM_UPDATED
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
-from v1_0.enterprise.teams.serializers import ListTeamSerializer, UpdateTeamPwdSerializer
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT
+from v1_0.enterprise.teams.serializers import ListTeamSerializer, UpdateTeamPwdSerializer, ImportTeamSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -23,6 +24,8 @@ class TeamPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = ListTeamSerializer
         elif self.action in ["update"]:
             self.serializer_class = UpdateTeamPwdSerializer
+        elif self.action in ["import_data"]:
+            self.serializer_class = ImportTeamSerializer
         return super(TeamPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -82,7 +85,17 @@ class TeamPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def import_data(self, request, *args, **kwargs):
-        pass
+        self.check_pwd_session_auth(request=request)
+        team = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        ciphers = validated_data.get("ciphers", [])
+        collections = validated_data.get("collections", [])
+        collection_relationships = validated_data.get("folderRelationships", [])
+        self.cipher_repository.import_multiple_cipher_team(team, ciphers, collections, collection_relationships)
+        PwdSync(event=SYNC_EVENT_VAULT, team=team).send()
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def dashboard(self, request, *args, **kwargs):
