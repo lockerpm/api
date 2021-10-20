@@ -25,7 +25,7 @@ class Collection(models.Model):
             name=data.get("name"),
             creation_date=data.get("creation_date", now()),
             revision_date=data.get("revision_date", now()),
-            external_id=uuid.uuid4(),
+            external_id=data.get("external_id", None),
             is_default=data.get("is_default", False)
         )
         new_collection.save()
