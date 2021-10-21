@@ -11,7 +11,7 @@ from shared.constants.event import *
 from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync
+from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -237,6 +237,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.user_repository.purge_account(user=user)
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
