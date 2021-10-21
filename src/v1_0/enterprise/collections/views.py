@@ -143,6 +143,6 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
                 id__in=members
             )
             members_data = members_obj.values('id', 'role')
-            self.collection_repository.save_update_user_collection(collection=collection, *members_data)
+            self.collection_repository.save_update_user_collection(collection, *members_data)
             PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], team=team).send()
             return Response(status=200, data={"success": True})
