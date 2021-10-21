@@ -35,7 +35,7 @@ class Command(BaseCommand):
             {"scope": "collection", "codename": "list", "description": "Can get list collections", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "collection", "codename": "create", "description": "Can create a collection", "roles": ["owner", "admin"]},
-            {"scope": "collection", "codename": "update", "description": "Can update a collection", "roles": ["owner", "admin", "manager"]},
+            {"scope": "collection", "codename": "update", "description": "Can update a collection", "roles": ["owner", "admin"]},
             {"scope": "collection", "codename": "destroy", "description": "Can delete collections",   "roles": ["owner", "admin"]},
 
             # Groups perms
@@ -59,9 +59,18 @@ class Command(BaseCommand):
 
             if "member" in perm["roles"]:
                 member_role.add_role_perm(perm_obj)
+            else:
+                member_role.remove_role_perm(perm_obj)
             if "owner" in perm["roles"]:
                 owner_role.add_role_perm(perm_obj)
+            else:
+                owner_role.remove_role_perm(perm_obj)
             if "admin" in perm["roles"]:
                 admin_role.add_role_perm(perm_obj)
+            else:
+                admin_role.remove_role_perm(perm_obj)
             if "manager" in perm["roles"]:
                 manager_role.add_role_perm(perm_obj)
+            else:
+                manager_role.remove_role_perm(perm_obj)
+
