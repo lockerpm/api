@@ -45,7 +45,7 @@ class Command(BaseCommand):
             {"scope": "group", "codename": "update", "description": "Can update a group", "roles": ["owner", "admin"]},
             {"scope": "group", "codename": "destroy", "description": "Can delete groups", "roles": ["owner", "admin"]},
 
-            # Groups perms
+            # Event perms
             {"scope": "event", "codename": "list", "description": "Can get list event", "roles": ["owner", "admin", "manager"]},
             {"scope": "event", "codename": "retrieve", "description": "Can retrieve an event", "roles": ["owner", "admin", "manager"]},
         ]

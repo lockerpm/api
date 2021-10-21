@@ -15,7 +15,7 @@ class ISessionRepository(ABC):
         pass
 
     @abstractmethod
-    def filter_refresh_tokens(self, device_identifier: str):
+    def filter_refresh_tokens(self, user: User, device_identifier: str):
         pass
 
     @abstractmethod
