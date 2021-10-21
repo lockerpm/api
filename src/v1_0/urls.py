@@ -116,6 +116,13 @@ urlpatterns += [
 """ Member Management """
 urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members$', views.MemberPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/invitation$',
+        views.MemberPwdViewSet.as_view({'post': 'invitation_member'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/revoke$',
+        views.MemberPwdViewSet.as_view({'post': 'revoke_invitation'})),
+    url(r'^teams/members/invitation/confirmation$',
+        views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
+
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)$',
         views.MemberPwdViewSet.as_view({'post': 'confirm', 'put': 'update', 'delete': 'destroy'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)/reinvite$',
@@ -124,12 +131,7 @@ urlpatterns += [
         views.MemberPwdViewSet.as_view({'get': 'public_key'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)/groups$',
         views.MemberPwdViewSet.as_view({'get': 'groups', 'put': 'groups'})),
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/invitation$',
-        views.MemberPwdViewSet.as_view({'post': 'invitation_member'})),
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/revoke$',
-        views.MemberPwdViewSet.as_view({'post': 'revoke_invitation'})),
-    url(r'^teams/members/invitation/confirmation$',
-        views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
+
 ]
 
 

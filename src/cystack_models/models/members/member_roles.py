@@ -27,3 +27,6 @@ class MemberRole(models.Model):
     def add_role_perm(self, perm_obj):
         if self.role_permissions.filter(permission=perm_obj).exists() is False:
             self.role_permissions.model.create(self, perm_obj)
+
+    def remove_role_perm(self, perm_obj):
+        self.role_permissions.filter(permission=perm_obj).delete()

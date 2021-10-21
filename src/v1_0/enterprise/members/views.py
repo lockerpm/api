@@ -32,6 +32,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             team = self.team_repository.get_by_id(team_id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=team)
             if self.action in ["create", "update", "invitation_member", "public_key"]:
+                print("AAAAAAAAAsasas")
                 if self.team_repository.is_locked(team):
                     raise ValidationError({"non_field_errors": [gen_error("3003")]})
             return team
@@ -179,10 +180,12 @@ class MemberPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def invitation_member(self, request, *args, **kwargs):
+        print("AAAAAAAAAAA")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         added_members = []
         members = request.data.get("members", [])
+        print("members: ", members)
         # Validate members
         if not isinstance(members, list):
             raise ValidationError(detail={"members": ["Members are not valid. This field must be an array"]})
