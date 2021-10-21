@@ -125,7 +125,7 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         collection = self.get_collection(team=team)
 
         if request.method == "GET":
-            collection_members = collection.collections_members.all().values_list('id', flat=True)
+            collection_members = collection.collections_members.all().values_list('member_id', flat=True)
             members = team.team_members.filter(
                 Q(id__in=list(collection_members)) | Q(role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN])
             ).distinct()
