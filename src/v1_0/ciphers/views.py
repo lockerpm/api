@@ -39,7 +39,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         try:
             cipher = self.cipher_repository.get_by_id(cipher_id=self.kwargs.get("pk"))
             if cipher.team:
-                self.check_object_permissions(request=self.request, obj=cipher.team)
+                self.check_object_permissions(request=self.request, obj=cipher)
             else:
                 if cipher.user != self.request.user:
                     raise NotFound
@@ -88,8 +88,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Check permission of user here
         ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
         teams = self.team_repository.get_multiple_team_by_ids(ciphers.values_list('team_id', flat=True))
-        for team in teams:
-            self.check_object_permissions(request=request, obj=team)
         self.cipher_repository.delete_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
         PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
@@ -112,8 +110,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Check permission of user here
         ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
         teams = self.team_repository.get_multiple_team_by_ids(ciphers.values_list('team_id', flat=True))
-        for team in teams:
-            self.check_object_permissions(request=request, obj=team)
         # We will get list ciphers of user (personal ciphers and managed ciphers)
         # Then delete all them and bump revision date of users
         # Finally, we send sync event to all relational users
@@ -138,8 +134,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Check permission of user here
         ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
         teams = self.team_repository.get_multiple_team_by_ids(team_ids=list(ciphers.values_list('team_id', flat=True)))
-        for team in teams:
-            self.check_object_permissions(request=request, obj=team)
         # We will set deleted_date of cipher to null
         # Then bump revision date of users and send sync event to all relational users
         self.cipher_repository.restore_multiple_cipher(cipher_ids=cipher_ids, user_restored=request.user)
@@ -184,7 +178,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         folder_id = validated_data.get("folderId")
 
         self.cipher_repository.move_multiple_cipher(cipher_ids=cipher_ids, user_moved=request.user, folder_id=folder_id)
-        PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
