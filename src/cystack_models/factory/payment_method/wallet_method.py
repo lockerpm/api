@@ -34,6 +34,7 @@ class WalletPaymentMethod(IPaymentMethod):
         :return:
         """
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
         currency = kwargs.get("currency", CURRENCY_VND)
         # First, call to CyStack ID to pay
         payment_data = {
@@ -59,9 +60,11 @@ class WalletPaymentMethod(IPaymentMethod):
                 "scope": self.scope,
                 "metadata": kwargs
             })
-            new_invoice.set_paid()
+            payment_repository.set_paid(payment=new_invoice)
             # Upgrade user plan
-            self.user.update_plan(scope=self.scope, plan_type_alias=plan_type, duration=duration, **kwargs)
+            user_repository.update_plan(
+                user=self.user, plan_type_alias=plan_type, duration=duration, scope=self.scope, **kwargs
+            )
             # Send mail
             LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
                 func_name="pay_successfully", **{"payment": new_invoice}

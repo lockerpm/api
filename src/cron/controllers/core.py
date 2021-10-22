@@ -23,7 +23,6 @@ class CronTask:
 
     def subscription_by_wallet(self):
         try:
-            close_old_connections()
             pm_subscription()
             self.logger.info("[+] subscription_by_wallet Done")
         except Exception as e:
