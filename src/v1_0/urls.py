@@ -107,9 +107,7 @@ urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
         views.TeamCollectionPwdViewSet.as_view({'post': 'destroy'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/users$',
-        views.TeamCollectionPwdViewSet.as_view({'get': 'users', 'put': 'users'})),
-    # url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/groups$',
-    #     views.TeamPwdFolderViewSet.as_view({'get': 'groups', 'put': 'groups'})),
+        views.TeamCollectionPwdViewSet.as_view({'get': 'users', 'put': 'users'}))
 ]
 
 

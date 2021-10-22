@@ -12,7 +12,7 @@ class LockerPermission(AppBasePermission):
         role = member.role
         role_permissions = role.get_permissions()
         role_pattern = self.get_role_pattern(view)
-        return role_pattern in role_permissions
+        return member.status == PM_MEMBER_STATUS_CONFIRMED and role_pattern in role_permissions
 
     def can_edit_cipher(self, user, cipher: Cipher):
         from cystack_models.models.teams.collections_groups import CollectionGroup

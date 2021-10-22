@@ -59,11 +59,12 @@ class TeamMemberRepository(ITeamMemberRepository):
         member.role_id = role_id
         member.save()
         # Update member collections
-        if role_id in [MEMBER_ROLE_MEMBER, MEMBER_ROLE_MANAGER]:
-            existed_collection_ids = list(member.collections_members.values_list('collection_id', flat=True))
-            removed_collection_ids = diff_list(existed_collection_ids, collection_ids)
-            member.collections_members.filter(collection_id__in=removed_collection_ids).delete()
-            member.collections_members.model.create_multiple(member, *collection_ids)
+        if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
+            collection_ids = []
+        existed_collection_ids = list(member.collections_members.values_list('collection_id', flat=True))
+        removed_collection_ids = diff_list(existed_collection_ids, collection_ids)
+        member.collections_members.filter(collection_id__in=removed_collection_ids).delete()
+        member.collections_members.model.create_multiple(member, *collection_ids)
         # Bump revision date
         bump_account_revision_date(user=member.user)
 

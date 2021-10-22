@@ -6,7 +6,6 @@ from shared.constants.members import PM_MEMBER_STATUS_CONFIRMED
 
 
 API_SYNC = "{}/micro_services/cystack_platform/pm/sync".format(settings.GATEWAY_API)
-# API_SYNC = "{}/micro_services/cystack_platform/pm/sync".format("https://gateway.staging.cystack.org")
 HEADERS = {
     'User-agent': 'CyStack Locker',
     "Authorization": settings.MICRO_SERVICE_USER_AUTH
