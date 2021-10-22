@@ -25,7 +25,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
     def get_serializer_class(self):
-        if self.action in ["group"]:
+        if self.action in ["groups"]:
             self.serializer_class = MemberGroupSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
