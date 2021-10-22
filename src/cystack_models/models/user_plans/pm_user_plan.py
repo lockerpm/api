@@ -107,18 +107,21 @@ class PMUserPlan(UserPlan):
         :param duration:
         :return:
         """
+        # if this plan is not subscription plan => Return None
+        if self.get_plan_type_alias() in [PLAN_TYPE_PM_FREE]:
+            return None
         # If subscription object is None => Get next billing time of this user plan
         stripe_subscription = self.get_stripe_subscription()
-        if not stripe_subscription:
-            # If user subscribed a plan
-            if self.end_period:
-                return self.end_period
-            # User is not still subscribe any subscription
-            return now() + Payment.get_duration_month_number(duration=duration) * 30 * 86400
-        else:
+        if stripe_subscription:
             if stripe_subscription.status == "trialing":
                 return stripe_subscription.trial_end
             return stripe_subscription.current_period_end
+
+        # If user subscribed a plan
+        if self.end_period:
+            return self.end_period
+        # User is not still subscribe any subscription
+        return now() + Payment.get_duration_month_number(duration=duration) * 30 * 86400
 
     def get_current_number_members(self):
         return self.number_members
