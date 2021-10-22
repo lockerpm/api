@@ -11,6 +11,10 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super(CollectionSerializer, self).to_representation(instance)
+        action = self.context["view"].action
+        if action == "retrieve":
+            data["group_ids"] = list(instance.collections_groups.values_list('group_id', flat=True))
+
         return data
 
 

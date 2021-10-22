@@ -1,3 +1,5 @@
+from cystack_models.models import Cipher
+from shared.constants.members import *
 from shared.permissions.app import AppBasePermission
 
 
@@ -11,3 +13,36 @@ class LockerPermission(AppBasePermission):
         role_permissions = role.get_permissions()
         role_pattern = self.get_role_pattern(view)
         return role_pattern in role_permissions
+
+    def can_edit_cipher(self, user, cipher: Cipher):
+        from cystack_models.models.teams.collections_groups import CollectionGroup
+
+        if cipher.user == user:
+            return True
+
+        # Check member is confirmed
+        member = self.get_team_member(user=user, obj=cipher.team)
+        if member.status != PM_MEMBER_STATUS_CONFIRMED:
+            return False
+        # Check is owner or admin
+        role_id = member.role_id
+        if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
+            return True
+        if role_id in [MEMBER_ROLE_MEMBER]:
+            return False
+        # Check member collection: Member belongs to one of collections of cipher and member has write permission
+        cipher_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
+        member_collection_ids = list(member.collections_members.values_list('collection_id', flat=True))
+        if any(collection_id in cipher_collection_ids for collection_id in member_collection_ids) and \
+                role_id != MEMBER_ROLE_MEMBER:
+            return True
+
+        # Check member group: Member belongs to one of groups of cipher collections
+        member_group_ids = list(member.groups_members.values_list('group_id', flat=True))
+        cipher_group_ids = list(CollectionGroup.objects.filter(
+            collection_id=cipher_collection_ids
+        ).values_list('group_id', flat=True))
+        if any(group_id in cipher_group_ids for group_id in member_group_ids):
+            return True
+
+        return False

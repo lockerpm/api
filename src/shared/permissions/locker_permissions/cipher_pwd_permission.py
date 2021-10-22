@@ -17,24 +17,17 @@ class CipherPwdPermission(LockerPermission):
         :return:
         """
         if view.action in ["update", "share"]:
-            member = self.get_team_member(user=request.user, obj=obj.team)
-            # Check is owner or admin
-            role_id = member.role_id
-            is_owner_or_admin = role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
-            # Check is a member of access all groups
-            group_access_all = obj.team.groups.filter(access_all=True).values_list('id', flat=True)
-            is_allow_group = member.groups_members.filter(group_id__in=list(group_access_all)).exists()
-            return is_allow_group or is_owner_or_admin
+            return self.can_edit_cipher(request.user, obj)
 
-        return super(CipherPwdPermission, self).has_object_permission(request, view, obj)
+        return super(CipherPwdPermission, self).has_object_permission(request, view, obj.team)
 
     def get_role_pattern(self, view):
-        map_action_to_perm = {
-            "multiple_delete": "destroy",
-            "multiple_permanent_delete": "destroy",
-            "multiple_restore": "destroy",
-            "vaults": "create"
-        }
-        if view.action in list(map_action_to_perm.keys()):
-            return "{}.{}".format(self.scope, map_action_to_perm.get(view.action))
+        # map_action_to_perm = {
+        #     "multiple_delete": "destroy",
+        #     "multiple_permanent_delete": "destroy",
+        #     "multiple_restore": "destroy",
+        #     "vaults": "create"
+        # }
+        # if view.action in list(map_action_to_perm.keys()):
+        #     return "{}.{}".format(self.scope, map_action_to_perm.get(view.action))
         return super(CipherPwdPermission, self).get_role_pattern(view)
