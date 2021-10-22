@@ -32,8 +32,8 @@ class Command(BaseCommand):
             {"scope": "cipher", "codename": "destroy", "description": "Can delete ciphers", "roles": ["owner", "admin", "manager"]},
 
             # Collection perms
-            {"scope": "collection", "codename": "list", "description": "Can get list collections", "roles": ["owner", "admin", "manager", "member"]},
-            {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager", "member"]},
+            {"scope": "collection", "codename": "list", "description": "Can get list collections", "roles": ["owner", "admin", "manager"]},
+            {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager"]},
             {"scope": "collection", "codename": "create", "description": "Can create a collection", "roles": ["owner", "admin"]},
             {"scope": "collection", "codename": "update", "description": "Can update a collection", "roles": ["owner", "admin"]},
             {"scope": "collection", "codename": "destroy", "description": "Can delete collections",   "roles": ["owner", "admin"]},
@@ -46,8 +46,8 @@ class Command(BaseCommand):
             {"scope": "group", "codename": "destroy", "description": "Can delete groups", "roles": ["owner", "admin"]},
 
             # Event perms
-            {"scope": "event", "codename": "list", "description": "Can get list event", "roles": ["owner", "admin", "manager"]},
-            {"scope": "event", "codename": "retrieve", "description": "Can retrieve an event", "roles": ["owner", "admin", "manager"]},
+            {"scope": "event", "codename": "list", "description": "Can get list event", "roles": ["owner", "admin"]},
+            {"scope": "event", "codename": "retrieve", "description": "Can retrieve an event", "roles": ["owner", "admin"]},
         ]
         for perm in perms_list:
             if Permission.objects.filter(scope=perm.get("scope"), codename=perm.get("codename")).exists() is False:

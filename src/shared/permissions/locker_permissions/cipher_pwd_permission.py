@@ -10,7 +10,6 @@ class CipherPwdPermission(LockerPermission):
 
     def has_object_permission(self, request, view, obj):
         """
-
         :param request:
         :param view:
         :param obj: (obj) Cipher object

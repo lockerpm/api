@@ -58,7 +58,7 @@ class SyncProfileSerializer(serializers.ModelSerializer):
         }
         organizations = []
         for team_member in team_members:
-            team_member_data = constant_team_data
+            team_member_data = constant_team_data.copy()
             team_member_data.update({
                 "enabled": True if not team_member.team.locked else False,
                 "id": team_member.team_id,
