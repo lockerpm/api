@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 
 from core.repositories import ICipherRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -45,6 +45,33 @@ class CipherRepository(ICipherRepository):
         personal_ciphers = Cipher.objects.filter(user=user)
         if only_personal is True:
             return personal_ciphers
+
+        confirmed_team_members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
+        if only_managed_team:
+            confirmed_team_members = confirmed_team_members.filter(team__locked=False)
+
+        confirmed_team_ids = confirmed_team_members.values_list('team_id', flat=True)
+        team_ciphers = Cipher.objects.filter(
+            team_id__in=confirmed_team_ids
+        ).filter(
+            Q(team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user) |
+            Q(team__groups__access_all=True, team__team_members__user=user) |
+            Q(
+                collections_ciphers__collection__collections_members__member__in=confirmed_team_members,
+                team__team_members__user=user
+            ) |
+            Q(
+                collections_ciphers__collection__collections_groups__group__groups_members__member__in=confirmed_team_members,
+                team__team_members__user=user
+            )
+        )
+        if only_edited:
+            team_ciphers = team_ciphers.filter(
+                team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
+                team__team_members__user=user
+            )
+
+        return (personal_ciphers | team_ciphers).distinct()
 
         members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         if only_edited is True:

@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from shared.background import *
+from shared.constants.event import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
@@ -32,6 +34,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             team = self.team_repository.get_by_id(team_id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=team)
             if self.action in ["create", "update", "invitation_member", "public_key"]:
+                print("AAAAAAAAAsasas")
                 if self.team_repository.is_locked(team):
                     raise ValidationError({"non_field_errors": [gen_error("3003")]})
             return team
@@ -83,6 +86,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=member_serializer.data)
 
     def create(self, request, *args, **kwargs):
+        ip = request.data.get("ip")
+        user = self.request.user
         self.check_pwd_session_auth(request)
         team = self.get_object()
         added_members = []
@@ -116,6 +121,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                     collection_ids=member_collections
                 )
                 PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=[member_obj.user_id]).send()
+                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+                    "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+                    "type": EVENT_MEMBER_INVITED, "team_member_id": member_obj.id, "ip_address": ip
+                })
                 added_members.append(member_obj.user_id)
 
         result = {
@@ -126,6 +135,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         user = self.request.user
         team = self.get_object()
@@ -151,6 +161,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         self.team_member_repository.update_member(member=member_obj, role_id=role, collection_ids=member_collections)
         # Sync data for updated member
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[member_obj.user_id]).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_MEMBER_UPDATED, "team_member_id": member_obj.id, "ip_address": ip
+        })
         return Response(status=200, data={"success": True})
 
     def destroy(self, request, *args, **kwargs):
@@ -158,6 +172,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         team = self.get_object()
         member_id = kwargs.get("member_id")
         user = self.request.user
+        ip = request.data.get("ip")
         try:
             member = team.team_members.get(id=member_id)
         except TeamMember.DoesNotExist:
@@ -170,6 +185,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         member.delete()
         # Sync data of member
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_MEMBER_REMOVED, "team_member_id": member_id, "ip_address": ip
+        })
         # Return response data to API Gateway to send mail
         return Response(status=200, data={
             "team_id": team.id,
@@ -179,6 +198,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def invitation_member(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
         self.check_pwd_session_auth(request)
         team = self.get_object()
         added_members = []
@@ -219,6 +240,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                     "token": token,
                     "email": member_obj.email
                 })
+                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+                    "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+                    "type": EVENT_MEMBER_INVITED, "team_member_id": member_obj.id, "ip_address": ip
+                })
         return Response(status=200, data=added_members)
 
     @action(methods=["post"], detail=False)
@@ -246,6 +271,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def confirm(self, request, *args, **kwargs):
+        ip = request.data.get("ip")
+        user = self.request.user
         self.check_pwd_session_auth(request)
         team = self.get_object()
         member_id = kwargs.get("member_id")
@@ -262,6 +289,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         member.status = PM_MEMBER_STATUS_CONFIRMED
         member.save()
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
+        })
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
@@ -322,6 +353,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             return Response(status=200, data=group_ids)
 
         elif request.method == "PUT":
+            ip = request.data.get("ip")
+            user = self.request.user
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             validated_data = serializer.validated_data
@@ -329,4 +362,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             team_group_ids = list(team.groups.values_list('id', flat=True))
             valid_group_ids = [group_id for group_id in group_ids if group_id in team_group_ids]
             self.team_member_repository.update_list_groups(member, valid_group_ids)
+            # Sync data for this user
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+                "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
+            })
             return Response(status=200, data={"success": True})
