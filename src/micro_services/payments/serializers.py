@@ -103,9 +103,21 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                     "key": stripe_metadata.get("key"),
                     "collection_name": stripe_metadata.get("collection_name")
                 }
-                user_repository.update_plan(
-                    new_payment.user, plan_type_alias=new_payment.plan, scope=scope, **subscription_metadata
+
+                updated_user_plan = user_repository.update_plan(
+                    new_payment.user, plan_type_alias=new_payment.plan, duration=new_payment.duration, scope=scope,
+                    **subscription_metadata
                 )
+                primary_team = user_repository.get_default_team(user=new_payment.user)
+                result["payment_data"] = {
+                    "team_id": primary_team.id,
+                    "team_name": primary_team.name,
+                    "plan_name": updated_user_plan.get_plan_type_name(),
+                    "plan_price": updated_user_plan.pm_plan.get_price(
+                        currency=new_payment.currency, duration=new_payment.duration
+                    ),
+                    "number_members": new_payment.get_metadata().get("number_members", 1) or 1
+                }
 
         else:
             new_payment = payment_repository.set_failed(new_payment, failure_reason=validated_data.get("failure_reason"))
