@@ -121,10 +121,11 @@ class VaultItemSerializer(serializers.Serializer):
         if organization_id:
             try:
                 team_member = user.team_members.get(
-                    team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN],
+                    team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
                 )
                 # Get team object and check team is locked?
                 team_obj = team_member.team
+                role_id = team_member.role_id
                 if not team_obj.key:
                     raise serializers.ValidationError(detail={"organizationId": [
                         "This team does not exist", "Team này không tồn tại"
@@ -135,9 +136,20 @@ class VaultItemSerializer(serializers.Serializer):
 
                 if not collection_ids:
                     default_collection_id = team_repository.get_default_collection(team=team_obj).id
+                    if role_id == MEMBER_ROLE_MANAGER and team_member.collections_members.filter(
+                        collection_id=default_collection_id
+                    ).exists() is False:
+                        raise serializers.ValidationError(detail={
+                            "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
+                        })
                     data["collectionIds"] = [default_collection_id]
                 else:
-                    team_collections_ids = team_repository.get_list_collection_ids(team=team_obj)
+                    if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
+                        team_collections_ids = team_repository.get_list_collection_ids(team=team_obj)
+                    else:
+                        team_collections_ids = list(
+                            team_member.collections_members.values_list('collection_id', flat=True)
+                        )
                     for collection_id in collection_ids:
                         if collection_id not in list(team_collections_ids):
                             raise serializers.ValidationError(detail={
