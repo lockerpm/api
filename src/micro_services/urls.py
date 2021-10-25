@@ -20,6 +20,6 @@ urlpatterns += [
         views.PaymentViewSet.as_view({'post': 'webhook_set_status'})),
     url(r'^payments/webhook/customers/(?P<pk>[a-zA-Z0-9\_]+)$',
         views.PaymentViewSet.as_view({'post': 'webhook_unpaid_subscription', 'put': 'webhook_cancel_subscription'})),
-    url(r'^payments/pm/banking/callback$', views.PaymentViewSet.as_view({'post': 'banking_callback'})),
+    url(r'^payments/banking/callback$', views.PaymentViewSet.as_view({'post': 'banking_callback'})),
     url(r'^payments/referral$', views.PaymentViewSet.as_view({'post': 'referral_payment'})),
 ]
