@@ -26,7 +26,7 @@ class CollectionRepository(ICollectionRepository):
         # Collections that user is an owner or admin or user belongs to a group that can access all.
         access_all_teams = list(members.filter(
             Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]) |
-            Q(team__groups__access_all=True)
+            Q(team__groups__access_all=True, team__groups__groups_members__member__user=user)
         ).values_list('team_id', flat=True))
         access_all_collections = Collection.objects.filter(team_id__in=access_all_teams)
 
