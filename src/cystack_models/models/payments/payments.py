@@ -64,7 +64,7 @@ class Payment(models.Model):
             currency=currency, metadata=metadata
         )
         new_payment.save()
-        new_payment.payment_id = "CS{}".format(10000 + new_payment.id)
+        new_payment.payment_id = "CL{}".format(10000 + new_payment.id)
         new_payment.save()
 
         # Set promo code and customer
