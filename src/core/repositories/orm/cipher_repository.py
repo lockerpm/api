@@ -55,7 +55,7 @@ class CipherRepository(ICipherRepository):
             team_id__in=confirmed_team_ids
         ).filter(
             Q(team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user) |
-            Q(team__groups__access_all=True, team__team_members__user=user) |
+            Q(team__groups__access_all=True, team__groups__groups_members__member__user=user) |
             Q(
                 collections_ciphers__collection__collections_members__member__in=confirmed_team_members,
                 team__team_members__user=user
@@ -70,7 +70,9 @@ class CipherRepository(ICipherRepository):
                 team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
                 team__team_members__user=user
             )
-
+        return Cipher.objects.filter(
+            id__in=list(personal_ciphers.values_list('id', flat=True)) + list(team_ciphers.values_list('id', flat=True))
+        )
         return (personal_ciphers | team_ciphers).distinct()
 
         members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
