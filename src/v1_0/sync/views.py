@@ -16,9 +16,9 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     def sync(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-        ciphers = self.cipher_repository.get_multiple_by_user(user=user)
+        ciphers = self.cipher_repository.get_multiple_by_user(user=user).prefetch_related('collections_ciphers')
         folders = self.folder_repository.get_multiple_by_user(user=user)
-        collections = self.collection_repository.get_multiple_user_collections(user=user)
+        collections = self.collection_repository.get_multiple_user_collections(user=user).select_related('team')
         sync_data = {
             "object": "sync",
             "profile": SyncProfileSerializer(user, many=False).data,
