@@ -14,3 +14,4 @@ class MicroServiceViewSet(AppGeneralViewSet):
     """
     user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+    payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()

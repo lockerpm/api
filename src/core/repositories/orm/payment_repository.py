@@ -20,20 +20,24 @@ class PaymentRepository(IPaymentRepository):
     def set_paid(self, payment: Payment):
         payment.status = PAYMENT_STATUS_PAID
         payment.save()
+        return payment
 
     def set_past_due(self, payment: Payment, failure_reason=None):
         payment.failure_reason = failure_reason
         payment.status = PAYMENT_STATUS_PAST_DUE
         payment.save()
+        return payment
 
     def set_failed(self, payment: Payment, failure_reason=None):
         payment.failure_reason = failure_reason
         payment.status = PAYMENT_STATUS_FAILED
         payment.save()
+        return payment
 
     def set_processing(self, payment: Payment):
         payment.status = PAYMENT_STATUS_PROCESSING
         payment.save()
+        return payment
 
     def pending_cancel(self, payment: Payment):
         payment.delete()
@@ -42,4 +46,5 @@ class PaymentRepository(IPaymentRepository):
         if payment.stripe_invoice_id is not None:
             invoice = stripe.Invoice.retrieve(payment.stripe_invoice_id)
             invoice.pay()
+        return payment
 
