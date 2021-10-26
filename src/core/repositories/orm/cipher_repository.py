@@ -124,7 +124,7 @@ class CipherRepository(ICipherRepository):
         :return:
         """
         favorite = cipher_data.get("favorite", False)
-        folder_id = cipher_data.get("folder_id", False)
+        folder_id = cipher_data.get("folder_id", None)
         user_created_id = cipher_data.get("user_id")
         user_cipher_id = cipher_data.get("user_id")
         team_id = cipher_data.get("team_id")
@@ -147,10 +147,10 @@ class CipherRepository(ICipherRepository):
         cipher.save()
         # Create CipherFavorite
         if user_created_id and favorite:
-            cipher.set_favorite(user_cipher_id, True)
+            cipher.set_favorite(user_created_id, True)
         # Create CipherFolder
-        if folder_id:
-            cipher.set_folder(user_cipher_id, folder_id)
+        if user_created_id and folder_id:
+            cipher.set_folder(user_created_id, folder_id)
         # Create CipherCollections
         if team_id:
             cipher.collections_ciphers.model.create_multiple(cipher.id, *collection_ids)
