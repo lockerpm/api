@@ -277,3 +277,30 @@ class ImportCipherSerializer(serializers.Serializer):
         if len(folders) > 200:
             raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
         return data
+
+
+class SyncOfflineVaultItemSerializer(VaultItemSerializer):
+    id = serializers.CharField(required=False, allow_null=True)
+
+
+class SyncOfflineFolderSerializer(FolderSerializer):
+    id = serializers.CharField(required=False, allow_null=True)
+
+
+class SyncOfflineCipherSerializer(serializers.Serializer):
+    ciphers = SyncOfflineVaultItemSerializer(many=True)
+    folders = SyncOfflineFolderSerializer(many=True)
+    folderRelationships = FolderRelationshipSerializer(many=True)
+
+    def validate(self, data):
+        ciphers = data.get("ciphers", [])
+        folders = data.get("folders", [])
+        folder_relationships = data.get("folderRelationships", [])
+        if len(ciphers) > 1000:
+            raise serializers.ValidationError(detail={"ciphers": ["You cannot import this much data at once"]})
+        if len(folder_relationships) > 1000:
+            raise serializers.ValidationError(
+                detail={"folderRelationships": ["You cannot import this much data at once"]})
+        if len(folders) > 200:
+            raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
+        return data
