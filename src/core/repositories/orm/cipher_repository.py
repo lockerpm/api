@@ -337,6 +337,114 @@ class CipherRepository(ICipherRepository):
         Cipher.objects.bulk_create(import_ciphers, batch_size=100, ignore_conflicts=True)
         bump_account_revision_date(user=user)
 
+    def sync_personal_cipher_offline(self, user: User, ciphers, folders, folder_relationships):
+        # Init id for folders
+        existed_folder_ids = list(Folder.objects.filter(user=user).values_list('id', flat=True))
+        for folder in folders:
+            if not folder.get("id"):
+                while True:
+                    new_folder_id = str(uuid.uuid4())
+                    if new_folder_id not in existed_folder_ids:
+                        break
+                folder["id"] = new_folder_id
+
+        # Create the folder associations based on the newly created folder ids
+        for folder_relationship in folder_relationships:
+            try:
+                cipher = ciphers[folder_relationship["key"]]
+                folder = folders[folder_relationship["value"]]
+            except (KeyError, ValueError):
+                continue
+
+            cipher["folders"] = "{%d: '%s'}" % (user.user_id, folder.get("id"))
+
+        # Create multiple folders
+        sync_folders = []
+        for folder in folders:
+            sync_folders.append(
+                Folder(id=folder["id"], name=folder["name"], user=user, creation_date=now(), revision_date=now())
+            )
+        Folder.objects.bulk_create(sync_folders, batch_size=100, ignore_conflicts=True)
+
+        # Create multiple ciphers
+        sync_create_ciphers = []
+        sync_create_ciphers_data = [cipher_data for cipher_data in ciphers if not cipher_data.get("id")]
+        for cipher_data in sync_create_ciphers_data:
+            cipher_type = cipher_data.get("type")
+            if cipher_type == CIPHER_TYPE_LOGIN:
+                cipher_data["data"] = dict(cipher_data.get("login"))
+            elif cipher_type == CIPHER_TYPE_CARD:
+                cipher_data["data"] = dict(cipher_data.get("card"))
+            elif cipher_type == CIPHER_TYPE_IDENTITY:
+                cipher_data["data"] = dict(cipher_data.get("identity"))
+            elif cipher_type == CIPHER_TYPE_NOTE:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            cipher_data["data"]["name"] = cipher_data.get("name")
+            if cipher_data.get("notes"):
+                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data = json.loads(json.dumps(cipher_data))
+
+            sync_create_ciphers.append(
+                Cipher(
+                    creation_date=cipher_data.get("creation_date", now()),
+                    revision_date=cipher_data.get("revision_date", now()),
+                    deleted_date=cipher_data.get("deleted_date"),
+                    reprompt=cipher_data.get("reprompt", 0) or 0,
+                    score=cipher_data.get("score", 0),
+                    type=cipher_data.get("type"),
+                    data=cipher_data.get("data"),
+                    user_id=user.user_id,
+                    folders=cipher_data.get("folders", ""),
+                    team_id=cipher_data.get("organizationId")
+                )
+            )
+
+        Cipher.objects.bulk_create(sync_create_ciphers, batch_size=100, ignore_conflicts=True)
+
+        # Sync update existed ciphers
+        sync_update_ciphers = []
+        sync_update_ciphers_data = [cipher_data for cipher_data in ciphers if cipher_data.get("id")]
+        sync_update_cipher_ids = [cipher_data.get("id") for cipher_data in sync_update_ciphers_data]
+        user_update_ciphers = user.ciphers.filter(id__in=sync_update_cipher_ids)
+        user_update_ciphers_dict = {}
+        for cipher in user_update_ciphers:
+            user_update_ciphers_dict[cipher.id] = cipher
+        for cipher_data in sync_update_ciphers_data:
+            cipher_obj = user_update_ciphers_dict.get(cipher_data.get("id"))
+            cipher_type = cipher_data.get("type")
+            if cipher_type == CIPHER_TYPE_LOGIN:
+                cipher_data["data"] = dict(cipher_data.get("login"))
+            elif cipher_type == CIPHER_TYPE_CARD:
+                cipher_data["data"] = dict(cipher_data.get("card"))
+            elif cipher_type == CIPHER_TYPE_IDENTITY:
+                cipher_data["data"] = dict(cipher_data.get("identity"))
+            elif cipher_type == CIPHER_TYPE_NOTE:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            cipher_data["data"]["name"] = cipher_data.get("name")
+            if cipher_data.get("notes"):
+                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data = json.loads(json.dumps(cipher_data))
+
+            cipher_obj.creation_date = cipher_data.get("creation_date", now())
+            cipher_obj.revision_date = cipher_data.get("revision_date", now())
+            cipher_obj.deleted_date = cipher_data.get("deleted_date")
+            cipher_obj.reprompt = cipher_data.get("reprompt", 0) or 0
+            cipher_obj.score = cipher_data.get("score", 0)
+            cipher_obj.type = cipher_data.get("type")
+            cipher_obj.data = cipher_data.get("data")
+            cipher_obj.user_id = user.user_id
+            cipher_obj.folders = cipher_data.get("folders", "")
+            cipher_obj.team_id = cipher_data.get("organizationId")
+            sync_update_ciphers.append(cipher_obj)
+
+        Cipher.objects.bulk_update(
+            sync_update_ciphers,
+            ['creation_date', 'revision_date', 'deleted_date', 'reprompt', 'score', 'type',
+             'data', 'user_id', 'folders', 'team_id'],
+            batch_size=100
+        )
+        bump_account_revision_date(user=user)
+
     def import_multiple_cipher_team(self, team: Team, ciphers, collections, collection_relationships):
         # Init id for collections
         existed_collection_ids = list(team.collections.values_list('id', flat=True))

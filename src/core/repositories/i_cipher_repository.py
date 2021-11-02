@@ -57,6 +57,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def sync_personal_cipher_offline(self, user, ciphers, folders, folder_relationships):
+        pass
+
+    @abstractmethod
     def import_multiple_cipher_team(self, team, ciphers, collections, collection_relationships):
         pass
 
