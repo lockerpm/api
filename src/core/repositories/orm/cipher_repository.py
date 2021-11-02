@@ -386,9 +386,9 @@ class CipherRepository(ICipherRepository):
 
             sync_create_ciphers.append(
                 Cipher(
-                    creation_date=cipher_data.get("creation_date", now()),
-                    revision_date=cipher_data.get("revision_date", now()),
-                    deleted_date=cipher_data.get("deleted_date"),
+                    creation_date=cipher_data.get("creationDate", now()),
+                    revision_date=cipher_data.get("revisionDate", now()),
+                    deleted_date=cipher_data.get("deletedDate"),
                     reprompt=cipher_data.get("reprompt", 0) or 0,
                     score=cipher_data.get("score", 0),
                     type=cipher_data.get("type"),
@@ -425,9 +425,9 @@ class CipherRepository(ICipherRepository):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
             cipher_data = json.loads(json.dumps(cipher_data))
 
-            cipher_obj.creation_date = cipher_data.get("creation_date", now())
-            cipher_obj.revision_date = cipher_data.get("revision_date", now())
-            cipher_obj.deleted_date = cipher_data.get("deleted_date")
+            cipher_obj.creation_date = cipher_data.get("creationDate", now())
+            cipher_obj.revision_date = cipher_data.get("revisionDate", now())
+            cipher_obj.deleted_date = cipher_data.get("deletedDate")
             cipher_obj.reprompt = cipher_data.get("reprompt", 0) or 0
             cipher_obj.score = cipher_data.get("score", 0)
             cipher_obj.type = cipher_data.get("type")
