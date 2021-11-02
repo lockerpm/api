@@ -187,7 +187,7 @@ class VaultItemSerializer(serializers.Serializer):
             "attachments": None,
             "fields": validated_data.get("fields"),
             "score": validated_data.get("score", 0),
-            "collection_ids": validated_data.get("collectionIds")
+            "collection_ids": validated_data.get("collectionIds"),
         }
         # Login data
         if cipher_type == CIPHER_TYPE_LOGIN:
@@ -281,6 +281,12 @@ class ImportCipherSerializer(serializers.Serializer):
 
 class SyncOfflineVaultItemSerializer(VaultItemSerializer):
     id = serializers.CharField(required=False, allow_null=True)
+    deletedDate = serializers.FloatField(required=False, allow_null=True)
+
+    def to_representation(self, instance):
+        data = super(SyncOfflineVaultItemSerializer, self).to_representation(instance)
+        data["deleted_date"] = self.validated_data.get("deletedDate")
+        return data
 
 
 class SyncOfflineFolderSerializer(FolderSerializer):
