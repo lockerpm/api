@@ -370,6 +370,9 @@ class CipherRepository(ICipherRepository):
         sync_create_ciphers = []
         sync_create_ciphers_data = [cipher_data for cipher_data in ciphers if not cipher_data.get("id")]
         for cipher_data in sync_create_ciphers_data:
+            # Only allow sync personal ciphers
+            if cipher_data.get("organizationId") or cipher_data.get("team"):
+                continue
             cipher_type = cipher_data.get("type")
             if cipher_type == CIPHER_TYPE_LOGIN:
                 cipher_data["data"] = dict(cipher_data.get("login"))
@@ -410,6 +413,9 @@ class CipherRepository(ICipherRepository):
         for cipher in user_update_ciphers:
             user_update_ciphers_dict[cipher.id] = cipher
         for cipher_data in sync_update_ciphers_data:
+            # Only allow sync personal ciphers
+            if cipher_data.get("organizationId") or cipher_data.get("team"):
+                continue
             cipher_obj = user_update_ciphers_dict.get(cipher_data.get("id"))
             cipher_type = cipher_data.get("type")
             if cipher_type == CIPHER_TYPE_LOGIN:
