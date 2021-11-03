@@ -310,3 +310,4 @@ class SyncOfflineCipherSerializer(serializers.Serializer):
         if len(folders) > 200:
             raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
         return data
+
