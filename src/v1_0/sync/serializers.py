@@ -103,7 +103,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         cipher_detail.pop("notes", None)
 
         login = cipher_detail if instance.type == CIPHER_TYPE_LOGIN else None
-        secure_note = cipher_detail if instance.type == CIPHER_TYPE_NOTE else None
+        secure_note = cipher_detail if instance.type in [CIPHER_TYPE_NOTE, CIPHER_TYPE_TOTP] else None
         card = cipher_detail if instance.type == CIPHER_TYPE_CARD else None
         identity = cipher_detail if instance.type == CIPHER_TYPE_IDENTITY else None
         folder_id = instance.get_folders().get(user.user_id)

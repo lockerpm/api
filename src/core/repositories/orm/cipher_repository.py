@@ -316,6 +316,8 @@ class CipherRepository(ICipherRepository):
                 cipher_data["data"] = dict(cipher_data.get("identity"))
             elif cipher_type == CIPHER_TYPE_NOTE:
                 cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            elif cipher_type == CIPHER_TYPE_TOTP:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
@@ -382,6 +384,8 @@ class CipherRepository(ICipherRepository):
                 cipher_data["data"] = dict(cipher_data.get("identity"))
             elif cipher_type == CIPHER_TYPE_NOTE:
                 cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            elif cipher_type == CIPHER_TYPE_TOTP:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
@@ -425,6 +429,8 @@ class CipherRepository(ICipherRepository):
             elif cipher_type == CIPHER_TYPE_IDENTITY:
                 cipher_data["data"] = dict(cipher_data.get("identity"))
             elif cipher_type == CIPHER_TYPE_NOTE:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            elif cipher_type == CIPHER_TYPE_TOTP:
                 cipher_data["data"] = dict(cipher_data.get("secureNote"))
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
@@ -503,6 +509,8 @@ class CipherRepository(ICipherRepository):
             elif cipher_type == CIPHER_TYPE_IDENTITY:
                 cipher_data["data"] = dict(cipher_data.get("identity"))
             elif cipher_type == CIPHER_TYPE_NOTE:
+                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            elif cipher_type == CIPHER_TYPE_TOTP:
                 cipher_data["data"] = dict(cipher_data.get("secureNote"))
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):

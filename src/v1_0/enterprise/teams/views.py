@@ -111,6 +111,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
             "trash": ciphers.filter(deleted_date__isnull=False).count(),
             "login": login_ciphers.count(),
             "secure_note": ciphers.filter(type=CIPHER_TYPE_NOTE).count(),
+            "totp": ciphers.filter(type=CIPHER_TYPE_TOTP).count(),
             "card": ciphers.filter(type=CIPHER_TYPE_CARD).count(),
             "identity":  ciphers.filter(type=CIPHER_TYPE_IDENTITY).count()
         }
