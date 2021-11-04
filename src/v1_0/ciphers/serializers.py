@@ -90,7 +90,7 @@ class VaultItemSerializer(serializers.Serializer):
         team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
 
         vault_type = data.get("type")
-        if vault_type < 1 or vault_type > 4:
+        if vault_type < 1 or vault_type > 5:
             raise serializers.ValidationError(detail={"type": ["The type does not exist"]})
         login = data.get("login", {})
         secure_note = data.get("secureNote")
