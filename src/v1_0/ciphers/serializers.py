@@ -109,6 +109,8 @@ class VaultItemSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"card": ["This field is required"]})
         if vault_type == CIPHER_TYPE_IDENTITY and not identity:
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_TOTP and not secure_note:
+            raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
 
         # Check folder id
         folder_id = data.get("folderId")
@@ -197,6 +199,8 @@ class VaultItemSerializer(serializers.Serializer):
         elif cipher_type == CIPHER_TYPE_IDENTITY:
             detail["data"] = dict(validated_data.get("identity"))
         elif cipher_type == CIPHER_TYPE_NOTE:
+            detail["data"] = dict(validated_data.get("secureNote"))
+        elif cipher_type == CIPHER_TYPE_TOTP:
             detail["data"] = dict(validated_data.get("secureNote"))
         detail["data"]["name"] = validated_data.get("name")
         if validated_data.get("notes"):
