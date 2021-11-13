@@ -142,7 +142,8 @@ class CipherRepository(ICipherRepository):
             type=cipher_data.get("type"),
             data=cipher_data.get("data"),
             user_id=user_cipher_id,
-            team_id=team_id
+            team_id=team_id,
+            view_password=cipher_data.get("view_password", True)
         )
         cipher.save()
         # Create CipherFavorite
@@ -177,6 +178,7 @@ class CipherRepository(ICipherRepository):
         cipher.revision_date = now()
         cipher.reprompt = cipher_data.get("reprompt", cipher.reprompt) or 0
         cipher.score = cipher_data.get("score", cipher.score)
+        cipher.view_password = cipher_data.get("view_password", cipher.view_password)
         cipher.type = cipher_data.get("type", cipher.type)
         cipher.data = cipher_data.get("data", cipher.get_data())
         cipher.user_id = user_cipher_id
