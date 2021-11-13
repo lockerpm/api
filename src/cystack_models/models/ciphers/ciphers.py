@@ -19,6 +19,7 @@ class Cipher(models.Model):
     data = models.TextField(blank=True, null=True)
     favorites = models.TextField(blank=True, null=True)
     folders = models.TextField(blank=True, null=True, default="")
+    view_password = models.BooleanField(default=True)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ciphers", null=True)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="ciphers", null=True)
