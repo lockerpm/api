@@ -77,6 +77,7 @@ class VaultItemSerializer(serializers.Serializer):
     fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
     score = serializers.FloatField(default=0, min_value=0)
     reprompt = serializers.ChoiceField(choices=[0, 1], default=0, allow_null=True)
+    view_password = serializers.BooleanField(default=True)
     name = serializers.CharField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
     type = serializers.IntegerField()
@@ -178,7 +179,7 @@ class VaultItemSerializer(serializers.Serializer):
         cipher_type = validated_data.get("type")
         detail = {
             "edit": True,
-            "view_password": True,
+            "view_password": validated_data.get("view_password", True),
             "type": cipher_type,
             "user_id": self.context["request"].user.user_id,
             "organization_id": validated_data.get("organizationId"),

@@ -131,7 +131,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "revision_date": convert_readable_date(instance.revision_date),
             "secure_note": secure_note,
             "type": instance.type,
-            "view_password": True
+            "view_password": instance.view_password
         }
         return data
 
