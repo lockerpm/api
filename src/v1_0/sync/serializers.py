@@ -9,6 +9,7 @@ from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.collections import Collection
+from cystack_models.models.policy.policy import Policy
 
 
 class SyncProfileSerializer(serializers.ModelSerializer):
@@ -169,5 +170,25 @@ class SyncCollectionSerializer(serializers.ModelSerializer):
             "read_only": True if role == MEMBER_ROLE_MEMBER else False,
             "external_id": None,
 
+        }
+        return data
+
+
+class SyncPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Policy
+        field = '__all__'
+
+    def to_representation(self, instance):
+        data = {
+            "object": "policyDetails",
+            "team_id": instance.team_id,
+            "organization_id": instance.team_id,
+            "min_password_length": instance.min_password_length,
+            "max_password_length": instance.max_password_length,
+            "password_composition": instance.password_composition,
+            "failed_login_attempts": instance.failed_login_attempts,
+            "failed_login_duration": instance.failed_login_duration,
+            "failed_login_block_time": instance.failed_login_block_time
         }
         return data
