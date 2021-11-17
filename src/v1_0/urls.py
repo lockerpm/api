@@ -144,6 +144,12 @@ urlpatterns += [
 ]
 
 
+""" Policy """
+urlpatterns += [
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/policy$', views.PolicyPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+]
+
+
 """ Event Logs """
 urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/logs$', views.ActivityLogViewSet.as_view({'get': 'list'})),
