@@ -47,3 +47,11 @@ class ITeamRepository(ABC):
     @abstractmethod
     def get_member_obj(self, team: Team, user):
         pass
+
+    @abstractmethod
+    def retrieve_or_create_policy(self, team: Team):
+        pass
+
+    @abstractmethod
+    def get_multiple_policy_by_user(self, user):
+        pass

@@ -33,6 +33,7 @@ from cystack_models.models.teams.groups_members import GroupMember
 from cystack_models.models.teams.collections_ciphers import CollectionCipher
 from cystack_models.models.teams.collections_groups import CollectionGroup
 from cystack_models.models.teams.collections_members import CollectionMember
+from cystack_models.models.policy.policy import Policy
 
 
 # ------------------------ Permission Models ----------------------- #
