@@ -138,14 +138,14 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 failed_login_block_time = login_policy_limit.get("failed_login_block_time")
                 latest_request_login = user.last_request_login
 
-                user.login_failed_attempts = F('login_failed_attempts') + 1
+                user.login_failed_attempts = user.login_failed_attempts + 1
                 user.last_request_login = now()
                 user.save()
-                user_updated = user
-                if user_updated.login_failed_attempts >= failed_login_attempts and \
+
+                if user.login_failed_attempts >= failed_login_attempts and \
                         latest_request_login and now() - latest_request_login < failed_login_duration:
-                    user_updated.login_block_until = now() + failed_login_block_time
-                    user_updated.save()
+                    user.login_block_until = now() + failed_login_block_time
+                    user.save()
 
             # Create event here
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
