@@ -6,8 +6,8 @@ from cystack_models.models.policy.policy import Policy
 class PolicyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Policy
-        field = ('min_password_length', 'max_password_length', 'password_composition',
-                 'failed_login_attempts', 'failed_login_duration', 'failed_login_block_time')
+        fields = ('min_password_length', 'max_password_length', 'password_composition',
+                  'failed_login_attempts', 'failed_login_duration', 'failed_login_block_time')
 
     def validate(self, data):
         min_password_length = data.get("min_password_length")
