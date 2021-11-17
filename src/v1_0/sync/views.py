@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from core.utils.data_helpers import camel_snake_data
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
-    SyncCollectionSerializer
+    SyncCollectionSerializer, SyncPolicySerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -19,6 +19,8 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         ciphers = self.cipher_repository.get_multiple_by_user(user=user).prefetch_related('collections_ciphers')
         folders = self.folder_repository.get_multiple_by_user(user=user)
         collections = self.collection_repository.get_multiple_user_collections(user=user).select_related('team')
+        policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('team')
+
         sync_data = {
             "object": "sync",
             "profile": SyncProfileSerializer(user, many=False).data,
@@ -26,7 +28,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             "collections": SyncCollectionSerializer(collections, many=True, context={"user": user}).data,
             "folders": SyncFolderSerializer(folders, many=True).data,
             "domains": None,
-            "policies": [],
+            "policies": SyncPolicySerializer(policies, many=True).data,
             "sends": []
         }
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)
