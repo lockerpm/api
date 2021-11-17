@@ -68,7 +68,7 @@ class TeamRepository(ITeamRepository):
 
     def get_multiple_policy_by_user(self, user):
         managed_teams = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
-            team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user
+            # team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user
         ).values_list('team_id', flat=True)
         policies = Policy.objects.filter(team_id__in=managed_teams)
         return policies

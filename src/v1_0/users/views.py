@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F, Value, FloatField
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, Throttled
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
@@ -12,6 +13,7 @@ from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
+from shared.utils.app import now
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -104,6 +106,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def session(self, request, *args, **kwargs):
         user = self.request.user
+        if user.login_block_until and user.login_block_until > now():
+            raise Throttled(wait=user.login_block_until - now())
+
         user_teams = list(self.team_repository.get_multiple_team_by_user(
             user=user, status=PM_MEMBER_STATUS_CONFIRMED
         ).values_list('id', flat=True))
@@ -117,13 +122,39 @@ class UserPwdViewSet(PasswordManagerViewSet):
         device_type = validated_data.get("device_type")
         password = validated_data.get("password")
 
+        # Login failed
         if user.check_master_password(raw_password=password) is False:
+            # Check policy
+            login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
+                failed_login_attempts__isnull=False
+            ).values('failed_login_attempts', 'failed_login_duration', 'failed_login_block_time').annotate(
+                rate_limit=Value(F('failed_login_attempts') / F('failed_login_duration'), output_field=FloatField())
+            ).order_by('rate_limit').first()
+            if login_policy_limit:
+                failed_login_attempts = login_policy_limit.get("failed_login_attempts")
+                failed_login_duration = login_policy_limit.get("failed_login_duration")
+                failed_login_block_time = login_policy_limit.get("failed_login_block_time")
+                latest_request_login = user.last_request_login
+
+                user.login_failed_attempts = F('login_failed_attempts') + 1
+                user.last_request_login = now()
+                user.save()
+                if user.login_failed_attempts >= failed_login_attempts and \
+                        latest_request_login and now() - latest_request_login < failed_login_duration:
+                    user.login_block_until = now() + failed_login_block_time
+                    user.save()
+
             # Create event here
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
                 "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
                 "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
             })
             raise ValidationError(detail={"password": ["Password is not correct"]})
+
+        user.last_request_login = now()
+        user.login_failed_attempts = 0
+        user.login_block_until = None
+        user.save()
         # First, check CyStack database to get existed access token
         refresh_token_obj = self.session_repository.filter_refresh_tokens(
             user=user, device_identifier=device_identifier
