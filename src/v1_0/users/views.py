@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import F, Value, FloatField
+from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, Throttled
 from rest_framework.decorators import action
@@ -128,7 +128,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
                 failed_login_attempts__isnull=False
             ).values('failed_login_attempts', 'failed_login_duration', 'failed_login_block_time').annotate(
-                rate_limit=Value(F('failed_login_attempts') / F('failed_login_duration'), output_field=FloatField())
+                rate_limit=ExpressionWrapper(
+                    F('failed_login_attempts') * 1.0 / F('failed_login_duration'), output_field=FloatField()
+                )
             ).order_by('rate_limit').first()
             if login_policy_limit:
                 failed_login_attempts = login_policy_limit.get("failed_login_attempts")
