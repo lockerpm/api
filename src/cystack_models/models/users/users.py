@@ -29,6 +29,11 @@ class User(models.Model):
     timeout = models.IntegerField(default=15)
     timeout_action = models.CharField(default="lock", max_length=16)
 
+    # Login policy
+    last_request_login = models.FloatField(null=True, default=None)
+    login_failed_attempts = models.IntegerField(default=0)
+    login_block_until = models.FloatField(null=True, default=None)
+
     # Stores the raw password if set_password() is called so that it can
     # be passed to password_changed() after the model is saved.
     _password = None
