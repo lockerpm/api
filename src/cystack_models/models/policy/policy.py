@@ -15,6 +15,12 @@ class Policy(models.Model):
         null=True, default=None, validators=[MinValueValidator(1), MaxValueValidator(128)]
     )
     password_composition = models.BooleanField(default=False)
+    require_lower_case = models.BooleanField(default=False)
+    require_upper_case = models.BooleanField(default=False)
+    require_special_character = models.BooleanField(default=False)
+    require_digit = models.BooleanField(default=False)
+    avoid_ambiguous_character = models.BinaryField(default=False)
+
     failed_login_attempts = models.IntegerField(null=True, default=None, validators=[MinValueValidator(1)])
     failed_login_duration = models.IntegerField(default=600, validators=[MinValueValidator(1)])     # 10 minutes
     failed_login_block_time = models.IntegerField(default=900, validators=[MinValueValidator(1)])   # Block 15 minutes
@@ -29,6 +35,11 @@ class Policy(models.Model):
             min_password_length=data.get("min_password_length"),
             max_password_length=data.get("max_password_length"),
             password_composition=data.get("password_composition", False),
+            require_lower_case=data.get("require_lower_case", False),
+            require_upper_case=data.get("require_upper_case", False),
+            require_special_character=data.get("require_special_character", False),
+            require_digit=data.get("require_digit", False),
+            avoid_ambiguous_character=data.get("avoid_ambiguous_character", False),
             failed_login_attempts=data.get("failed_login_attempts"),
             failed_login_duration=data.get("failed_login_duration", 600),
             failed_login_block_time=data.get("failed_login_block_time", 900)
