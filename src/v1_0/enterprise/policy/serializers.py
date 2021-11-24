@@ -6,7 +6,9 @@ from cystack_models.models.policy.policy import Policy
 class PolicyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Policy
-        fields = ('min_password_length', 'max_password_length', 'password_composition',
+        fields = ('min_password_length', 'max_password_length',
+                  'password_composition', 'require_lower_case', 'require_upper_case', 'require_special_character',
+                  'require_digit', 'avoid_ambiguous_character',
                   'failed_login_attempts', 'failed_login_duration', 'failed_login_block_time')
 
     def validate(self, data):
@@ -36,6 +38,11 @@ class PolicyDetailSerializer(serializers.ModelSerializer):
         min_password_length = validated_data.get("min_password_length")
         max_password_length = validated_data.get("max_password_length")
         password_composition = validated_data.get("password_composition", instance.password_composition)
+        require_lower_case = validated_data.get("require_lower_case", instance.require_lower_case)
+        require_upper_case = validated_data.get("require_upper_case", instance.require_upper_case)
+        require_special_character = validated_data.get("require_special_character", instance.require_special_character)
+        require_digit = validated_data.get("require_digit", instance.require_digit)
+        avoid_ambiguous_character = validated_data.get("avoid_ambiguous_character", instance.avoid_ambiguous_character)
         failed_login_attempts = validated_data.get("failed_login_attempts")
         failed_login_duration = validated_data.get("failed_login_duration", instance.failed_login_duration)
         failed_login_block_time = validated_data.get("failed_login_block_time", instance.failed_login_block_time)
@@ -43,6 +50,11 @@ class PolicyDetailSerializer(serializers.ModelSerializer):
         instance.min_password_length = min_password_length
         instance.max_password_length = max_password_length
         instance.password_composition = password_composition
+        instance.require_lower_case = require_lower_case
+        instance.require_upper_case = require_upper_case
+        instance.require_special_character = require_special_character
+        instance.require_digit = require_digit
+        instance.avoid_ambiguous_character = avoid_ambiguous_character
         instance.failed_login_attempts = failed_login_attempts
         instance.failed_login_duration = failed_login_duration
         instance.failed_login_block_time = failed_login_block_time
