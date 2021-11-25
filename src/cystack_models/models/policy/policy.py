@@ -19,7 +19,7 @@ class Policy(models.Model):
     require_upper_case = models.BooleanField(default=False)
     require_special_character = models.BooleanField(default=False)
     require_digit = models.BooleanField(default=False)
-    avoid_ambiguous_character = models.BinaryField(default=False)
+    avoid_ambiguous_character = models.BooleanField(default=False)
 
     failed_login_attempts = models.IntegerField(null=True, default=None, validators=[MinValueValidator(1)])
     failed_login_duration = models.IntegerField(default=600, validators=[MinValueValidator(1)])     # 10 minutes
