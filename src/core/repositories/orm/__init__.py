@@ -10,3 +10,5 @@ from core.repositories.orm.team_member_repository import TeamMemberRepository
 from core.repositories.orm.collection_repository import CollectionRepository
 from core.repositories.orm.group_repository import GroupRepository
 from core.repositories.orm.event_repository import EventRepository
+
+from core.repositories.orm.emergency_access_repository import EmergencyAccessRepository

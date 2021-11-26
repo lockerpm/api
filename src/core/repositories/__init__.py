@@ -17,3 +17,4 @@ from core.repositories.i_collection_repository import ICollectionRepository
 from core.repositories.i_group_repository import IGroupRepository
 from core.repositories.i_event_repository import IEventRepository
 
+from core.repositories.i_emergency_access_repository import IEmergencyAccessRepository
