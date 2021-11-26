@@ -23,6 +23,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     collection_repository = CORE_CONFIG["repositories"]["ICollectionRepository"]()
     group_repository = CORE_CONFIG["repositories"]["IGroupRepository"]()
     event_repository = CORE_CONFIG["repositories"]["IEventRepository"]()
+    emergency_repository = CORE_CONFIG["repositories"]["IEmergencyAccessRepository"]()
 
     def check_pwd_session_auth(self, request, renew=False):
         valid_token = self.session_repository.fetch_access_token(user=request.user, renew=renew)
