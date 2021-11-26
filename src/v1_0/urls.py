@@ -68,6 +68,13 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Emergency Access ------------------------------- #
+urlpatterns += [
+    url(r'^emergency_access/trusted$', views.EmergencyAccessPwdViewSet.as_view({'get': 'trusted'})),
+    url(r'^emergency_access/granted$', views.EmergencyAccessPwdViewSet.as_view({'get': 'granted'})),
+]
+
+
 # ------------------------------- Payment ------------------------------------- #
 urlpatterns += [
     url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),

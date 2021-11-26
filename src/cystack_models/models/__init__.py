@@ -43,3 +43,7 @@ from cystack_models.models.permissions.role_permissions import RolePermission
 
 # ------------------------ Activity Log Models --------------------- #
 from cystack_models.models.events.events import Event
+
+
+# ------------------------ Emergency Access ------------------------ #
+from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
