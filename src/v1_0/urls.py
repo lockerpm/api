@@ -72,6 +72,14 @@ urlpatterns += [
 urlpatterns += [
     url(r'^emergency_access/trusted$', views.EmergencyAccessPwdViewSet.as_view({'get': 'trusted'})),
     url(r'^emergency_access/granted$', views.EmergencyAccessPwdViewSet.as_view({'get': 'granted'})),
+    url(r'^emergency_access/invite$', views.EmergencyAccessPwdViewSet.as_view({'post': 'invite'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)$', views.EmergencyAccessPwdViewSet.as_view({'delete': 'destroy'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/reinvite$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'reinvite'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/public_key$',
+        views.EmergencyAccessPwdViewSet.as_view({'get': 'public_key'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/accept$', views.EmergencyAccessPwdViewSet.as_view({'post': 'accept'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/confirm$', views.EmergencyAccessPwdViewSet.as_view({'post': 'confirm'}))
 ]
 
 

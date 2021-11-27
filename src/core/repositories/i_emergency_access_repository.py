@@ -16,3 +16,19 @@ class IEmergencyAccessRepository(ABC):
     @abstractmethod
     def get_multiple_by_grantee(self, grantee: User):
         pass
+
+    @abstractmethod
+    def delete_emergency_access(self, emergency_access: EmergencyAccess, user_id):
+        pass
+
+    @abstractmethod
+    def invite_emergency_access(self, access_type, wait_time_days, grantor, grantee=None, email=None):
+        pass
+
+    @abstractmethod
+    def accept_emergency_access(self, emergency_access: EmergencyAccess):
+        pass
+
+    @abstractmethod
+    def confirm_emergency_access(self, emergency_access: EmergencyAccess, key_encrypted: str):
+        pass
