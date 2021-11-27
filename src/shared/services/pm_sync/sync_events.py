@@ -24,3 +24,4 @@ SYNC_EVENT_ORG_KEY = "sync_org_key"
 
 SYNC_SETTINGS = "sync_settings"
 
+SYNC_EMERGENCY_ACCESS_INVITATION = "emergency_access_invitation"
