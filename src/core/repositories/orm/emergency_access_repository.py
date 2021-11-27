@@ -4,6 +4,7 @@ from core.utils.account_revision_date import bump_account_revision_date
 from shared.constants.emergency_access import *
 from cystack_models.models.users.users import User
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
+from shared.utils.app import now
 
 
 class EmergencyAccessRepository(IEmergencyAccessRepository):
@@ -62,3 +63,18 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         emergency_access.key_encrypted = key_encrypted
         emergency_access.save()
         bump_account_revision_date(user=emergency_access.grantee)
+
+    def initiate_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED
+        emergency_access.revision_date = now()
+        emergency_access.recovery_initiated_date = now()
+        emergency_access.last_notification_date = now()
+        emergency_access.save()
+
+    def reject_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_CONFIRMED
+        emergency_access.save()
+
+    def approve_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED
+        emergency_access.save()

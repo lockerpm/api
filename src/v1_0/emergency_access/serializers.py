@@ -52,3 +52,9 @@ class InviteEmergencyAccessSerializer(serializers.Serializer):
             except User.DoesNotExist:
                 raise serializers.ValidationError(detail={'email': ["Grantee email does not exist"]})
         return data
+
+
+class PasswordEmergencyAccessSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    new_master_password_hash = serializers.CharField()
+

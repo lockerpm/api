@@ -32,3 +32,15 @@ class IEmergencyAccessRepository(ABC):
     @abstractmethod
     def confirm_emergency_access(self, emergency_access: EmergencyAccess, key_encrypted: str):
         pass
+
+    @abstractmethod
+    def initiate_emergency_access(self, emergency_access: EmergencyAccess):
+        pass
+
+    @abstractmethod
+    def reject_emergency_access(self, emergency_access: EmergencyAccess):
+        pass
+
+    @abstractmethod
+    def approve_emergency_access(self, emergency_access: EmergencyAccess):
+        pass

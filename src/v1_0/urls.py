@@ -78,8 +78,22 @@ urlpatterns += [
         views.EmergencyAccessPwdViewSet.as_view({'post': 'reinvite'})),
     url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/public_key$',
         views.EmergencyAccessPwdViewSet.as_view({'get': 'public_key'})),
-    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/accept$', views.EmergencyAccessPwdViewSet.as_view({'post': 'accept'})),
-    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/confirm$', views.EmergencyAccessPwdViewSet.as_view({'post': 'confirm'}))
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/accept$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'accept'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/confirm$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'confirm'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/initiate$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'initiate'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/approve$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'approve'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/reject$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'reject'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/view$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'view'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/takeover$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'takeover'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/password$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'password'})),
 ]
 
 
