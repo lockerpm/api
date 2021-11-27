@@ -16,7 +16,8 @@ from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
-    InviteEmergencyAccessSerializer
+    InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
+from v1_0.sync.serializers import SyncCipherSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -32,6 +33,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = EmergencyAccessGrantorSerializer
         elif self.action == "invite":
             self.serializer_class = InviteEmergencyAccessSerializer
+        elif self.action == "password":
+            self.serializer_class = PasswordEmergencyAccessSerializer
         return super(EmergencyAccessPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -104,12 +107,93 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=True)
     def confirm(self, request, *args, **kwargs):
         ip = request.data.get("ip")
-        grantor = self.request.user
         emergency_access = self.get_object()
         key_encrypted = request.data.get("key")
         if not key_encrypted:
             raise ValidationError(detail={"key": ["This field is required"]})
-        if not emergency_access.status == EMERGENCY_ACCESS_STATUS_ACCEPTED:
+        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_ACCEPTED:
             raise NotFound
         self.emergency_repository.confirm_emergency_access(emergency_access, key_encrypted)
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=True)
+    def initiate(self, request, *args, **kwargs):
+        emergency_access = self.get_object()
+        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_CONFIRMED:
+            raise NotFound
+        self.emergency_repository.initiate_emergency_access(emergency_access)
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=True)
+    def reject(self, request, *args, **kwargs):
+        emergency_access = self.get_object()
+        if not emergency_access.status not in [EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED,
+                                               EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED]:
+            raise NotFound
+        self.emergency_repository.reject_emergency_access(emergency_access)
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=True)
+    def approve(self, request, *args, **kwargs):
+        emergency_access = self.get_object()
+        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED:
+            raise NotFound
+        self.emergency_repository.reject_emergency_access(emergency_access)
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=True)
+    def view(self, request, *args, **kwargs):
+        emergency_access = self.get_object()
+        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+            raise NotFound
+        ciphers = self.cipher_repository.get_multiple_by_user(
+            user=emergency_access.grantor, only_personal=True
+        ).prefetch_related('collections_ciphers')
+        key_encrypted = emergency_access.key_encrypted
+
+        return Response(status=200, data={
+            "object": "emergencyAccessView",
+            "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": emergency_access.grantor}).data,
+            "key_encrypted": key_encrypted
+        })
+
+    @action(methods=["post"], detail=True)
+    def takeover(self, request, *args, **kwargs):
+        emergency_access = self.get_object()
+        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+            raise NotFound
+        grantor = emergency_access.grantor
+        result = {
+            "obj": "emergencyAccessTakeover",
+            "key_encrypted": emergency_access.key_encrypted,
+            "kdf": grantor.kdf,
+            "kdf_iterations": grantor.kdf_iterations
+        }
+        return Response(status=200, data=result)
+
+    @action(methods=["post"], detail=True)
+    def password(self, request, *args, **kwargs):
+        emergency_access = self.get_object()
+        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+            raise NotFound
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        key = validated_data.get("key")
+        new_master_password_hash = validated_data.get("new_master_password_hash")
+
+        grantor = emergency_access.grantor
+        self.user_repository.change_master_password_hash(
+            user=grantor, new_master_password_hash=new_master_password_hash, key=key
+        )
+        self.user_repository.revoke_all_sessions(user=grantor)
+        # Remove grantor from all teams unless Owner
+        grantor_teams = self.team_repository.get_multiple_team_by_user(
+            user=grantor, status=PM_MEMBER_STATUS_CONFIRMED
+        ).order_by('-creation_date')
+        for grantor_team in grantor_teams:
+            member = grantor_team.team_members.get(user=grantor)
+            if member.role.name != MEMBER_ROLE_OWNER:
+                member.delete()
+
         return Response(status=200, data={"success": True})
