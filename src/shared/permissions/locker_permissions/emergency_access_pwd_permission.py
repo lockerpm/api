@@ -8,4 +8,11 @@ class EmergencyAccessPermission(LockerPermission):
         return self.is_auth(request)
 
     def has_object_permission(self, request, view, obj):
-        return super(EmergencyAccessPermission, self).has_object_permission(request, view, obj)
+        user = request.user
+
+        # obj is a EmergencyAsset object => Check user is a grantor or a grantee
+        if view.action in ["reinvite", "confirm"]:
+            return user.user_id == obj.grantor_id
+        elif view.action in ["accept"]:
+            return user.user_id == obj.grantee_id
+        return user.user_id in [obj.grantee_id, obj.grantor_id]

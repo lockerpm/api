@@ -1,5 +1,7 @@
 from core.repositories import IEmergencyAccessRepository
+from core.utils.account_revision_date import bump_account_revision_date
 
+from shared.constants.emergency_access import *
 from cystack_models.models.users.users import User
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 
@@ -30,3 +32,33 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         """
         grantee_emergency = grantee.emergency_grantees.all().order_by('creation_date')
         return grantee_emergency
+
+    def delete_emergency_access(self, emergency_access: EmergencyAccess, user_id):
+        """
+        Destroy an EmergencyAsset object
+        :param emergency_access: (obj)
+        :param user_id: Grantor or Grantee
+        :return:
+        """
+        if emergency_access.status == EMERGENCY_ACCESS_STATUS_CONFIRMED:
+            bump_account_revision_date(user=emergency_access.grantee)
+        emergency_access.delete()
+
+    def invite_emergency_access(self, access_type, wait_time_days, grantor, grantee=None, email=None):
+        emergency_access = EmergencyAccess.create(
+            grantor=grantor, access_type=access_type, wait_time_days=wait_time_days, grantee=grantee, email=email
+        )
+        return emergency_access
+
+    def accept_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.email = None
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_ACCEPTED
+        emergency_access.save()
+        bump_account_revision_date(user=emergency_access.grantee)
+
+    def confirm_emergency_access(self, emergency_access: EmergencyAccess, key_encrypted: str):
+        emergency_access.email = None
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_CONFIRMED
+        emergency_access.key_encrypted = key_encrypted
+        emergency_access.save()
+        bump_account_revision_date(user=emergency_access.grantee)
