@@ -108,13 +108,13 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                 team.team_members.get(user_id=member["user_id"])
             except TeamMember.DoesNotExist:
                 collections = member.get("collections", [])
-                valid_collections = [collection_id for collection_id in collections if collection_id in collection_ids]
+                valid_collections = [collection for collection in collections if collection.get("id") in collection_ids]
                 role = member["role"]
                 member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collections
                 member_user = self.user_repository.retrieve_or_create_by_id(user_id=member["user_id"])
                 member_obj = team.team_members.model.create_with_collections(
                     team=team, user=member_user, role_id=role, status=PM_MEMBER_STATUS_INVITED,
-                    collection_ids=member_collections
+                    collections=member_collections
                 )
                 PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=[member_obj.user_id]).send()
                 LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
@@ -222,12 +222,12 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             except TeamMember.DoesNotExist:
                 # Create new email invitation
                 collections = member.get("collections", [])
-                valid_collections = [collection_id for collection_id in collections if collection_id in collection_ids]
+                valid_collections = [collection for collection in collections if collection.get("id") in collection_ids]
                 role = member["role"]
                 member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collections
                 member_obj = team.team_members.model.create_with_collections(
                     team=team, role_id=role, status=PM_MEMBER_STATUS_INVITED, email=member["email"],
-                    collection_ids=member_collections
+                    collections=member_collections
                 )
                 token = self.team_member_repository.create_invitation_token(member=member_obj)
                 added_members.append({
