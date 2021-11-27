@@ -12,7 +12,7 @@ from shared.permissions.locker_permissions.member_pwd_permission import MemberPw
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER, SYNC_EVENT_VAULT
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
-from v1_0.enterprise.members.serializers import DetailMemberSerializer, MemberGroupSerializer
+from v1_0.enterprise.members.serializers import DetailMemberSerializer, MemberGroupSerializer, UpdateMemberSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -24,6 +24,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
     def get_serializer_class(self):
         if self.action in ["groups"]:
             self.serializer_class = MemberGroupSerializer
+        elif self.action in ["update"]:
+            self.serializer_class = UpdateMemberSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -140,21 +142,22 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             member_obj = team.team_members.get(id=member_id)
         except TeamMember.DoesNotExist:
             raise NotFound
-        role = request.data.get("role")
-        collections = request.data.get("collections")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        role = validated_data.get("role")
+        collections = validated_data.get("collections")
 
         team_collection_ids = list(team.collections.values_list('id', flat=True))
-        valid_collection_ids = [collection_id for collection_id in collections if collection_id in team_collection_ids]
-        # Validate data
-        if role not in [MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER]:
-            raise ValidationError(detail={"role": ["Role is not valid"]})
+        valid_collections = [collection for collection in collections if collection.get("id") in team_collection_ids]
+
         # Not allow edit yourself and Not allow edit primary owner
         if member_obj.user == user or member_obj.is_primary is True:
             return Response(status=403)
 
         # Update role and collections
-        member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collection_ids
-        self.team_member_repository.update_member(member=member_obj, role_id=role, collection_ids=member_collections)
+        member_collections = [] if role in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] else valid_collections
+        self.team_member_repository.update_member(member=member_obj, role_id=role, collections=member_collections)
         # Sync data for updated member
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[member_obj.user_id]).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
