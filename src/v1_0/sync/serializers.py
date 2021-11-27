@@ -167,7 +167,7 @@ class SyncCollectionSerializer(serializers.ModelSerializer):
             "id": instance.id,
             "name": instance.name,
             "organization_id": instance.team_id,
-            "hide_passwords": False,
+            "hide_passwords": instance.hide_passwords,
             "read_only": True if role == MEMBER_ROLE_MEMBER else False,
             "external_id": None,
 
