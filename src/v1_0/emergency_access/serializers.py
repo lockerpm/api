@@ -17,6 +17,7 @@ class EmergencyAccessGranteeSerializer(serializers.ModelSerializer):
         data["object"] = "emergencyAccessGranteeDetails"
         data["email"] = instance.email
         data["grantee_user_id"] = instance.grantee_id
+        data["grantee_pwd_user_id"] = instance.grantee.internal_id if instance.grantee else None
         return data
 
 
@@ -31,6 +32,7 @@ class EmergencyAccessGrantorSerializer(serializers.ModelSerializer):
         data = super(EmergencyAccessGrantorSerializer, self).to_representation(instance)
         data["object"] = "emergencyAccessGrantorDetails"
         data["grantor_user_id"] = instance.grantor_id
+        data["grantor_pwd_user_id"] = instance.grantor.internal_id if instance.grantor else None
         return data
 
 
