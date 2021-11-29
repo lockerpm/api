@@ -19,15 +19,13 @@ class TeamMemberRepository(ITeamMemberRepository):
         """
         return TeamMember.objects.filter(team__in=teams)
 
-    def accept_invitation(self, member: TeamMember, key: str):
+    def accept_invitation(self, member: TeamMember):
         """
         The user accepts the invitation of a team
         :param member: (obj) Member object represents for the invitation
-        :param key: (str) Member org key
         :return:
         """
-        member.key = key
-        member.status = PM_MEMBER_STATUS_CONFIRMED
+        member.status = PM_MEMBER_STATUS_ACCEPTED
         member.email = None
         member.save()
 
