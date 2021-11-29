@@ -15,6 +15,7 @@ from django.db import close_old_connections
 
 from cron.controllers.utils.logger import Logger
 from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_notify
+from cron.controllers.tasks.emergency_access_auto_approve import emergency_access_auto_approve
 
 
 class CronTask:
@@ -41,9 +42,20 @@ class CronTask:
         finally:
             close_old_connections()
 
+    def emergency_access_approve(self):
+        try:
+            emergency_access_auto_approve()
+            self.logger.info("[+] emergency_access_approve Done")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.logger.error("[!] emergency_access_approve error: {}".format(tb))
+        finally:
+            close_old_connections()
+
     def start(self):
         schedule.every(480).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
+        schedule.every(20).minutes.do(self.emergency_access_approve)
         self.logger.info("[+] Starting Platform cron task")
         while True:
             schedule.run_pending()
