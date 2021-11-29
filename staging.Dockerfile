@@ -20,4 +20,4 @@ USER cystack
 
 ENV PROD_ENV staging
 
-CMD gunicorn -w 3 -b 0.0.0.0:8000 server_config.wsgi:application & python cron_task.py
+CMD gunicorn -w 3 -b 0.0.0.0:8000 server_config.wsgi:application
