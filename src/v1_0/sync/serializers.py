@@ -132,6 +132,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "revision_date": convert_readable_date(instance.revision_date),
             "secure_note": secure_note,
             "type": instance.type,
+            # "view_password": True
             "view_password": instance.view_password
         }
         return data
@@ -166,7 +167,7 @@ class SyncCollectionSerializer(serializers.ModelSerializer):
             "id": instance.id,
             "name": instance.name,
             "organization_id": instance.team_id,
-            "hide_passwords": False,
+            "hide_passwords": instance.hide_passwords,
             "read_only": True if role == MEMBER_ROLE_MEMBER else False,
             "external_id": None,
 

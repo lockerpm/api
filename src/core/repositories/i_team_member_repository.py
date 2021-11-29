@@ -21,7 +21,7 @@ class ITeamMemberRepository(ABC):
         pass
 
     @abstractmethod
-    def update_member(self, member: TeamMember, role_id: str, collection_ids: list) -> TeamMember:
+    def update_member(self, member: TeamMember, role_id: str, collections: list) -> TeamMember:
         pass
 
     @abstractmethod
