@@ -171,7 +171,6 @@ class CipherRepository(ICipherRepository):
             data=cipher_data.get("data"),
             user_id=user_cipher_id,
             team_id=team_id,
-            view_password=cipher_data.get("view_password", True)
         )
         cipher.save()
         # Create CipherFavorite
