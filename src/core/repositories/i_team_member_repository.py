@@ -9,7 +9,7 @@ class ITeamMemberRepository(ABC):
         pass
 
     @abstractmethod
-    def accept_invitation(self, member: TeamMember, key: str):
+    def accept_invitation(self, member: TeamMember):
         pass
 
     @abstractmethod

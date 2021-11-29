@@ -12,7 +12,7 @@ from shared.constants.event import *
 from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_CIPHER
+from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
 from shared.utils.app import now
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer
@@ -284,7 +284,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["put"], detail=False)
     def invitation_update(self, request, *args, **kwargs):
-        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         user = self.request.user
         status = request.data.get("status")
@@ -299,19 +298,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
         if status == "accept":
-            key = request.data.get("key")
-            if not key:
-                raise ValidationError(detail={"key": ["This field is required"]})
             self.team_member_repository.accept_invitation(member=member_invitation)
             primary_owner = self.team_repository.get_primary_member(team=member_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
-
-            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id]).send()
-            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-                "team_id": primary_owner.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-                "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member_invitation.id, "ip_address": ip
-            })
-
         else:
             self.team_member_repository.reject_invitation(member=member_invitation)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[user.user_id]).send()
