@@ -149,7 +149,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         emergency_access = self.get_object()
         if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED:
             raise NotFound
-        self.emergency_repository.reject_emergency_access(emergency_access)
+        self.emergency_repository.approve_emergency_access(emergency_access)
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=True)
