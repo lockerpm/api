@@ -34,11 +34,10 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         grantee_emergency = grantee.emergency_grantees.all().order_by('creation_date')
         return grantee_emergency
 
-    def delete_emergency_access(self, emergency_access: EmergencyAccess, user_id):
+    def delete_emergency_access(self, emergency_access: EmergencyAccess):
         """
         Destroy an EmergencyAsset object
         :param emergency_access: (obj)
-        :param user_id: Grantor or Grantee
         :return:
         """
         if emergency_access.status == EMERGENCY_ACCESS_STATUS_CONFIRMED:
