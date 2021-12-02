@@ -18,7 +18,7 @@ class IEmergencyAccessRepository(ABC):
         pass
 
     @abstractmethod
-    def delete_emergency_access(self, emergency_access: EmergencyAccess, user_id):
+    def delete_emergency_access(self, emergency_access: EmergencyAccess):
         pass
 
     @abstractmethod
