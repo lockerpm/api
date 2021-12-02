@@ -44,7 +44,7 @@ class CipherRepository(ICipherRepository):
 
         personal_ciphers = Cipher.objects.filter(user=user)
         if only_personal is True:
-            return personal_ciphers
+            return personal_ciphers.annotate(view_password=Value(True, output_field=BooleanField()))
 
         confirmed_team_members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         if only_managed_team:

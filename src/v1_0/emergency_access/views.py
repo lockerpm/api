@@ -1,19 +1,11 @@
-from django.conf import settings
-from django.db.models import Value, When, Q, Case, IntegerField
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
-from shared.background import *
-from shared.constants.event import *
 from shared.constants.members import *
 from shared.constants.emergency_access import *
-from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.emergency_access_pwd_permission import EmergencyAccessPermission
-from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS_INVITATION
-from cystack_models.models.teams.teams import Team
-from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
     InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
@@ -119,7 +111,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         key_encrypted = request.data.get("key")
         if not key_encrypted:
             raise ValidationError(detail={"key": ["This field is required"]})
-        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_ACCEPTED:
+        if emergency_access.status != EMERGENCY_ACCESS_STATUS_ACCEPTED:
             raise NotFound
         self.emergency_repository.confirm_emergency_access(emergency_access, key_encrypted)
         return Response(status=200, data={"success": True})
@@ -128,7 +120,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def initiate(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_CONFIRMED:
+        if emergency_access.status != EMERGENCY_ACCESS_STATUS_CONFIRMED:
             raise NotFound
         self.emergency_repository.initiate_emergency_access(emergency_access)
         return Response(status=200, data={"success": True})
@@ -137,8 +129,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def reject(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if not emergency_access.status not in [EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED,
-                                               EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED]:
+        if emergency_access.status not in [EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED,
+                                           EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED]:
             raise NotFound
         self.emergency_repository.reject_emergency_access(emergency_access)
         return Response(status=200, data={"success": True})
@@ -147,7 +139,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def approve(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED:
+        if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED:
             raise NotFound
         self.emergency_repository.approve_emergency_access(emergency_access)
         return Response(status=200, data={"success": True})
@@ -156,7 +148,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def view(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+        if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         ciphers = self.cipher_repository.get_multiple_by_user(
             user=emergency_access.grantor, only_personal=True
@@ -173,7 +165,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def takeover(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+        if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         grantor = emergency_access.grantor
         result = {
@@ -188,7 +180,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def password(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if not emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+        if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
