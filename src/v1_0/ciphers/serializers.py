@@ -209,6 +209,10 @@ class VaultItemSerializer(serializers.Serializer):
 
         return detail
 
+    def to_internal_value(self, data):
+        data["favorite"] = data.get("favorite", False) or False
+        return super(VaultItemSerializer, self).to_internal_value(data)
+
 
 class UpdateVaultItemSerializer(VaultItemSerializer):
     def save(self, **kwargs):
