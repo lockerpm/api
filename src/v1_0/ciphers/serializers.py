@@ -100,10 +100,11 @@ class VaultItemSerializer(serializers.Serializer):
         if vault_type == CIPHER_TYPE_LOGIN:
             if not login:
                 raise serializers.ValidationError(detail={"login": ["This field is required"]})
-            if login.get("totp") and not data.get("organizationId"):
-                raise serializers.ValidationError(detail={
-                    "organizationId": ["This field is required when using time OTP"]
-                })
+            # if login.get("totp") and not data.get("organizationId"):
+            #     print("CIPHER_TYPE_LOGIN topt")
+            #     raise serializers.ValidationError(detail={
+            #         "organizationId": ["This field is required when using time OTP"]
+            #     })
         if vault_type == CIPHER_TYPE_NOTE and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
         if vault_type == CIPHER_TYPE_CARD and not card:
