@@ -87,7 +87,11 @@ class TeamPwdViewSet(PasswordManagerViewSet):
     def import_data(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         team = self.get_object()
-        serializer = self.get_serializer(data=request.data)
+        import_data = request.data
+        ciphers = import_data.get("ciphers")
+        new_ciphers = [cipher for cipher in ciphers if cipher.get("name")]
+        import_data["ciphers"] = new_ciphers
+        serializer = self.get_serializer(data=import_data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         ciphers = validated_data.get("ciphers", [])
