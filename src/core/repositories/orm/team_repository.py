@@ -64,7 +64,7 @@ class TeamRepository(ITeamRepository):
         try:
             return team.policy
         except AttributeError:
-            Policy.create(team=team)
+            return Policy.create(team=team)
 
     def get_multiple_policy_by_user(self, user):
         managed_teams = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
@@ -72,3 +72,6 @@ class TeamRepository(ITeamRepository):
         ).values_list('team_id', flat=True)
         policies = Policy.objects.filter(team_id__in=managed_teams)
         return policies
+
+    def check_team_policy(self, user, request, team: Team):
+        pass
