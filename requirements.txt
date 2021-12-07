@@ -12,5 +12,6 @@ gunicorn==19.9.0
 slack_sdk==3.0.0rc1
 pyhumps==1.6.1
 stripe==2.40.0
+user-agents==2.0
 requests==2.25.0
 schedule==0.6.0
