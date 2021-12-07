@@ -16,7 +16,7 @@ class CipherPwdPermission(LockerPermission):
         :return:
         """
         if view.action in ["update", "share"]:
-            return self.can_edit_cipher(request.user, obj)
+            return self.can_edit_cipher(request, obj)
 
         return super(CipherPwdPermission, self).has_object_permission(request, view, obj.team)
 
