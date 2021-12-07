@@ -16,10 +16,22 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     def sync(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-        ciphers = self.cipher_repository.get_multiple_by_user(user=user).prefetch_related('collections_ciphers')
-        folders = self.folder_repository.get_multiple_by_user(user=user)
-        collections = self.collection_repository.get_multiple_user_collections(user=user).select_related('team')
+
         policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('team')
+        # Check team policies
+        block_team_ids = []
+        for policy in policies:
+            check_policy = self.team_repository.check_team_policy(request=request, team=policy.team)
+            if check_policy is False:
+                block_team_ids.append(policy.team_id)
+
+        ciphers = self.cipher_repository.get_multiple_by_user(
+            user=user, exclude_team_ids=block_team_ids
+        ).prefetch_related('collections_ciphers')
+        folders = self.folder_repository.get_multiple_by_user(user=user)
+        collections = self.collection_repository.get_multiple_user_collections(
+            user=user, exclude_team_ids=block_team_ids
+        ).select_related('team')
 
         sync_data = {
             "object": "sync",

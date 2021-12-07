@@ -20,8 +20,10 @@ class CollectionRepository(ICollectionRepository):
     def get_multiple_team_collections(self, team_id: str):
         return Collection.objects.filter(team_id=team_id).order_by('-creation_date')
 
-    def get_multiple_user_collections(self, user: User):
+    def get_multiple_user_collections(self, user: User, exclude_team_ids=None):
         members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False)
+        if exclude_team_ids and isinstance(exclude_team_ids, list):
+            members = members.exclude(team_id__in=exclude_team_ids)
 
         # Collections that user is an owner or admin or user belongs to a group that can access all.
         access_all_teams = list(members.filter(

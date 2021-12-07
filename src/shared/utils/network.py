@@ -1,13 +1,13 @@
+import socket
 from user_agents import parse
 
 
-def detect_device(request):
+def detect_device(ua_string: str):
     """
     Detect device information from request
-    :param request:
+    :param ua_string: (str) User Agent string
     :return:
     """
-    ua_string = request.META.get("HTTP_USER_AGENT")
     if not ua_string:
         return {}
 
@@ -36,3 +36,69 @@ def detect_device(request):
         "is_bot": user_agent.is_bot
     }
     return device_information
+
+
+def get_ip_by_request(request):
+    ip_address = ''
+
+    # Look up: HTTP_X_ORIGINAL_FORWARDED_FOR
+    x_original_forwarded_for = request.META.get("HTTP_X_ORIGINAL_FORWARDED_FOR", "")
+    if x_original_forwarded_for:
+        ips = [ip.strip() for ip in x_original_forwarded_for.split(",")]
+        for ip in ips:
+            if is_valid_ip(ip):
+                ip_address = ip
+                break
+
+    # Look up: HTTP_X_FORWARDED_FOR
+    if not ip_address:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if x_forwarded_for:
+            ips = [ip.strip() for ip in x_forwarded_for.split(',')]
+            for ip in ips:
+                if is_valid_ip(ip):
+                    ip_address = ip
+                    break
+
+    # Look up: HTTP_X_REAL_IP
+    if not ip_address:
+        x_real_ip = request.META.get('HTTP_X_REAL_IP', '')
+        if x_real_ip and is_valid_ip(x_real_ip):
+            ip_address = x_real_ip.strip()
+
+    # Look up: REMOTE_ADDR
+    if not ip_address:
+        remote_addr = request.META.get('REMOTE_ADDR', '')
+        if remote_addr and is_valid_ip(remote_addr):
+            ip_address = remote_addr.strip()
+
+    if not ip_address:
+        ip_address = '127.0.0.1'
+    return ip_address
+
+
+def is_valid_ip(ip_address):
+    return is_valid_ipv4_address(address=ip_address) or is_valid_ipv6_address(address=ip_address)
+
+
+def is_valid_ipv4_address(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:  # no inet_pton here, sorry
+        try:
+            socket.inet_aton(address.strip())
+        except socket.error:
+            return False
+        return address.count('.') == 3
+    except socket.error:  # not a valid address
+        return False
+
+    return True
+
+
+def is_valid_ipv6_address(address):
+    try:
+        socket.inet_pton(socket.AF_INET6, address.strip())
+        return True
+    except socket.error:  # not a valid address
+        return False
