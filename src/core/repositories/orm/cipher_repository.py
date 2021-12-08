@@ -548,6 +548,7 @@ class CipherRepository(ICipherRepository):
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data.pop("team", None)
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(
                 Cipher(

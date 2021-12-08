@@ -23,6 +23,7 @@ class Command(BaseCommand):
             {"scope": "team", "codename": "create", "description": "Can create team", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "team", "codename": "update", "description": "Can update team", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "team", "codename": "destroy", "description": "Can delete team", "roles": ["owner"]},
+            {"scope": "team", "codename": "import_data", "description": "Can import data team", "roles": ["owner", "admin"]},
 
             # Cipher perms
             {"scope": "cipher", "codename": "list", "description": "Can get list ciphers", "roles": ["owner", "admin", "manager", "member"]},
