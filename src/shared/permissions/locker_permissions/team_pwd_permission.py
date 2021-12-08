@@ -11,12 +11,10 @@ class TeamPwdPermission(LockerPermission):
     def has_object_permission(self, request, view, obj):
         action = view.action
 
-        if action in ["dashboard"]:
+        if action in ["dashboard", "purge"]:
             member = self.get_team_member(user=request.user, obj=obj)
             role = member.role
             role_name = role.name
             return role_name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
 
         return super(TeamPwdPermission, self).has_object_permission(request, view, obj)
-
-

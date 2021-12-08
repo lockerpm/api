@@ -72,7 +72,7 @@ class PolicyDetailSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super(PolicyDetailSerializer, self).to_representation(instance)
         data["ip_allow"] = instance.get_list_ip_allow()
-        data["ip_block"] = instance.gett_list_ip_block()
+        data["ip_block"] = instance.get_list_ip_block()
         data["team"] = {
             "id": instance.team_id,
             "name": instance.team.name,
