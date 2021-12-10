@@ -96,7 +96,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         ciphers = validated_data.get("ciphers", [])
         collections = validated_data.get("collections", [])
-        collection_relationships = validated_data.get("folderRelationships", [])
+        collection_relationships = validated_data.get("collectionRelationships", [])
         self.cipher_repository.import_multiple_cipher_team(team, ciphers, collections, collection_relationships)
         PwdSync(event=SYNC_EVENT_VAULT, team=team).send()
         return Response(status=200, data={"success": True})
