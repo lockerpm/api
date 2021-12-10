@@ -568,7 +568,7 @@ class CipherRepository(ICipherRepository):
         # Create collection cipher
         import_collection_ciphers = []
         for collection_cipher in collection_ciphers:
-            import_collections.append(
+            import_collection_ciphers.append(
                 CollectionCipher(
                     cipher_id=collection_cipher.get("cipher_id"),
                     collection_id=collection_cipher.get("collection_id")
