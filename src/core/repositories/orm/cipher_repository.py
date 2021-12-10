@@ -32,13 +32,15 @@ class CipherRepository(ICipherRepository):
     def get_multiple_by_ids(self, cipher_ids: list):
         return Cipher.objects.filter(id__in=cipher_ids)
 
-    def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False):
+    def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False,
+                             exclude_team_ids=None):
         """
         Get list ciphers of user
         :param user: (obj) User object
         :param only_personal: (bool) if True => Only get list personal ciphers
         :param only_managed_team: (bool) if True => Only get list ciphers of non-locked teams
         :param only_edited: (bool) if True => Only get list ciphers that user is allowed edit permission
+        :param exclude_team_ids: (list) Excluding all ciphers have team_id in this list
         :return:
         """
 
@@ -49,6 +51,9 @@ class CipherRepository(ICipherRepository):
         confirmed_team_members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         if only_managed_team:
             confirmed_team_members = confirmed_team_members.filter(team__locked=False)
+
+        if exclude_team_ids:
+            confirmed_team_members = confirmed_team_members.exclude(team_id__in=exclude_team_ids)
 
         confirmed_team_ids = confirmed_team_members.values_list('team_id', flat=True)
         team_ciphers = Cipher.objects.filter(
@@ -543,6 +548,7 @@ class CipherRepository(ICipherRepository):
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data.pop("team", None)
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(
                 Cipher(

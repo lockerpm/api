@@ -181,15 +181,29 @@ class SyncPolicySerializer(serializers.ModelSerializer):
         field = '__all__'
 
     def to_representation(self, instance):
+        instance = Policy.objects.get()
         data = {
             "object": "policyDetails",
             "team_id": instance.team_id,
             "organization_id": instance.team_id,
+            # Password length requirements
             "min_password_length": instance.min_password_length,
             "max_password_length": instance.max_password_length,
+            # Password composition
             "password_composition": instance.password_composition,
+            "require_lower_case": instance.require_lower_case,
+            "require_upper_case": instance.require_upper_case,
+            "require_special_character": instance.require_special_character,
+            "require_digit": instance.require_digit,
+            "avoid_ambiguous_character": instance.avoid_ambiguous_character,
+            # Block ip
+            "ip_allow": instance.get_list_ip_allow(),
+            "ip_block": instance.get_list_ip_block(),
+            "block_mobile": instance.block_mobile,
+            # Failed login
             "failed_login_attempts": instance.failed_login_attempts,
             "failed_login_duration": instance.failed_login_duration,
-            "failed_login_block_time": instance.failed_login_block_time
+            "failed_login_block_time": instance.failed_login_block_time,
+            "failed_login_owner_email": instance.failed_login_owner_email,
         }
         return data

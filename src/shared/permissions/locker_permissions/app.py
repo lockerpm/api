@@ -1,3 +1,4 @@
+from core.settings import CORE_CONFIG
 from cystack_models.models import Cipher
 from shared.constants.members import *
 from shared.permissions.app import AppBasePermission
@@ -14,9 +15,10 @@ class LockerPermission(AppBasePermission):
         role_pattern = self.get_role_pattern(view)
         return member.status == PM_MEMBER_STATUS_CONFIRMED and role_pattern in role_permissions
 
-    def can_edit_cipher(self, user, cipher: Cipher):
+    def can_edit_cipher(self, request, cipher: Cipher):
         from cystack_models.models.teams.collections_groups import CollectionGroup
 
+        user = request.user
         if cipher.user == user:
             return True
 
@@ -43,6 +45,12 @@ class LockerPermission(AppBasePermission):
             collection_id=cipher_collection_ids
         ).values_list('group_id', flat=True))
         if any(group_id in cipher_group_ids for group_id in member_group_ids):
+            return True
+
+        # Check member policy
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        check_policy = team_repository.check_team_policy(request=request, team=cipher.team)
+        if check_policy is True:
             return True
 
         return False
