@@ -491,10 +491,6 @@ class CipherRepository(ICipherRepository):
         bump_account_revision_date(user=user)
 
     def import_multiple_cipher_team(self, team: Team, ciphers, collections, collection_relationships):
-        print("team:", team)
-        print("ciphjers", len(ciphers))
-        print("collections: ", len(collections))
-        print("collection rela: ", len(collection_relationships))
         # Init id for collections
         existed_collection_ids = list(team.collections.values_list('id', flat=True))
         for collection in collections:
