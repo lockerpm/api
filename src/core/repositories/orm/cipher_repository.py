@@ -491,6 +491,10 @@ class CipherRepository(ICipherRepository):
         bump_account_revision_date(user=user)
 
     def import_multiple_cipher_team(self, team: Team, ciphers, collections, collection_relationships):
+        print("team:", team)
+        print("ciphjers", len(ciphers))
+        print("collections: ", len(collections))
+        print("collection rela: ", len(collection_relationships))
         # Init id for collections
         existed_collection_ids = list(team.collections.values_list('id', flat=True))
         for collection in collections:
@@ -552,6 +556,7 @@ class CipherRepository(ICipherRepository):
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(
                 Cipher(
+                    id=cipher_data.get("id"),
                     creation_date=cipher_data.get("creation_date", now()),
                     revision_date=cipher_data.get("revision_date", now()),
                     deleted_date=cipher_data.get("deleted_date"),
@@ -575,6 +580,5 @@ class CipherRepository(ICipherRepository):
                 )
             )
         CollectionCipher.objects.bulk_create(import_collection_ciphers, batch_size=100, ignore_conflicts=True)
-
         # Bump account revision date
         bump_account_revision_date(team=team)
