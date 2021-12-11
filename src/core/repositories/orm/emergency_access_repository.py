@@ -16,6 +16,24 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         """
         return EmergencyAccess.objects.get(id=emergency_access_id)
 
+    def check_emergency_existed(self, grantor: User, emergency_type: str,
+                                grantee: User = None, email: str = None) -> bool:
+        """
+        Check emergency exists or not?
+        :param grantor: (obj) Grantor User object
+        :param emergency_type: (str) Emergency type
+        :param grantee: (obj) Grantee User object
+        :param email: (str) Email
+        :return:
+        """
+        if grantee is not None:
+            if EmergencyAccess.objects.filter(grantor=grantor, type=emergency_type, grantee=grantee).exists():
+                return True
+        if email is not None:
+            if EmergencyAccess.objects.filter(grantor=grantor, type=emergency_type, email=email).exists():
+                return True
+        return False
+
     def get_multiple_by_grantor(self, grantor: User):
         """
         Get list emergency access which user is a grantor
