@@ -13,8 +13,6 @@ class EmergencyAccess(models.Model):
     revision_date = models.IntegerField()
     last_notification_date = models.IntegerField(null=True)
     recovery_initiated_date = models.IntegerField(null=True)
-    # status = models.PositiveSmallIntegerField(default=0)
-    # type = models.PositiveSmallIntegerField(default=0)
     status = models.CharField(max_length=128, default=EMERGENCY_ACCESS_STATUS_INVITED)
     type = models.CharField(max_length=128)
     wait_time_days = models.PositiveSmallIntegerField(default=7)
