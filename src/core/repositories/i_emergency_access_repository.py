@@ -10,6 +10,11 @@ class IEmergencyAccessRepository(ABC):
         pass
 
     @abstractmethod
+    def check_emergency_existed(self, grantor: User, emergency_type: str,
+                                grantee: User = None, email: str = None) -> bool:
+        pass
+
+    @abstractmethod
     def get_multiple_by_grantor(self, grantor: User):
         pass
 
