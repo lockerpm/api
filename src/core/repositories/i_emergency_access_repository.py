@@ -10,6 +10,11 @@ class IEmergencyAccessRepository(ABC):
         pass
 
     @abstractmethod
+    def check_emergency_existed(self, grantor: User, emergency_type: str,
+                                grantee: User = None, email: str = None) -> bool:
+        pass
+
+    @abstractmethod
     def get_multiple_by_grantor(self, grantor: User):
         pass
 
@@ -18,7 +23,7 @@ class IEmergencyAccessRepository(ABC):
         pass
 
     @abstractmethod
-    def delete_emergency_access(self, emergency_access: EmergencyAccess, user_id):
+    def delete_emergency_access(self, emergency_access: EmergencyAccess):
         pass
 
     @abstractmethod
@@ -31,4 +36,16 @@ class IEmergencyAccessRepository(ABC):
 
     @abstractmethod
     def confirm_emergency_access(self, emergency_access: EmergencyAccess, key_encrypted: str):
+        pass
+
+    @abstractmethod
+    def initiate_emergency_access(self, emergency_access: EmergencyAccess):
+        pass
+
+    @abstractmethod
+    def reject_emergency_access(self, emergency_access: EmergencyAccess):
+        pass
+
+    @abstractmethod
+    def approve_emergency_access(self, emergency_access: EmergencyAccess):
         pass

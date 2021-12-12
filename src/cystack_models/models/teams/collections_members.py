@@ -19,9 +19,10 @@ class CollectionMember(models.Model):
     def create_multiple(cls, member: TeamMember, *collections):
         collections_member = []
         read_only = True if member.role_id == MEMBER_ROLE_MEMBER else False
-        for collection_id in collections:
+        for collection in collections:
             collections_member.append(
-                cls(collection_id=collection_id, member=member, read_only=read_only, hide_passwords=False)
+                cls(collection_id=collection.get("id"), member=member,
+                    read_only=read_only, hide_passwords=collection.get("hide_passwords", False))
             )
         cls.objects.bulk_create(collections_member, ignore_conflicts=True)
 
@@ -31,6 +32,7 @@ class CollectionMember(models.Model):
         for member in members:
             read_only = True if member.get("role") == MEMBER_ROLE_MEMBER else False
             collection_members.append(
-                cls(collection=collection, member_id=member.get("id"), read_only=read_only, hide_passwords=False)
+                cls(collection=collection, member_id=member.get("id"),
+                    read_only=read_only, hide_passwords=member.get("hide_passwords", False))
             )
         cls.objects.bulk_create(collection_members, ignore_conflicts=True)

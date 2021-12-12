@@ -5,6 +5,7 @@ from core.settings import CORE_CONFIG
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
+from shared.utils.app import diff_list
 from v1_0.folders.serializers import FolderSerializer
 
 
@@ -88,7 +89,6 @@ class VaultItemSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = self.context["request"].user
-        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
 
         vault_type = data.get("type")
         if vault_type < 1 or vault_type > 5:
@@ -100,10 +100,11 @@ class VaultItemSerializer(serializers.Serializer):
         if vault_type == CIPHER_TYPE_LOGIN:
             if not login:
                 raise serializers.ValidationError(detail={"login": ["This field is required"]})
-            if login.get("totp") and not data.get("organizationId"):
-                raise serializers.ValidationError(detail={
-                    "organizationId": ["This field is required when using time OTP"]
-                })
+            # if login.get("totp") and not data.get("organizationId"):
+            #     print("CIPHER_TYPE_LOGIN topt")
+            #     raise serializers.ValidationError(detail={
+            #         "organizationId": ["This field is required when using time OTP"]
+            #     })
         if vault_type == CIPHER_TYPE_NOTE and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
         if vault_type == CIPHER_TYPE_CARD and not card:
@@ -119,6 +120,12 @@ class VaultItemSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"folderId": ["This folder does not exist"]})
 
         # Check team id, collection ids
+        data = self.validated_team(data)
+        return data
+
+    def validated_team(self, data):
+        user = self.context["request"].user
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
         organization_id = data.get("organizationId")
         collection_ids = data.get("collectionIds", [])
         if organization_id:
@@ -128,7 +135,6 @@ class VaultItemSerializer(serializers.Serializer):
                 )
                 # Get team object and check team is locked?
                 team_obj = team_member.team
-                role_id = team_member.role_id
                 if not team_obj.key:
                     raise serializers.ValidationError(detail={"organizationId": [
                         "This team does not exist", "Team này không tồn tại"
@@ -136,33 +142,9 @@ class VaultItemSerializer(serializers.Serializer):
                 if team_repository.is_locked(team=team_obj):
                     raise serializers.ValidationError({"non_field_errors": [gen_error("3003")]})
                 data["team"] = team_obj
-
-                if not collection_ids:
-                    default_collection_id = team_repository.get_default_collection(team=team_obj).id
-                    if role_id == MEMBER_ROLE_MANAGER and team_member.collections_members.filter(
-                        collection_id=default_collection_id
-                    ).exists() is False:
-                        raise serializers.ValidationError(detail={
-                            "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
-                        })
-                    data["collectionIds"] = [default_collection_id]
-                else:
-                    if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
-                        team_collections_ids = team_repository.get_list_collection_ids(team=team_obj)
-                    else:
-                        team_collections_ids = list(
-                            team_member.collections_members.values_list('collection_id', flat=True)
-                        )
-                    for collection_id in collection_ids:
-                        if collection_id not in list(team_collections_ids):
-                            raise serializers.ValidationError(detail={
-                                "collectionIds": ["The team collection id {} does not exist".format(collection_id)]
-                            })
-                        # Check member folder
-                        # CHANGE LATER ...
-
-                    data["collectionIds"] = list(set(collection_ids))
-
+                data["collectionIds"] = self.validate_collections(
+                    team_member=team_member, collection_ids=collection_ids
+                )
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": [
                     "This team does not exist", "Team này không tồn tại"
@@ -171,8 +153,34 @@ class VaultItemSerializer(serializers.Serializer):
             data["organizationId"] = None
             data["collectionIds"] = []
             data["team"] = None
-
         return data
+
+    def validate_collections(self, team_member, collection_ids):
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        team_obj = team_member.team
+        role_id = team_member.role_id
+        if not collection_ids:
+            default_collection_id = team_repository.get_default_collection(team=team_obj).id
+            if role_id == MEMBER_ROLE_MANAGER and team_member.collections_members.filter(
+                    collection_id=default_collection_id
+            ).exists() is False:
+                raise serializers.ValidationError(detail={
+                    "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
+                })
+            return [default_collection_id]
+        else:
+            if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
+                team_collections_ids = team_repository.get_list_collection_ids(team=team_obj)
+            else:
+                team_collections_ids = list(
+                    team_member.collections_members.values_list('collection_id', flat=True)
+                )
+            for collection_id in collection_ids:
+                if collection_id not in list(team_collections_ids):
+                    raise serializers.ValidationError(detail={
+                        "collectionIds": ["The team collection id {} does not exist".format(collection_id)]
+                    })
+            return list(set(collection_ids))
 
     def save(self, **kwargs):
         validated_data = self.validated_data
@@ -209,8 +217,33 @@ class VaultItemSerializer(serializers.Serializer):
 
         return detail
 
+    def to_internal_value(self, data):
+        data["favorite"] = data.get("favorite", False) or False
+        return super(VaultItemSerializer, self).to_internal_value(data)
+
 
 class UpdateVaultItemSerializer(VaultItemSerializer):
+    def validate_collections(self, team_member, collection_ids):
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        team_obj = team_member.team
+        role_id = team_member.role_id
+        if not collection_ids:
+            default_collection_id = team_repository.get_default_collection(team=team_obj).id
+            if role_id == MEMBER_ROLE_MANAGER and \
+                    team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
+                raise serializers.ValidationError(detail={
+                    "collectionIds": ["You do not have permission in default collections"]
+                })
+            return [default_collection_id]
+        else:
+            team_collection_ids = team_repository.get_list_collection_ids(team=team_obj)
+            for collection_id in collection_ids:
+                if collection_id not in list(team_collection_ids):
+                    raise serializers.ValidationError(detail={
+                        "collectionIds": ["The team collection id {} does not exist".format(collection_id)]
+                    })
+            return list(set(collection_ids))
+
     def save(self, **kwargs):
         cipher = kwargs.get("cipher")
         validated_data = self.validated_data
@@ -218,6 +251,40 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
             raise serializers.ValidationError(detail={"organizationId": [
                 "You can not change team of cipher when update. Please share this cipher to change team"
             ]})
+
+        # Validate collection ids
+        if cipher.team:
+            team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+            user = self.context["request"].user
+            team_member = user.team_members.get(
+                team_id=cipher.team_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
+            )
+            role_id = team_member.role_id
+            cipher_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
+            collection_ids = validated_data.get("collectionIds", [])
+            team_collection_ids = team_repository.get_list_collection_ids(team=cipher.team)
+            if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
+                member_collection_ids = team_collection_ids
+            else:
+                member_collection_ids = list(
+                    team_member.collections_members.values_list('collection_id', flat=True)
+                )
+            remove_collection_ids = diff_list(cipher_collection_ids, collection_ids)
+            add_collection_ids = diff_list(collection_ids, cipher_collection_ids)
+
+            if remove_collection_ids:
+                for member_collection_id in member_collection_ids:
+                    if member_collection_id not in remove_collection_ids:
+                        raise serializers.ValidationError(detail={"collectionIds": [
+                            "You can not remove collection {}".format(member_collection_id)
+                        ]})
+            if add_collection_ids:
+                for member_collection_id in member_collection_ids:
+                    if member_collection_id not in add_collection_ids:
+                        raise serializers.ValidationError(detail={"collectionIds": [
+                            "You can not add collection {}".format(member_collection_id)
+                        ]})
+
         return super(UpdateVaultItemSerializer, self).save(**kwargs)
 
 

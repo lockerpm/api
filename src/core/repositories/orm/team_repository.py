@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from core.repositories import ITeamRepository
 
 from shared.constants.members import *
+from shared.utils.network import get_ip_by_request, detect_device
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.policy.policy import Policy
 
@@ -37,8 +38,6 @@ class TeamRepository(ITeamRepository):
                 team_members__user=user, key__isnull=False,
                 team_members__status=status
             )
-        # if status:
-        #     teams = teams.filter(team_members__status=status)
         return teams
 
     def get_role_notify(self, team: Team, user) -> dict:
@@ -64,7 +63,7 @@ class TeamRepository(ITeamRepository):
         try:
             return team.policy
         except AttributeError:
-            Policy.create(team=team)
+            return Policy.create(team=team)
 
     def get_multiple_policy_by_user(self, user):
         managed_teams = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
@@ -72,3 +71,34 @@ class TeamRepository(ITeamRepository):
         ).values_list('team_id', flat=True)
         policies = Policy.objects.filter(team_id__in=managed_teams)
         return policies
+
+    def check_team_policy(self, request, team: Team) -> bool:
+        policy = self.retrieve_or_create_policy(team=team)
+
+        # Check block ip
+        ip_allow = policy.get_list_ip_allow()
+        ip_block = policy.get_list_ip_block()
+        client_ip = self.__get_client_ip(request)
+        if ip_allow and client_ip not in ip_allow:
+            return False
+        if ip_block and client_ip in ip_block:
+            return False
+
+        # Check block mobile
+        if policy.block_mobile is True:
+            device_info = detect_device(self.__get_user_agent(request))
+            if device_info.get("device", {}).get("is_mobile"):
+                return False
+
+        return True
+
+    @staticmethod
+    def __get_client_ip(request):
+        # Get ip from header
+        ip = request.META.get("HTTP_LOCKER_CLIENT_IP") or get_ip_by_request(request=request)
+        return ip
+
+    @staticmethod
+    def __get_user_agent(request):
+        user_agent = request.META.get("HTTP_LOCKER_CLIENT_AGENT") or request.META.get("HTTP_USER_AGENT")
+        return user_agent

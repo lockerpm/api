@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from django.db.models import Q, Case, When, Value, IntegerField
+from django.db.models import Q, Case, When, Value, IntegerField, BooleanField
 
 from core.repositories import ICipherRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -32,30 +32,44 @@ class CipherRepository(ICipherRepository):
     def get_multiple_by_ids(self, cipher_ids: list):
         return Cipher.objects.filter(id__in=cipher_ids)
 
-    def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False):
+    def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False,
+                             exclude_team_ids=None):
         """
         Get list ciphers of user
         :param user: (obj) User object
         :param only_personal: (bool) if True => Only get list personal ciphers
         :param only_managed_team: (bool) if True => Only get list ciphers of non-locked teams
         :param only_edited: (bool) if True => Only get list ciphers that user is allowed edit permission
+        :param exclude_team_ids: (list) Excluding all ciphers have team_id in this list
         :return:
         """
 
         personal_ciphers = Cipher.objects.filter(user=user)
         if only_personal is True:
-            return personal_ciphers
+            return personal_ciphers.annotate(view_password=Value(True, output_field=BooleanField()))
 
         confirmed_team_members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         if only_managed_team:
             confirmed_team_members = confirmed_team_members.filter(team__locked=False)
 
+        if exclude_team_ids:
+            confirmed_team_members = confirmed_team_members.exclude(team_id__in=exclude_team_ids)
+
         confirmed_team_ids = confirmed_team_members.values_list('team_id', flat=True)
         team_ciphers = Cipher.objects.filter(
             team_id__in=confirmed_team_ids
         ).filter(
-            Q(team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user) |
-            Q(team__groups__access_all=True, team__groups__groups_members__member__user=user) |
+            # Owner, Admin ciphers
+            Q(
+                team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN],
+                team__team_members__user=user
+            ) |
+            # Group access all ciphers
+            Q(
+                team__groups__access_all=True,
+                team__groups__groups_members__member__user=user
+            ) |
+            # Team member
             Q(
                 collections_ciphers__collection__collections_members__member__in=confirmed_team_members,
                 team__team_members__user=user
@@ -64,7 +78,20 @@ class CipherRepository(ICipherRepository):
                 collections_ciphers__collection__collections_groups__group__groups_members__member__in=confirmed_team_members,
                 team__team_members__user=user
             )
+        ).annotate(
+            view_password=Case(
+                When(
+                    Q(
+                        team__team_members__role_id__in=[MEMBER_ROLE_MEMBER],
+                        team__team_members__user=user,
+                        collections_ciphers__collection__collections_members__hide_passwords=True
+                    ), then=False
+                ),
+                default=True,
+                output_field=BooleanField()
+            )
         )
+        hide_password_cipher_ids = team_ciphers.filter(view_password=False).values_list('id', flat=True)
         if only_edited:
             team_ciphers = team_ciphers.filter(
                 team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
@@ -72,36 +99,42 @@ class CipherRepository(ICipherRepository):
             )
         return Cipher.objects.filter(
             id__in=list(personal_ciphers.values_list('id', flat=True)) + list(team_ciphers.values_list('id', flat=True))
-        )
-        return (personal_ciphers | team_ciphers).distinct()
-
-        members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
-        if only_edited is True:
-            members = members.filter(
-                Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER]) |
-                Q(team__groups__access_all=True)
+        ).annotate(
+            view_password=Case(
+                When(id__in=hide_password_cipher_ids, then=False),
+                default=True,
+                output_field=BooleanField()
             )
-        if only_managed_team:
-            members = members.filter(team__locked=False)
-
-        # Members that user is an owner or an admin or user belongs to a group that can access all.
-        access_all_teams = list(members.filter(
-            Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]) |
-            Q(team__groups__access_all=True)
-        ).values_list('team_id', flat=True))
-        access_all_team_ciphers = Cipher.objects.filter(team_id__in=access_all_teams)
-
-        # Members is a manager or a member that belong to allowed collections
-        limit_members = members.filter(role__name__in=[MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
-        collection_members = list(CollectionMember.objects.filter(
-            member__in=limit_members
-        ).values_list('collection_id', flat=True))
-        collection_groups = list(CollectionGroup.objects.filter(
-            group_id__in=GroupMember.objects.filter(member__in=limit_members).values_list('group_id', flat=True)
-        ).values_list('collection_id', flat=True))
-        limit_team_ciphers = Cipher.objects.filter(
-            collections_ciphers__collection_id__in=collection_members + collection_groups
         )
+        # return (personal_ciphers | team_ciphers).distinct()
+
+        # members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
+        # if only_edited is True:
+        #     members = members.filter(
+        #         Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER]) |
+        #         Q(team__groups__access_all=True)
+        #     )
+        # if only_managed_team:
+        #     members = members.filter(team__locked=False)
+        #
+        # # Members that user is an owner or an admin or user belongs to a group that can access all.
+        # access_all_teams = list(members.filter(
+        #     Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]) |
+        #     Q(team__groups__access_all=True)
+        # ).values_list('team_id', flat=True))
+        # access_all_team_ciphers = Cipher.objects.filter(team_id__in=access_all_teams)
+        #
+        # # Members is a manager or a member that belong to allowed collections
+        # limit_members = members.filter(role__name__in=[MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
+        # collection_members = list(CollectionMember.objects.filter(
+        #     member__in=limit_members
+        # ).values_list('collection_id', flat=True))
+        # collection_groups = list(CollectionGroup.objects.filter(
+        #     group_id__in=GroupMember.objects.filter(member__in=limit_members).values_list('group_id', flat=True)
+        # ).values_list('collection_id', flat=True))
+        # limit_team_ciphers = Cipher.objects.filter(
+        #     collections_ciphers__collection_id__in=collection_members + collection_groups
+        # )
 
         # team_ids = list(members.values_list('team_id', flat=True))
         # member_collections = CollectionMember.objects.filter(member__in=members).values_list('collection_id', flat=True)
@@ -115,7 +148,7 @@ class CipherRepository(ICipherRepository):
         # )
         # return (personal_ciphers | team_ciphers).distinct()
 
-        return (personal_ciphers | access_all_team_ciphers | limit_team_ciphers).distinct()
+        # return (personal_ciphers | access_all_team_ciphers | limit_team_ciphers).distinct()
 
     def save_new_cipher(self, cipher_data):
         """
@@ -143,7 +176,6 @@ class CipherRepository(ICipherRepository):
             data=cipher_data.get("data"),
             user_id=user_cipher_id,
             team_id=team_id,
-            view_password=cipher_data.get("view_password", True)
         )
         cipher.save()
         # Create CipherFavorite
@@ -178,7 +210,6 @@ class CipherRepository(ICipherRepository):
         cipher.revision_date = now()
         cipher.reprompt = cipher_data.get("reprompt", cipher.reprompt) or 0
         cipher.score = cipher_data.get("score", cipher.score)
-        cipher.view_password = cipher_data.get("view_password", cipher.view_password)
         cipher.type = cipher_data.get("type", cipher.type)
         cipher.data = cipher_data.get("data", cipher.get_data())
         cipher.user_id = user_cipher_id
@@ -517,9 +548,11 @@ class CipherRepository(ICipherRepository):
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
+            cipher_data.pop("team", None)
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(
                 Cipher(
+                    id=cipher_data.get("id"),
                     creation_date=cipher_data.get("creation_date", now()),
                     revision_date=cipher_data.get("revision_date", now()),
                     deleted_date=cipher_data.get("deleted_date"),
@@ -536,13 +569,12 @@ class CipherRepository(ICipherRepository):
         # Create collection cipher
         import_collection_ciphers = []
         for collection_cipher in collection_ciphers:
-            import_collections.append(
+            import_collection_ciphers.append(
                 CollectionCipher(
                     cipher_id=collection_cipher.get("cipher_id"),
                     collection_id=collection_cipher.get("collection_id")
                 )
             )
         CollectionCipher.objects.bulk_create(import_collection_ciphers, batch_size=100, ignore_conflicts=True)
-
         # Bump account revision date
         bump_account_revision_date(team=team)

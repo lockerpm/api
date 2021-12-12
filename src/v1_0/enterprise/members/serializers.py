@@ -21,10 +21,31 @@ class DetailMemberSerializer(serializers.ModelSerializer):
         role = instance.role.name
         data["role"] = role
         if role in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER]:
-            data["collections"] = list(instance.collections_members.values_list('collection_id', flat=True))
+            collection_members = list(instance.collections_members.values('collection_id', 'hide_passwords'))
+            data["collections"] = [{
+                "id": collection_member.get("collection_id"),
+                "hide_passwords": collection_member.get("hide_passwords")
+            } for collection_member in collection_members]
         else:
-            data["collections"] = list(instance.team.collections.values_list('id', flat=True))
+            collection_ids = list(instance.team.collections.values_list('id', flat=True))
+            data["collections"] = [{
+                "id": collection_id,
+                "hide_passwords": False
+            } for collection_id in collection_ids]
         data["pwd_user_id"] = instance.user.internal_id if instance.user else None
+        return data
+
+
+class CollectionSerializer(serializers.Serializer):
+    id = serializers.CharField(max_length=128)
+    hide_passwords = serializers.BooleanField(default=False)
+
+
+class UpdateMemberSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=TEAM_LIST_ROLE, required=True)
+    collections = CollectionSerializer(many=True, allow_null=True)
+
+    def validate(self, data):
         return data
 
 

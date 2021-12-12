@@ -2,7 +2,7 @@ import uuid
 from typing import Dict
 
 import stripe
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
@@ -22,7 +22,7 @@ class UserRepository(IUserRepository):
             user = User(user_id=user_id, creation_date=creation_date)
             user.save()
             # Create default team for this new user
-            self.get_default_team(user=user)
+            self.get_default_team(user=user, create_if_not_exist=True)
         return user
 
     def get_by_id(self, user_id) -> User:
@@ -35,12 +35,19 @@ class UserRepository(IUserRepository):
             if not create_if_not_exist:
                 return None
             default_team = self._create_default_team(user)
+        except MultipleObjectsReturned:
+            # If user has multiple default teams because of concurrent requests ="> Delete others
+            multiple_default_teams = user.team_members.filter(is_default=True).order_by('-created_time')
+            # Set first team as default
+            default_team = multiple_default_teams.first().team
+            multiple_default_teams.exclude(team_id=default_team.id).delete()
+
         return default_team
 
     def _create_default_team(self, user: User):
         from cystack_models.models.teams.teams import Team
         from cystack_models.models.members.member_roles import MemberRole
-        team_name = user.get_from_cystack_id().get("full_name", "My Team")
+        team_name = user.get_from_cystack_id().get("full_name", "My Vault")
         default_group = Team.create(**{
             "members": [{
                 "user": self,

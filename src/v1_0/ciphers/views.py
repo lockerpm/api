@@ -66,12 +66,9 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Then, we update revision date of user (personal or members of the organization)
         # If cipher belongs to the organization, we also update collections of the cipher.
         new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
-        PwdSync(
-            event=SYNC_EVENT_CIPHER_CREATE,
-            user_ids=[request.user.user_id],
-            team=team,
-            add_all=True
-        ).send()
+        # Send sync message
+        PwdSync(event=SYNC_EVENT_CIPHER_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        # Create event
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": new_cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_CIPHER_CREATED, "cipher_id": new_cipher.id, "ip_address": ip
@@ -188,7 +185,12 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     def import_data(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-        serializer = self.get_serializer(data=request.data)
+        import_data = request.data
+        ciphers = import_data.get("ciphers")
+        new_ciphers = [cipher for cipher in ciphers if cipher.get("name")]
+        import_data["ciphers"] = new_ciphers
+
+        serializer = self.get_serializer(data=import_data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         ciphers = validated_data.get("ciphers", [])
