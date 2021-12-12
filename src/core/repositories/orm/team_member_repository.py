@@ -54,7 +54,7 @@ class TeamMemberRepository(ITeamMemberRepository):
         member.save()
         return token_value
 
-    def update_member(self, member: TeamMember, role_id: str, collection_ids: list) -> TeamMember:
+    def update_member(self, member: TeamMember, role_id: str, collections: list) -> TeamMember:
         # Update role
         member.role_id = role_id
         member.save()
@@ -62,11 +62,11 @@ class TeamMemberRepository(ITeamMemberRepository):
         if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
             # Delete all groups of this member
             member.groups_members.all().delete()
-            collection_ids = []
-        existed_collection_ids = list(member.collections_members.values_list('collection_id', flat=True))
-        removed_collection_ids = diff_list(existed_collection_ids, collection_ids)
-        member.collections_members.filter(collection_id__in=removed_collection_ids).delete()
-        member.collections_members.model.create_multiple(member, *collection_ids)
+            collections = []
+        # Remove all old collections
+        member.collections_members.all().delete()
+        # Create member collections
+        member.collections_members.model.create_multiple(member, *collections)
         # Bump revision date
         bump_account_revision_date(user=member.user)
 

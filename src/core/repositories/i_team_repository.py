@@ -55,3 +55,7 @@ class ITeamRepository(ABC):
     @abstractmethod
     def get_multiple_policy_by_user(self, user):
         pass
+
+    @abstractmethod
+    def check_team_policy(self, request, team: Team) -> bool:
+        pass

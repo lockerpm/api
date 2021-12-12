@@ -64,8 +64,8 @@ class TeamMember(models.Model):
     @classmethod
     def create_with_collections(cls, team: Team, role_id: str, is_primary=False, is_default=False,
                                 status=PM_MEMBER_STATUS_CONFIRMED, user: User = None, email: str = None,
-                                collection_ids: list = None):
+                                collections: list = None):
         new_member = cls.create(team, role_id, is_primary, is_default, status, user, email)
-        if collection_ids:
-            new_member.collections_members.model.create_multiple(new_member, *collection_ids)
+        if collections:
+            new_member.collections_members.model.create_multiple(new_member, *collections)
         return new_member

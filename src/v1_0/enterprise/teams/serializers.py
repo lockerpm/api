@@ -60,7 +60,7 @@ class CollectionRelationshipSerializer(serializers.Serializer):
 
 
 class ImportTeamSerializer(serializers.Serializer):
-    ciphers = VaultItemSerializer(many=True)
+    ciphers = VaultItemSerializer(many=True, required=True)
     collections = ImportCollectionSerializer(many=True)
     collectionRelationships = CollectionRelationshipSerializer(many=True)
 

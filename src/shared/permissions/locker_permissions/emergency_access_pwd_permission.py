@@ -11,8 +11,8 @@ class EmergencyAccessPermission(LockerPermission):
         user = request.user
 
         # obj is a EmergencyAsset object => Check user is a grantor or a grantee
-        if view.action in ["reinvite", "confirm"]:
+        if view.action in ["reinvite", "confirm", "approve", "reject"]:
             return user.user_id == obj.grantor_id
-        elif view.action in ["accept"]:
+        elif view.action in ["accept", "initiate", "view", "takeover", "password"]:
             return user.user_id == obj.grantee_id
         return user.user_id in [obj.grantee_id, obj.grantor_id]

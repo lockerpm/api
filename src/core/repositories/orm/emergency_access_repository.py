@@ -4,6 +4,7 @@ from core.utils.account_revision_date import bump_account_revision_date
 from shared.constants.emergency_access import *
 from cystack_models.models.users.users import User
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
+from shared.utils.app import now
 
 
 class EmergencyAccessRepository(IEmergencyAccessRepository):
@@ -14,6 +15,24 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         :return:
         """
         return EmergencyAccess.objects.get(id=emergency_access_id)
+
+    def check_emergency_existed(self, grantor: User, emergency_type: str,
+                                grantee: User = None, email: str = None) -> bool:
+        """
+        Check emergency exists or not?
+        :param grantor: (obj) Grantor User object
+        :param emergency_type: (str) Emergency type
+        :param grantee: (obj) Grantee User object
+        :param email: (str) Email
+        :return:
+        """
+        if grantee is not None:
+            if EmergencyAccess.objects.filter(grantor=grantor, type=emergency_type, grantee=grantee).exists():
+                return True
+        if email is not None:
+            if EmergencyAccess.objects.filter(grantor=grantor, type=emergency_type, email=email).exists():
+                return True
+        return False
 
     def get_multiple_by_grantor(self, grantor: User):
         """
@@ -33,11 +52,10 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         grantee_emergency = grantee.emergency_grantees.all().order_by('creation_date')
         return grantee_emergency
 
-    def delete_emergency_access(self, emergency_access: EmergencyAccess, user_id):
+    def delete_emergency_access(self, emergency_access: EmergencyAccess):
         """
         Destroy an EmergencyAsset object
         :param emergency_access: (obj)
-        :param user_id: Grantor or Grantee
         :return:
         """
         if emergency_access.status == EMERGENCY_ACCESS_STATUS_CONFIRMED:
@@ -62,3 +80,18 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         emergency_access.key_encrypted = key_encrypted
         emergency_access.save()
         bump_account_revision_date(user=emergency_access.grantee)
+
+    def initiate_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED
+        emergency_access.revision_date = now()
+        emergency_access.recovery_initiated_date = now()
+        emergency_access.last_notification_date = now()
+        emergency_access.save()
+
+    def reject_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_CONFIRMED
+        emergency_access.save()
+
+    def approve_emergency_access(self, emergency_access: EmergencyAccess):
+        emergency_access.status = EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED
+        emergency_access.save()

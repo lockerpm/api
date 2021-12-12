@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Value, BooleanField, Case, When
 
 from core.repositories import ICollectionRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -20,8 +20,10 @@ class CollectionRepository(ICollectionRepository):
     def get_multiple_team_collections(self, team_id: str):
         return Collection.objects.filter(team_id=team_id).order_by('-creation_date')
 
-    def get_multiple_user_collections(self, user: User):
+    def get_multiple_user_collections(self, user: User, exclude_team_ids=None):
         members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False)
+        if exclude_team_ids and isinstance(exclude_team_ids, list):
+            members = members.exclude(team_id__in=exclude_team_ids)
 
         # Collections that user is an owner or admin or user belongs to a group that can access all.
         access_all_teams = list(members.filter(
@@ -31,21 +33,24 @@ class CollectionRepository(ICollectionRepository):
         access_all_collections = Collection.objects.filter(team_id__in=access_all_teams)
 
         limit_members = members.filter(role__name__in=[MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
-        collection_members = list(CollectionMember.objects.filter(
-            member__in=limit_members
-        ).values_list('collection_id', flat=True))
-        collection_groups = list(CollectionGroup.objects.filter(
+        collection_members = CollectionMember.objects.filter(member__in=limit_members)
+        hide_password_collection_ids = list(
+            collection_members.filter(hide_passwords=True).values_list('collection_id', flat=True)
+        )
+        collection_members_ids = list(collection_members.values_list('collection_id', flat=True))
+        collection_groups_ids = list(CollectionGroup.objects.filter(
             group_id__in=GroupMember.objects.filter(member__in=limit_members).values_list('group_id', flat=True)
         ).values_list('collection_id', flat=True))
-        limit_collections = Collection.objects.filter(id__in=collection_members + collection_groups)
+        limit_collections = Collection.objects.filter(id__in=collection_members_ids + collection_groups_ids)
 
-        collections = (access_all_collections | limit_collections).distinct().order_by('-creation_date')
+        collections = (access_all_collections | limit_collections).distinct().annotate(
+            hide_passwords=Case(
+                When(id__in=hide_password_collection_ids, then=True),
+                default=False,
+                output_field=BooleanField()
+            )
+        ).order_by('-creation_date')
         return collections
-
-        # teams = user.team_members.filter(
-        #     status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False
-        # ).values_list('team_id', flat=True)
-        # return Collection.objects.filter(team_id__in=list(teams)).order_by('-creation_date')
 
     def save_new_collection(self, team: Team, name: str, is_default: bool = False) -> Collection:
         collection = Collection.objects.create(
