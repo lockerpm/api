@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from shared.constants.members import *
 from shared.constants.emergency_access import *
 from shared.permissions.locker_permissions.emergency_access_pwd_permission import EmergencyAccessPermission
-from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS_INVITATION
+from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
     InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
@@ -75,7 +75,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         )
         # Send notification via ws for grantee
         if new_emergency_access.grantee_id:
-            PwdSync(event=SYNC_EMERGENCY_ACCESS_INVITATION, user_ids=[new_emergency_access.grantee_id]).send()
+            PwdSync(event=SYNC_EMERGENCY_ACCESS, user_ids=[new_emergency_access.grantee_id]).send()
         return Response(status=200, data={"id": new_emergency_access.id})
 
     @action(methods=["post"], detail=False)
@@ -84,7 +84,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         emergency_access = self.get_object()
         # Send notification via ws for grantee
         if emergency_access.grantee_id:
-            PwdSync(event=SYNC_EMERGENCY_ACCESS_INVITATION, user_ids=[emergency_access.grantee_id]).send()
+            PwdSync(event=SYNC_EMERGENCY_ACCESS, user_ids=[emergency_access.grantee_id]).send()
         return Response(status=200, data={"id": emergency_access.id})
 
     @action(methods=["post"], detail=True)
