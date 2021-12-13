@@ -107,7 +107,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
     def session(self, request, *args, **kwargs):
         user = self.request.user
         if user.login_block_until and user.login_block_until > now():
-            raise Throttled(wait=user.login_block_until - now())
+            wait = user.login_block_until - now()
+            error_detail = gen_error("1008")
+            error_detail["wait"] = wait
+            return Response(status=400, data=error_detail)
 
         user_teams = list(self.team_repository.get_multiple_team_by_user(
             user=user, status=PM_MEMBER_STATUS_CONFIRMED
