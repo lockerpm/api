@@ -10,7 +10,7 @@ from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
 from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
-from shared.error_responses.error import gen_error
+from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
 from shared.utils.app import now
@@ -108,7 +108,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         if user.login_block_until and user.login_block_until > now():
             wait = user.login_block_until - now()
-            error_detail = gen_error("1008")
+            error_detail = refer_error(gen_error("1008"))
             error_detail["wait"] = wait
             return Response(status=400, data=error_detail)
 
