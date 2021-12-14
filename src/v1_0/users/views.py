@@ -103,6 +103,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
             user.save()
             return Response(status=200, data={"success": True})
 
+    @action(methods=["get"], detail=False)
+    def revision_date(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        return Response(status=200, data={"revision_date": user.revision_date})
+
     @action(methods=["post"], detail=False)
     def session(self, request, *args, **kwargs):
         user = self.request.user
