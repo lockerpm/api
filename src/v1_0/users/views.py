@@ -263,11 +263,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
             raise ValidationError({"non_field_errors": [gen_error("1007")]})
 
         # Clear data of default team
-        default_team.team_members.all().order_by('id').delete()
-        default_team.groups.order_by('id').delete()
-        default_team.collections.all().order_by('id').delete()
-        default_team.ciphers.all().order_by('id').delete()
-        default_team.delete()
+        if default_team:
+            default_team.team_members.all().order_by('id').delete()
+            default_team.groups.order_by('id').delete()
+            default_team.collections.all().order_by('id').delete()
+            default_team.ciphers.all().order_by('id').delete()
+            default_team.delete()
 
         # Deactivated this account
         self.user_repository.delete_account(user)

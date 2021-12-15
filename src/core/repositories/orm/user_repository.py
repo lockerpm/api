@@ -226,20 +226,21 @@ class UserRepository(IUserRepository):
         return member_invitations
 
     def delete_account(self, user: User):
-        user.user_refresh_tokens.all().delete()
-        user.folders.all().delete()
-        user.ciphers.all().delete()
-        user.revision_date = None
-        user.activated = False
-        user.account_revision_date = None
-        user.master_password = None
-        user.master_password_hint = None
-        user.master_password_score = 0
-        user.security_stamp = None
-        user.key = None
-        user.public_key = None
-        user.private_key = None
-        user.save()
+        user.delete()
+        # user.user_refresh_tokens.all().delete()
+        # user.folders.all().delete()
+        # user.ciphers.all().delete()
+        # user.revision_date = None
+        # user.activated = False
+        # user.account_revision_date = None
+        # user.master_password = None
+        # user.master_password_hint = None
+        # user.master_password_score = 0
+        # user.security_stamp = None
+        # user.key = None
+        # user.public_key = None
+        # user.private_key = None
+        # user.save()
 
     def purge_account(self, user: User):
         user.folders.all().delete()
