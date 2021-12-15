@@ -33,7 +33,7 @@ class UserRepository(IUserRepository):
         try:
             default_team = user.team_members.get(is_default=True).team
         except ObjectDoesNotExist:
-            if not create_if_not_exist:
+            if create_if_not_exist is False:
                 return None
             default_team = self._create_default_team(user)
         except MultipleObjectsReturned:
@@ -51,7 +51,7 @@ class UserRepository(IUserRepository):
         team_name = user.get_from_cystack_id().get("full_name", "My Vault")
         default_group = Team.create(**{
             "members": [{
-                "user": self,
+                "user": user,
                 "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
                 "is_default": True,
                 "is_primary": True
