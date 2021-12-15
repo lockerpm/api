@@ -10,7 +10,6 @@ from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
-from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from cystack_models.models import User
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
@@ -34,7 +33,7 @@ class UserRepository(IUserRepository):
         try:
             default_team = user.team_members.get(is_default=True).team
         except ObjectDoesNotExist:
-            if create_if_not_exist is False:
+            if not create_if_not_exist:
                 return None
             default_team = self._create_default_team(user)
         except MultipleObjectsReturned:
@@ -52,7 +51,7 @@ class UserRepository(IUserRepository):
         team_name = user.get_from_cystack_id().get("full_name", "My Vault")
         default_group = Team.create(**{
             "members": [{
-                "user": user,
+                "user": self,
                 "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
                 "is_default": True,
                 "is_primary": True
@@ -157,6 +156,7 @@ class UserRepository(IUserRepository):
         else:
             payment_method = PAYMENT_METHOD_WALLET
 
+        from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
         end_time = PaymentMethodFactory.get_method(
             user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
         ).cancel_recurring_subscription()
