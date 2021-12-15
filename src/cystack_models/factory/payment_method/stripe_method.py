@@ -3,7 +3,6 @@ import traceback
 import stripe
 import stripe.error
 
-from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
@@ -83,15 +82,13 @@ class StripePaymentMethod(IPaymentMethod):
         :param kwargs: (dict) Metadata: card, bank_id
         :return: (dict) {"success": true/false, "stripe_error": ""}
         """
-        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-
         # If user doesn't have any card => return
         card = kwargs.get("card")
         if not card or isinstance(card, dict) is False or not card.get("stripe_customer_id") or not card.get("id_card"):
             return {"success": False}
 
         # First, get current user plan
-        current_plan = user_repository.get_current_plan(user=self.user, scope=self.scope)
+        current_plan = self.get_current_plan(**kwargs)
 
         stripe_subscription = current_plan.get_stripe_subscription()
         # Create stripe subscription if does not exist
@@ -199,7 +196,7 @@ class StripePaymentMethod(IPaymentMethod):
         """
         current_plan = kwargs.get("current_plan")
         if not current_plan:
-            current_plan = self.user.get_current_plan(scope=self.scope)
+            current_plan = self.get_current_plan(**kwargs)
         current_stripe_sub = current_plan.get_stripe_subscription()
         # Retrieve discount applied of this current Stripe Subscription
         discount_applied = current_stripe_sub.discount

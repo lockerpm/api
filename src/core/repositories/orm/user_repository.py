@@ -2,6 +2,7 @@ import uuid
 from typing import Dict
 
 import stripe
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
@@ -9,6 +10,7 @@ from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
+from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from cystack_models.models import User
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
@@ -32,7 +34,7 @@ class UserRepository(IUserRepository):
         try:
             default_team = user.team_members.get(is_default=True).team
         except ObjectDoesNotExist:
-            if not create_if_not_exist:
+            if create_if_not_exist is False:
                 return None
             default_team = self._create_default_team(user)
         except MultipleObjectsReturned:
@@ -50,7 +52,7 @@ class UserRepository(IUserRepository):
         team_name = user.get_from_cystack_id().get("full_name", "My Vault")
         default_group = Team.create(**{
             "members": [{
-                "user": self,
+                "user": user,
                 "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
                 "is_default": True,
                 "is_primary": True
@@ -144,6 +146,22 @@ class UserRepository(IUserRepository):
             self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
         return pm_user_plan
 
+    def cancel_plan(self, user: User, scope=None):
+        current_plan = self.get_current_plan(user=user, scope=scope)
+        pm_plan_alias = current_plan.get_plan_type_alias()
+        if pm_plan_alias == PLAN_TYPE_PM_FREE:
+            return
+        stripe_subscription = current_plan.get_stripe_subscription()
+        if stripe_subscription:
+            payment_method = PAYMENT_METHOD_CARD
+        else:
+            payment_method = PAYMENT_METHOD_WALLET
+
+        end_time = PaymentMethodFactory.get_method(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
+        ).cancel_recurring_subscription()
+        return end_time
+
     def __create_vault_team(self, user, key, collection_name):
         # Retrieve or create default team
         team = self.get_default_team(user=user, create_if_not_exist=True)
@@ -226,6 +244,9 @@ class UserRepository(IUserRepository):
         return member_invitations
 
     def delete_account(self, user: User):
+        # Cancel current plan
+        self.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # Then, delete related data: sessions, folders, ciphers
         user.user_refresh_tokens.all().delete()
         user.folders.all().delete()
         user.ciphers.all().delete()
