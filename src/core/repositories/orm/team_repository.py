@@ -96,6 +96,10 @@ class TeamRepository(ITeamRepository):
     def __get_client_ip(request):
         # Get ip from header
         ip = request.META.get("HTTP_LOCKER_CLIENT_IP") or get_ip_by_request(request=request)
+        from shared.log.cylog import CyLog
+        CyLog.debug(**{"message": "Client api: {} {} {}".format(
+            request.META.get("HTTP_LOCKER_CLIENT_IP"), get_ip_by_request(request=request), ip
+        )})
         return ip
 
     @staticmethod
