@@ -34,6 +34,9 @@ EVENT_TEAM_UPDATED = 1600
 EVENT_TEAM_PURGED_DATA = 1601
 
 
+EVENT_TEAM_POLICY_UPDATED = 1700
+
+
 LOG_TYPES = {
     # User Events
     EVENT_USER_LOGIN: {
@@ -61,7 +64,7 @@ LOG_TYPES = {
         "en": "Login attempted failed with incorrect password"
     },
     1006: {
-        "vi": "",
+        "vi": "Đăng nhập thất bại với 2FA không chính xác",
         "en": "Login attempt failed with incorrect two-step login"
     },
     EVENT_USER_EXPORT_VAULT: {
@@ -103,7 +106,7 @@ LOG_TYPES = {
         "en": "Viewed item {}"
     },
     1108: {
-        "vi": "",
+        "vi": "Hiển thị mật khẩu của item {}",
         "en": "Viewed password for item {}"
     },
     1109: {
@@ -201,5 +204,11 @@ LOG_TYPES = {
     EVENT_TEAM_PURGED_DATA: {
         "vi": "Xóa dữ liệu tổ chức",
         "en": "Purged organization vault"
+    },
+
+    # Team policy events
+    EVENT_TEAM_POLICY_UPDATED: {
+        "vi": "Cập nhật policy của tổ chức",
+        "en": "Updated the team policy"
     },
 }
