@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.response import Response
@@ -133,6 +135,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Login failed
         if user.check_master_password(raw_password=password) is False:
+            # Create event here
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+                "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
+            })
             # Check policy
             login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
                 failed_login_attempts__isnull=False
@@ -153,14 +160,22 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
                 if user.login_failed_attempts >= failed_login_attempts and \
                         latest_request_login and now() - latest_request_login < failed_login_duration:
+                    # Lock login of this member
                     user.login_block_until = now() + failed_login_block_time
                     user.save()
+                    owner = self.team_repository.get_primary_member(team=login_policy_limit.team).user_id
+                    raise ValidationError(detail={
+                        "password": ["Password is not correct"],
+                        "owner": owner,
+                        "lock_time": "{} (UTC+00)".format(
+                            datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
+                        ),
+                        "unlock_time": "{} (UTC+00)".format(
+                            datetime.utcfromtimestamp(user.login_block_until).strftime('%H:%M:%S %d-%m-%Y')
+                        ),
+                        "ip": ip
+                    })
 
-            # Create event here
-            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-                "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-                "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
-            })
             raise ValidationError(detail={"password": ["Password is not correct"]})
 
         user.last_request_login = now()
@@ -311,10 +326,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.team_member_repository.accept_invitation(member=member_invitation)
             primary_owner = self.team_repository.get_primary_member(team=member_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
+            result = {"status": status, "owner": primary_owner.user_id, "team_name": member_invitation.team.name}
         else:
             self.team_member_repository.reject_invitation(member=member_invitation)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[user.user_id]).send()
-        return Response(status=200, data={"success": True})
+            result = {"status": status}
+        return Response(status=200, data=result)
 
     @action(methods=["get"], detail=False)
     def family(self, request, *args, **kwargs):
