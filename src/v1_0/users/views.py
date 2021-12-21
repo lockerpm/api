@@ -143,15 +143,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
             # Check policy
             login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
                 failed_login_attempts__isnull=False
-            ).values('failed_login_attempts', 'failed_login_duration', 'failed_login_block_time').annotate(
+            ).annotate(
                 rate_limit=ExpressionWrapper(
                     F('failed_login_attempts') * 1.0 / F('failed_login_duration'), output_field=FloatField()
                 )
             ).order_by('rate_limit').first()
             if login_policy_limit:
-                failed_login_attempts = login_policy_limit.get("failed_login_attempts")
-                failed_login_duration = login_policy_limit.get("failed_login_duration")
-                failed_login_block_time = login_policy_limit.get("failed_login_block_time")
+                failed_login_attempts = login_policy_limit.failed_login_attempts
+                failed_login_duration = login_policy_limit.failed_login_duration
+                failed_login_block_time = login_policy_limit.failed_login_block_time
                 latest_request_login = user.last_request_login
 
                 user.login_failed_attempts = user.login_failed_attempts + 1
