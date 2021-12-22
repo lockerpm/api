@@ -63,6 +63,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user.api_key = secure_random_string(length=30)
         # Verified and activated this user
         user.activated = True
+        user.activated_date = now()
         user.save()
 
         return Response(status=200, data={"success": True})
