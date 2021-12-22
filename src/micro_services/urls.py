@@ -6,6 +6,7 @@ from micro_services import views
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'sync/teams', views.SyncTeamViewSet, "teams")
+router.register(r'users', views.UserViewSet, "users")
 
 
 urlpatterns = [
