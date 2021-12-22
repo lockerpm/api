@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from core.utils.account_revision_date import bump_account_revision_date
 from shared.background import *
 from shared.constants.event import *
 from shared.constants.members import *
@@ -174,15 +175,17 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         ip = request.data.get("ip")
         try:
             member = team.team_members.get(id=member_id)
+            member_user = member.user
         except TeamMember.DoesNotExist:
             raise NotFound
         deleted_member_user_id = member.user_id
         # Not allow delete themselves
-        if member.user == user or member.role.name == MEMBER_ROLE_OWNER:
+        if member_user == user or member.role.name == MEMBER_ROLE_OWNER:
             return Response(status=403)
         member_user_id = member.user_id
         member.delete()
         # Sync data of member
+        bump_account_revision_date(user=member_user)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
@@ -287,6 +290,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         member.key = org_key
         member.status = PM_MEMBER_STATUS_CONFIRMED
         member.save()
+        bump_account_revision_date(user=member.user)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
