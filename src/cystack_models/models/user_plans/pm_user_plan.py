@@ -154,7 +154,7 @@ class PMUserPlan(UserPlan):
         :param new_duration: (str) New duration: monthly/half_yearly/yearly
         :param new_quantity: (int) New number of quantity
         :param currency: (str) Currency
-        :param promo_code: (obj) Promo code object
+        :param promo_code: (str) Promo code string value
         :return:
         """
         current_time = now()
@@ -172,8 +172,8 @@ class PMUserPlan(UserPlan):
             if not promo_code_obj:
                 error_promo = {"promo_code": ["This coupon is expired or incorrect"]}
             else:
-                if not (new_duration == DURATION_YEARLY and promo_code_obj.duration < 12):
-                    duration_next_billing_month = promo_code_obj.duration
+                # if not (new_duration == DURATION_YEARLY and promo_code_obj.duration < 12):
+                #     duration_next_billing_month = promo_code_obj.duration
                 promo_description_en = promo_code_obj.description_en
                 promo_description_vi = promo_code_obj.description_vi
 
