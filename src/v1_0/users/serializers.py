@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from cystack_models.models.members.team_members import TeamMember
 from shared.constants.ciphers import KDF_TYPE
+from shared.constants.device_type import LIST_CLIENT_ID, LIST_DEVICE_TYPE
+from cystack_models.models.members.team_members import TeamMember
 
 
 class EncryptedPairKey(serializers.Serializer):
@@ -31,11 +32,17 @@ class UserPwdSerializer(serializers.Serializer):
 
 
 class UserSessionSerializer(serializers.Serializer):
-    client_id = serializers.ChoiceField(choices=["web", "browser", "desktop", "mobile"])
+    client_id = serializers.ChoiceField(choices=LIST_CLIENT_ID)
     device_identifier = serializers.CharField()
     device_name = serializers.CharField(required=False, allow_blank=True)
     device_type = serializers.IntegerField(required=False)
     password = serializers.CharField()
+
+    def validate(self, data):
+        device_type = data.get("device_type")
+        if device_type and device_type not in LIST_DEVICE_TYPE:
+            raise serializers.ValidationError(detail={"device_type": ["The device type is not valid"]})
+        return data
 
 
 class UserPwdInvitationSerializer(serializers.ModelSerializer):
