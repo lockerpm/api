@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.response import Response
@@ -189,34 +190,49 @@ class UserPwdViewSet(PasswordManagerViewSet):
         decoded_token = self.decode_token(request.auth)
         sso_token_id = decoded_token.get("sso_token_id") if decoded_token else None
 
-        # First, check CyStack database to get existed access token
-        refresh_token_obj = self.session_repository.filter_refresh_tokens(
-            user=user, device_identifier=device_identifier
-        ).first()
+        # Get current user plan, the sync device limit
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        limit_sync_device = current_plan.get_plan_obj().get_sync_device()
+        # The list stores sso token id which will not be synchronized
+        not_sync_sso_token_ids = []
 
-        # If database does not have refresh token object => Create new one
-        if not refresh_token_obj:
-            refresh_token_obj = user.user_refresh_tokens.model.retrieve_or_create(user, **{
+        # First, check the device exists
+        device_obj = self.device_repository.get_device_by_identifier(
+            user=user, device_identifier=device_identifier
+        )
+        # If the device does not exist => New device => Create new one
+        if not device_obj:
+            device_obj = user.user_devices.model.retrieve_or_create(user, **{
                 "client_id": client_id,
                 "device_name": device_name,
                 "device_type": device_type,
                 "device_identifier": device_identifier,
                 "scope": "api offline_access",
                 "token_type": "Bearer",
-                "refresh_token": secure_random_string(length=64, lower=False),
-                "sso_token_id": sso_token_id
+                "refresh_token": secure_random_string(length=64, lower=False)
             })
-        # Get access token from refresh token
-        access_token = self.session_repository.fetch_valid_token(refresh_token=refresh_token_obj)
+            all_devices = self.device_repository.get_device_user(user=user)
+            if limit_sync_device and all_devices.count() > limit_sync_device:
+                old_devices = all_devices[:limit_sync_device]
+                not_sync_sso_token_ids = list(self.device_repository.get_devices_access_token(devices=old_devices).exclude(
+                    sso_token_id__isnull=True
+                ).values_list('sso_token_id', flat=True))
+                self.device_repository.remove_devices_access_token(devices=old_devices)
+
+        # Retrieve or create new access token
+        access_token = self.device_repository.fetch_device_access_token(
+            device=device_obj, renewal=True, sso_token_id=sso_token_id
+        )
         result = {
-            "refresh_token": refresh_token_obj.refresh_token,
+            "refresh_token": device_obj.refresh_token,
             "access_token": access_token.access_token,
-            "token_type": refresh_token_obj.token_type,
+            "token_type": device_obj.token_type,
             "public_key": user.public_key,
             "private_key": user.private_key,
             "key": user.key,
             "kdf": user.kdf,
-            "kdf_iterations": user.kdf_iterations
+            "kdf_iterations": user.kdf_iterations,
+            "not_sync": not_sync_sso_token_ids
         }
         # Create event login successfully
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{

@@ -50,11 +50,14 @@ class PMUserPlan(UserPlan):
             user_plan.save()
         return user_plan
 
+    def get_plan_obj(self):
+        return self.pm_plan
+
     def get_plan_type_alias(self) -> str:
-        return self.pm_plan.get_alias()
+        return self.get_plan_obj().get_alias()
 
     def get_plan_type_name(self) -> str:
-        return self.pm_plan.get_name()
+        return self.get_plan_obj().get_name()
 
     def is_subscription(self):
         stripe_subscription = self.get_stripe_subscription()

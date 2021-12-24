@@ -15,6 +15,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     """
     user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
     session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
+    device_repository = CORE_CONFIG["repositories"]["IDeviceRepository"]()
     payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
     cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
     folder_repository = CORE_CONFIG["repositories"]["IFolderRepository"]()
@@ -25,8 +26,13 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     event_repository = CORE_CONFIG["repositories"]["IEventRepository"]()
     emergency_repository = CORE_CONFIG["repositories"]["IEmergencyAccessRepository"]()
 
-    def check_pwd_session_auth(self, request, renew=False):
-        valid_token = self.session_repository.fetch_access_token(user=request.user, renew=renew)
+    def check_pwd_session_auth(self, request):
+        if request.auth:
+            decoded_token = self.decode_token(request.auth)
+            sso_token_id = decoded_token.get("sso_token_id") if decoded_token else None
+        else:
+            sso_token_id = None
+        valid_token = self.device_repository.fetch_user_access_token(user=request.user, sso_token_id=sso_token_id)
         if not valid_token:
             raise AuthenticationFailed
         return valid_token
