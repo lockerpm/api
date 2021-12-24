@@ -1,5 +1,6 @@
 from core.repositories.orm.user_repository import UserRepository
 from core.repositories.orm.session_repository import SessionRepository
+from core.repositories.orm.device_repository import DeviceRepository
 
 from core.repositories.orm.payment_repository import PaymentRepository
 
