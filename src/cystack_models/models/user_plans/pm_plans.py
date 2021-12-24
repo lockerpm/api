@@ -10,9 +10,6 @@ class PMPlan(models.Model):
     id = models.AutoField(primary_key=True)
     alias = models.CharField(max_length=128, blank=True, default="")
     name = models.CharField(max_length=128)
-    max_number = models.IntegerField(null=True, default=None)
-    # max_device = models.IntegerField(null=True, default=None)
-    # max_device_type = models.IntegerField(null=True, default=None)
 
     # Price monthly
     price_usd = models.FloatField()
@@ -36,6 +33,7 @@ class PMPlan(models.Model):
     emergency_access = models.BooleanField(default=False)
 
     is_team_plan = models.BooleanField(default=False)
+    max_number = models.IntegerField(null=True, default=None)
     team_dashboard = models.BooleanField(default=False)
     team_policy = models.BooleanField(default=False)
     team_prevent_password = models.BooleanField(default=False)
