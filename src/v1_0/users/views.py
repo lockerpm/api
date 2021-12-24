@@ -179,14 +179,21 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
             raise ValidationError(detail={"password": ["Password is not correct"]})
 
+        # Unblock login
         user.last_request_login = now()
         user.login_failed_attempts = 0
         user.login_block_until = None
         user.save()
+
+        # Get sso token id from authentication token
+        decoded_token = self.decode_token(request.auth)
+        sso_token_id = decoded_token.get("sso_token_id") if decoded_token else None
+
         # First, check CyStack database to get existed access token
         refresh_token_obj = self.session_repository.filter_refresh_tokens(
             user=user, device_identifier=device_identifier
         ).first()
+
         # If database does not have refresh token object => Create new one
         if not refresh_token_obj:
             refresh_token_obj = user.user_refresh_tokens.model.retrieve_or_create(user, **{
@@ -196,7 +203,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 "device_identifier": device_identifier,
                 "scope": "api offline_access",
                 "token_type": "Bearer",
-                "refresh_token": secure_random_string(length=64, lower=False)
+                "refresh_token": secure_random_string(length=64, lower=False),
+                "sso_token_id": sso_token_id
             })
         # Get access token from refresh token
         access_token = self.session_repository.fetch_valid_token(refresh_token=refresh_token_obj)

@@ -50,3 +50,8 @@ PLAN_TYPE_PM_ENTERPRISE = "pm_business_premium"
 
 
 FAMILY_MAX_MEMBER = 5
+
+
+# ------------- Banking code ----------------------------- #
+BANKING_ID_PWD_MANAGER = "LK"
+BANKING_ID_WEB_SECURITY = "CW"

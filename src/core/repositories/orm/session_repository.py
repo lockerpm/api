@@ -37,7 +37,6 @@ class SessionRepository(ISessionRepository):
             "nbf": created_time,
             "exp": expired_time,
             "iss": "https://locker.io",
-            # "user_id": refresh_token.user.user_id,
             "client_id": refresh_token.client_id,
             "sub": refresh_token.user.internal_id,
             "auth_time": created_time,
