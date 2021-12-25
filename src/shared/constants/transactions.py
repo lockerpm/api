@@ -1,5 +1,6 @@
-TRIAL_ASSET_NUMBER = 1
-TRIAL_TEAM_NUMBER = 2
+TRIAL_PERSONAL_PLAN = 30 * 86400        # 30 days
+TRIAL_TEAM_PLAN = 10 * 86400            # 10 days
+TRIAL_TEAM_MEMBERS = 2
 
 # ------------------- Currency ------------------------------------- #
 CURRENCY_VND = "VND"

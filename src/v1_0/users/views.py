@@ -12,7 +12,7 @@ from core.utils.core_helpers import secure_random_string
 from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
-from shared.constants.transactions import PLAN_TYPE_PM_FAMILY_DISCOUNT
+from shared.constants.transactions import *
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
@@ -52,6 +52,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
         master_password_hash = validated_data.get("master_password_hash")
         master_password_hint = validated_data.get("master_password_hint", "")
         score = validated_data.get("score")
+        trial_plan_obj = validated_data.get("trial_plan_obj")
+
         # Register new user information
         user.kdf = kdf
         user.kdf_iterations = kdf_iterations
@@ -66,6 +68,25 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user.activated = True
         user.activated_date = now()
         user.save()
+
+        # Upgrade trial plan
+        if trial_plan_obj.is_team_plan:
+            plan_metadata = {
+                "start_period": now(),
+                "end_period": now() + TRIAL_TEAM_PLAN,
+                "number_members": TRIAL_TEAM_MEMBERS,
+                "collection_name": validated_data.get("collection_name"),
+                "key": validated_data.get("team_key")
+            }
+        else:
+            plan_metadata = {
+                "start_period": now(),
+                "end_period": now() + TRIAL_PERSONAL_PLAN
+            }
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=trial_plan_obj.get_alias(),
+            duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
 
         return Response(status=200, data={"success": True})
 

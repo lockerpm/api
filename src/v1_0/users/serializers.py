@@ -4,6 +4,7 @@ from shared.constants.ciphers import KDF_TYPE
 from shared.constants.transactions import PLAN_TYPE_PM_PRO, PLAN_TYPE_PM_BUSINESS, PLAN_TYPE_PM_AGENCY
 from shared.constants.device_type import LIST_CLIENT_ID, LIST_DEVICE_TYPE
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.user_plans.pm_plans import PMPlan
 
 
 class EncryptedPairKey(serializers.Serializer):
@@ -20,8 +21,10 @@ class UserPwdSerializer(serializers.Serializer):
     master_password_hint = serializers.CharField(allow_blank=True)
     score = serializers.FloatField(required=False, allow_null=True)
     trial_plan = serializers.ChoiceField(
-        required=False, default=PLAN_TYPE_PM_PRO, choices=[PLAN_TYPE_PM_PRO, PLAN_TYPE_PM_BUSINESS, PLAN_TYPE_PM_AGENCY]
+        default=PLAN_TYPE_PM_PRO, choices=[PLAN_TYPE_PM_PRO, PLAN_TYPE_PM_BUSINESS, PLAN_TYPE_PM_AGENCY]
     )
+    team_key = serializers.CharField(required=False, allow_null=True)
+    collection_name = serializers.CharField(required=False, allow_null=True)
 
     def validate(self, data):
         kdf_type = data.get("kdf_type", 0)
@@ -32,6 +35,14 @@ class UserPwdSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={
                 "kdf_iterations": ["KDF iterations must be between 5000 and 1000000"]
             })
+
+        trial_plan = data.get("trial_plan", PLAN_TYPE_PM_PRO)
+        try:
+            trial_plan_obj = PMPlan.objects.get(alias=trial_plan)
+            data["trial_plan_obj"] = trial_plan_obj
+        except PMPlan.DoesNotExist:
+            raise serializers.ValidationError(detail={"trial_plan": ["The trial plan does not exist"]})
+
         return data
 
 
