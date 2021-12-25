@@ -93,7 +93,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         import_data["ciphers"] = new_ciphers
         serializer = self.get_serializer(data=import_data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
+        validated_data = serializer.save(**{"team": team})
         ciphers = validated_data.get("ciphers", [])
         collections = validated_data.get("collections", [])
         collection_relationships = validated_data.get("collectionRelationships", [])

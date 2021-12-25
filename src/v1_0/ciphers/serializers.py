@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
@@ -81,7 +82,7 @@ class VaultItemSerializer(serializers.Serializer):
     view_password = serializers.BooleanField(default=True)
     name = serializers.CharField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
-    type = serializers.IntegerField()
+    type = serializers.ChoiceField(choices=LIST_CIPHER_TYPE)
     login = LoginVaultSerializer(required=False, many=False, allow_null=True)
     secureNote = SecurityNoteVaultSerializer(required=False, many=False, allow_null=True)
     card = CardVaultSerializer(required=False, many=False, allow_null=True)
@@ -91,20 +92,12 @@ class VaultItemSerializer(serializers.Serializer):
         user = self.context["request"].user
 
         vault_type = data.get("type")
-        if vault_type < 1 or vault_type > 5:
-            raise serializers.ValidationError(detail={"type": ["The type does not exist"]})
         login = data.get("login", {})
         secure_note = data.get("secureNote")
         card = data.get("card")
         identity = data.get("identity")
-        if vault_type == CIPHER_TYPE_LOGIN:
-            if not login:
-                raise serializers.ValidationError(detail={"login": ["This field is required"]})
-            # if login.get("totp") and not data.get("organizationId"):
-            #     print("CIPHER_TYPE_LOGIN topt")
-            #     raise serializers.ValidationError(detail={
-            #         "organizationId": ["This field is required when using time OTP"]
-            #     })
+        if vault_type == CIPHER_TYPE_LOGIN and not login:
+            raise serializers.ValidationError(detail={"login": ["This field is required"]})
         if vault_type == CIPHER_TYPE_NOTE and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
         if vault_type == CIPHER_TYPE_CARD and not card:
@@ -182,8 +175,42 @@ class VaultItemSerializer(serializers.Serializer):
                     })
             return list(set(collection_ids))
 
+    def validated_plan(self, data):
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
+        user = self.context["request"].user
+        team = data.get("team")
+        if team is not None:
+            owner = team_repository.get_primary_member(team=team).user
+            ciphers = cipher_repository.get_team_ciphers(team=team)
+        else:
+            owner = user
+            ciphers = cipher_repository.get_personal_ciphers(user=user)
+        current_plan = user_repository.get_current_plan(user=owner, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        vault_type = data.get("type")
+        existed_ciphers_count = ciphers.filter(type=vault_type).count()
+        limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
+        if vault_type == CIPHER_TYPE_LOGIN and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+            raise serializers.ValidationError(detail={"login": ["The maximum number of login ciphers is reached"]})
+        if vault_type == CIPHER_TYPE_NOTE and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+            raise serializers.ValidationError(detail={"secureNote": ["The maximum number of note ciphers is reached"]})
+        if vault_type == CIPHER_TYPE_CARD and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+            raise serializers.ValidationError(detail={"card": ["The maximum number of card ciphers is reached"]})
+        if vault_type == CIPHER_TYPE_IDENTITY and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+            raise serializers.ValidationError(detail={"identity": ["The maximum number of identity ciphers is reached"]})
+        if vault_type == CIPHER_TYPE_TOTP and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+            raise serializers.ValidationError(detail={"secureNote": ["The maximum number of totp ciphers is reached"]})
+
+        return data
+
     def save(self, **kwargs):
         validated_data = self.validated_data
+        check_plan = kwargs.get("check_plan", False)
+        if check_plan is True:
+            validated_data = self.validated_plan(validated_data)
+
         cipher_type = validated_data.get("type")
         detail = {
             "edit": True,
@@ -348,6 +375,36 @@ class ImportCipherSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"folderRelationships": ["You cannot import this much data at once"]})
         if len(folders) > 200:
             raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
+
+        # Validate plan
+        data = self.validated_plan(data)
+
+        return data
+
+    def validated_plan(self, data):
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
+        user = self.context["request"].user
+        ciphers = data.get("ciphers", [])
+        valid_ciphers = []
+
+        # Check limit ciphers by plan
+        existed_ciphers = cipher_repository.get_personal_ciphers(user=user)
+        current_plan = user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        for vault_type in LIST_CIPHER_TYPE:
+            limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
+            import_ciphers_type = [cipher for cipher in ciphers if cipher["type"] == vault_type]
+            # If this vault type is unlimited
+            if limit_vault_type is None:
+                valid_ciphers += import_ciphers_type
+            else:
+                existed_ciphers_type_count = existed_ciphers.filter(type=vault_type).count()
+                if existed_ciphers_type_count < limit_vault_type:
+                    valid_ciphers += import_ciphers_type[:(limit_vault_type - existed_ciphers_type_count)]
+
+        data["ciphers"] = valid_ciphers
+
         return data
 
 
