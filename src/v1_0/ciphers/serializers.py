@@ -181,26 +181,36 @@ class VaultItemSerializer(serializers.Serializer):
         cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
         user = self.context["request"].user
         team = data.get("team")
-        if team is not None:
-            owner = team_repository.get_primary_member(team=team).user
-            ciphers = cipher_repository.get_team_ciphers(team=team)
-        else:
-            owner = user
-            ciphers = cipher_repository.get_personal_ciphers(user=user)
-        current_plan = user_repository.get_current_plan(user=owner, scope=settings.SCOPE_PWD_MANAGER)
-        plan_obj = current_plan.get_plan_obj()
+
+        # Get limit cipher type from personal and team plans
+        allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
+        ciphers = cipher_repository.get_personal_ciphers(user=user)     # CHANGE LATER - list ciphers created by user
+
+        # if team is not None:
+        #     owner = team_repository.get_primary_member(team=team).user
+        #     ciphers = cipher_repository.get_team_ciphers(team=team)
+        # else:
+        #     owner = user
+        #     ciphers = cipher_repository.get_personal_ciphers(user=user)
+        # current_plan = user_repository.get_current_plan(user=owner, scope=settings.SCOPE_PWD_MANAGER)
+        # plan_obj = current_plan.get_plan_obj()
         vault_type = data.get("type")
         existed_ciphers_count = ciphers.filter(type=vault_type).count()
-        limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
-        if vault_type == CIPHER_TYPE_LOGIN and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+        # limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
+        if vault_type == CIPHER_TYPE_LOGIN and allow_cipher_type.get("limit_password") and \
+                existed_ciphers_count >= allow_cipher_type.get("limit_password"):
             raise serializers.ValidationError(detail={"login": ["The maximum number of login ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_NOTE and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+        if vault_type == CIPHER_TYPE_NOTE and allow_cipher_type.get("limit_secure_note") and \
+                existed_ciphers_count >= allow_cipher_type.get("limit_secure_note"):
             raise serializers.ValidationError(detail={"secureNote": ["The maximum number of note ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_CARD and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+        if vault_type == CIPHER_TYPE_CARD and allow_cipher_type.get("limit_payment_card") and \
+                existed_ciphers_count >= allow_cipher_type.get("limit_payment_card"):
             raise serializers.ValidationError(detail={"card": ["The maximum number of card ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_IDENTITY and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+        if vault_type == CIPHER_TYPE_IDENTITY and allow_cipher_type.get("limit_identity") and \
+                existed_ciphers_count >= allow_cipher_type.get("limit_identity"):
             raise serializers.ValidationError(detail={"identity": ["The maximum number of identity ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_TOTP and limit_vault_type and existed_ciphers_count >= limit_vault_type:
+        if vault_type == CIPHER_TYPE_TOTP and allow_cipher_type.get("limit_totp") and \
+                existed_ciphers_count >= allow_cipher_type.get("limit_totp"):
             raise serializers.ValidationError(detail={"secureNote": ["The maximum number of totp ciphers is reached"]})
 
         return data
@@ -389,11 +399,24 @@ class ImportCipherSerializer(serializers.Serializer):
         valid_ciphers = []
 
         # Check limit ciphers by plan
+        allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
         existed_ciphers = cipher_repository.get_personal_ciphers(user=user)
-        current_plan = user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        plan_obj = current_plan.get_plan_obj()
+        # current_plan = user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # plan_obj = current_plan.get_plan_obj()
         for vault_type in LIST_CIPHER_TYPE:
-            limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
+            limit_vault_type = None
+            if vault_type == CIPHER_TYPE_LOGIN:
+                limit_vault_type = allow_cipher_type.get("limit_password")
+            elif vault_type == CIPHER_TYPE_NOTE:
+                limit_vault_type = allow_cipher_type.get("limit_secure_note")
+            elif vault_type == CIPHER_TYPE_IDENTITY:
+                limit_vault_type = allow_cipher_type.get("limit_identity")
+            elif vault_type == CIPHER_TYPE_CARD:
+                limit_vault_type = allow_cipher_type.get("limit_payment_card")
+            elif vault_type == CIPHER_TYPE_TOTP:
+                limit_vault_type = allow_cipher_type.get("limit_totp")
+            elif vault_type == CIPHER_TYPE_CRYPTO:
+                limit_vault_type = allow_cipher_type.get("limit_crypto_asset")
             import_ciphers_type = [cipher for cipher in ciphers if cipher["type"] == vault_type]
             # If this vault type is unlimited
             if limit_vault_type is None:
