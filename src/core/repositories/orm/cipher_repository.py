@@ -20,17 +20,17 @@ from cystack_models.models.teams.groups_members import GroupMember
 
 
 class CipherRepository(ICipherRepository):
-    def get_favorite_users(self, cipher: Cipher):
-        pass
-
-    def get_folder_ids(self, cipher: Cipher):
-        pass
-
     def get_by_id(self, cipher_id: str) -> Cipher:
         return Cipher.objects.get(id=cipher_id)
 
     def get_multiple_by_ids(self, cipher_ids: list):
         return Cipher.objects.filter(id__in=cipher_ids)
+
+    def get_personal_ciphers(self, user):
+        return Cipher.objects.filter(user=user)
+
+    def get_team_ciphers(self, team):
+        return Cipher.objects.filter(team=team)
 
     def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False,
                              exclude_team_ids=None):
@@ -44,7 +44,7 @@ class CipherRepository(ICipherRepository):
         :return:
         """
 
-        personal_ciphers = Cipher.objects.filter(user=user)
+        personal_ciphers = self.get_personal_ciphers(user=user)
         if only_personal is True:
             return personal_ciphers.annotate(view_password=Value(True, output_field=BooleanField()))
 
@@ -106,49 +106,6 @@ class CipherRepository(ICipherRepository):
                 output_field=BooleanField()
             )
         )
-        # return (personal_ciphers | team_ciphers).distinct()
-
-        # members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
-        # if only_edited is True:
-        #     members = members.filter(
-        #         Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER]) |
-        #         Q(team__groups__access_all=True)
-        #     )
-        # if only_managed_team:
-        #     members = members.filter(team__locked=False)
-        #
-        # # Members that user is an owner or an admin or user belongs to a group that can access all.
-        # access_all_teams = list(members.filter(
-        #     Q(role__name__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]) |
-        #     Q(team__groups__access_all=True)
-        # ).values_list('team_id', flat=True))
-        # access_all_team_ciphers = Cipher.objects.filter(team_id__in=access_all_teams)
-        #
-        # # Members is a manager or a member that belong to allowed collections
-        # limit_members = members.filter(role__name__in=[MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
-        # collection_members = list(CollectionMember.objects.filter(
-        #     member__in=limit_members
-        # ).values_list('collection_id', flat=True))
-        # collection_groups = list(CollectionGroup.objects.filter(
-        #     group_id__in=GroupMember.objects.filter(member__in=limit_members).values_list('group_id', flat=True)
-        # ).values_list('collection_id', flat=True))
-        # limit_team_ciphers = Cipher.objects.filter(
-        #     collections_ciphers__collection_id__in=collection_members + collection_groups
-        # )
-
-        # team_ids = list(members.values_list('team_id', flat=True))
-        # member_collections = CollectionMember.objects.filter(member__in=members).values_list('collection_id', flat=True)
-        # member_group_collections = CollectionGroup.objects.filter(
-        #     group__groups_members__member__in=members
-        # ).values_list('collection_id', flat=True)
-        # team_collection_ids = list(member_collections) + list(member_group_collections)
-        # team_ciphers = Cipher.objects.filter(
-        #     Q(collections_ciphers__collection_id__in=team_collection_ids) |
-        #     Q(team_id__in=team_ids)
-        # )
-        # return (personal_ciphers | team_ciphers).distinct()
-
-        # return (personal_ciphers | access_all_team_ciphers | limit_team_ciphers).distinct()
 
     def save_new_cipher(self, cipher_data):
         """

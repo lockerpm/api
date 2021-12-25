@@ -3,6 +3,7 @@ from django.db import models
 
 from shared.constants.transactions import DURATION_MONTHLY, DURATION_YEARLY, DURATION_HALF_YEARLY, \
     CURRENCY_USD, CURRENCY_VND
+from shared.constants.ciphers import *
 from cystack_models.models.user_plans.plan_types import PlanType
 
 
@@ -87,8 +88,25 @@ class PMPlan(models.Model):
     def get_limit_payment_card(self):
         return self.limit_payment_card
 
+    def get_limit_totp(self):
+        return None
+
     def get_limit_crypto_asset(self):
         return self.limit_crypto_asset
+
+    def get_limit_ciphers_by_type(self, vault_type):
+        if vault_type == CIPHER_TYPE_LOGIN:
+            return self.get_limit_password()
+        elif vault_type == CIPHER_TYPE_NOTE:
+            return self.get_limit_secure_note()
+        elif vault_type == CIPHER_TYPE_IDENTITY:
+            return self.get_limit_identity()
+        elif vault_type == CIPHER_TYPE_CARD:
+            return self.get_limit_payment_card()
+        elif vault_type == CIPHER_TYPE_TOTP:
+            return self.get_limit_totp()
+        elif vault_type == CIPHER_TYPE_CRYPTO:
+            return self.get_limit_crypto_asset()
 
     def allow_tools_password_reuse(self):
         return self.tools_password_reuse

@@ -58,7 +58,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         team = serializer.validated_data.get("team")
-        cipher_detail = serializer.save()
+        cipher_detail = serializer.save(**{"check_plan": True})
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
 
@@ -187,6 +187,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         import_data = request.data
         ciphers = import_data.get("ciphers")
+        # Only accepts ciphers which have name
         new_ciphers = [cipher for cipher in ciphers if cipher.get("name")]
         import_data["ciphers"] = new_ciphers
 

@@ -2,6 +2,7 @@ from django.conf import settings
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
+from shared.constants.ciphers import LIST_CIPHER_TYPE
 from shared.constants.transactions import PLAN_TYPE_PM_ENTERPRISE
 from shared.utils.app import now
 from cystack_models.models.teams.teams import Team
@@ -76,3 +77,37 @@ class ImportTeamSerializer(serializers.Serializer):
         if len(collections) > 200:
             raise serializers.ValidationError(detail={"collections": ["You cannot import this much data at once"]})
         return data
+
+    def validated_plan(self, team, data):
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        ciphers = data.get("ciphers", [])
+        valid_ciphers = []
+
+        owner = team_repository.get_primary_member(team=team).user
+        existed_ciphers = cipher_repository.get_team_ciphers(team=team)
+        # Get current plan of the team's owner
+        current_plan = user_repository.get_current_plan(user=owner, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        # Check limit ciphers by plan
+        for vault_type in LIST_CIPHER_TYPE:
+            limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
+            import_ciphers_type = [cipher for cipher in ciphers if cipher["type"] == vault_type]
+            # If this vault type is unlimited
+            if limit_vault_type is None:
+                vault_type += import_ciphers_type
+            else:
+                existed_ciphers_type_count = existed_ciphers.filter(type=vault_type).count()
+                if existed_ciphers_type_count < limit_vault_type:
+                    valid_ciphers += import_ciphers_type[:(limit_vault_type - existed_ciphers_type_count)]
+
+        data["ciphers"] = valid_ciphers
+
+        return data
+
+    def save(self, **kwargs):
+        team = kwargs.get("team")
+        validated_data = self.validated_data
+        validated_data = self.validated_plan(team, validated_data)
+        return validated_data
