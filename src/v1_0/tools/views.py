@@ -24,10 +24,12 @@ class ToolPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         # Only premium plan
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        if current_plan.get_plan_type_alias() not in [
-            PLAN_TYPE_PM_PERSONAL_PREMIUM, PLAN_TYPE_PM_FAMILY_DISCOUNT, PLAN_TYPE_PM_ENTERPRISE
-        ]:
-            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        plan_obj = current_plan.get_plan_obj()
+
+        if self.action == "breach":
+            if plan_obj.allow_tools_data_breach() is False:
+                raise ValidationError({"non_field_errors": [gen_error("7002")]})
+
         return user
 
     @action(methods=["post"], detail=False)
