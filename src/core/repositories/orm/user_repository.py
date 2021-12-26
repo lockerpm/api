@@ -2,14 +2,16 @@ import uuid
 from typing import Dict
 
 import stripe
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
+from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
-from cystack_models.models import User
+from cystack_models.models.users.users import User
+from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
 
@@ -23,6 +25,8 @@ class UserRepository(IUserRepository):
             user.save()
             # Create default team for this new user
             self.get_default_team(user=user, create_if_not_exist=True)
+            # Create default plan for this user
+            self.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         return user
 
     def get_by_id(self, user_id) -> User:
@@ -32,7 +36,7 @@ class UserRepository(IUserRepository):
         try:
             default_team = user.team_members.get(is_default=True).team
         except ObjectDoesNotExist:
-            if not create_if_not_exist:
+            if create_if_not_exist is False:
                 return None
             default_team = self._create_default_team(user)
         except MultipleObjectsReturned:
@@ -50,7 +54,7 @@ class UserRepository(IUserRepository):
         team_name = user.get_from_cystack_id().get("full_name", "My Vault")
         default_group = Team.create(**{
             "members": [{
-                "user": self,
+                "user": user,
                 "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
                 "is_default": True,
                 "is_primary": True
@@ -81,6 +85,38 @@ class UserRepository(IUserRepository):
         except AttributeError:
             from cystack_models.models.users.user_score import UserScore
             return UserScore.create(user=user)
+
+    def get_personal_team_plans(self, user: User):
+        user_team_ids = user.team_members.filter(
+            team__key__isnull=False, status=PM_MEMBER_STATUS_CONFIRMED
+        ).values_list('team_id', flat=True)
+        primary_owners = TeamMember.objects.filter(team_id__in=list(user_team_ids)).filter(
+            role_id=MEMBER_ROLE_OWNER
+        ).values_list('user_id', flat=True)
+        from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+        personal_team_plans = PMUserPlan.objects.filter(
+            user_id__in=list(primary_owners) + [user.user_id]
+        ).select_related('pm_plan')
+        return personal_team_plans
+
+    def get_max_allow_cipher_type(self, user: User):
+        personal_team_plans = self.get_personal_team_plans(user=user)
+        cipher_limits = PMPlan.objects.filter(id__in=personal_team_plans.values_list('pm_plan_id')).values(
+            'limit_password', 'limit_secure_note', 'limit_identity', 'limit_payment_card', 'limit_crypto_asset'
+        )
+        limit_password = [cipher_limit.get("limit_password") for cipher_limit in cipher_limits]
+        limit_secure_note = [cipher_limit.get("limit_secure_note") for cipher_limit in cipher_limits]
+        limit_identity = [cipher_limit.get("limit_identity") for cipher_limit in cipher_limits]
+        limit_payment_card = [cipher_limit.get("limit_payment_card") for cipher_limit in cipher_limits]
+        limit_crypto_asset = [cipher_limit.get("limit_crypto_asset") for cipher_limit in cipher_limits]
+        return {
+            "limit_password": None if None in limit_password else max(limit_password),
+            "limit_secure_note": None if None in limit_secure_note else max(limit_secure_note),
+            "limit_identity": None if None in limit_identity else max(limit_identity),
+            "limit_payment_card": None if None in limit_payment_card else max(limit_payment_card),
+            "limit_crypto_asset": None if None in limit_crypto_asset else max(limit_crypto_asset),
+            "limit_totp": None
+        }
 
     def get_current_plan(self, user: User, scope=None):
         try:
@@ -143,6 +179,23 @@ class UserRepository(IUserRepository):
             # Create Vault Org here
             self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
         return pm_user_plan
+
+    def cancel_plan(self, user: User, scope=None):
+        current_plan = self.get_current_plan(user=user, scope=scope)
+        pm_plan_alias = current_plan.get_plan_type_alias()
+        if pm_plan_alias == PLAN_TYPE_PM_FREE:
+            return
+        stripe_subscription = current_plan.get_stripe_subscription()
+        if stripe_subscription:
+            payment_method = PAYMENT_METHOD_CARD
+        else:
+            payment_method = PAYMENT_METHOD_WALLET
+
+        from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+        end_time = PaymentMethodFactory.get_method(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
+        ).cancel_recurring_subscription()
+        return end_time
 
     def __create_vault_team(self, user, key, collection_name):
         # Retrieve or create default team
@@ -226,20 +279,24 @@ class UserRepository(IUserRepository):
         return member_invitations
 
     def delete_account(self, user: User):
+        # Cancel current plan
+        self.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # Then, delete related data: sessions, folders, ciphers
         user.user_refresh_tokens.all().delete()
         user.folders.all().delete()
         user.ciphers.all().delete()
-        user.revision_date = None
-        user.activated = False
-        user.account_revision_date = None
-        user.master_password = None
-        user.master_password_hint = None
-        user.master_password_score = 0
-        user.security_stamp = None
-        user.key = None
-        user.public_key = None
-        user.private_key = None
-        user.save()
+        user.delete()
+        # user.revision_date = None
+        # user.activated = False
+        # user.account_revision_date = None
+        # user.master_password = None
+        # user.master_password_hint = None
+        # user.master_password_score = 0
+        # user.security_stamp = None
+        # user.key = None
+        # user.public_key = None
+        # user.private_key = None
+        # user.save()
 
     def purge_account(self, user: User):
         user.folders.all().delete()

@@ -163,20 +163,11 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
     def cancel_plan(self, request, *args, **kwargs):
         user = self.request.user
         current_plan = self.user_repository.get_current_plan(user=user)
-
         pm_plan_alias = current_plan.get_plan_type_alias()
         if pm_plan_alias == PLAN_TYPE_PM_FREE:
             raise ValidationError({"non_field_errors": [gen_error("7004")]})
 
-        stripe_subscription = current_plan.get_stripe_subscription()
-        if stripe_subscription:
-            payment_method = PAYMENT_METHOD_CARD
-        else:
-            payment_method = PAYMENT_METHOD_WALLET
-
-        end_time = PaymentMethodFactory.get_method(
-            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
-        ).cancel_recurring_subscription()
+        end_time = self.user_repository.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         if end_time:
             return Response(status=200, data={
                 "user_ids": [user.user_id],

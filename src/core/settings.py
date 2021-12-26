@@ -8,6 +8,7 @@ CORE_CONFIG = {
     "repositories": {
         "IUserRepository": UserRepository,
         "ISessionRepository": SessionRepository,
+        "IDeviceRepository": DeviceRepository,
         "IPaymentRepository": PaymentRepository,
         "ITeamRepository": TeamRepository,
         "ICipherRepository": CipherRepository,

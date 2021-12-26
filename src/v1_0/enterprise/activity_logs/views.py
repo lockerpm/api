@@ -22,9 +22,18 @@ class ActivityLogViewSet(PasswordManagerViewSet):
             self.check_object_permissions(request=self.request, obj=team)
             if self.team_repository.is_locked(team=team):
                 raise ValidationError({"non_field_errors": [gen_error("3003")]})
+            team = self.allow_team_plan(team=team)
             return team
         except ObjectDoesNotExist:
             raise NotFound
+
+    def allow_team_plan(self, team):
+        primary_user = self.team_repository.get_primary_member(team=team).user
+        current_plan = self.user_repository.get_current_plan(user=primary_user)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_team_activity_log() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        return team
 
     def get_queryset(self):
         team = self.get_object()

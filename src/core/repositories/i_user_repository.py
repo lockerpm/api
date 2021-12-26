@@ -43,11 +43,23 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def get_personal_team_plans(self, user: User):
+        pass
+
+    @abstractmethod
+    def get_max_allow_cipher_type(self, user: User):
+        pass
+
+    @abstractmethod
     def get_current_plan(self, user: User, scope=None):
         pass
 
     @abstractmethod
     def update_plan(self, user: User, plan_type_alias: str, duration=DURATION_MONTHLY, scope=None, **kwargs):
+        pass
+
+    @abstractmethod
+    def cancel_plan(self, user: User, scope=None):
         pass
 
     @abstractmethod

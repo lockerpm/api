@@ -39,6 +39,16 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
+    def allow_team_plan(self, team):
+        primary_user = self.team_repository.get_primary_member(team=team).user
+        current_plan = self.user_repository.get_current_plan(user=primary_user)
+        plan_obj = current_plan.get_plan_obj()
+        if self.action == "dashboard":
+            if plan_obj.allow_team_dashboard() is False:
+                raise ValidationError({"non_field_errors": [gen_error("7002")]})
+
+        return team
+
     def get_queryset(self):
         order_whens = [
             When(Q(team_members__is_default=True), then=Value(1)),
@@ -93,7 +103,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         import_data["ciphers"] = new_ciphers
         serializer = self.get_serializer(data=import_data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
+        validated_data = serializer.save(**{"team": team})
         ciphers = validated_data.get("ciphers", [])
         collections = validated_data.get("collections", [])
         collection_relationships = validated_data.get("collectionRelationships", [])
@@ -105,6 +115,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
     def dashboard(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         team = self.get_object()
+        team = self.allow_team_plan(team=team)
 
         # Items statistic
         ciphers = team.ciphers.all()

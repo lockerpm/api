@@ -167,6 +167,10 @@ class PaymentViewSet(MicroServiceViewSet):
             self.user_repository.update_plan(
                 user=user, plan_type_alias=invoice.plan, duration=invoice.duration, scope=invoice.scope, **plan_metadata
             )
+            # Send mail
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                func_name="pay_successfully", **{"payment": invoice}
+            )
 
         invoice_data = DetailInvoiceSerializer(invoice, many=False).data
         invoice_data["user_id"] = invoice.user_id

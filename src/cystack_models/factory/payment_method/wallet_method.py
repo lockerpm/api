@@ -78,7 +78,7 @@ class WalletPaymentMethod(IPaymentMethod):
         Cancel or continue subscription
         :return: End period if cancel plan. Return None if continue scan
         """
-        current_plan = self.user.get_current_plan(scope=self.scope)
+        current_plan = self.get_current_plan(**kwargs)
         current_plan.cancel_at_period_end = True if current_plan.cancel_at_period_end is False else False
         current_plan.save()
         if current_plan.cancel_at_period_end is True:

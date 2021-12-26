@@ -1,6 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
 
+from shared.background import *
+from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.policy_pwd_permission import PolicyPwdPermission
 from v1_0.enterprise.policy.serializers import PolicyDetailSerializer
@@ -26,9 +29,29 @@ class PolicyPwdViewSet(PasswordManagerViewSet):
             return policy
         except ObjectDoesNotExist:
             raise NotFound
-        
+
+    def allow_team_plan(self, team):
+        primary_user = self.team_repository.get_primary_member(team=team).user
+        current_plan = self.user_repository.get_current_plan(user=primary_user)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_team_policy() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        return team
+
     def retrieve(self, request, *args, **kwargs):
         return super(PolicyPwdViewSet, self).retrieve(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        return super(PolicyPwdViewSet, self).update(request, *args, **kwargs)
+        ip = request.data.get("ip")
+        user = request.user
+        policy = self.get_object()
+        team = self.allow_team_plan(team=policy.team)
+        serializer = self.get_serializer(policy, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            "type": EVENT_TEAM_POLICY_UPDATED, "ip_address": ip
+        })
+        return Response(status=200, data=serializer.data)
+

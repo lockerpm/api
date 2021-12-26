@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
+from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
 
 
@@ -10,7 +11,8 @@ class IPaymentMethod:
         self.scope = scope
 
     def get_current_plan(self, **kwargs):
-        current_plan = self.user.get_current_plan()
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        current_plan = user_repository.get_current_plan(user=self.user, scope=self.scope)
         return current_plan
 
     def create_recurring_subscription(self, amount: float, plan_type: str,
