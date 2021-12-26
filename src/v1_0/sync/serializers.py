@@ -181,7 +181,6 @@ class SyncPolicySerializer(serializers.ModelSerializer):
         field = '__all__'
 
     def to_representation(self, instance):
-        instance = Policy.objects.get()
         data = {
             "object": "policyDetails",
             "team_id": instance.team_id,

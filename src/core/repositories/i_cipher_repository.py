@@ -5,19 +5,19 @@ from cystack_models.models.ciphers.ciphers import Cipher
 
 class ICipherRepository(ABC):
     @abstractmethod
-    def get_favorite_users(self, cipher: Cipher):
-        pass
-
-    @abstractmethod
-    def get_folder_ids(self, cipher: Cipher):
-        pass
-
-    @abstractmethod
     def get_by_id(self, cipher_id: str) -> Cipher:
         pass
 
     @abstractmethod
     def get_multiple_by_ids(self, cipher_ids: list):
+        pass
+
+    @abstractmethod
+    def get_personal_ciphers(self, user):
+        pass
+
+    @abstractmethod
+    def get_team_ciphers(self, team):
         pass
 
     @abstractmethod

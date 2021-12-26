@@ -33,8 +33,6 @@ class PolicyDetailSerializer(serializers.ModelSerializer):
         return data
 
     def update(self, instance, validated_data):
-        instance = Policy.objects.get()
-
         min_password_length = validated_data.get("min_password_length")
         max_password_length = validated_data.get("max_password_length")
         password_composition = validated_data.get("password_composition", instance.password_composition)

@@ -5,26 +5,17 @@ from shared.constants.transactions import DURATION_MONTHLY, PAYMENT_METHOD_WALLE
 
 class UserPlan(models.Model):
     duration = models.CharField(max_length=128, default=DURATION_MONTHLY)
-    # user = models.OneToOneField(
-    #     User, to_field='user_id', primary_key=True, related_name='pm_user_plan', on_delete=models.CASCADE
-    # )
     start_period = models.FloatField(null=True, default=None)
     end_period = models.FloatField(null=True, default=None)
     cancel_at_period_end = models.BooleanField(default=False)
     custom_endtime = models.FloatField(null=True, default=None)  # Custom endtime for some special cases
-    # ref_plan_code = models.CharField(max_length=128, null=True, default=None)
-    # number_members = models.IntegerField(default=1)  # Number of member business
-    # pm_stripe_subscription = models.CharField(max_length=255, null=True)
-    # pm_stripe_subscription_created_time = models.IntegerField(null=True)
     default_payment_method = models.CharField(max_length=128, default=PAYMENT_METHOD_WALLET)
-
-    # pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
-    # promo_code = models.ForeignKey(
-    #     PromoCode, on_delete=models.SET_NULL, related_name="pm_user_plans", null=True, default=None
-    # )
 
     class Meta:
         abstract = True
+
+    def get_plan_obj(self):
+        raise NotImplementedError
 
     def get_plan_type_alias(self) -> str:
         raise NotImplementedError

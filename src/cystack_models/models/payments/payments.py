@@ -64,7 +64,7 @@ class Payment(models.Model):
             currency=currency, metadata=metadata
         )
         new_payment.save()
-        new_payment.payment_id = "CL{}".format(10000 + new_payment.id)
+        new_payment.payment_id = "{}{}".format(BANKING_ID_PWD_MANAGER, 10000 + new_payment.id)
         new_payment.save()
 
         # Set promo code and customer
@@ -85,9 +85,9 @@ class Payment(models.Model):
         # Set banking code
         if new_payment.payment_method == PAYMENT_METHOD_BANKING:
             if scope == settings.SCOPE_PWD_MANAGER:
-                new_payment.code = "CL{}".format(10000 + new_payment.id)
+                new_payment.code = "{}{}".format(BANKING_ID_PWD_MANAGER, 10000 + new_payment.id)
             else:
-                new_payment.code = "CW{}".format(10000 + new_payment.id)
+                new_payment.code = "{}{}".format(BANKING_ID_WEB_SECURITY, 10000 + new_payment.id)
             new_payment.bank_id = data.get("bank_id")
             new_payment.save()
 

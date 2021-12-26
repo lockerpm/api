@@ -5,6 +5,18 @@ from cystack_models.models.users.users import User
 
 
 class UserRefreshToken(models.Model):
+    """
+    This model manages the devices of the user. The device is represented by a refresh token.
+    The RefreshToken object will generate access tokens which are represented for a session.
+    - created_time: The device client creation time
+    - refresh_token: Random Refresh token string
+    - scope: api offline_access (will be useful later)
+    - client_id: The client id: browser / web / mobile
+    - device_name: The device name
+    - device_type: The device type. See more: /shared/constants/device_type.py
+    - device_identifier: The device identifier.
+    - user: User object of this device
+    """
     created_time = models.FloatField()
     refresh_token = models.CharField(max_length=255)
     token_type = models.CharField(max_length=128)
@@ -51,7 +63,8 @@ class UserRefreshToken(models.Model):
             new_refresh_token.access_tokens.model.create(new_refresh_token, **{
                 "access_token": data.get("access_token"),
                 "expires_in": data.get("expires_in", 3600),
-                "grant_type": data.get("grant_type", "")
+                "grant_type": data.get("grant_type", ""),
+                "sso_token_id": data.get("sso_token_id")
             })
         return new_refresh_token
 

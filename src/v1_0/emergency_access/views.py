@@ -1,11 +1,13 @@
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from shared.constants.members import *
 from shared.constants.emergency_access import *
+from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.emergency_access_pwd_permission import EmergencyAccessPermission
-from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS_INVITATION
+from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
     InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
@@ -37,6 +39,13 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         except EmergencyAccess.DoesNotExist:
             raise NotFound
 
+    def allow_emergency_access(self, user):
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_emergency_access() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        return user
+
     @action(methods=["get"], detail=False)
     def trusted(self, request, *args, **kwargs):
         user = self.request.user
@@ -62,6 +71,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def invite(self, request, *args, **kwargs):
         grantor = self.request.user
+        grantor = self.allow_emergency_access(user=grantor)
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -75,17 +85,21 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         )
         # Send notification via ws for grantee
         if new_emergency_access.grantee_id:
-            PwdSync(event=SYNC_EMERGENCY_ACCESS_INVITATION, user_ids=[new_emergency_access.grantee_id]).send()
+            PwdSync(event=SYNC_EMERGENCY_ACCESS, user_ids=[new_emergency_access.grantee_id]).send()
         return Response(status=200, data={"id": new_emergency_access.id})
 
     @action(methods=["post"], detail=False)
     def reinvite(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
+        self.allow_emergency_access(user=emergency_access.grantor)
         # Send notification via ws for grantee
         if emergency_access.grantee_id:
-            PwdSync(event=SYNC_EMERGENCY_ACCESS_INVITATION, user_ids=[emergency_access.grantee_id]).send()
-        return Response(status=200, data={"id": emergency_access.id})
+            PwdSync(event=SYNC_EMERGENCY_ACCESS, user_ids=[emergency_access.grantee_id]).send()
+        grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        return Response(status=200, data={
+            "id": emergency_access.id, "grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email
+        })
 
     @action(methods=["post"], detail=True)
     def accept(self, request, *args, **kwargs):
@@ -94,7 +108,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if emergency_access.status != EMERGENCY_ACCESS_STATUS_INVITED:
             raise NotFound
         self.emergency_repository.accept_emergency_access(emergency_access)
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={"success": True, "grantor_user_id": emergency_access.grantor.user_id})
 
     @action(methods=["get"], detail=True)
     def public_key(self, request, *args, **kwargs):
@@ -108,13 +122,15 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         ip = request.data.get("ip")
         emergency_access = self.get_object()
+        self.allow_emergency_access(user=emergency_access.grantor)
         key_encrypted = request.data.get("key")
         if not key_encrypted:
             raise ValidationError(detail={"key": ["This field is required"]})
         if emergency_access.status != EMERGENCY_ACCESS_STATUS_ACCEPTED:
             raise NotFound
         self.emergency_repository.confirm_emergency_access(emergency_access, key_encrypted)
-        return Response(status=200, data={"success": True})
+        grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        return Response(status=200, data={"grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email})
 
     @action(methods=["post"], detail=True)
     def initiate(self, request, *args, **kwargs):
@@ -123,26 +139,32 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if emergency_access.status != EMERGENCY_ACCESS_STATUS_CONFIRMED:
             raise NotFound
         self.emergency_repository.initiate_emergency_access(emergency_access)
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={
+            "type": emergency_access.type, "grantor_user_id": emergency_access.grantor.user_id
+        })
 
     @action(methods=["post"], detail=True)
     def reject(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
+        self.allow_emergency_access(user=emergency_access.grantor)
         if emergency_access.status not in [EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED,
                                            EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED]:
             raise NotFound
         self.emergency_repository.reject_emergency_access(emergency_access)
-        return Response(status=200, data={"success": True})
+        grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        return Response(status=200, data={"grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email})
 
     @action(methods=["post"], detail=True)
     def approve(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
+        self.allow_emergency_access(user=emergency_access.grantor)
         if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED:
             raise NotFound
         self.emergency_repository.approve_emergency_access(emergency_access)
-        return Response(status=200, data={"success": True})
+        grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        return Response(status=200, data={"grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email})
 
     @action(methods=["post"], detail=True)
     def view(self, request, *args, **kwargs):
