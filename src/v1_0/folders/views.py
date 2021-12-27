@@ -5,14 +5,19 @@ from rest_framework.exceptions import NotFound
 from shared.permissions.locker_permissions.folder_pwd_permission import FolderPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_FOLDER_CREATE, SYNC_EVENT_FOLDER_UPDATE, \
     SYNC_EVENT_FOLDER_DELETE
-from v1_0.folders.serializers import FolderSerializer
+from v1_0.folders.serializers import FolderSerializer, DetailFolderSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
 class FolderPwdViewSet(PasswordManagerViewSet):
     permission_classes = (FolderPwdPermission, )
-    http_method_names = ["head", "options", "post", "put", "delete"]
+    http_method_names = ["head", "options", "get", "post", "put", "delete"]
     serializer_class = FolderSerializer
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            self.serializer_class = DetailFolderSerializer
+        return super(FolderPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
         try:
@@ -34,6 +39,13 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         new_folder = self.folder_repository.save_new_folder(user=user, name=name)
         PwdSync(event=SYNC_EVENT_FOLDER_CREATE, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"id": new_folder.id})
+
+    def retrieve(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        folder = self.get_object()
+        serializer = self.get_serializer(folder)
+        return Response(status=200, data=serializer.data)
 
     def update(self, request, *args, **kwargs):
         user = self.request.user
