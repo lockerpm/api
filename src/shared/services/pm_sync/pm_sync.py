@@ -27,9 +27,9 @@ class PwdSync:
             user_ids = user_ids + team_user_ids if self.add_all else team_user_ids
         elif self.teams:
             from cystack_models.models.members.team_members import TeamMember
-            teams_user_ids = list(
-                TeamMember.objects.filter(team_id__in=self.teams, status=PM_MEMBER_STATUS_CONFIRMED).values_list('user_id', flat=True).distinct()
-            )
+            teams_user_ids = list(TeamMember.objects.filter(
+                team_id__in=self.teams, status=PM_MEMBER_STATUS_CONFIRMED
+            ).values_list('user_id', flat=True).distinct())
             user_ids = user_ids + teams_user_ids if self.add_all else teams_user_ids
         else:
             user_ids = user_ids + self.user_ids if self.add_all else self.user_ids

@@ -20,7 +20,7 @@ class CollectionRepository(ICollectionRepository):
     def get_multiple_team_collections(self, team_id: str):
         return Collection.objects.filter(team_id=team_id).order_by('-creation_date')
 
-    def get_multiple_user_collections(self, user: User, exclude_team_ids=None):
+    def get_multiple_user_collections(self, user: User, exclude_team_ids=None, filter_ids=None):
         members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False)
         if exclude_team_ids and isinstance(exclude_team_ids, list):
             members = members.exclude(team_id__in=exclude_team_ids)
@@ -43,7 +43,10 @@ class CollectionRepository(ICollectionRepository):
         ).values_list('collection_id', flat=True))
         limit_collections = Collection.objects.filter(id__in=collection_members_ids + collection_groups_ids)
 
-        collections = (access_all_collections | limit_collections).distinct().annotate(
+        collections = (access_all_collections | limit_collections).distinct()
+        if filter_ids:
+            collections = collections.filter(id__in=filter_ids)
+        collections = collections.annotate(
             hide_passwords=Case(
                 When(id__in=hide_password_collection_ids, then=True),
                 default=False,

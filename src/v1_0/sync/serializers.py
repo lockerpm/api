@@ -170,7 +170,6 @@ class SyncCollectionSerializer(serializers.ModelSerializer):
             "hide_passwords": instance.hide_passwords,
             "read_only": True if role == MEMBER_ROLE_MEMBER else False,
             "external_id": None,
-
         }
         return data
 

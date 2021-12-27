@@ -132,10 +132,12 @@ urlpatterns += [
 
 """ Folder Management """
 urlpatterns += [
+    url(r'^collections/(?P<collection_id>[0-9a-z\-]+)$', views.TeamCollectionPwdViewSet.as_view({'get': 'retrieve'})),
+
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders$',
-        views.TeamCollectionPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+        views.TeamCollectionPwdViewSet.as_view({'post': 'create'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)$',
-        views.TeamCollectionPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+        views.TeamCollectionPwdViewSet.as_view({'put': 'update'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
         views.TeamCollectionPwdViewSet.as_view({'post': 'destroy'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/users$',
