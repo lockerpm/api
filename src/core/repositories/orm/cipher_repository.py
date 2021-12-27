@@ -33,7 +33,7 @@ class CipherRepository(ICipherRepository):
         return Cipher.objects.filter(team=team)
 
     def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False,
-                             exclude_team_ids=None):
+                             exclude_team_ids=None, filter_ids=None):
         """
         Get list ciphers of user
         :param user: (obj) User object
@@ -41,10 +41,13 @@ class CipherRepository(ICipherRepository):
         :param only_managed_team: (bool) if True => Only get list ciphers of non-locked teams
         :param only_edited: (bool) if True => Only get list ciphers that user is allowed edit permission
         :param exclude_team_ids: (list) Excluding all ciphers have team_id in this list
+        :param filter_ids: (list) List filtered cipher ids
         :return:
         """
 
         personal_ciphers = self.get_personal_ciphers(user=user)
+        if filter_ids:
+            personal_ciphers = personal_ciphers.filter(id__in=filter_ids)
         if only_personal is True:
             return personal_ciphers.annotate(view_password=Value(True, output_field=BooleanField()))
 
@@ -58,7 +61,11 @@ class CipherRepository(ICipherRepository):
         confirmed_team_ids = confirmed_team_members.values_list('team_id', flat=True)
         team_ciphers = Cipher.objects.filter(
             team_id__in=confirmed_team_ids
-        ).filter(
+        )
+        if filter_ids:
+            team_ciphers = team_ciphers.filter(id__in=filter_ids)
+
+        team_ciphers = team_ciphers.filter(
             # Owner, Admin ciphers
             Q(
                 team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN],
