@@ -13,7 +13,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVEN
     SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer, \
-    SyncOfflineCipherSerializer
+    SyncOfflineCipherSerializer, DetailCipherSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -24,6 +24,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     def get_serializer_class(self):
         if self.action in ["vaults"]:
             self.serializer_class = VaultItemSerializer
+        elif self.action in ["retrieve"]:
+            self.serializer_class = DetailCipherSerializer
         elif self.action in ["update"]:
             self.serializer_class = UpdateVaultItemSerializer
         elif self.action in ["share"]:
@@ -143,6 +145,17 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             "type": EVENT_CIPHER_RESTORE, "ciphers": ciphers, "ip_address": ip
         })
         return Response(status=200, data={"success": True})
+
+    def retrieve(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
+        self.check_pwd_session_auth(request=request)
+        cipher = self.get_object()
+        cipher_obj = self.cipher_repository.get_multiple_by_user(
+            user=user, filter_ids=[cipher.id]
+        ).prefetch_related('collections_ciphers').first()
+        serializer = DetailCipherSerializer(cipher_obj, context={"user": user}, many=False)
+        return Response(status=200, data=serializer.data)
 
     def update(self, request, *args, **kwargs):
         user = self.request.user
