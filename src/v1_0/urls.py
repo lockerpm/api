@@ -65,7 +65,8 @@ urlpatterns += [
 # -------------------------------- Folders ------------------------------- #
 urlpatterns += [
     url(r'^folders$', views.FolderPwdViewSet.as_view({'post': 'create'})),
-    url(r'^folders/(?P<pk>[0-9a-z\-]+)$', views.FolderPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+    url(r'^folders/(?P<pk>[0-9a-z\-]+)$',
+        views.FolderPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
 ]
 
 
