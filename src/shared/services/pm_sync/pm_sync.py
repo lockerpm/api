@@ -20,7 +20,7 @@ class PwdSync:
         self.teams = teams
         self.add_all = add_all
 
-    def send(self):
+    def send(self, data=None):
         user_ids = []
         if self.team:
             team_user_ids = list(self.team.team_members.values_list('user_id', flat=True))
@@ -36,7 +36,8 @@ class PwdSync:
         try:
             requests.post(url=API_SYNC, verify=False, headers=HEADERS, timeout=10, json={
                 "event": self.event,
-                "user_ids": list(set(user_ids))
+                "user_ids": list(set(user_ids)),
+                "data": data
             })
         except (requests.exceptions.ConnectionError, requests.exceptions.ConnectTimeout,
                 requests.exceptions.ReadTimeout):

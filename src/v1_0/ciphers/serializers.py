@@ -8,6 +8,7 @@ from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.utils.app import diff_list
 from v1_0.folders.serializers import FolderSerializer
+from v1_0.sync.serializers import SyncCipherSerializer
 
 
 class ItemFieldSerializer(serializers.Serializer):
@@ -464,3 +465,7 @@ class SyncOfflineCipherSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
         return data
 
+
+class DetailCipherSerializer(SyncCipherSerializer):
+    def to_representation(self, instance):
+        return super(DetailCipherSerializer, self).to_representation(instance)
