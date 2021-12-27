@@ -23,6 +23,7 @@ class Cipher(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ciphers", null=True)
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="ciphers", null=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_ciphers", null=True)
 
     class Meta:
         db_table = 'cs_ciphers'
