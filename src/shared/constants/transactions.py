@@ -45,7 +45,6 @@ PROMO_PERCENTAGE = "percentage_off"
 
 # ------------------- Plan type constants --------------------------- #
 PLAN_TYPE_PM_FREE = "pm_free"
-
 PLAN_TYPE_PM_BASIC = "pm_basic"
 PLAN_TYPE_PM_PRO = "pm_pro"
 PLAN_TYPE_PM_FAMILY = "pm_family"
