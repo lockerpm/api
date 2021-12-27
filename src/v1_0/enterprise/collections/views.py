@@ -10,10 +10,10 @@ from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_collection_pwd_permission import TeamCollectionPwdPermission
 from cystack_models.models.teams.teams import Team
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_COLLECTION_CREATE, SYNC_EVENT_COLLECTION_UPDATE, \
-    SYNC_EVENT_COLLECTION_DELETE, SYNC_EVENT_VAULT
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_COLLECTION_UPDATE, SYNC_EVENT_COLLECTION_DELETE, \
+    SYNC_EVENT_VAULT
 from v1_0.enterprise.collections.serializers import CollectionSerializer, UpdateCollectionSerializer, \
-    UpdateUserCollectionSerializer
+    UpdateUserCollectionSerializer, DetailCollectionSerializer
 from v1_0.enterprise.members.serializers import DetailMemberSerializer
 from v1_0.apps import PasswordManagerViewSet
 
@@ -28,6 +28,8 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpdateUserCollectionSerializer
         elif self.action in ["update"]:
             self.serializer_class = UpdateCollectionSerializer
+        elif self.action in ["retrieve"]:
+            self.serializer_class = DetailCollectionSerializer
 
         return super(TeamCollectionPwdViewSet, self).get_serializer_class()
 
@@ -51,18 +53,16 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
-    def list(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request)
-        team = self.get_object()
-        collections = self.collection_repository.get_multiple_team_collections(team_id=team.id)
-        serializer = self.get_serializer(collections, many=True)
-        return Response(status=200, data=serializer.data)
-
     def retrieve(self, request, *args, **kwargs):
+        user = request.user
         self.check_pwd_session_auth(request)
-        team = self.get_object()
-        collection = self.get_collection(team=team)
-        serializer = self.get_serializer(collection, many=False)
+        collection_id = kwargs.get("collection_id")
+        collection = self.collection_repository.get_multiple_user_collections(
+            user=user, filter_ids=[collection_id]
+        ).first()
+        if not collection:
+            raise NotFound
+        serializer = DetailCollectionSerializer(collection, many=False, context={"user": user})
         return Response(status=200, data=serializer.data)
 
     def create(self, request, *args, **kwargs):
@@ -77,7 +77,9 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         new_collection = self.collection_repository.save_new_collection(
             team=team, name=name, is_default=False
         )
-        PwdSync(event=SYNC_EVENT_COLLECTION_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+            data={"id": new_collection.id}
+        )
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_COLLECTION_CREATED, "collection_id": new_collection.id, "ip_address": ip
@@ -96,8 +98,12 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         name = validated_data.get("name")
         groups = validated_data.get("groups", [])
         valid_groups = team.groups.filter(id__in=groups).values_list('id', flat=True)
-        collection = self.collection_repository.save_update_collection(collection=collection, name=name, groups=valid_groups)
-        PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        collection = self.collection_repository.save_update_collection(
+            collection=collection, name=name, groups=valid_groups
+        )
+        PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+            data={"id": collection.id}
+        )
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_COLLECTION_UPDATED, "collection_id": collection.id, "ip_address": ip

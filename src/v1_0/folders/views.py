@@ -3,8 +3,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 
 from shared.permissions.locker_permissions.folder_pwd_permission import FolderPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_FOLDER_CREATE, SYNC_EVENT_FOLDER_UPDATE, \
-    SYNC_EVENT_FOLDER_DELETE
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_FOLDER_UPDATE, SYNC_EVENT_FOLDER_DELETE
 from v1_0.folders.serializers import FolderSerializer, DetailFolderSerializer
 from v1_0.apps import PasswordManagerViewSet
 
@@ -37,7 +36,7 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         # We create new folder object from folder data
         # Then we update revision date of user
         new_folder = self.folder_repository.save_new_folder(user=user, name=name)
-        PwdSync(event=SYNC_EVENT_FOLDER_CREATE, user_ids=[request.user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[request.user.user_id]).send(data={"id": new_folder.id})
         return Response(status=200, data={"id": new_folder.id})
 
     def retrieve(self, request, *args, **kwargs):
@@ -56,7 +55,7 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         name = validated_data.get("name", folder.name)
         folder = self.folder_repository.save_update_folder(user=user, folder=folder, name=name)
-        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[request.user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[request.user.user_id]).send(data={"id": folder.id})
         return Response(status=200, data={"id": folder.id})
 
     def destroy(self, request, *args, **kwargs):

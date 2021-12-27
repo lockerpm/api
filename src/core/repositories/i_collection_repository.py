@@ -15,7 +15,7 @@ class ICollectionRepository(ABC):
         pass
 
     @abstractmethod
-    def get_multiple_user_collections(self, user: User, exclude_team_ids=None):
+    def get_multiple_user_collections(self, user: User, exclude_team_ids=None, filter_ids=None):
         pass
 
     @abstractmethod
