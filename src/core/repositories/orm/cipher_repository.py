@@ -116,6 +116,7 @@ class CipherRepository(ICipherRepository):
         favorite = cipher_data.get("favorite", False)
         folder_id = cipher_data.get("folder_id", None)
         user_created_id = cipher_data.get("user_id")
+        created_by_id = cipher_data.get("created_by_id")
         user_cipher_id = cipher_data.get("user_id")
         team_id = cipher_data.get("team_id")
         collection_ids = cipher_data.get("collection_ids", [])
@@ -133,6 +134,7 @@ class CipherRepository(ICipherRepository):
             data=cipher_data.get("data"),
             user_id=user_cipher_id,
             team_id=team_id,
+            created_by_id=created_by_id,
         )
         cipher.save()
         # Create CipherFavorite
