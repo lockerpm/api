@@ -9,8 +9,7 @@ from shared.background import BG_EVENT, LockerBackgroundFactory
 from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_CREATE, \
-    SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer, \
     SyncOfflineCipherSerializer, DetailCipherSerializer
@@ -69,7 +68,9 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # If cipher belongs to the organization, we also update collections of the cipher.
         new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
         # Send sync message
-        PwdSync(event=SYNC_EVENT_CIPHER_CREATE, user_ids=[request.user.user_id], team=team, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+            data={"id": new_cipher.id}
+        )
         # Create event
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": new_cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
@@ -91,7 +92,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
         teams = self.team_repository.get_multiple_team_by_ids(ciphers.values_list('team_id', flat=True))
         self.cipher_repository.delete_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
-        PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
             "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_CIPHER_SOFT_DELETED, "ciphers": ciphers, "ip_address": ip
@@ -116,7 +117,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Then delete all them and bump revision date of users
         # Finally, we send sync event to all relational users
         self.cipher_repository.delete_permanent_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
-        PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
             "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_CIPHER_DELETED, "ciphers": ciphers, "ip_address": ip
@@ -139,7 +140,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # We will set deleted_date of cipher to null
         # Then bump revision date of users and send sync event to all relational users
         self.cipher_repository.restore_multiple_cipher(cipher_ids=cipher_ids, user_restored=request.user)
-        PwdSync(event=SYNC_EVENT_CIPHER_DELETE, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
             "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_CIPHER_RESTORE, "ciphers": ciphers, "ip_address": ip
@@ -174,7 +175,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             user_ids=[request.user.user_id],
             team=team,
             add_all=True
-        ).send()
+        ).send(data={"id": cipher.id})
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_CIPHER_UPDATED, "cipher_id": cipher.id, "ip_address": ip
@@ -191,7 +192,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         folder_id = validated_data.get("folderId")
 
         self.cipher_repository.move_multiple_cipher(cipher_ids=cipher_ids, user_moved=request.user, folder_id=folder_id)
-        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
@@ -248,7 +249,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             user_ids=[request.user.user_id],
             team=team,
             add_all=True
-        ).send()
+        ).send(data={"id": cipher.id})
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
             "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_CIPHER_SHARED, "cipher_id": cipher.id, "ip_address": ip

@@ -1,6 +1,4 @@
 SYNC_EVENT_CIPHER_UPDATE = "cipher_update"
-SYNC_EVENT_CIPHER_CREATE = "cipher_create"
-SYNC_EVENT_CIPHER_DELETE = "cipher_delete"
 SYNC_EVENT_CIPHER = "cipher"
 
 SYNC_EVENT_FOLDER_CREATE = "folder_create"
