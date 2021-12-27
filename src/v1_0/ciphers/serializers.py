@@ -227,6 +227,7 @@ class VaultItemSerializer(serializers.Serializer):
             "view_password": validated_data.get("view_password", True),
             "type": cipher_type,
             "user_id": self.context["request"].user.user_id,
+            "created_by_id": self.context["request"].user.user_id,
             "organization_id": validated_data.get("organizationId"),
             "team_id": validated_data.get("organizationId"),
             "folder_id": validated_data.get("folderId"),
