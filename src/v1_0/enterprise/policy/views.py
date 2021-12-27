@@ -29,7 +29,15 @@ class PolicyPwdViewSet(PasswordManagerViewSet):
             return policy
         except ObjectDoesNotExist:
             raise NotFound
-        
+
+    def allow_team_plan(self, team):
+        primary_user = self.team_repository.get_primary_member(team=team).user
+        current_plan = self.user_repository.get_current_plan(user=primary_user)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_team_policy() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        return team
+
     def retrieve(self, request, *args, **kwargs):
         return super(PolicyPwdViewSet, self).retrieve(request, *args, **kwargs)
 
@@ -37,7 +45,7 @@ class PolicyPwdViewSet(PasswordManagerViewSet):
         ip = request.data.get("ip")
         user = request.user
         policy = self.get_object()
-        team = policy.team
+        team = self.allow_team_plan(team=policy.team)
         serializer = self.get_serializer(policy, data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)

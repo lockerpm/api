@@ -6,11 +6,12 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER
+from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
-from cystack_models.models import User
+from cystack_models.models.users.users import User
+from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
 
@@ -24,6 +25,8 @@ class UserRepository(IUserRepository):
             user.save()
             # Create default team for this new user
             self.get_default_team(user=user, create_if_not_exist=True)
+            # Create default plan for this user
+            self.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         return user
 
     def get_by_id(self, user_id) -> User:
@@ -82,6 +85,38 @@ class UserRepository(IUserRepository):
         except AttributeError:
             from cystack_models.models.users.user_score import UserScore
             return UserScore.create(user=user)
+
+    def get_personal_team_plans(self, user: User):
+        user_team_ids = user.team_members.filter(
+            team__key__isnull=False, status=PM_MEMBER_STATUS_CONFIRMED
+        ).values_list('team_id', flat=True)
+        primary_owners = TeamMember.objects.filter(team_id__in=list(user_team_ids)).filter(
+            role_id=MEMBER_ROLE_OWNER
+        ).values_list('user_id', flat=True)
+        from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+        personal_team_plans = PMUserPlan.objects.filter(
+            user_id__in=list(primary_owners) + [user.user_id]
+        ).select_related('pm_plan')
+        return personal_team_plans
+
+    def get_max_allow_cipher_type(self, user: User):
+        personal_team_plans = self.get_personal_team_plans(user=user)
+        cipher_limits = PMPlan.objects.filter(id__in=personal_team_plans.values_list('pm_plan_id')).values(
+            'limit_password', 'limit_secure_note', 'limit_identity', 'limit_payment_card', 'limit_crypto_asset'
+        )
+        limit_password = [cipher_limit.get("limit_password") for cipher_limit in cipher_limits]
+        limit_secure_note = [cipher_limit.get("limit_secure_note") for cipher_limit in cipher_limits]
+        limit_identity = [cipher_limit.get("limit_identity") for cipher_limit in cipher_limits]
+        limit_payment_card = [cipher_limit.get("limit_payment_card") for cipher_limit in cipher_limits]
+        limit_crypto_asset = [cipher_limit.get("limit_crypto_asset") for cipher_limit in cipher_limits]
+        return {
+            "limit_password": None if None in limit_password else max(limit_password),
+            "limit_secure_note": None if None in limit_secure_note else max(limit_secure_note),
+            "limit_identity": None if None in limit_identity else max(limit_identity),
+            "limit_payment_card": None if None in limit_payment_card else max(limit_payment_card),
+            "limit_crypto_asset": None if None in limit_crypto_asset else max(limit_crypto_asset),
+            "limit_totp": None
+        }
 
     def get_current_plan(self, user: User, scope=None):
         try:

@@ -1,5 +1,6 @@
-TRIAL_ASSET_NUMBER = 1
-TRIAL_TEAM_NUMBER = 2
+TRIAL_PERSONAL_PLAN = 30 * 86400        # 30 days
+TRIAL_TEAM_PLAN = 10 * 86400            # 10 days
+TRIAL_TEAM_MEMBERS = 2
 
 # ------------------- Currency ------------------------------------- #
 CURRENCY_VND = "VND"
@@ -44,12 +45,18 @@ PROMO_PERCENTAGE = "percentage_off"
 
 # ------------------- Plan type constants --------------------------- #
 PLAN_TYPE_PM_FREE = "pm_free"
+PLAN_TYPE_PM_BASIC = "pm_basic"
+PLAN_TYPE_PM_PRO = "pm_pro"
+PLAN_TYPE_PM_FAMILY = "pm_family"
+PLAN_TYPE_PM_BUSINESS = "pm_business"
+PLAN_TYPE_PM_AGENCY = "pm_agency"
+
 PLAN_TYPE_PM_PERSONAL_PREMIUM = "pm_personal_premium"
 PLAN_TYPE_PM_FAMILY_DISCOUNT = "pm_family_discount"
 PLAN_TYPE_PM_ENTERPRISE = "pm_business_premium"
 
 
-FAMILY_MAX_MEMBER = 5
+FAMILY_MAX_MEMBER = 6
 
 
 # ------------- Banking code ----------------------------- #
