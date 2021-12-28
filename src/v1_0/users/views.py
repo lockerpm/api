@@ -18,7 +18,7 @@ from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPer
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
 from shared.utils.app import now
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
-    UserMasterPasswordHashSerializer, UserChangePasswordSerializer
+    UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -37,6 +37,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserMasterPasswordHashSerializer
         elif self.action == "password":
             self.serializer_class = UserChangePasswordSerializer
+        elif self.action == "fcm_id":
+            self.serializer_class = DeviceFcmSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
     @action(methods=["post"], detail=False)
@@ -261,6 +263,17 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "type": EVENT_USER_LOGIN, "ip_address": ip
         })
         return Response(status=200, data=result)
+
+    @action(methods=["post"], detail=False)
+    def fcm_id(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        fcm_id = validated_data.get("fcm_id")
+        device = validated_data.get("device")
+        self.device_repository.update_fcm_id(device=device, fcm_id=fcm_id)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def password(self, request, *args, **kwargs):

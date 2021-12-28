@@ -93,3 +93,8 @@ class DeviceRepository(IDeviceRepository):
         :return:
         """
         return DeviceAccessToken.objects.filter(device__in=devices).delete()
+
+    def update_fcm_id(self, device: Device, fcm_id: str = None):
+        device.fcm_id = fcm_id
+        device.save()
+        return device
