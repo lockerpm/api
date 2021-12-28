@@ -17,6 +17,9 @@ class TeamMember(models.Model):
     is_default = models.BooleanField(default=False)
     is_primary = models.BooleanField(default=False)
 
+    # Show/hide passwords when the team ciphers don't have any collections
+    hide_passwords = models.BooleanField(default=False)
+
     key = models.TextField(null=True)
     reset_password_key = models.TextField(null=True)
     status = models.CharField(max_length=128, default=PM_MEMBER_STATUS_CONFIRMED)

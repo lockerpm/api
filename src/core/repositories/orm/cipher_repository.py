@@ -94,6 +94,14 @@ class CipherRepository(ICipherRepository):
                         collections_ciphers__collection__collections_members__hide_passwords=True
                     ), then=False
                 ),
+                When(
+                    Q(
+                        team__team_members__role_id__in=[MEMBER_ROLE_MEMBER],
+                        team__team_members__user=user,
+                        team__personal_share=True,
+                        team__team_members__hide_passwords=True
+                    ), then=False
+                ),
                 default=True,
                 output_field=BooleanField()
             )
