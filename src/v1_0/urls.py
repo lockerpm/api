@@ -62,6 +62,12 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Cipher Sharing ------------------------------- #
+urlpatterns += [
+    url(r'^sharing/public_key$', views.SharingPwdViewSet.as_view({'post': 'public_key'})),
+]
+
+
 # -------------------------------- Folders ------------------------------- #
 urlpatterns += [
     url(r'^folders$', views.FolderPwdViewSet.as_view({'post': 'create'})),
