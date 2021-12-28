@@ -31,3 +31,7 @@ class IDeviceRepository(ABC):
     @abstractmethod
     def remove_devices_access_token(self, devices: List[Device]):
         pass
+
+    @abstractmethod
+    def update_fcm_id(self, device: Device, fcm_id: str = None):
+        pass

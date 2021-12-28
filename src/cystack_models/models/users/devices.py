@@ -29,6 +29,8 @@ class Device(models.Model):
     device_type = models.IntegerField(null=True)
     device_identifier = models.CharField(max_length=128)
 
+    fcm_id = models.CharField(max_length=255, null=True, blank=True, default=None)
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_devices")
 
     class Meta:

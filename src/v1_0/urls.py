@@ -30,6 +30,7 @@ urlpatterns += [
     url(r'^users/me/delete$', views.UserPwdViewSet.as_view({'post': 'delete_me'})),
     url(r'^users/me/purge$', views.UserPwdViewSet.as_view({'post': 'purge_me'})),
     url(r'^users/me/password$', views.UserPwdViewSet.as_view({'post': 'password'})),
+    url(r'^users/me/fcm_id$', views.UserPwdViewSet.as_view({'post': 'fcm_id'})),
     url(r'^users/password_hint$', views.UserPwdViewSet.as_view({'post': 'password_hint'})),
     url(r'^users/register$', views.UserPwdViewSet.as_view({'post': 'register'})),
     url(r'^users/prelogin$', views.UserPwdViewSet.as_view({'post': 'prelogin'})),

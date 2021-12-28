@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from shared.constants.ciphers import KDF_TYPE
@@ -98,4 +99,21 @@ class UserChangePasswordSerializer(serializers.Serializer):
         master_password_hash = data.get("master_password_hash")
         if user.check_master_password(master_password_hash) is False:
             raise serializers.ValidationError(detail={"master_password_hash": ["The master password is not correct"]})
+        return data
+
+
+class DeviceFcmSerializer(serializers.Serializer):
+    fcm_id = serializers.CharField(max_length=255, allow_null=True)
+    device_identifier = serializers.CharField(max_length=128)
+
+    def validate(self, data):
+        user = self.context["request"].user
+        device_identifier = data.get("device_identifier")
+        try:
+            device = user.user_devices.get(device_identifier=device_identifier)
+            data["device"] = device
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(detail={"device_identifier": [
+                "This device does not exist"
+            ]})
         return data
