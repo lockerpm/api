@@ -57,5 +57,28 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         members = validated_data.get("members")
         cipher = validated_data.get("cipher")
         folder = validated_data.get("folder")
+        cipher_obj = None
+        folder_obj = None
+        folder_name = None
+        if cipher:
+            cipher_id = cipher.get("id")
+            try:
+                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_id)
+                if cipher_obj.user != user:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+        if folder:
+            folder_id = folder.get("id")
+            folder_name = folder.get("name")
+            try:
+                folder_obj = self.folder_repository.get_by_id(folder_id=folder_id, user=user)
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"folder": ["The folder does not exist"]})
 
+        new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
+            sharing_key=sharing_key, members=members,
+            cipher=cipher_obj, folder=folder_obj, shared_collection_name=folder_name
+        )
 
+        return Response(status=200, data={"id": new_sharing.id})
