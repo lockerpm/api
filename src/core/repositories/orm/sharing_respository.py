@@ -11,9 +11,32 @@ from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.users.users import User
+from cystack_models.models.members.team_members import TeamMember
 
 
 class SharingRepository(ISharingRepository):
+    def accept_invitation(self, member: TeamMember):
+        """
+        The user accepts the personal invitation
+        :param member: (obj) Member object represents for the personal invitation
+        :return:
+        """
+        # If member has a encrypted key => Set status CONFIRMED
+        if member.key:
+            member.status = PM_MEMBER_STATUS_CONFIRMED
+        # Else, set status ACCEPTED
+        else:
+            member.status = PM_MEMBER_STATUS_ACCEPTED
+        member.save()
+
+    def reject_invitation(self, member: TeamMember):
+        """
+        This user rejects the personal invitation
+        :param member:
+        :return:
+        """
+        member.delete()
+
     def create_new_sharing(self, sharing_key: str, members,
                            cipher: Cipher = None, folder: Folder = None, shared_collection_name: str = None):
         """

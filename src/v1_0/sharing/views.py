@@ -8,10 +8,11 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from shared.background import BG_EVENT, LockerBackgroundFactory
 from shared.constants.event import *
+from shared.constants.members import PM_MEMBER_STATUS_INVITED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
-from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED
+from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -24,6 +25,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserPublicKeySerializer
         elif self.action == "share":
             self.serializer_class = SharingSerializer
+        elif self.action == "invitations":
+            self.serializer_class = SharingInvitationSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
     @action(methods=["post"], detail=False)
@@ -39,6 +42,38 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise ValidationError(detail={"user_id": ["The user does not exist"]})
         return Response(status=200, data={"public_key": user_obj.public_key})
+
+    @action(methods=["get"], detail=False)
+    def invitations(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        sharing_invitations = self.user_repository.get_list_invitations(user=user, personal_share=True)
+        serializer = self.get_serializer(sharing_invitations, many=True)
+        return Response(status=200, data=serializer.data)
+
+    @action(methods=["put"], detail=False)
+    def invitation_update(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        user = self.request.user
+        status = request.data.get("status")
+        if status not in ["accept", "reject"]:
+            raise ValidationError(detail={"status": ["This status is not valid"]})
+        try:
+            sharing_invitation = user.team_members.get(
+                id=kwargs.get("pk"), status=PM_MEMBER_STATUS_INVITED,
+                team__key__isnull=False, user__activated=True
+            )
+        except ObjectDoesNotExist:
+            raise NotFound
+        if status == "accept":
+            self.sharing_repository.accept_invitation(member=sharing_invitation)
+            primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
+            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
+            result = {"status": status, "owner": primary_owner.user_id, "team_name": sharing_invitation.team.name}
+        else:
+            self.sharing_repository.reject_invitation(member=sharing_invitation)
+            result = {"status": status}
+        return Response(status=200, data=result)
 
     @action(methods=["put"], detail=False)
     def share(self, request, *args, **kwargs):
