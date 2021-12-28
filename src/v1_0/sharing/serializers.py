@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from shared.constants.members import *
+from cystack_models.models.members.team_members import TeamMember
 
 
 class UserPublicKeySerializer(serializers.Serializer):
@@ -51,4 +52,21 @@ class SharingSerializer(serializers.Serializer):
                 "cipher": ["The cipher or folder is required"],
                 "folder": ["The folder or cipher is required"]
             })
+        return data
+
+
+class SharingInvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamMember
+        fields = ('id', 'access_time', 'role')
+        read_only_fields = ('id', 'access_time', 'role')
+
+    def to_representation(self, instance):
+        data = super(SharingInvitationSerializer, self).to_representation(instance)
+        data["status"] = instance.status
+        data["team"] = {
+            "id": instance.team.id,
+            "organization_id": instance.team.id,
+            "name": instance.team.name
+        }
         return data
