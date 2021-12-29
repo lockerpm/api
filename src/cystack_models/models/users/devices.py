@@ -28,8 +28,8 @@ class Device(models.Model):
     device_name = models.CharField(max_length=128, null=True)
     device_type = models.IntegerField(null=True)
     device_identifier = models.CharField(max_length=128)
-
     fcm_id = models.CharField(max_length=255, null=True, blank=True, default=None)
+    last_login = models.FloatField(null=True)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_devices")
 
