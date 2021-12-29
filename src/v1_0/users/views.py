@@ -74,23 +74,24 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user.save()
 
         # Upgrade trial plan
-        if trial_plan_obj.is_team_plan:
-            plan_metadata = {
-                "start_period": now(),
-                "end_period": now() + TRIAL_TEAM_PLAN,
-                "number_members": TRIAL_TEAM_MEMBERS,
-                "collection_name": validated_data.get("collection_name"),
-                "key": validated_data.get("team_key")
-            }
-        else:
-            plan_metadata = {
-                "start_period": now(),
-                "end_period": now() + TRIAL_PERSONAL_PLAN
-            }
-        self.user_repository.update_plan(
-            user=user, plan_type_alias=trial_plan_obj.get_alias(),
-            duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
-        )
+        if trial_plan_obj:
+            if trial_plan_obj.is_team_plan:
+                plan_metadata = {
+                    "start_period": now(),
+                    "end_period": now() + TRIAL_TEAM_PLAN,
+                    "number_members": TRIAL_TEAM_MEMBERS,
+                    "collection_name": validated_data.get("collection_name"),
+                    "key": validated_data.get("team_key")
+                }
+            else:
+                plan_metadata = {
+                    "start_period": now(),
+                    "end_period": now() + TRIAL_PERSONAL_PLAN
+                }
+            self.user_repository.update_plan(
+                user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+            )
 
         return Response(status=200, data={"success": True})
 
