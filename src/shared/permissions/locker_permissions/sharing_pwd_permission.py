@@ -3,7 +3,7 @@ from shared.permissions.locker_permissions.app import LockerPermission
 
 
 class SharingPwdPermission(LockerPermission):
-    scope = 'cipher'
+    # scope = 'cipher'
 
     def has_permission(self, request, view):
         return self.is_auth(request) and request.user.activated
@@ -11,7 +11,6 @@ class SharingPwdPermission(LockerPermission):
     def has_object_permission(self, request, view, obj):
         if view.action in ["public_key"]:
             return True
-        return super(SharingPwdPermission, self).has_object_permission(request, view, obj)
-
-    def get_role_pattern(self, view):
-        return super(SharingPwdPermission, self).get_role_pattern(view)
+        member = self.get_team_member(user=request.user, obj=obj)
+        role = member.role
+        return role.name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]

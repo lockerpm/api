@@ -8,7 +8,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from shared.background import BG_EVENT, LockerBackgroundFactory
 from shared.constants.event import *
-from shared.constants.members import PM_MEMBER_STATUS_INVITED
+from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED
@@ -28,6 +28,16 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         elif self.action == "invitations":
             self.serializer_class = SharingInvitationSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
+
+    def get_personal_share(self, sharing_id):
+        try:
+            team = self.team_repository.get_by_id(team_id=sharing_id)
+            if team.personal_share is False:
+                raise NotFound
+            self.check_object_permissions(request=self.request, obj=team)
+            return team
+        except ObjectDoesNotExist:
+            raise NotFound
 
     @action(methods=["post"], detail=False)
     def public_key(self, request, *args, **kwargs):
@@ -117,3 +127,26 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         )
 
         return Response(status=200, data={"id": new_sharing.id})
+
+    @action(methods=["post"], detail=False)
+    def invitation_confirm(self, request, *args, **kwargs):
+        ip = request.data.get("ip")
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(kwargs.get("pk"))
+        member_id = kwargs.get("member_id")
+        key = request.data.get("key")
+        if not key:
+            raise ValidationError(detail={"key": ["This field is required"]})
+        # Retrieve member that accepted
+        try:
+            member = personal_share.team_members.get(id=member_id, status=PM_MEMBER_STATUS_ACCEPTED)
+        except ObjectDoesNotExist:
+            raise NotFound
+        self.sharing_repository.confirm_invitation(member=member, key=key)
+        # PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
+        # })
+        return Response(status=200, data={"success": True})

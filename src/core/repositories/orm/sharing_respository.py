@@ -3,6 +3,7 @@ import uuid
 from django.db.models import Q
 
 from core.repositories import ISharingRepository
+from core.utils.account_revision_date import bump_account_revision_date
 
 from shared.constants.members import *
 from shared.utils.app import now
@@ -36,6 +37,19 @@ class SharingRepository(ISharingRepository):
         :return:
         """
         member.delete()
+
+    def confirm_invitation(self, member: TeamMember, key: str):
+        """
+        The owner confirms the member of the personal sharing
+        :param member: (obj)
+        :param key: member org key
+        :return:
+        """
+        member.email = None
+        member.key = key
+        member.status = PM_MEMBER_STATUS_CONFIRMED
+        member.save()
+        bump_account_revision_date(user=member.user)
 
     def create_new_sharing(self, sharing_key: str, members,
                            cipher: Cipher = None, folder: Folder = None, shared_collection_name: str = None):
