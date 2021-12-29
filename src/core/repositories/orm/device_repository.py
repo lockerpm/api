@@ -78,6 +78,16 @@ class DeviceRepository(IDeviceRepository):
         """
         return user.user_devices.all().order_by('-created_time')
 
+    def set_last_login(self, device: Device, last_login):
+        """
+        Set last login time for this device
+        :param device: (obj) The device object
+        :param last_login: (float) The last login
+        :return:
+        """
+        device.last_login = last_login or now()
+        device.save()
+
     def get_devices_access_token(self, devices: List[Device]):
         """
         Get list access tokens from the list devices
@@ -93,3 +103,8 @@ class DeviceRepository(IDeviceRepository):
         :return:
         """
         return DeviceAccessToken.objects.filter(device__in=devices).delete()
+
+    def update_fcm_id(self, device: Device, fcm_id: str = None):
+        device.fcm_id = fcm_id
+        device.save()
+        return device

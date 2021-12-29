@@ -71,7 +71,7 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def get_list_invitations(self, user: User):
+    def get_list_invitations(self, user: User, personal_share=False):
         pass
 
     @abstractmethod

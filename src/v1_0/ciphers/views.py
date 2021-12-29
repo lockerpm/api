@@ -69,7 +69,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
         # Send sync message
         PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
-            data={"id": new_cipher.id}
+            data={"id": str(new_cipher.id)}
         )
         # Create event
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{

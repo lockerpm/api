@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from shared.constants.ciphers import KDF_TYPE
@@ -5,6 +6,7 @@ from shared.constants.transactions import PLAN_TYPE_PM_PRO, PLAN_TYPE_PM_BUSINES
 from shared.constants.device_type import LIST_CLIENT_ID, LIST_DEVICE_TYPE
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from cystack_models.models.users.devices import Device
 
 
 class EncryptedPairKey(serializers.Serializer):
@@ -98,4 +100,31 @@ class UserChangePasswordSerializer(serializers.Serializer):
         master_password_hash = data.get("master_password_hash")
         if user.check_master_password(master_password_hash) is False:
             raise serializers.ValidationError(detail={"master_password_hash": ["The master password is not correct"]})
+        return data
+
+
+class DeviceFcmSerializer(serializers.Serializer):
+    fcm_id = serializers.CharField(max_length=255, allow_null=True)
+    device_identifier = serializers.CharField(max_length=128)
+
+    def validate(self, data):
+        user = self.context["request"].user
+        device_identifier = data.get("device_identifier")
+        try:
+            device = user.user_devices.get(device_identifier=device_identifier)
+            data["device"] = device
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(detail={"device_identifier": [
+                "This device does not exist"
+            ]})
+        return data
+
+
+class UserDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = ('client_id', 'device_name', 'device_type', 'device_identifier', 'last_login')
+
+    def to_representation(self, instance):
+        data = super(UserDeviceSerializer, self).to_representation(instance)
         return data

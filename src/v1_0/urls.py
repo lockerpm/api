@@ -30,6 +30,8 @@ urlpatterns += [
     url(r'^users/me/delete$', views.UserPwdViewSet.as_view({'post': 'delete_me'})),
     url(r'^users/me/purge$', views.UserPwdViewSet.as_view({'post': 'purge_me'})),
     url(r'^users/me/password$', views.UserPwdViewSet.as_view({'post': 'password'})),
+    url(r'^users/me/fcm_id$', views.UserPwdViewSet.as_view({'post': 'fcm_id'})),
+    url(r'^users/me/devices$', views.UserPwdViewSet.as_view({'get': 'devices'})),
     url(r'^users/password_hint$', views.UserPwdViewSet.as_view({'post': 'password_hint'})),
     url(r'^users/register$', views.UserPwdViewSet.as_view({'post': 'register'})),
     url(r'^users/prelogin$', views.UserPwdViewSet.as_view({'post': 'prelogin'})),
@@ -58,6 +60,19 @@ urlpatterns += [
     url(r'^ciphers/sync/offline$', views.CipherPwdViewSet.as_view({'post': 'sync_offline'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
+
+]
+
+
+# -------------------------------- Cipher Sharing ------------------------------- #
+urlpatterns += [
+    url(r'^sharing/public_key$', views.SharingPwdViewSet.as_view({'post': 'public_key'})),
+    url(r'^sharing/invitations$', views.SharingPwdViewSet.as_view({'get': 'invitations'})),
+    url(r'^sharing/invitations/(?P<pk>[0-9]+)$',
+        views.SharingPwdViewSet.as_view({'put': 'invitation_update'})),
+    url(r'^sharing$', views.SharingPwdViewSet.as_view({'post': 'share'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9]+)$',
+        views.SharingPwdViewSet.as_view({'post': 'invitation_confirm'})),
 
 ]
 

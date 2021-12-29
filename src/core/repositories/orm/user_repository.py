@@ -274,8 +274,10 @@ class UserRepository(IUserRepository):
             }
         return customer_data
 
-    def get_list_invitations(self, user: User):
-        member_invitations = user.team_members.filter(status=PM_MEMBER_STATUS_INVITED).order_by('access_time')
+    def get_list_invitations(self, user: User, personal_share=False):
+        member_invitations = user.team_members.filter(
+            status=PM_MEMBER_STATUS_INVITED, team__personal_share=personal_share
+        ).order_by('access_time')
         return member_invitations
 
     def delete_account(self, user: User):
