@@ -52,6 +52,11 @@ class SharingSerializer(serializers.Serializer):
                 "cipher": ["The cipher or folder is required"],
                 "folder": ["The folder or cipher is required"]
             })
+        if cipher and folder:
+            raise serializers.ValidationError(detail={
+                "cipher": ["You can only share a cipher or a folder"],
+                "folder": ["You can only share a cipher or a folder"]
+            })
         return data
 
 

@@ -11,7 +11,8 @@ from shared.constants.event import *
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
+    SYNC_EVENT_CIPHER
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer
 from v1_0.apps import PasswordManagerViewSet
 
@@ -130,8 +131,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def invitation_confirm(self, request, *args, **kwargs):
-        ip = request.data.get("ip")
-        user = self.request.user
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(kwargs.get("pk"))
         member_id = kwargs.get("member_id")
@@ -144,9 +143,5 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
         self.sharing_repository.confirm_invitation(member=member, key=key)
-        # PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
-        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #     "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
-        # })
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
         return Response(status=200, data={"success": True})
