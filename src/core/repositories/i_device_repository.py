@@ -25,6 +25,10 @@ class IDeviceRepository(ABC):
         pass
 
     @abstractmethod
+    def set_last_login(self, device: Device, last_login):
+        pass
+
+    @abstractmethod
     def get_devices_access_token(self, devices: List[Device]):
         pass
 

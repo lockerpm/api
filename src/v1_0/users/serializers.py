@@ -6,6 +6,7 @@ from shared.constants.transactions import PLAN_TYPE_PM_PRO, PLAN_TYPE_PM_BUSINES
 from shared.constants.device_type import LIST_CLIENT_ID, LIST_DEVICE_TYPE
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from cystack_models.models.users.devices import Device
 
 
 class EncryptedPairKey(serializers.Serializer):
@@ -116,4 +117,14 @@ class DeviceFcmSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"device_identifier": [
                 "This device does not exist"
             ]})
+        return data
+
+
+class UserDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Device
+        fields = ('client_id', 'device_name', 'device_type', 'device_identifier', 'last_login')
+
+    def to_representation(self, instance):
+        data = super(UserDeviceSerializer, self).to_representation(instance)
         return data

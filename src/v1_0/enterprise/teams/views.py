@@ -31,6 +31,8 @@ class TeamPwdViewSet(PasswordManagerViewSet):
     def get_object(self):
         try:
             team = self.team_repository.get_by_id(team_id=self.kwargs.get("pk"))
+            if team.personal_share:
+                raise NotFound
             self.check_object_permissions(request=self.request, obj=team)
             if self.action in ["update", "import_data", "dashboard"]:
                 if self.team_repository.is_locked(team=team):
@@ -55,7 +57,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         ]
         user = self.request.user
         all_teams = self.team_repository.get_multiple_team_by_user(
-            user=user, status=PM_MEMBER_STATUS_CONFIRMED
+            user=user, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
         ).annotate(
             is_default=Case(*order_whens, output_field=IntegerField(), default=Value(0))
         ).order_by('-is_default', '-creation_date')

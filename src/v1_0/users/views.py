@@ -18,7 +18,7 @@ from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPer
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
 from shared.utils.app import now
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
-    UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer
+    UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -39,6 +39,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserChangePasswordSerializer
         elif self.action == "fcm_id":
             self.serializer_class = DeviceFcmSerializer
+        elif self.action == "devices":
+            self.serializer_class = UserDeviceSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
     @action(methods=["post"], detail=False)
@@ -242,6 +244,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 ).values_list('sso_token_id', flat=True))
                 self.device_repository.remove_devices_access_token(devices=old_devices)
 
+        # Set last login
+        self.device_repository.set_last_login(device=device_obj, last_login=now())
+
         # Retrieve or create new access token
         access_token = self.device_repository.fetch_device_access_token(
             device=device_obj, renewal=True, sso_token_id=sso_token_id
@@ -403,3 +408,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
             is_default=True, is_primary=True
         ).values_list('team_id', flat=True)
         return Response(status=200, data=list(team_ids))
+
+    @action(methods=["get"], detail=False)
+    def devices(self, request, *args, **kwargs):
+        user = request.user
+        devices = self.device_repository.get_device_user(user=user)
+        serializer = self.get_serializer(devices, many=True)
+        return Response(status=200, data=serializer.data)
