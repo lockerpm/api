@@ -13,6 +13,10 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def confirm_invitation(self, member: TeamMember, key: str):
+        pass
+
+    @abstractmethod
     def create_new_sharing(self, sharing_key: str, members, cipher=None,
                            folder=None, shared_collection_name: str = None):
         pass
