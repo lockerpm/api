@@ -134,11 +134,12 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        sharing_repository = CORE_CONFIG["repositories"]["ISharingRepository"]()
         data = super(SharingInvitationSerializer, self).to_representation(instance)
         team = instance.team
         owner = team_repository.get_primary_member(team=team)
-        share_type = "folder" if team.collections.all().exists() else "cipher"
-        if share_type == "cipher":
+        item_type = "folder" if team.collections.all().exists() else "cipher"
+        if item_type == "cipher":
             share_cipher = team.ciphers.first()
             cipher_type = share_cipher.type if share_cipher else None
         else:
@@ -150,6 +151,7 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
             "name": instance.team.name
         }
         data["owner"] = owner.user_id
-        data["share_type"] = share_type
+        data["item_type"] = item_type
+        data["share_type"] = sharing_repository.get_personal_share_type(member=instance)
         data["cipher_type"] = cipher_type
         return data
