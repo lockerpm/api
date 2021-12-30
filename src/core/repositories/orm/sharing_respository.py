@@ -1,10 +1,7 @@
 import uuid
 
-from django.db.models import Q
-
 from core.repositories import ISharingRepository
 from core.utils.account_revision_date import bump_account_revision_date
-
 from shared.constants.members import *
 from shared.utils.app import now
 from shared.utils.id_generator import sharing_id_generator
@@ -142,13 +139,17 @@ class SharingRepository(ISharingRepository):
         # Sharing the folder
         if folder and shared_collection:
             shared_collection_cipher_ids = [collection_cipher["id"] for collection_cipher in shared_collection_ciphers]
-            ciphers = user.ciphers.filter(
-                id__in=shared_collection_cipher_ids
-                # Q(folders__icontains="{}: '{}'".format(user.user_id, folder.id)) |
-                # Q(folders__icontains='{}: "{}"'.format(user.user_id, folder.id))
-            )
+            ciphers = user.ciphers.filter(id__in=shared_collection_cipher_ids)
 
+            # Update new cipher data
+            for cipher in ciphers:
+                shared_cipher_data = next(
+                    (item for item in shared_collection_ciphers if item["id"] == cipher.id), {}
+                )
+                self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
+            # Delete all folders of the ciphers
             ciphers.update(team=new_sharing, user=None, folders='')
+            # Create a collection for the shared ciphers
             shared_cipher_ids = ciphers.values_list('id', flat=True)
             shared_collection.collections_ciphers.model.create_multiple_for_collection(
                 shared_collection.id, *shared_cipher_ids
@@ -159,9 +160,6 @@ class SharingRepository(ISharingRepository):
         # Share a single cipher
         if cipher:
             self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
-            # cipher.user = None
-            # cipher.team = new_sharing
-            # cipher.save()
 
         # Update revision date of the user
         bump_account_revision_date(user=user)
@@ -178,7 +176,4 @@ class SharingRepository(ISharingRepository):
         cipher.user_id = None
         cipher.team_id = team_id
         cipher.save()
-
-
-
         return cipher

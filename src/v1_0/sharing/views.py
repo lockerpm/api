@@ -118,6 +118,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
             except ObjectDoesNotExist:
                 raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            shared_cipher_data = json.loads(json.dumps(shared_cipher_data))
 
         if folder:
             folder_id = folder.get("id")
@@ -137,12 +138,14 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     raise ValidationError(detail={"folder": [
                         "The folder does not have the cipher {}".format(folder_cipher.get("id"))
                     ]})
+            folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
             sharing_key=sharing_key, members=members,
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
 
         return Response(status=200, data={"id": new_sharing.id})
 
