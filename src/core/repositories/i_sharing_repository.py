@@ -17,6 +17,7 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
-    def create_new_sharing(self, sharing_key: str, members, cipher=None,
-                           folder=None, shared_collection_name: str = None):
+    def create_new_sharing(self, sharing_key: str, members,
+                           cipher=None, shared_cipher_data=None,
+                           folder=None, shared_collection_name: str = None, shared_collection_ciphers=None):
         pass

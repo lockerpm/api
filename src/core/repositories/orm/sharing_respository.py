@@ -52,14 +52,17 @@ class SharingRepository(ISharingRepository):
         bump_account_revision_date(user=member.user)
 
     def create_new_sharing(self, sharing_key: str, members,
-                           cipher: Cipher = None, folder: Folder = None, shared_collection_name: str = None):
+                           cipher: Cipher = None, shared_cipher_data=None,
+                           folder: Folder = None, shared_collection_name: str = None, shared_collection_ciphers=None):
         """
         Personal share a cipher or a folder
         :param sharing_key: (str) org key
         :param members: list shared members
         :param cipher: (obj) Cipher object
+        :param shared_cipher_data: (dict) New shared cipher data
         :param folder: (obj) Folder object
         :param shared_collection_name: (str) Shared collection name
+        :param shared_collection_ciphers: (list) List shared ciphers
         :return:
         """
         user = folder.user if folder else cipher.user
@@ -68,10 +71,12 @@ class SharingRepository(ISharingRepository):
         id_generator = sharing_id_generator(user_id=user.user_id)
         sharing_id = next(id_generator)
 
+        # Create new sharing team
         from cystack_models.models.members.member_roles import MemberRole
+        team_name = user.get_from_cystack_id().get("full_name", "Sharing")
         new_sharing = Team.create(**{
             "id": sharing_id,
-            "name": "Sharing",
+            "name": team_name,
             "description": "",
             "personal_share": True,
             "members": [{
@@ -83,6 +88,7 @@ class SharingRepository(ISharingRepository):
         })
         new_sharing.key = sharing_key
         new_sharing.revision_date = now()
+        new_sharing.save()
 
         # Save owner key for primary member
         primary_member = new_sharing.team_members.get(user=user)
@@ -133,12 +139,15 @@ class SharingRepository(ISharingRepository):
             if shared_member.email:
                 non_existed_member_users.append(shared_member.email)
 
-        # Sharing this cipher or folder
+        # Sharing the folder
         if folder and shared_collection:
+            shared_collection_cipher_ids = [collection_cipher["id"] for collection_cipher in shared_collection_ciphers]
             ciphers = user.ciphers.filter(
-                Q(folders__icontains="{}: '{}'".format(user.user_id, folder.id)) |
-                Q(folders__icontains='{}: "{}"'.format(user.user_id, folder.id))
+                id__in=shared_collection_cipher_ids
+                # Q(folders__icontains="{}: '{}'".format(user.user_id, folder.id)) |
+                # Q(folders__icontains='{}: "{}"'.format(user.user_id, folder.id))
             )
+
             ciphers.update(team=new_sharing, user=None, folders='')
             shared_cipher_ids = ciphers.values_list('id', flat=True)
             shared_collection.collections_ciphers.model.create_multiple_for_collection(
@@ -146,10 +155,30 @@ class SharingRepository(ISharingRepository):
             )
             # Then, delete the root folder
             folder.delete()
+
         # Share a single cipher
         if cipher:
-            cipher.user = None
-            cipher.team = new_sharing
-            cipher.save()
+            self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
+            # cipher.user = None
+            # cipher.team = new_sharing
+            # cipher.save()
+
+        # Update revision date of the user
+        bump_account_revision_date(user=user)
 
         return new_sharing, existed_member_users, non_existed_member_users
+
+    def _share_cipher(self, cipher: Cipher, team_id, cipher_data):
+        # Update the cipher object
+        cipher.revision_date = now()
+        cipher.reprompt = cipher_data.get("reprompt", cipher.reprompt) or 0
+        cipher.score = cipher_data.get("score", cipher.score)
+        cipher.type = cipher_data.get("type", cipher.type)
+        cipher.data = cipher_data.get("data", cipher.get_data())
+        cipher.user_id = None
+        cipher.team_id = team_id
+        cipher.save()
+
+
+
+        return cipher
