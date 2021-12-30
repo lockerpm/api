@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from core.utils.data_helpers import camel_snake_data
 from shared.background import BG_EVENT, LockerBackgroundFactory
 from shared.constants.event import *
 from shared.error_responses.error import gen_error
@@ -156,7 +157,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             user=user, filter_ids=[cipher.id]
         ).prefetch_related('collections_ciphers').first()
         serializer = DetailCipherSerializer(cipher_obj, context={"user": user}, many=False)
-        return Response(status=200, data=serializer.data)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
         user = self.request.user

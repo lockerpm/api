@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 
+from core.utils.data_helpers import camel_snake_data
 from shared.permissions.locker_permissions.folder_pwd_permission import FolderPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_FOLDER_UPDATE, SYNC_EVENT_FOLDER_DELETE
 from v1_0.folders.serializers import FolderSerializer, DetailFolderSerializer
@@ -44,7 +45,8 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         folder = self.get_object()
         serializer = self.get_serializer(folder)
-        return Response(status=200, data=serializer.data)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
         user = self.request.user
