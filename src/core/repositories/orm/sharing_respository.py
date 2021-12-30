@@ -1,5 +1,7 @@
 import uuid
 
+from django.db.models import When, Q, Value, Case, IntegerField
+
 from core.repositories import ISharingRepository
 from core.utils.account_revision_date import bump_account_revision_date
 from shared.constants.members import *
@@ -13,6 +15,15 @@ from cystack_models.models.members.team_members import TeamMember
 
 
 class SharingRepository(ISharingRepository):
+    def get_personal_share_type(self, member: TeamMember):
+        role = member.role_id
+        if role in [MEMBER_ROLE_MEMBER]:
+            if member.hide_passwords is True:
+                return MEMBER_SHARE_TYPE_ONLY_FILL
+            else:
+                return MEMBER_SHARE_TYPE_VIEW
+        return MEMBER_SHARE_TYPE_EDIT
+
     def accept_invitation(self, member: TeamMember):
         """
         The user accepts the personal invitation
@@ -47,6 +58,16 @@ class SharingRepository(ISharingRepository):
         member.status = PM_MEMBER_STATUS_CONFIRMED
         member.save()
         bump_account_revision_date(user=member.user)
+
+    def stop_share(self, member: TeamMember, cipher=None, cipher_data=None):
+        """
+        The owner stops share a item (or a collection) with a member
+        :param member: (object) TeamMember object will be removed
+        :param cipher: (obj) Cipher object
+        :param cipher_data: (obj) New cipher data if the cipher does not share with any members
+        :return:
+        """
+        member.delete()
 
     def create_new_sharing(self, sharing_key: str, members,
                            cipher: Cipher = None, shared_cipher_data=None,
@@ -177,3 +198,37 @@ class SharingRepository(ISharingRepository):
         cipher.team_id = team_id
         cipher.save()
         return cipher
+
+    def get_my_personal_shared_teams(self, user: User):
+        """
+        Get list personal shared team that user is owner
+        :param user:
+        :return:
+        """
+        teams = Team.objects.filter(
+            team_members__user=user,
+            team_members__role_id=MEMBER_ROLE_OWNER,
+            team_members__status=PM_MEMBER_STATUS_CONFIRMED,
+            key__isnull=False,
+            personal_share=True
+        )
+        return teams
+
+    def get_shared_members(self, personal_shared_team: Team, exclude_owner=True):
+        """
+        Get list member of personal shared team
+        :param personal_shared_team:
+        :param exclude_owner:
+        :return:
+        """
+        order_whens = [
+            When(Q(role__name=MEMBER_ROLE_OWNER, user__isnull=False), then=Value(2)),
+            When(Q(role__name=MEMBER_ROLE_ADMIN, user__isnull=False), then=Value(3)),
+            When(Q(role__name=MEMBER_ROLE_MEMBER, user__isnull=False), then=Value(4))
+        ]
+        members_qs = personal_shared_team.team_members.annotate(
+            order_field=Case(*order_whens, output_field=IntegerField(), default=Value(4))
+        ).order_by("order_field")
+        if exclude_owner:
+            members_qs = members_qs.exclude(role_id=MEMBER_ROLE_OWNER)
+        return members_qs

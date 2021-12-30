@@ -7,9 +7,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
-from shared.background import BG_EVENT, LockerBackgroundFactory
-from shared.constants.event import *
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED
+from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
@@ -90,6 +88,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
     @action(methods=["put"], detail=False)
     def share(self, request, *args, **kwargs):
         user = self.request.user
+        self.check_pwd_session_auth(request)
 
         # Check plan of the user
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
@@ -145,7 +144,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
 
         return Response(status=200, data={"id": new_sharing.id})
 
@@ -164,4 +163,52 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.sharing_repository.confirm_invitation(member=member, key=key)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["get"], detail=False)
+    def my_share(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        user = request.user
+
+        my_shared_teams = []
+        personal_shared_teams = self.sharing_repository.get_my_personal_shared_teams(user=user)
+        for personal_shared_team in personal_shared_teams:
+            shared_members = self.sharing_repository.get_shared_members(
+                personal_shared_team=personal_shared_team, exclude_owner=True
+            )
+            shared_members_data = []
+            for member in shared_members:
+                shared_members_data.append({
+                    "id": member.id,
+                    "access_time": member.access_time,
+                    "user_id": member.user_id,
+                    "email": member.email,
+                    "role": member.role_id,
+                    "status": member.status,
+                    "hide_passwords": member.hide_passwords,
+                    "share_type": self.sharing_repository.get_personal_share_type(member=member)
+                })
+            team_data = {
+                "id": personal_shared_team.id,
+                "name": personal_shared_team.name,
+                "description": personal_shared_team.description,
+                "organization_id": personal_shared_team.id,
+                "members": shared_members_data
+            }
+            my_shared_teams.append(team_data)
+        return Response(status=200, data=my_shared_teams)
+
+    @action(methods=["post"], detail=False)
+    def stop_share(self, request, *args, **kwargs):
+        user = request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(kwargs.get("pk"))
+        member_id = kwargs.get("member_id")
+        # Retrieve member that accepted
+        try:
+            member = personal_share.team_members.exclude(user=user).get(id=member_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+        self.sharing_repository.confirm_invitation(member=member, key=key)
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=personal_share, add_all=True).send()
         return Response(status=200, data={"success": True})
