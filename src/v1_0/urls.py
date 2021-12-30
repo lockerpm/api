@@ -68,7 +68,7 @@ urlpatterns += [
 urlpatterns += [
     url(r'^sharing/public_key$', views.SharingPwdViewSet.as_view({'post': 'public_key'})),
     url(r'^sharing/invitations$', views.SharingPwdViewSet.as_view({'get': 'invitations'})),
-    url(r'^sharing/invitations/(?P<pk>[0-9]+)$',
+    url(r'^sharing/invitations/(?P<pk>[a-z0-9\-]+)$',
         views.SharingPwdViewSet.as_view({'put': 'invitation_update'})),
     url(r'^sharing$', views.SharingPwdViewSet.as_view({'put': 'share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9]+)$',
