@@ -16,35 +16,17 @@ class Command(BaseCommand):
         durations = [DURATION_MONTHLY, DURATION_HALF_YEARLY, DURATION_YEARLY]
         plans = [
             {
-                "alias": PLAN_TYPE_PM_BASIC,
-                DURATION_MONTHLY: 399,
-                DURATION_HALF_YEARLY: 2394,
-                DURATION_YEARLY: 1188
-            },
-            {
-                "alias": PLAN_TYPE_PM_PRO,
-                DURATION_MONTHLY: 799,
-                DURATION_HALF_YEARLY: 4794,
-                DURATION_YEARLY: 4788
+                "alias": PLAN_TYPE_PM_PREMIUM,
+                DURATION_MONTHLY: 499,
+                DURATION_HALF_YEARLY: 2994,
+                DURATION_YEARLY: 1548
             },
             {
                 "alias": PLAN_TYPE_PM_FAMILY,
-                DURATION_MONTHLY: 1199,
-                DURATION_HALF_YEARLY: 7194,
-                DURATION_YEARLY: 5988
-            },
-            {
-                "alias": PLAN_TYPE_PM_BUSINESS,
-                DURATION_MONTHLY: 599,
-                DURATION_HALF_YEARLY: 3594,
-                DURATION_YEARLY: 3588
-            },
-            {
-                "alias": PLAN_TYPE_PM_AGENCY,
-                DURATION_MONTHLY: 2499,
-                DURATION_HALF_YEARLY: 14994,
-                DURATION_YEARLY: 11988
-            },
+                DURATION_MONTHLY: 999,
+                DURATION_HALF_YEARLY: 7188,
+                DURATION_YEARLY: 5994
+            }
         ]
 
         for plan in plans:

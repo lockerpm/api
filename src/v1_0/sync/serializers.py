@@ -67,6 +67,7 @@ class SyncProfileSerializer(serializers.ModelSerializer):
                 "name": team_member.team.name,
                 "status": MAP_MEMBER_STATUS_TO_INT.get(team_member.status),
                 "type": MAP_MEMBER_TYPE_BW.get(team_member.role_id),
+                # "personal_share": team_member.team.personal_share,
             })
             organizations.append(team_member_data)
         data = {

@@ -178,23 +178,13 @@ class VaultItemSerializer(serializers.Serializer):
 
     def validated_plan(self, data):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
         cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
         user = self.context["request"].user
-        team = data.get("team")
 
         # Get limit cipher type from personal and team plans
         allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
         ciphers = cipher_repository.get_personal_ciphers(user=user)     # CHANGE LATER - list ciphers created by user
 
-        # if team is not None:
-        #     owner = team_repository.get_primary_member(team=team).user
-        #     ciphers = cipher_repository.get_team_ciphers(team=team)
-        # else:
-        #     owner = user
-        #     ciphers = cipher_repository.get_personal_ciphers(user=user)
-        # current_plan = user_repository.get_current_plan(user=owner, scope=settings.SCOPE_PWD_MANAGER)
-        # plan_obj = current_plan.get_plan_obj()
         vault_type = data.get("type")
         existed_ciphers_count = ciphers.filter(type=vault_type).count()
         # limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
