@@ -21,7 +21,13 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
-    def stop_share(self, member: TeamMember, cipher=None, cipher_data=None):
+    def stop_share(self, member: TeamMember,
+                   cipher=None, cipher_data=None,
+                   collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
+        pass
+
+    @abstractmethod
+    def leave_share(self, member: TeamMember):
         pass
 
     @abstractmethod
