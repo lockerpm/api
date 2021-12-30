@@ -12,7 +12,8 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
     SYNC_EVENT_CIPHER
-from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer
+from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
+    StopSharingSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -27,6 +28,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = SharingSerializer
         elif self.action == "invitations":
             self.serializer_class = SharingInvitationSerializer
+        elif self.action == "stop_share":
+            self.serializer_class = StopSharingSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
     def get_personal_share(self, sharing_id):
@@ -209,6 +212,76 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             member = personal_share.team_members.exclude(user=user).get(id=member_id)
         except ObjectDoesNotExist:
             raise NotFound
-        self.sharing_repository.confirm_invitation(member=member, key=key)
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=personal_share, add_all=True).send()
+        shared_team = member.team
+
+        # Check plan of the user
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_personal_share() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        cipher = validated_data.get("cipher")
+        personal_cipher_data = validated_data.get("personal_cipher_data")
+        folder = validated_data.get("folder")
+        cipher_obj = None
+        collection_obj = None
+        folder_name = None
+        folder_ciphers = None
+
+        if cipher:
+            cipher_id = cipher.get("id")
+            try:
+                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_id)
+                if cipher_obj.team != shared_team:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            personal_cipher_data = json.loads(json.dumps(personal_cipher_data))
+
+        if folder:
+            folder_id = folder.get("id")
+            folder_name = folder.get("name")
+            folder_ciphers = folder.get("ciphers") or []
+            # Get collection of the team
+            try:
+                collection_obj = self.collection_repository.get_team_collection_by_id(
+                    collection_id=folder_id, team_id=shared_team.id
+                )
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"folder": ["The folder does not exist"]})
+            # Check the list folder_ciphers in the folder
+            collection_ciphers_obj = collection_obj.collections_ciphers.values_list('cipher_id', flat=True)
+            for folder_cipher in folder_ciphers:
+                if folder_cipher.get("id") not in list(collection_ciphers_obj):
+                    raise ValidationError(detail={"folder": [
+                        "The collection does not have the cipher {}".format(folder_cipher.get("id"))
+                    ]})
+            folder_ciphers = json.loads(json.dumps(folder_ciphers))
+
+        removed_member_user_id = self.sharing_repository.stop_share(
+            member=member,
+            cipher=cipher_obj, cipher_data=personal_cipher_data,
+            collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
+        )
+        # Re-sync data of the owner and removed member
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def leave(self, request, *args, **kwargs):
+        user = request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(kwargs.get("pk"))
+        # Retrieve member that accepted
+        try:
+            member = personal_share.team_members.exclude(role_id=MEMBER_ROLE_OWNER).get(user=user)
+        except ObjectDoesNotExist:
+            raise NotFound
+
+        member_user_id = self.sharing_repository.leave_share(member=member)
+        # Re-sync data of the member
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
         return Response(status=200, data={"success": True})

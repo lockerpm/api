@@ -59,15 +59,79 @@ class SharingRepository(ISharingRepository):
         member.save()
         bump_account_revision_date(user=member.user)
 
-    def stop_share(self, member: TeamMember, cipher=None, cipher_data=None):
+    def stop_share(self, member: TeamMember,
+                   cipher=None, cipher_data=None,
+                   collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         """
         The owner stops share a item (or a collection) with a member
         :param member: (object) TeamMember object will be removed
         :param cipher: (obj) Cipher object
         :param cipher_data: (obj) New cipher data if the cipher does not share with any members
+        :param collection: (obj) Team collection will be stopped sharing
+        :param personal_folder_name: (obj) New folder name if the collection does not share with any members
+        :param personal_folder_ciphers: (obj) List new ciphers data in the collection if the user stops sharing
+        :return: The member user id has been removed
+        """
+        member_user = member.user
+        member_user_id = member.user_id
+        team = member.team
+
+        # Get owner
+        user_owner = team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
+
+        # Remove this member from the team
+        member.delete()
+
+        # If the team does not have any members (excluding owner)
+        # => Remove shared team and change the cipher/collection to personal cipher/personal folder
+        if team.team_members.exclude(role_id=MEMBER_ROLE_OWNER).exists() is False:
+            # If the team shared a folder
+            if collection:
+                # Create personal folder of the owner
+                personal_folder = Folder(
+                    name=personal_folder_name, user=user_owner, creation_date=now(), revision_date=now()
+                )
+                personal_folder.save()
+                # Get all ciphers of the shared team
+                shared_folder_cipher_ids = [cipher["id"] for cipher in personal_folder_ciphers]
+                ciphers = team.ciphers.filter(id__in=shared_folder_cipher_ids)
+
+                # Update new cipher data
+                for cipher in ciphers:
+                    personal_cipher_data = next(
+                        (item for item in personal_folder_ciphers if item["id"] == cipher.id), {}
+                    )
+                    self._stop_share_cipher(cipher=cipher, user_id=user_owner.id, cipher_data=personal_cipher_data)
+
+                # Update folder
+                ciphers.update(folder=str({user_owner.id: str(personal_folder.id)}))
+
+            # If the team shared a cipher
+            if cipher:
+                self._stop_share_cipher(cipher=cipher, user_id=user_owner.id, cipher_data=cipher_data)
+
+            # Delete this team
+            team.ciphers.all().delete()
+            team.collections.all().delete()
+            team.groups.all().delete()
+            team.delete()
+
+        # Update revision date of user
+        bump_account_revision_date(user=member_user)
+        bump_account_revision_date(user=user_owner)
+
+        return member_user_id
+
+    def leave_share(self, member: TeamMember):
+        """
+        The member leaves the sharing team
+        :param member: (obj) The member obj
         :return:
         """
+        bump_account_revision_date(user=member.user)
+        member_user_id = member.user_id
         member.delete()
+        return member_user_id
 
     def create_new_sharing(self, sharing_key: str, members,
                            cipher: Cipher = None, shared_cipher_data=None,
@@ -196,6 +260,18 @@ class SharingRepository(ISharingRepository):
         cipher.data = cipher_data.get("data", cipher.get_data())
         cipher.user_id = None
         cipher.team_id = team_id
+        cipher.save()
+        return cipher
+
+    def _stop_share_cipher(self, cipher: Cipher, user_id, cipher_data):
+        # Change team cipher to user cipher
+        cipher.revision_date = now()
+        cipher.reprompt = cipher_data.get("reprompt", cipher.reprompt) or 0
+        cipher.score = cipher_data.get("score", cipher.score)
+        cipher.type = cipher_data.get("type", cipher.type)
+        cipher.data = cipher_data.get("data", cipher.get_data())
+        cipher.user_id = user_id
+        cipher.team_id = None
         cipher.save()
         return cipher
 

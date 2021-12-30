@@ -79,11 +79,7 @@ class SharingSerializer(serializers.Serializer):
     def __get_shared_cipher_data(self, cipher):
         cipher_type = cipher.get("type")
         shared_cipher_data = {
-            # "edit": True,
-            # "view_password": cipher.get("view_password", True),
             "type": cipher_type,
-            # "user_id": self.context["request"].user.user_id,
-            # "created_by_id": self.context["request"].user.user_id,
             "score": cipher.get("score", 0),
             "reprompt": cipher.get("reprompt", 0),
             "attachments": None,
@@ -124,6 +120,70 @@ class SharingSerializer(serializers.Serializer):
             folder["ciphers"] = shared_ciphers
 
         return validated_data
+
+
+class StopSharingSerializer(serializers.Serializer):
+    cipher = CipherShareSerializer(many=False, required=False, allow_null=True)
+    folder = FolderShareSerializer(many=False, required=False, allow_null=True)
+
+    def validate(self, data):
+        cipher = data.get("cipher")
+        folder = data.get("folder")
+        if not cipher and not folder:
+            raise serializers.ValidationError(detail={
+                "cipher": ["The cipher or folder is required"],
+                "folder": ["The folder or cipher is required"]
+            })
+        if cipher and folder:
+            raise serializers.ValidationError(detail={
+                "cipher": ["You can only stop sharing a cipher or a folder"],
+                "folder": ["You can only stop sharing a cipher or a folder"]
+            })
+        return data
+
+    def __get_personal_cipher_data(self, cipher):
+        cipher_type = cipher.get("type")
+        shared_cipher_data = {
+            "type": cipher_type,
+            "score": cipher.get("score", 0),
+            "reprompt": cipher.get("reprompt", 0),
+            "fields": cipher.get("fields")
+        }
+        # Login data
+        if cipher_type == CIPHER_TYPE_LOGIN:
+            shared_cipher_data["data"] = dict(cipher.get("login"))
+        elif cipher_type == CIPHER_TYPE_CARD:
+            shared_cipher_data["data"] = dict(cipher.get("card"))
+        elif cipher_type == CIPHER_TYPE_IDENTITY:
+            shared_cipher_data["data"] = dict(cipher.get("identity"))
+        elif cipher_type == CIPHER_TYPE_NOTE:
+            shared_cipher_data["data"] = dict(cipher.get("secureNote"))
+        elif cipher_type == CIPHER_TYPE_TOTP:
+            shared_cipher_data["data"] = dict(cipher.get("secureNote"))
+        shared_cipher_data["data"]["name"] = cipher.get("name")
+        if cipher.get("notes"):
+            shared_cipher_data["data"]["notes"] = cipher.get("notes")
+        return shared_cipher_data
+
+    def save(self, **kwargs):
+        validated_data = self.validated_data
+        cipher = validated_data.get("cipher")
+
+        # Get personal cipher data if the user stop sharing a cipher
+        if cipher:
+            validated_data["personal_cipher_data"] = self.__get_personal_cipher_data(cipher=cipher)
+
+        # Get personal cipher data of the collection if the user stop sharing a collection
+        folder = validated_data.get("folder")
+        if folder:
+            personal_ciphers = []
+            ciphers = validated_data.get("ciphers") or []
+            for cipher in ciphers:
+                personal_ciphers.append(self.__get_personal_cipher_data(cipher=cipher))
+            folder["ciphers"] = personal_ciphers
+
+        return validated_data
+
 
 
 class SharingInvitationSerializer(serializers.ModelSerializer):
