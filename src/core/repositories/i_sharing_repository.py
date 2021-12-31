@@ -21,6 +21,10 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def update_role_invitation(self, member: TeamMember, role_id: str, hide_passwords: bool = None):
+        pass
+
+    @abstractmethod
     def stop_share(self, member: TeamMember,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):

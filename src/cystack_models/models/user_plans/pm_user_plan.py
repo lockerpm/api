@@ -1,6 +1,6 @@
 import stripe
-from django.conf import settings
 
+from django.conf import settings
 from django.db import models
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory

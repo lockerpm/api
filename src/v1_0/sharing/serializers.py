@@ -185,7 +185,6 @@ class StopSharingSerializer(serializers.Serializer):
         return validated_data
 
 
-
 class SharingInvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamMember
@@ -215,3 +214,8 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
         data["share_type"] = sharing_repository.get_personal_share_type(member=instance)
         data["cipher_type"] = cipher_type
         return data
+
+
+class UpdateInvitationRoleSerializer(serializers.Serializer):
+    hide_passwords = serializers.BooleanField(default=False)
+    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
