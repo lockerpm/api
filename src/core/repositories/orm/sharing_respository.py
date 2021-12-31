@@ -108,7 +108,7 @@ class SharingRepository(ISharingRepository):
 
             # If the team shared a cipher
             if cipher:
-                self._stop_share_cipher(cipher=cipher, user_id=user_owner.id, cipher_data=cipher_data)
+                self._stop_share_cipher(cipher=cipher, user_id=user_owner.user_id, cipher_data=cipher_data)
 
             # Delete this team
             team.ciphers.all().delete()
@@ -151,13 +151,9 @@ class SharingRepository(ISharingRepository):
             user = folder.user
         else:
             if cipher.team:
-                user = cipher.team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True)
+                user = cipher.team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
             else:
                 user = cipher.user
-
-        # Create new sharing id
-        id_generator = sharing_id_generator(user_id=user.user_id)
-        sharing_id = next(id_generator)
 
         # If the cipher is shared => The sharing team is the team of the cipher
         if cipher and cipher.team:
@@ -165,6 +161,9 @@ class SharingRepository(ISharingRepository):
         # Else, create new sharing team
         else:
             from cystack_models.models.members.member_roles import MemberRole
+            # Create new sharing id
+            id_generator = sharing_id_generator(user_id=user.user_id)
+            sharing_id = next(id_generator)
             team_name = user.get_from_cystack_id().get("full_name", "Sharing")
             new_sharing = Team.create(**{
                 "id": sharing_id,
