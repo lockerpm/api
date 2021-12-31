@@ -112,14 +112,26 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         folder_name = None
         folder_ciphers = None
 
+        # Validate the cipher
         if cipher:
-            cipher_id = cipher.get("id")
             try:
-                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_id)
-                if cipher_obj.user != user:
-                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher.get("id"))
             except ObjectDoesNotExist:
                 raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            # If the cipher isn't shared?
+            if cipher_obj.user and cipher_obj.user != user:
+                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            # If the cipher obj belongs to a team
+            if cipher_obj.team:
+                # Check the team is a personal sharing team?
+                if cipher_obj.team.personal_share is False:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+                # Check the user is an owner?
+                if cipher_obj.team.team_members.filter(user=user, role_id=MEMBER_ROLE_OWNER).exists() is False:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+                # Check the team only shares this cipher?
+                if cipher_obj.team.collections.exists() is True:
+                    raise ValidationError(detail={"cipher": ["The cipher belongs to a collection"]})
             shared_cipher_data = json.loads(json.dumps(shared_cipher_data))
 
         if folder:
@@ -234,7 +246,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         if cipher:
             cipher_id = cipher.get("id")
             try:
-                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_id)
+                cipher_obj = self.cipher_repository.get_by_id(cipher_id)
                 if cipher_obj.team != shared_team:
                     raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
             except ObjectDoesNotExist:

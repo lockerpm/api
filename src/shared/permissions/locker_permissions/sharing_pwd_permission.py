@@ -13,4 +13,7 @@ class SharingPwdPermission(LockerPermission):
             return True
         member = self.get_team_member(user=request.user, obj=obj)
         role = member.role
+        if view.action in ["leave"]:
+            return role.name in [MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER]
+
         return role.name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
