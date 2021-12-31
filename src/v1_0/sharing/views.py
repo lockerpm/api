@@ -13,7 +13,7 @@ from shared.permissions.locker_permissions.sharing_pwd_permission import Sharing
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
     SYNC_EVENT_CIPHER
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
-    StopSharingSerializer
+    StopSharingSerializer, UpdateInvitationRoleSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -30,6 +30,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = SharingInvitationSerializer
         elif self.action == "stop_share":
             self.serializer_class = StopSharingSerializer
+        elif self.action == "update_role":
+            self.serializer_class = UpdateInvitationRoleSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
     def get_personal_share(self, sharing_id):
@@ -178,6 +180,29 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.sharing_repository.confirm_invitation(member=member, key=key)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def update_role(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        member_id = kwargs.get("member_id")
+        # Retrieve member that accepted
+        try:
+            member = personal_share.team_members.get(id=member_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        role = validated_data.get("role")
+        hide_passwords = validated_data.get("hide_passwords", member.hide_passwords)
+
+        self.sharing_repository.update_role_invitation(
+            member=member, role_id=role, hide_passwords=hide_passwords
+        )
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)

@@ -59,6 +59,22 @@ class SharingRepository(ISharingRepository):
         member.save()
         bump_account_revision_date(user=member.user)
 
+    def update_role_invitation(self, member: TeamMember, role_id: str, hide_passwords: bool = None):
+        """
+        The owner updates the role of the member personal sharing
+        :param member: (obj) Member obj
+        :param role_id: (str) The role id
+        :param hide_passwords: (bool)
+        :return:
+        """
+        member.role_id = role_id
+        if role_id in [MEMBER_ROLE_MEMBER]:
+            member.hide_passwords = hide_passwords
+        member.save()
+        # Bump revision date
+        bump_account_revision_date(user=member.user)
+        return member
+
     def stop_share(self, member: TeamMember,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
