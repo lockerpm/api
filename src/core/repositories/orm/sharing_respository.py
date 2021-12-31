@@ -147,36 +147,46 @@ class SharingRepository(ISharingRepository):
         :param shared_collection_ciphers: (list) List shared ciphers
         :return:
         """
-        user = folder.user if folder else cipher.user
+        if folder:
+            user = folder.user
+        else:
+            if cipher.team:
+                user = cipher.team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True)
+            else:
+                user = cipher.user
 
         # Create new sharing id
         id_generator = sharing_id_generator(user_id=user.user_id)
         sharing_id = next(id_generator)
 
-        # Create new sharing team
-        from cystack_models.models.members.member_roles import MemberRole
-        team_name = user.get_from_cystack_id().get("full_name", "Sharing")
-        new_sharing = Team.create(**{
-            "id": sharing_id,
-            "name": team_name,
-            "description": "",
-            "personal_share": True,
-            "members": [{
-                "user": user,
-                "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
-                "is_default": False,
-                "is_primary": True
-            }]
-        })
-        new_sharing.key = sharing_key
-        new_sharing.revision_date = now()
-        new_sharing.save()
+        # If the cipher is shared => The sharing team is the team of the cipher
+        if cipher and cipher.team:
+            new_sharing = cipher.team
+        # Else, create new sharing team
+        else:
+            from cystack_models.models.members.member_roles import MemberRole
+            team_name = user.get_from_cystack_id().get("full_name", "Sharing")
+            new_sharing = Team.create(**{
+                "id": sharing_id,
+                "name": team_name,
+                "description": "",
+                "personal_share": True,
+                "members": [{
+                    "user": user,
+                    "role": MemberRole.objects.get(name=MEMBER_ROLE_OWNER),
+                    "is_default": False,
+                    "is_primary": True
+                }]
+            })
+            new_sharing.key = sharing_key
+            new_sharing.revision_date = now()
+            new_sharing.save()
 
-        # Save owner key for primary member
-        primary_member = new_sharing.team_members.get(user=user)
-        primary_member.key = sharing_key
-        primary_member.external_id = uuid.uuid4()
-        primary_member.save()
+            # Save owner key for primary member
+            primary_member = new_sharing.team_members.get(user=user)
+            primary_member.key = sharing_key
+            primary_member.external_id = uuid.uuid4()
+            primary_member.save()
 
         # If user shares a folder => Create collection for this team
         shared_collection = None
@@ -189,11 +199,16 @@ class SharingRepository(ISharingRepository):
         non_existed_member_users = []
         existed_member_users = []
         for member in members:
+            member_user = None
             try:
-                User.objects.get(user_id=member.get("user_id"))
+                member_user = User.objects.get(user_id=member.get("user_id"))
                 email = None
             except User.DoesNotExist:
                 email = member.get("email")
+            if member_user and new_sharing.team_members.filter(user=member_user).exists() is True:
+                continue
+            if email and new_sharing.team_members.filter(email=email).exists():
+                continue
             shared_member = new_sharing.team_members.model.objects.create(
                 user_id=member.get("user_id"),
                 email=email,
@@ -244,7 +259,8 @@ class SharingRepository(ISharingRepository):
 
         # Share a single cipher
         if cipher:
-            self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
+            if not cipher.team:
+                self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
 
         # Update revision date of the user
         bump_account_revision_date(user=user)
