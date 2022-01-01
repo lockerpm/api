@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from cystack_models.models.teams.collections import Collection
+from v1_0.sync.serializers import SyncCollectionSerializer
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -16,6 +17,11 @@ class CollectionSerializer(serializers.ModelSerializer):
             data["group_ids"] = list(instance.collections_groups.values_list('group_id', flat=True))
 
         return data
+    
+
+class DetailCollectionSerializer(SyncCollectionSerializer):
+    def to_representation(self, instance):
+        return super(DetailCollectionSerializer, self).to_representation(instance)
 
 
 class UpdateCollectionSerializer(serializers.Serializer):

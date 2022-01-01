@@ -29,3 +29,12 @@ class CollectionCipher(models.Model):
                 cls(cipher_id=cipher_id, collection_id=collection_id)
             )
         cls.objects.bulk_create(collection_ciphers, ignore_conflicts=True)
+
+    @classmethod
+    def create_multiple_for_collection(cls, collection_id, *cipher_ids):
+        collection_ciphers = []
+        for cipher_id in cipher_ids:
+            collection_ciphers.append(
+                cls(collection_id=collection_id, cipher_id=cipher_id)
+            )
+        cls.objects.bulk_create(collection_ciphers, ignore_conflicts=True)

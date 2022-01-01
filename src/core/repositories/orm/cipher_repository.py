@@ -33,7 +33,7 @@ class CipherRepository(ICipherRepository):
         return Cipher.objects.filter(team=team)
 
     def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False,
-                             exclude_team_ids=None):
+                             exclude_team_ids=None, filter_ids=None):
         """
         Get list ciphers of user
         :param user: (obj) User object
@@ -41,10 +41,13 @@ class CipherRepository(ICipherRepository):
         :param only_managed_team: (bool) if True => Only get list ciphers of non-locked teams
         :param only_edited: (bool) if True => Only get list ciphers that user is allowed edit permission
         :param exclude_team_ids: (list) Excluding all ciphers have team_id in this list
+        :param filter_ids: (list) List filtered cipher ids
         :return:
         """
 
         personal_ciphers = self.get_personal_ciphers(user=user)
+        if filter_ids:
+            personal_ciphers = personal_ciphers.filter(id__in=filter_ids)
         if only_personal is True:
             return personal_ciphers.annotate(view_password=Value(True, output_field=BooleanField()))
 
@@ -58,7 +61,11 @@ class CipherRepository(ICipherRepository):
         confirmed_team_ids = confirmed_team_members.values_list('team_id', flat=True)
         team_ciphers = Cipher.objects.filter(
             team_id__in=confirmed_team_ids
-        ).filter(
+        )
+        if filter_ids:
+            team_ciphers = team_ciphers.filter(id__in=filter_ids)
+
+        team_ciphers = team_ciphers.filter(
             # Owner, Admin ciphers
             Q(
                 team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN],
@@ -77,14 +84,27 @@ class CipherRepository(ICipherRepository):
             Q(
                 collections_ciphers__collection__collections_groups__group__groups_members__member__in=confirmed_team_members,
                 team__team_members__user=user
+            ) |
+            # Personal share
+            Q(
+                team__personal_share=True,
+                team__team_members__user=user
             )
-        ).annotate(
+        ).distinct().annotate(
             view_password=Case(
                 When(
                     Q(
                         team__team_members__role_id__in=[MEMBER_ROLE_MEMBER],
                         team__team_members__user=user,
                         collections_ciphers__collection__collections_members__hide_passwords=True
+                    ), then=False
+                ),
+                When(
+                    Q(
+                        team__team_members__role_id__in=[MEMBER_ROLE_MEMBER],
+                        team__team_members__user=user,
+                        team__personal_share=True,
+                        team__team_members__hide_passwords=True
                     ), then=False
                 ),
                 default=True,
@@ -116,6 +136,7 @@ class CipherRepository(ICipherRepository):
         favorite = cipher_data.get("favorite", False)
         folder_id = cipher_data.get("folder_id", None)
         user_created_id = cipher_data.get("user_id")
+        created_by_id = cipher_data.get("created_by_id")
         user_cipher_id = cipher_data.get("user_id")
         team_id = cipher_data.get("team_id")
         collection_ids = cipher_data.get("collection_ids", [])
@@ -133,6 +154,7 @@ class CipherRepository(ICipherRepository):
             data=cipher_data.get("data"),
             user_id=user_cipher_id,
             team_id=team_id,
+            created_by_id=created_by_id,
         )
         cipher.save()
         # Create CipherFavorite

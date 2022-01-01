@@ -19,6 +19,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
     cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
     folder_repository = CORE_CONFIG["repositories"]["IFolderRepository"]()
+    sharing_repository = CORE_CONFIG["repositories"]["ISharingRepository"]()
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
     team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]()
     collection_repository = CORE_CONFIG["repositories"]["ICollectionRepository"]()

@@ -32,6 +32,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
     def get_object(self):
         try:
             team = self.team_repository.get_by_id(team_id=self.kwargs.get("pk"))
+            if team.personal_share is True:
+                raise NotFound
             self.check_object_permissions(request=self.request, obj=team)
             if self.action in ["create", "update", "invitation_member", "public_key"]:
                 if self.team_repository.is_locked(team):
