@@ -30,7 +30,7 @@ class TeamRepository(ITeamRepository):
     def get_multiple_team_by_ids(self, team_ids: list):
         return Team.objects.filter(id__in=team_ids)
 
-    def get_multiple_team_by_user(self, user, status=None):
+    def get_multiple_team_by_user(self, user, status=None, personal_share=None):
         if not status:
             teams = Team.objects.filter(team_members__user=user, key__isnull=False)
         else:
@@ -38,6 +38,8 @@ class TeamRepository(ITeamRepository):
                 team_members__user=user, key__isnull=False,
                 team_members__status=status
             )
+        if personal_share is not None:
+            teams = teams.filter(personal_share=personal_share)
         return teams
 
     def get_role_notify(self, team: Team, user) -> dict:

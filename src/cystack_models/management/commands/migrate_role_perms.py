@@ -33,8 +33,8 @@ class Command(BaseCommand):
             {"scope": "cipher", "codename": "destroy", "description": "Can delete ciphers", "roles": ["owner", "admin", "manager"]},
 
             # Collection perms
-            {"scope": "collection", "codename": "list", "description": "Can get list collections", "roles": ["owner", "admin", "manager"]},
-            {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager"]},
+            # {"scope": "collection", "codename": "list", "description": "Can get list collections", "roles": ["owner", "admin", "manager"]},
+            {"scope": "collection", "codename": "retrieve", "description": "Can retrieve a collection", "roles": ["owner", "admin", "manager", "member"]},
             {"scope": "collection", "codename": "create", "description": "Can create a collection", "roles": ["owner", "admin"]},
             {"scope": "collection", "codename": "update", "description": "Can update a collection", "roles": ["owner", "admin"]},
             {"scope": "collection", "codename": "destroy", "description": "Can delete collections",   "roles": ["owner", "admin"]},

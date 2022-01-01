@@ -18,6 +18,7 @@ class Team(models.Model):
     default_collection_name = models.CharField(max_length=512, null=True)
     public_key = models.TextField(null=True)
     private_key = models.TextField(null=True)
+    personal_share = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'cs_teams'
@@ -27,6 +28,7 @@ class Team(models.Model):
         name = data.get("name")
         description = data.get("description", "")
         creation_date = data.get("creation_date", now())
+        personal_share = data.get("personal_share", False)
         team_id = data.get("id")
         if not team_id:
             # Create new team object
@@ -35,7 +37,7 @@ class Team(models.Model):
                 if cls.objects.filter(id=team_id).exists() is False:
                     break
         new_team = cls(
-            id=team_id, name=name, description=description, creation_date=creation_date
+            id=team_id, name=name, description=description, creation_date=creation_date, personal_share=personal_share
         )
         new_team.save()
 

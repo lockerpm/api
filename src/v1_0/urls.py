@@ -30,6 +30,8 @@ urlpatterns += [
     url(r'^users/me/delete$', views.UserPwdViewSet.as_view({'post': 'delete_me'})),
     url(r'^users/me/purge$', views.UserPwdViewSet.as_view({'post': 'purge_me'})),
     url(r'^users/me/password$', views.UserPwdViewSet.as_view({'post': 'password'})),
+    url(r'^users/me/fcm_id$', views.UserPwdViewSet.as_view({'post': 'fcm_id'})),
+    url(r'^users/me/devices$', views.UserPwdViewSet.as_view({'get': 'devices'})),
     url(r'^users/password_hint$', views.UserPwdViewSet.as_view({'post': 'password_hint'})),
     url(r'^users/register$', views.UserPwdViewSet.as_view({'post': 'register'})),
     url(r'^users/prelogin$', views.UserPwdViewSet.as_view({'post': 'prelogin'})),
@@ -56,8 +58,25 @@ urlpatterns += [
     url(r'^ciphers/move$', views.CipherPwdViewSet.as_view({'put': 'multiple_move'})),
     url(r'^ciphers/import$', views.CipherPwdViewSet.as_view({'post': 'import_data'})),
     url(r'^ciphers/sync/offline$', views.CipherPwdViewSet.as_view({'post': 'sync_offline'})),
-    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'put': 'update'})),
+    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
+
+]
+
+
+# -------------------------------- Cipher Sharing ------------------------------- #
+urlpatterns += [
+    url(r'^sharing/public_key$', views.SharingPwdViewSet.as_view({'post': 'public_key'})),
+    url(r'^sharing/invitations$', views.SharingPwdViewSet.as_view({'get': 'invitations'})),
+    url(r'^sharing/invitations/(?P<pk>[a-z0-9\-]+)$',
+        views.SharingPwdViewSet.as_view({'put': 'invitation_update'})),
+    url(r'^sharing$', views.SharingPwdViewSet.as_view({'put': 'share'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)$',
+        views.SharingPwdViewSet.as_view({'post': 'invitation_confirm', 'put': 'update_role'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)/stop$',
+        views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/leave$',  views.SharingPwdViewSet.as_view({'post': 'leave'})),
+    url(r'^sharing/my_share$', views.SharingPwdViewSet.as_view({'get': 'my_share'})),
 
 ]
 
@@ -65,7 +84,8 @@ urlpatterns += [
 # -------------------------------- Folders ------------------------------- #
 urlpatterns += [
     url(r'^folders$', views.FolderPwdViewSet.as_view({'post': 'create'})),
-    url(r'^folders/(?P<pk>[0-9a-z\-]+)$', views.FolderPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+    url(r'^folders/(?P<pk>[0-9a-z\-]+)$',
+        views.FolderPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
 ]
 
 
@@ -131,10 +151,12 @@ urlpatterns += [
 
 """ Folder Management """
 urlpatterns += [
+    url(r'^collections/(?P<collection_id>[0-9a-z\-]+)$', views.TeamCollectionPwdViewSet.as_view({'get': 'retrieve'})),
+
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders$',
-        views.TeamCollectionPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+        views.TeamCollectionPwdViewSet.as_view({'post': 'create'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)$',
-        views.TeamCollectionPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+        views.TeamCollectionPwdViewSet.as_view({'put': 'update'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
         views.TeamCollectionPwdViewSet.as_view({'post': 'destroy'})),
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/folders/(?P<folder_id>[0-9a-z\-]+)/users$',
