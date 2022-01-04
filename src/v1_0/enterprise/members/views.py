@@ -326,18 +326,19 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         for invitation in invitations:
             team = invitation.team
             # Check max number members
-            current_total_members = team.team_members.all().count()
             primary_user = self.team_repository.get_primary_member(team=team).user
-            max_allow_members = self.user_repository.get_current_plan(
-                user=primary_user, scope=settings.SCOPE_PWD_MANAGER
-            ).get_max_allow_members()
-            if max_allow_members and current_total_members + 1 > max_allow_members:
-                continue
-
-            invitation.email = None
-            invitation.token_invitation = None
-            invitation.user = member_user
-            invitation.save()
+            primary_plan = self.user_repository.get_current_plan(user=primary_user, scope=settings.SCOPE_PWD_MANAGER)
+            plan_obj = primary_plan.get_plan_obj()
+            if plan_obj.allow_personal_share() or plan_obj.is_team_plan or plan_obj.is_family_plan:
+                if plan_obj.is_team_plan:
+                    current_total_members = team.team_members.all().count()
+                    max_allow_members = primary_plan.get_max_allow_members()
+                    if max_allow_members and current_total_members + 1 > max_allow_members:
+                        continue
+                invitation.email = None
+                invitation.token_invitation = None
+                invitation.user = member_user
+                invitation.save()
 
         return Response(status=200, data={"success": True, "team_ids": list(team_ids)})
 

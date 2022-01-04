@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.conf import settings
@@ -104,6 +105,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         promo_code_obj = validated_data.get("promo_code_obj", None)
         duration = validated_data.get("duration", DURATION_MONTHLY)
         number_members = validated_data.get("number_members", 1)
+        family_members = json.loads(validated_data.get("family_members", []))
         card = request.data.get("card")
         bank_id = request.data.get("bank_id")
         payment_method = validated_data.get("payment_method")
@@ -114,6 +116,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "bank_id": bank_id,
             "card": card,
             "number_members": number_members,
+            "family_members": list(family_members),
             "key": validated_data.get("key"),
             "collection_name": validated_data.get("collection_name")
         }

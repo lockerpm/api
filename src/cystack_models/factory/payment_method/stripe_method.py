@@ -57,6 +57,7 @@ class StripePaymentMethod(IPaymentMethod):
                 metadata={
                     "user_id": self.user.user_id,
                     "scope": self.scope,
+                    "family_members": kwargs.get("family_members", []),
                     "key": kwargs.get("key"),
                     "collection_name": kwargs.get("collection_name")
                 },
@@ -94,7 +95,7 @@ class StripePaymentMethod(IPaymentMethod):
         # Create stripe subscription if does not exist
         if not stripe_subscription:
             return self.create_recurring_subscription(amount, plan_type, coupon, duration, **kwargs)
-        # Update existed plan
+        # Upgrade existed plan
         CyLog.info(**{"message": "Upgrade existed plan: User: {} - kwargs {} - {} {} {}".format(
             self.user, kwargs, plan_type, coupon, duration
         )})
@@ -103,13 +104,13 @@ class StripePaymentMethod(IPaymentMethod):
             stripe.Subscription.delete_discount(stripe_subscription.id)
         # Re-formatting Stripe coupon and Stripe plans
         coupon = None if coupon is None else "{}_{}".format(coupon.id, duration)
-        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration, **kwargs)
+        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
         try:
             """
             Here, we update the Stripe subscription.
             - Use payment_behavior='pending_if_incomplete' to update subscription using `pending_updates`. 
             The subscription object will return `pending_update` dict in event webhook
-            - Use proration_behavior='always_invoice' to invoice immediately for prorotion. 
+            - Use proration_behavior='always_invoice' to invoice immediately for proration. 
             """
             # First, update payment method
             new_stripe_subscription = stripe.Subscription.modify(
@@ -250,10 +251,10 @@ class StripePaymentMethod(IPaymentMethod):
         return 1
 
     def __reformatting_stripe_plans(self, plan_type: str, duration: str, **kwargs):
-        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration, **kwargs)
+        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
         return [{"plan": stripe_plan_id, "quantity": self.__get_new_quantity(**kwargs)}]
 
-    def __reformatting_stripe_plan_id(self, plan_type: str, duration: str, **kwargs):
+    def __reformatting_stripe_plan_id(self, plan_type: str, duration: str):
         stripe_plan_id = "{}_{}".format(plan_type, duration).lower()
         return stripe_plan_id.lower()
 

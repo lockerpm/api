@@ -127,22 +127,23 @@ class VaultItemSerializer(serializers.Serializer):
                 team_member = user.team_members.get(
                     team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
                 )
-                # Get team object and check team is locked?
-                team_obj = team_member.team
-                if not team_obj.key:
-                    raise serializers.ValidationError(detail={"organizationId": [
-                        "This team does not exist", "Team này không tồn tại"
-                    ]})
-                if team_repository.is_locked(team=team_obj):
-                    raise serializers.ValidationError({"non_field_errors": [gen_error("3003")]})
-                data["team"] = team_obj
-                data["collectionIds"] = self.validate_collections(
-                    team_member=team_member, collection_ids=collection_ids
-                )
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": [
                     "This team does not exist", "Team này không tồn tại"
                 ]})
+            # Get team object and check team is locked?
+            team_obj = team_member.team
+            if not team_obj.key:
+                raise serializers.ValidationError(detail={"organizationId": [
+                    "This team does not exist", "Team này không tồn tại"
+                ]})
+            if team_repository.is_locked(team=team_obj):
+                raise serializers.ValidationError({"non_field_errors": [gen_error("3003")]})
+            data["team"] = team_obj
+            data["collectionIds"] = self.validate_collections(
+                team_member=team_member, collection_ids=collection_ids
+            )
+
         else:
             data["organizationId"] = None
             data["collectionIds"] = []
@@ -154,10 +155,15 @@ class VaultItemSerializer(serializers.Serializer):
         team_obj = team_member.team
         role_id = team_member.role_id
         if not collection_ids:
-            default_collection_id = team_repository.get_default_collection(team=team_obj).id
-            if role_id == MEMBER_ROLE_MANAGER and team_member.collections_members.filter(
-                    collection_id=default_collection_id
-            ).exists() is False:
+            try:
+                default_collection = team_repository.get_default_collection(team=team_obj)
+                default_collection_id = default_collection.id
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(detail={
+                    "collectionIds": ["Not found any collections"]
+                })
+            if role_id == MEMBER_ROLE_MANAGER and \
+                    team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
                 raise serializers.ValidationError(detail={
                     "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
                 })
@@ -257,13 +263,18 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
         team_obj = team_member.team
         role_id = team_member.role_id
         if not collection_ids:
-            default_collection_id = team_repository.get_default_collection(team=team_obj).id
-            if role_id == MEMBER_ROLE_MANAGER and \
-                    team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
-                raise serializers.ValidationError(detail={
-                    "collectionIds": ["You do not have permission in default collections"]
-                })
-            return [default_collection_id]
+            # Get default collection
+            try:
+                default_collection = team_repository.get_default_collection(team=team_obj)
+                default_collection_id = default_collection.id
+                if role_id == MEMBER_ROLE_MANAGER and \
+                        team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
+                    raise serializers.ValidationError(detail={
+                        "collectionIds": ["You do not have permission in default collections"]
+                    })
+                return [default_collection_id]
+            except ObjectDoesNotExist:
+                return []
         else:
             team_collection_ids = team_repository.get_list_collection_ids(team=team_obj)
             for collection_id in collection_ids:
