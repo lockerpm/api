@@ -1,9 +1,6 @@
-from django.conf import settings
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
-from shared.constants.ciphers import *
-from shared.constants.transactions import PLAN_TYPE_PM_ENTERPRISE
 from shared.utils.app import now
 from cystack_models.models.teams.teams import Team
 from v1_0.ciphers.serializers import VaultItemSerializer, ImportCipherSerializer
@@ -30,9 +27,8 @@ class ListTeamSerializer(serializers.ModelSerializer):
         # Retrieve current plan of this team
         primary_member = team_repository.get_primary_member(team=instance)
         pm_plan = user_repository.get_current_plan(user=primary_member.user)
-        pm_plan_alias = pm_plan.get_plan_type_alias()
         pm_plan_name = pm_plan.get_plan_type_name()
-        data["is_business"] = True if pm_plan_alias == PLAN_TYPE_PM_ENTERPRISE else False
+        data["is_business"] = True if pm_plan.get_plan_obj().is_team_plan else False
         data["plan_name"] = pm_plan_name
         return data
 

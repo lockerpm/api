@@ -404,7 +404,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request)
         # Get all team that user is a confirmed members and owner's plan is Family discount
         team_ids = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
-            user__pm_user_plan__pm_plan__alias=PLAN_TYPE_PM_FAMILY_DISCOUNT,
+            user__pm_user_plan__pm_plan__alias=PLAN_TYPE_PM_FAMILY,
             role_id=MEMBER_ROLE_OWNER,
             is_default=True, is_primary=True
         ).values_list('team_id', flat=True)
