@@ -226,7 +226,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     "role": member.role_id,
                     "status": member.status,
                     "hide_passwords": member.hide_passwords,
-                    "share_type": self.sharing_repository.get_personal_share_type(member=member)
+                    "share_type": self.sharing_repository.get_personal_share_type(member=member),
+                    "pwd_user_id": member.user.internal_id if member.user else None
                 })
             team_data = {
                 "id": personal_shared_team.id,

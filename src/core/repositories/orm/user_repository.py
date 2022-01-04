@@ -257,7 +257,11 @@ class UserRepository(IUserRepository):
                     # Then upgrade to Premium
                     self.update_plan(
                         user=pm_user_plan, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
-                        scope=settings.SCOPE_PWD_MANAGER, **{"number_members": 1}
+                        scope=settings.SCOPE_PWD_MANAGER, **{
+                            "start_period": pm_user_plan.start_period,
+                            "end_period": pm_user_plan.end_period,
+                            "number_members": 1
+                        }
                     )
             else:
                 pm_user_plan.pm_plan_family.model.create(pm_user_plan, None, email)
