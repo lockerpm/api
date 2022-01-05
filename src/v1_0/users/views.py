@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound, Throttled
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
@@ -75,6 +75,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Upgrade trial plan
         if trial_plan_obj:
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             if trial_plan_obj.is_team_plan:
                 plan_metadata = {
                     "start_period": now(),
@@ -83,15 +84,27 @@ class UserPwdViewSet(PasswordManagerViewSet):
                     "collection_name": validated_data.get("collection_name"),
                     "key": validated_data.get("team_key")
                 }
-            else:
+                self.user_repository.update_plan(
+                    user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                    duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+                )
+            elif current_plan.is_personal_trial_applied() is False:
                 plan_metadata = {
                     "start_period": now(),
                     "end_period": now() + TRIAL_PERSONAL_PLAN
                 }
-            self.user_repository.update_plan(
-                user=user, plan_type_alias=trial_plan_obj.get_alias(),
-                duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
-            )
+                self.user_repository.update_plan(
+                    user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                    duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+                )
+                current_plan.personal_trial_applied = True
+                current_plan.save()
+
+        # Upgrade plan if the user is a family member
+        self.user_repository.upgrade_member_family_plan(user=user)
+
+        # Update member confirmation
+        self.user_repository.invitations_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 

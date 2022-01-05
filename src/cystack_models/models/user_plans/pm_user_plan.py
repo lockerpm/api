@@ -19,6 +19,7 @@ class PMUserPlan(UserPlan):
     )
     ref_plan_code = models.CharField(max_length=128, null=True, default=None)
     number_members = models.IntegerField(default=1)  # Number of member business
+    personal_trial_applied = models.BooleanField(default=False)     # Did this user apply the personal trial plan?
     pm_stripe_subscription = models.CharField(max_length=255, null=True)
     pm_stripe_subscription_created_time = models.IntegerField(null=True)
 
@@ -262,3 +263,6 @@ class PMUserPlan(UserPlan):
 
         current_amount = max(round(total_price - discount, 2), 0)
         return current_amount
+
+    def is_personal_trial_applied(self) -> bool:
+        return self.personal_trial_applied
