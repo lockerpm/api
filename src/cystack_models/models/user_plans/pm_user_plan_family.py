@@ -1,5 +1,3 @@
-import stripe
-
 from django.db import models
 
 from shared.utils.app import now
