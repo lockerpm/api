@@ -11,6 +11,7 @@ from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from cystack_models.models.user_plans.plan_types import PlanType
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
 
 
 # ------------------------- Payments --------------------------- #

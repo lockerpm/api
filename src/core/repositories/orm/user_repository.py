@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
-from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
+from shared.constants.members import *
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
@@ -125,7 +125,8 @@ class UserRepository(IUserRepository):
             from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
             return PMUserPlan.update_or_create(user)
 
-    def update_plan(self, user: User, plan_type_alias: str, duration=DURATION_MONTHLY, scope=None, **kwargs):
+    def update_plan(self, user: User, plan_type_alias: str, duration=DURATION_MONTHLY,
+                    scope=settings.SCOPE_PWD_MANAGER, **kwargs):
         """
         Update the Password Manager plan of this user
         :param user: (obj) User object
@@ -165,6 +166,8 @@ class UserRepository(IUserRepository):
             primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
             for primary_owner in primary_owners:
                 primary_owner.team.lock_pm_team(lock=True)
+            # Downgrade all family members
+            self.__cancel_family_members(pm_user_plan)
         else:
             # Unlock all their PM teams
             primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
@@ -172,12 +175,21 @@ class UserRepository(IUserRepository):
                 primary_owner.team.lock_pm_team(lock=False)
 
         pm_user_plan.save()
+
         # Update plan rule here
-        if pm_user_plan.pm_plan.is_team_plan:
+        # If the plan is team plan => Create vault org
+        pm_plan = pm_user_plan.get_plan_obj()
+        if pm_plan.is_team_plan:
             default_collection_name = kwargs.get("collection_name")
             key = kwargs.get("key")
             # Create Vault Org here
             self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
+
+        # If the plan is family plan => Upgrade plan for the user
+        if pm_plan.is_family_plan:
+            family_members = kwargs.get("family_members", [])
+            self.__create_family_members(pm_user_plan=pm_user_plan, family_members=family_members)
+
         return pm_user_plan
 
     def cancel_plan(self, user: User, scope=None):
@@ -214,6 +226,54 @@ class UserRepository(IUserRepository):
         primary_member.key = key
         primary_member.external_id = uuid.uuid4()
         primary_member.save()
+
+    def __create_family_members(self, pm_user_plan, family_members):
+        plan_obj = pm_user_plan.get_plan_obj()
+        if plan_obj.is_family_plan is False:
+            return pm_user_plan
+        # If this pm user plan has family members => Not create
+        if pm_user_plan.pm_plan_family.exists():
+            return pm_user_plan
+
+        for family_member in family_members:
+            email = family_member.get("email")
+            user_id = family_member.get("user_id")
+            try:
+                family_member_user = User.objects.get(user_id=user_id, activated=True)
+            except User.DoesNotExist:
+                family_member_user = None
+            if family_member_user:
+                pm_user_plan.pm_plan_family.model.create(pm_user_plan, family_member_user, None)
+
+                # If the member user has a plan => Cancel this plan if this plan is not a team plan
+                current_member_plan = self.get_current_plan(user=family_member_user, scope=settings.SCOPE_PWD_MANAGER)
+                if current_member_plan.get_plan_obj().is_family_plan is False and \
+                        current_member_plan.get_plan_obj().is_team_plan is False:
+                    from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+                    PaymentMethodFactory.get_method(
+                        user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=current_member_plan.get_default_payment_method()
+                    ).cancel_immediately_recurring_subscription()
+                    # Then upgrade to Premium
+                    self.update_plan(
+                        user=pm_user_plan, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
+                        scope=settings.SCOPE_PWD_MANAGER, **{
+                            "start_period": pm_user_plan.start_period,
+                            "end_period": pm_user_plan.end_period,
+                            "number_members": 1
+                        }
+                    )
+            else:
+                pm_user_plan.pm_plan_family.model.create(pm_user_plan, None, email)
+
+    def __cancel_family_members(self, pm_user_plan):
+        family_members = pm_user_plan.pm_plan_family.all()
+        for family_member in family_members:
+            if family_member.user:
+                self.update_plan(
+                    user=family_member.user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
+                )
+            family_member.delete()
 
     def get_max_allow_member_pm_team(self, user: User, scope=None):
         return self.get_current_plan(user, scope=scope).get_max_allow_members()
@@ -276,7 +336,7 @@ class UserRepository(IUserRepository):
 
     def get_list_invitations(self, user: User, personal_share=False):
         member_invitations = user.team_members.filter(
-            status=PM_MEMBER_STATUS_INVITED, team__personal_share=personal_share
+            status__in=[PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED], team__personal_share=personal_share
         ).select_related('team').order_by('access_time')
         return member_invitations
 

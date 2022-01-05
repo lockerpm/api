@@ -100,6 +100,7 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                     "start_period": start_period,
                     "end_period": end_period,
                     "promo_code": new_payment.promo_code,
+                    "family_members": stripe_metadata.get("family_members", []),
                     "key": stripe_metadata.get("key"),
                     "collection_name": stripe_metadata.get("collection_name")
                 }

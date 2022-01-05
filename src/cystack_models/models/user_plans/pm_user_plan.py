@@ -1,6 +1,6 @@
 import stripe
-from django.conf import settings
 
+from django.conf import settings
 from django.db import models
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
@@ -130,9 +130,10 @@ class PMUserPlan(UserPlan):
         return self.number_members
 
     def get_max_allow_members(self):
-        if self.get_plan_type_alias() == PLAN_TYPE_PM_ENTERPRISE:
+        plan_obj = self.get_plan_obj()
+        if plan_obj.is_team_plan:
             return self.number_members
-        return self.pm_plan.get_max_number_members()
+        return plan_obj.get_max_number_members()
 
     def set_default_payment_method(self, method):
         self.default_payment_method = method

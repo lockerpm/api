@@ -42,7 +42,16 @@ class BankingPaymentMethod(IPaymentMethod):
         return {"success": True, "banking_invoice": new_invoice}
 
     def cancel_recurring_subscription(self, **kwargs):
-        pass
+        """
+        Cancel or continue subscription
+        :return: End period if cancel plan. Return None if continue scan
+        """
+        current_plan = self.get_current_plan(**kwargs)
+        current_plan.cancel_at_period_end = True if current_plan.cancel_at_period_end is False else False
+        current_plan.save()
+        if current_plan.cancel_at_period_end is True:
+            return current_plan.end_period
+        return None
 
     def recurring_subtract(self, amount: float, plan_type: str,
                            coupon=None, duration: str = DURATION_MONTHLY, **kwargs):

@@ -84,8 +84,13 @@ class CipherRepository(ICipherRepository):
             Q(
                 collections_ciphers__collection__collections_groups__group__groups_members__member__in=confirmed_team_members,
                 team__team_members__user=user
+            ) |
+            # Personal share
+            Q(
+                team__personal_share=True,
+                team__team_members__user=user
             )
-        ).annotate(
+        ).distinct().annotate(
             view_password=Case(
                 When(
                     Q(
