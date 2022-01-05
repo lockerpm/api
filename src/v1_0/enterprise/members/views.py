@@ -8,11 +8,13 @@ from core.utils.account_revision_date import bump_account_revision_date
 from shared.background import *
 from shared.constants.event import *
 from shared.constants.members import *
+from shared.constants.transactions import PLAN_TYPE_PM_PREMIUM
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER, SYNC_EVENT_VAULT
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
 from v1_0.enterprise.members.serializers import DetailMemberSerializer, MemberGroupSerializer, UpdateMemberSerializer
 from v1_0.apps import PasswordManagerViewSet
 
@@ -322,7 +324,6 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         # Filter invitations of the teams
         invitations = TeamMember.objects.filter(email=email, team__key__isnull=False, status=PM_MEMBER_STATUS_INVITED)
         team_ids = invitations.values_list('team_id', flat=True)
-
         for invitation in invitations:
             team = invitation.team
             # Check max number members
@@ -339,6 +340,21 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                 invitation.token_invitation = None
                 invitation.user = member_user
                 invitation.save()
+
+        # Upgrade plan if the user is a family member
+        family_invitations = PMUserPlanFamily.objects.filter(email=email).order_by('created_time')
+        family_invitation = family_invitations.first()
+        if family_invitation:
+            root_user_plan = family_invitation.root_user_plan
+            self.user_repository.update_plan(
+                user=member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=root_user_plan.duration,
+                scope=settings.SCOPE_PWD_MANAGER, **{
+                    "start_period": root_user_plan.start_period,
+                    "end_period": root_user_plan.end_period,
+                    "number_members": 1
+                }
+            )
+            family_invitations.update(user=member_user, email=None)
 
         return Response(status=200, data={"success": True, "team_ids": list(team_ids)})
 
