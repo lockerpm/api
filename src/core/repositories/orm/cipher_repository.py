@@ -26,6 +26,9 @@ class CipherRepository(ICipherRepository):
     def get_multiple_by_ids(self, cipher_ids: list):
         return Cipher.objects.filter(id__in=cipher_ids)
 
+    def get_ciphers_created_by_user(self, user):
+        return Cipher.objects.filter(created_by=user)
+
     def get_personal_ciphers(self, user):
         return Cipher.objects.filter(user=user)
 
