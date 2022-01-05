@@ -116,9 +116,9 @@ class UpgradePlanSerializer(serializers.Serializer):
         if plan.is_family_plan:
             if not family_members:
                 raise serializers.ValidationError(detail={"members": ["The family members are required"]})
-            if len(family_members) != plan.get_max_number_members():
+            if len(family_members) != plan.get_max_number_members() - 1:
                 raise serializers.ValidationError(detail={
-                    "members": ["The plan requires {} members".format(plan.get_max_number_members())]
+                    "members": ["The plan requires {} members including you".format(plan.get_max_number_members())]
                 })
         else:
             data["family_members"] = []
