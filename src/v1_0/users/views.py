@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound, Throttled
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
@@ -92,6 +92,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 user=user, plan_type_alias=trial_plan_obj.get_alias(),
                 duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
             )
+
+        # Upgrade plan if the user is a family member
+        self.user_repository.upgrade_member_family_plan(user=user)
+
+        # Update member confirmation
+        self.user_repository.invitations_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 
