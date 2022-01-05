@@ -189,7 +189,7 @@ class VaultItemSerializer(serializers.Serializer):
 
         # Get limit cipher type from personal and team plans
         allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
-        ciphers = cipher_repository.get_personal_ciphers(user=user)     # CHANGE LATER - list ciphers created by user
+        ciphers = cipher_repository.get_ciphers_created_by_user(user=user)
 
         vault_type = data.get("type")
         existed_ciphers_count = ciphers.filter(type=vault_type).count()
@@ -394,7 +394,7 @@ class ImportCipherSerializer(serializers.Serializer):
 
         return data
 
-    def validated_plan(self, data):
+    def validated_plan(self, data, existed_ciphers=None):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
         user = self.context["request"].user
@@ -403,9 +403,8 @@ class ImportCipherSerializer(serializers.Serializer):
 
         # Check limit ciphers by plan
         allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
-        existed_ciphers = cipher_repository.get_personal_ciphers(user=user)
-        # current_plan = user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        # plan_obj = current_plan.get_plan_obj()
+        if not existed_ciphers:
+            existed_ciphers = cipher_repository.get_ciphers_created_by_user(user=user)
         for vault_type in LIST_CIPHER_TYPE:
             limit_vault_type = None
             if vault_type == CIPHER_TYPE_LOGIN:

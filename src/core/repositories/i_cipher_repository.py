@@ -13,6 +13,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def get_ciphers_created_by_user(self, user):
+        pass
+
+    @abstractmethod
     def get_personal_ciphers(self, user):
         pass
 
