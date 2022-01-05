@@ -22,9 +22,7 @@ class UserPwdSerializer(serializers.Serializer):
     master_password_hash = serializers.CharField(allow_blank=False)
     master_password_hint = serializers.CharField(allow_blank=True)
     score = serializers.FloatField(required=False, allow_null=True)
-    # trial_plan = serializers.ChoiceField(
-    #     default=PLAN_TYPE_PM_PRO, choices=[PLAN_TYPE_PM_PRO, PLAN_TYPE_PM_BUSINESS, PLAN_TYPE_PM_AGENCY]
-    # )
+    trial_plan = serializers.ChoiceField(choices=[PLAN_TYPE_PM_PREMIUM], required=False)
     team_key = serializers.CharField(required=False, allow_null=True)
     collection_name = serializers.CharField(required=False, allow_null=True)
 

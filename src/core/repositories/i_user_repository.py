@@ -11,6 +11,14 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def upgrade_member_family_plan(self, user):
+        pass
+
+    @abstractmethod
+    def invitations_confirm(self, user):
+        pass
+
+    @abstractmethod
     def get_by_id(self, user_id) -> User:
         pass
 

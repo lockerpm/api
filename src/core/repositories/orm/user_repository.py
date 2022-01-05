@@ -29,6 +29,50 @@ class UserRepository(IUserRepository):
             self.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         return user
 
+    def upgrade_member_family_plan(self, user: User):
+        # Upgrade plan if the user is a family member
+        from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
+        email = user.get_from_cystack_id().get("email")
+        if not email:
+            return user
+        family_invitations = PMUserPlanFamily.objects.filter(email=email).order_by('created_time')
+        family_invitation = family_invitations.first()
+        if family_invitation:
+            root_user_plan = family_invitation.root_user_plan
+            self.update_plan(
+                user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=root_user_plan.duration,
+                scope=settings.SCOPE_PWD_MANAGER, **{
+                    "start_period": root_user_plan.start_period,
+                    "end_period": root_user_plan.end_period,
+                    "number_members": 1
+                }
+            )
+            family_invitations.update(user=user, email=None)
+        return user
+
+    def invitations_confirm(self, user):
+        email = user.get_from_cystack_id().get("email")
+        if not email:
+            return user
+        invitations = TeamMember.objects.filter(email=email, team__key__isnull=False, status=PM_MEMBER_STATUS_INVITED)
+        for invitation in invitations:
+            team = invitation.team
+            # Check max number members
+            primary_user = team.team_members.get(is_primary=True).user
+            primary_plan = self.get_current_plan(user=primary_user, scope=settings.SCOPE_PWD_MANAGER)
+            plan_obj = primary_plan.get_plan_obj()
+            if plan_obj.allow_personal_share() or plan_obj.is_team_plan or plan_obj.is_family_plan:
+                if plan_obj.is_team_plan:
+                    current_total_members = team.team_members.all().count()
+                    max_allow_members = primary_plan.get_max_allow_members()
+                    if max_allow_members and current_total_members + 1 > max_allow_members:
+                        continue
+                invitation.email = None
+                invitation.token_invitation = None
+                invitation.user = user
+                invitation.save()
+        return user
+
     def get_by_id(self, user_id) -> User:
         return User.objects.get(user_id=user_id)
 
@@ -341,24 +385,28 @@ class UserRepository(IUserRepository):
         return member_invitations
 
     def delete_account(self, user: User):
-        # Cancel current plan
+        # Cancel current plan at the end period
         self.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         # Then, delete related data: sessions, folders, ciphers
         user.user_refresh_tokens.all().delete()
         user.folders.all().delete()
         user.ciphers.all().delete()
-        user.delete()
-        # user.revision_date = None
-        # user.activated = False
-        # user.account_revision_date = None
-        # user.master_password = None
-        # user.master_password_hint = None
-        # user.master_password_score = 0
-        # user.security_stamp = None
-        # user.key = None
-        # user.public_key = None
-        # user.private_key = None
-        # user.save()
+        # user.delete()
+
+        # We only soft-delete this user. The plan of user is still available (but it will be canceled at the end period)
+        # If user registers again, the data is deleted but the plan is still available.
+        # User must restart the plan manually. Otherwise, the plan is still removed at the end period
+        user.revision_date = None
+        user.activated = False
+        user.account_revision_date = None
+        user.master_password = None
+        user.master_password_hint = None
+        user.master_password_score = 0
+        user.security_stamp = None
+        user.key = None
+        user.public_key = None
+        user.private_key = None
+        user.save()
 
     def purge_account(self, user: User):
         user.folders.all().delete()
