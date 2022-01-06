@@ -263,6 +263,17 @@ class CipherRepository(ICipherRepository):
             bump_account_revision_date(team=team)
         bump_account_revision_date(user=user_deleted)
 
+    def delete_permanent_multiple_cipher_by_teams(self, team_ids):
+        """
+        Delete permanently ciphers by team ids
+        :param team_ids:
+        :return:
+        """
+        teams = Team.objects.filter(id__in=team_ids)
+        Cipher.objects.filter(team_id__in=team_ids).delete()
+        for team in teams:
+            bump_account_revision_date(team=team)
+
     def restore_multiple_cipher(self, cipher_ids: list, user_restored: User):
         """
         Restore ciphers by ids

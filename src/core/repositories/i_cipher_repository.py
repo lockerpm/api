@@ -50,6 +50,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def delete_permanent_multiple_cipher_by_teams(self, team_ids):
+        pass
+
+    @abstractmethod
     def restore_multiple_cipher(self, cipher_ids, user_restored):
         pass
 
