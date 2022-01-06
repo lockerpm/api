@@ -243,7 +243,7 @@ class SharingRepository(ISharingRepository):
                     hide_passwords=member.get("hide_passwords", False)
                 )
             if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
-                shared_member.hide_passwords = member.get("hide_password", False)
+                shared_member.hide_passwords = member.get("hide_passwords", False)
                 shared_member.save()
 
             if shared_member.user_id:
