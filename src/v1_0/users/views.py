@@ -350,9 +350,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
         default_team_id = default_team.id if default_team else None
 
         owner_teams = user.team_members.all().filter(
-            role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False
+            role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False,
         ).exclude(team_id=default_team_id)
-        if owner_teams.count() > 0:
+        business_teams = owner_teams.filter(team__personal_share=False)
+
+        if business_teams.count() > 0:
             raise ValidationError({"non_field_errors": [gen_error("1007")]})
 
         # Clear data of default team
@@ -362,6 +364,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
             default_team.collections.all().order_by('id').delete()
             default_team.ciphers.all().order_by('id').delete()
             default_team.delete()
+
+        # Remove all share teams
+        personal_share_teams = owner_teams.filter(team__personal_share=True)
+        self.cipher_repository.delete_permanent_multiple_cipher_by_teams(
+            team_ids=list(personal_share_teams.values_list('team_id', flat=True))
+        )
+        personal_share_teams.delete()
 
         # Deactivated this account
         self.user_repository.delete_account(user)
