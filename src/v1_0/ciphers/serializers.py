@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
@@ -6,7 +5,7 @@ from core.settings import CORE_CONFIG
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
-from shared.utils.app import diff_list
+from shared.utils.app import diff_list, get_cipher_detail_data
 from v1_0.folders.serializers import FolderSerializer
 from v1_0.sync.serializers import SyncCipherSerializer
 
@@ -31,6 +30,20 @@ class LoginVaultSerializer(serializers.Serializer):
     totp = serializers.CharField(allow_null=True, allow_blank=True)
     response = serializers.CharField(allow_null=True, allow_blank=True, default=None)
     uris = LoginUriVaultSerializer(many=True, allow_null=True)
+
+
+class CryptoAccountSerializer(serializers.Serializer):
+    username = serializers.CharField(allow_null=True, allow_blank=True)
+    password = serializers.CharField(allow_null=True, allow_blank=True)
+    phone = serializers.CharField(allow_null=True, allow_blank=True)
+    email_recovery = serializers.CharField(allow_null=True, allow_blank=True)
+    response = serializers.CharField(allow_null=True, allow_blank=True, default=None)
+    uris = LoginUriVaultSerializer(many=True, allow_null=True)
+
+
+class CryptoWalletSerializer(serializers.Serializer):
+    email = serializers.CharField(allow_null=True, allow_blank=True)
+    seed = serializers.CharField(allow_null=True, allow_blank=True)
 
 
 class CardVaultSerializer(serializers.Serializer):
@@ -88,6 +101,8 @@ class VaultItemSerializer(serializers.Serializer):
     secureNote = SecurityNoteVaultSerializer(required=False, many=False, allow_null=True)
     card = CardVaultSerializer(required=False, many=False, allow_null=True)
     identity = IdentityVaultSerializer(required=False, many=False, allow_null=True)
+    cryptoAccount = CryptoAccountSerializer(required=False, many=False, allow_null=True)
+    cryptoWallet = CryptoWalletSerializer(required=False, many=False, allow_null=True)
 
     def validate(self, data):
         user = self.context["request"].user
@@ -97,6 +112,8 @@ class VaultItemSerializer(serializers.Serializer):
         secure_note = data.get("secureNote")
         card = data.get("card")
         identity = data.get("identity")
+        crypto_account = data.get("cryptoAccount")
+        crypto_wallet = data.get("cryptoWallet")
         if vault_type == CIPHER_TYPE_LOGIN and not login:
             raise serializers.ValidationError(detail={"login": ["This field is required"]})
         if vault_type == CIPHER_TYPE_NOTE and not secure_note:
@@ -107,6 +124,10 @@ class VaultItemSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
         if vault_type == CIPHER_TYPE_TOTP and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and not crypto_account:
+            raise serializers.ValidationError(detail={"cryptoAccount": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_CRYPTO_WALLET and not crypto_wallet:
+            raise serializers.ValidationError(detail={"cryptoWallet": ["This field is required"]})
 
         # Check folder id
         folder_id = data.get("folderId")
@@ -235,17 +256,8 @@ class VaultItemSerializer(serializers.Serializer):
             "score": validated_data.get("score", 0),
             "collection_ids": validated_data.get("collectionIds"),
         }
-        # Login data
-        if cipher_type == CIPHER_TYPE_LOGIN:
-            detail["data"] = dict(validated_data.get("login"))
-        elif cipher_type == CIPHER_TYPE_CARD:
-            detail["data"] = dict(validated_data.get("card"))
-        elif cipher_type == CIPHER_TYPE_IDENTITY:
-            detail["data"] = dict(validated_data.get("identity"))
-        elif cipher_type == CIPHER_TYPE_NOTE:
-            detail["data"] = dict(validated_data.get("secureNote"))
-        elif cipher_type == CIPHER_TYPE_TOTP:
-            detail["data"] = dict(validated_data.get("secureNote"))
+        # Cipher data
+        detail.update({"data": get_cipher_detail_data(validated_data)})
         detail["data"]["name"] = validated_data.get("name")
         if validated_data.get("notes"):
             detail["data"]["notes"] = validated_data.get("notes")
@@ -417,7 +429,7 @@ class ImportCipherSerializer(serializers.Serializer):
                 limit_vault_type = allow_cipher_type.get("limit_payment_card")
             elif vault_type == CIPHER_TYPE_TOTP:
                 limit_vault_type = allow_cipher_type.get("limit_totp")
-            elif vault_type == CIPHER_TYPE_CRYPTO:
+            elif vault_type in [CIPHER_TYPE_CRYPTO_ACCOUNT, CIPHER_TYPE_CRYPTO_WALLET]:
                 limit_vault_type = allow_cipher_type.get("limit_crypto_asset")
             import_ciphers_type = [cipher for cipher in ciphers if cipher["type"] == vault_type]
             # If this vault type is unlimited
