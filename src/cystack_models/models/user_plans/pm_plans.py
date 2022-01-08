@@ -106,7 +106,7 @@ class PMPlan(models.Model):
             return self.get_limit_payment_card()
         elif vault_type == CIPHER_TYPE_TOTP:
             return self.get_limit_totp()
-        elif vault_type == CIPHER_TYPE_CRYPTO:
+        elif vault_type in [CIPHER_TYPE_CRYPTO_ACCOUNT, CIPHER_TYPE_CRYPTO_WALLET]:
             return self.get_limit_crypto_asset()
 
     def allow_tools_password_reuse(self):

@@ -6,6 +6,8 @@ import urllib.parse
 import pytz
 from datetime import datetime
 
+from shared.constants.ciphers import *
+
 
 def now(return_float=False):
     """
@@ -58,3 +60,24 @@ def url_decode(url):
     url = url.replace("+", "%20")
     url = urllib.parse.unquote(url)
     return url
+
+
+def get_cipher_detail_data(cipher):
+    cipher_type = cipher.get("type")
+    if cipher_type == CIPHER_TYPE_LOGIN:
+        data = dict(cipher.get("login"))
+    elif cipher_type == CIPHER_TYPE_CARD:
+        data = dict(cipher.get("card"))
+    elif cipher_type == CIPHER_TYPE_IDENTITY:
+        data = dict(cipher.get("identity"))
+    elif cipher_type == CIPHER_TYPE_NOTE:
+        data = dict(cipher.get("secureNote"))
+    elif cipher_type == CIPHER_TYPE_TOTP:
+        data = dict(cipher.get("secureNote"))
+    elif cipher_type == CIPHER_TYPE_CRYPTO_ACCOUNT:
+        data = dict(cipher.get("cryptoAccount"))
+    elif cipher_type == CIPHER_TYPE_CRYPTO_WALLET:
+        data = dict(cipher.get("cryptoWallet"))
+    else:
+        data = dict()
+    return data

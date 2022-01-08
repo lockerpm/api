@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
@@ -108,12 +107,16 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         secure_note = cipher_detail if instance.type in [CIPHER_TYPE_NOTE, CIPHER_TYPE_TOTP] else None
         card = cipher_detail if instance.type == CIPHER_TYPE_CARD else None
         identity = cipher_detail if instance.type == CIPHER_TYPE_IDENTITY else None
+        crypto_account = cipher_detail if instance.type == CIPHER_TYPE_CRYPTO_ACCOUNT else None
+        crypto_wallet = cipher_detail if instance.type == CIPHER_TYPE_CRYPTO_WALLET else None
         folder_id = instance.get_folders().get(user.user_id)
         favorite = instance.get_favorites().get(user.user_id, False)
         data = {
             "object": "cipherDetails",
             "attachments": None,
             "card": card,
+            "crypto_account": crypto_account,
+            "crypto_wallet": crypto_wallet,
             "collection_ids": list(instance.collections_ciphers.values_list('collection_id', flat=True)),
             "data": data,
             "deleted_date": instance.deleted_date,
@@ -133,7 +136,6 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "revision_date": convert_readable_date(instance.revision_date),
             "secure_note": secure_note,
             "type": instance.type,
-            # "view_password": True
             "view_password": instance.view_password
         }
         return data
