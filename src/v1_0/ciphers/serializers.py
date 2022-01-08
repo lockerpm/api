@@ -36,7 +36,7 @@ class CryptoAccountSerializer(serializers.Serializer):
     username = serializers.CharField(allow_null=True, allow_blank=True)
     password = serializers.CharField(allow_null=True, allow_blank=True)
     phone = serializers.CharField(allow_null=True, allow_blank=True)
-    email_recovery = serializers.CharField(allow_null=True, allow_blank=True)
+    emailRecovery = serializers.CharField(allow_null=True, allow_blank=True)
     response = serializers.CharField(allow_null=True, allow_blank=True, default=None)
     uris = LoginUriVaultSerializer(many=True, allow_null=True)
 
