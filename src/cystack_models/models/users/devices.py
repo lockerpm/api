@@ -1,3 +1,5 @@
+import ast
+
 from django.db import models
 
 from shared.utils.app import now
@@ -30,7 +32,8 @@ class Device(models.Model):
     device_identifier = models.CharField(max_length=128)
     fcm_id = models.CharField(max_length=255, null=True, blank=True, default=None)
     last_login = models.FloatField(null=True)
-
+    os = models.CharField(max_length=255, blank=True, default="")
+    browser = models.CharField(max_length=255, blank=True, default="")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_devices")
 
     class Meta:
@@ -53,11 +56,14 @@ class Device(models.Model):
         device_name = data.get("device_name")
         device_type = data.get("device_type")
         device_identifier = data.get("device_identifier")
+        os = data.get("os") or ""
+        browser = data.get("browser") or ""
 
         # Create new device object
         new_device = cls(
             refresh_token=refresh_token, token_type=token_type, scope=scope,
             client_id=client_id, device_name=device_name, device_type=device_type, device_identifier=device_identifier,
+            os=os, browser=browser,
             created_time=now(return_float=True), user=user
         )
         new_device.save()
@@ -70,4 +76,18 @@ class Device(models.Model):
         device_obj = cls.objects.filter(device_identifier=device_identifier, user=user).first()
         if not device_obj:
             device_obj = cls.create(user, **data)
+        else:
+            device_obj.os = data.get("os") or ""
+            device_obj.browser = data.get("browser") or ""
+            device_obj.save()
         return device_obj
+
+    def get_os(self):
+        if not self.os:
+            return {}
+        return ast.literal_eval(str(self.os))
+
+    def get_browser(self):
+        if not self.browser:
+            return {}
+        return ast.literal_eval(str(self.browser))
