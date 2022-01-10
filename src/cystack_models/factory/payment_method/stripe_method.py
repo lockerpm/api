@@ -126,6 +126,13 @@ class StripePaymentMethod(IPaymentMethod):
                     'plan': stripe_plan_id,
                     'quantity': self.__get_new_quantity(**kwargs)
                 }],
+                metadata={
+                    "user_id": self.user.user_id,
+                    "scope": self.scope,
+                    "family_members": str(kwargs.get("family_members", [])),
+                    "key": kwargs.get("key"),
+                    "collection_name": kwargs.get("collection_name")
+                },
                 coupon=coupon
             )
         except stripe.error.CardError as e:
