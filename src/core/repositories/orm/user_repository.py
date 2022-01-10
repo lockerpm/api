@@ -1,3 +1,4 @@
+import ast
 import uuid
 from typing import Dict
 
@@ -11,6 +12,7 @@ from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
 from cystack_models.models.users.users import User
+from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
@@ -279,6 +281,7 @@ class UserRepository(IUserRepository):
         if pm_user_plan.pm_plan_family.exists():
             return pm_user_plan
 
+        family_members = ast.literal_eval(str(family_members))
         for family_member in family_members:
             email = family_member.get("email")
             user_id = family_member.get("user_id")
@@ -414,7 +417,7 @@ class UserRepository(IUserRepository):
         return user
 
     def revoke_all_sessions(self, user: User):
-        user.user_refresh_tokens.all().delete()
+        DeviceAccessToken.objects.filter(device__user=user).delete()
         return user
 
     def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str):

@@ -8,7 +8,7 @@ from cystack_models.models.users.users import User
 class PMUserPlanFamily(models.Model):
     created_time = models.IntegerField()
     email = models.CharField(max_length=128, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pm_plan_family")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pm_plan_family", null=True)
     root_user_plan = models.ForeignKey(PMUserPlan, on_delete=models.CASCADE, related_name="pm_plan_family")
 
     class Meta:

@@ -37,3 +37,6 @@ class PasswordManagerViewSet(AppGeneralViewSet):
         if not valid_token:
             raise AuthenticationFailed
         return valid_token
+
+    def get_client_agent(self):
+        return self.request.META.get("HTTP_LOCKER_CLIENT_AGENT")
