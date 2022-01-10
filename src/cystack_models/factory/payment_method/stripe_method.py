@@ -57,7 +57,7 @@ class StripePaymentMethod(IPaymentMethod):
                 metadata={
                     "user_id": self.user.user_id,
                     "scope": self.scope,
-                    "family_members": kwargs.get("family_members", []),
+                    "family_members": str(kwargs.get("family_members", [])),
                     "key": kwargs.get("key"),
                     "collection_name": kwargs.get("collection_name")
                 },
