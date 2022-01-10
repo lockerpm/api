@@ -390,8 +390,8 @@ class UserRepository(IUserRepository):
     def delete_account(self, user: User):
         # Cancel current plan at the end period
         self.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        # Then, delete related data: sessions, folders, ciphers
-        user.user_refresh_tokens.all().delete()
+        # Then, delete related data: device sessions, folders, ciphers
+        user.user_devices.all().delete()
         user.folders.all().delete()
         user.ciphers.all().delete()
         # user.delete()
