@@ -17,6 +17,7 @@ from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
 from shared.utils.app import now
+from shared.utils.network import detect_device
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -236,26 +237,31 @@ class UserPwdViewSet(PasswordManagerViewSet):
         not_sync_sso_token_ids = []
 
         # First, check the device exists
-        device_obj = self.device_repository.get_device_by_identifier(
+        device_existed = self.device_repository.get_device_by_identifier(
             user=user, device_identifier=device_identifier
         )
+        device_info = detect_device(ua_string=self.get_client_agent())
+        device_obj = user.user_devices.model.retrieve_or_create(user, **{
+            "client_id": client_id,
+            "device_name": device_name,
+            "device_type": device_type,
+            "device_identifier": device_identifier,
+            "os": device_info.get("os"),
+            "browser": device_info.get("browser"),
+            "scope": "api offline_access",
+            "token_type": "Bearer",
+            "refresh_token": secure_random_string(length=64, lower=False)
+        })
         # If the device does not exist => New device => Create new one
-        if not device_obj:
-            device_obj = user.user_devices.model.retrieve_or_create(user, **{
-                "client_id": client_id,
-                "device_name": device_name,
-                "device_type": device_type,
-                "device_identifier": device_identifier,
-                "scope": "api offline_access",
-                "token_type": "Bearer",
-                "refresh_token": secure_random_string(length=64, lower=False)
-            })
+        if not device_existed:
             all_devices = self.device_repository.get_device_user(user=user)
             if limit_sync_device and all_devices.count() > limit_sync_device:
                 old_devices = all_devices[:limit_sync_device]
-                not_sync_sso_token_ids = list(self.device_repository.get_devices_access_token(devices=old_devices).exclude(
-                    sso_token_id__isnull=True
-                ).values_list('sso_token_id', flat=True))
+                not_sync_sso_token_ids = list(
+                    self.device_repository.get_devices_access_token(devices=old_devices).exclude(
+                        sso_token_id__isnull=True
+                    ).values_list('sso_token_id', flat=True)
+                )
                 self.device_repository.remove_devices_access_token(devices=old_devices)
 
         # Set last login

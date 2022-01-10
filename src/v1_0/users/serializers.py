@@ -126,4 +126,7 @@ class UserDeviceSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super(UserDeviceSerializer, self).to_representation(instance)
+        data["os"] = instance.get_os()
+        data["browser"] = instance.get_browser()
+        data["is_active"] = instance.device_access_tokens.filter().exists()
         return data
