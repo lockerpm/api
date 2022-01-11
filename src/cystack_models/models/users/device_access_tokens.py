@@ -1,5 +1,6 @@
 from django.db import models
 
+from shared.constants.device_type import CLIENT_ID_MOBILE
 from shared.utils.app import now
 from cystack_models.models.users.devices import Device
 
@@ -29,7 +30,7 @@ class DeviceAccessToken(models.Model):
         expired_time = data.get("expired_time")
         sso_token_id = data.get("sso_token_id")
         if not expired_time:
-            expired_time = now() + data.get("expires_in", 3600)
+            expired_time = now() + data.get("expires_in", cls.get_token_duration(device.client_id))
         grant_type = data.get("grant_type", "refresh_token")
         new_token = cls(
             access_token=access_token, expired_time=expired_time, grant_type=grant_type,
@@ -37,5 +38,11 @@ class DeviceAccessToken(models.Model):
         )
         new_token.save()
         # Delete all expired token
-        cls.objects.filter(expired_time__lt=now()).delete()
+        cls.objects.filter(device__user=device.user, expired_time__lt=now()).delete()
         return new_token
+
+    @classmethod
+    def get_token_duration(cls, client_id):
+        if client_id == CLIENT_ID_MOBILE:
+            return 30 * 86400
+        return 4 * 3600

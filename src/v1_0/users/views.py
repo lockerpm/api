@@ -441,6 +441,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["get"], detail=False)
     def devices(self, request, *args, **kwargs):
         user = request.user
+        self.check_pwd_session_auth(request)
         devices = self.device_repository.get_device_user(user=user)
         serializer = self.get_serializer(devices, many=True)
         return Response(status=200, data=serializer.data)
