@@ -94,7 +94,7 @@ class DeviceRepository(IDeviceRepository):
         :param devices:
         :return:
         """
-        return DeviceAccessToken.objects.filter(device__in=devices).order_by('-expired_time')
+        return DeviceAccessToken.objects.filter(device__in=list(devices)).order_by('-expired_time')
 
     def remove_devices_access_token(self, devices: List[Device]):
         """
