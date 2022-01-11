@@ -102,7 +102,7 @@ class DeviceRepository(IDeviceRepository):
         :param devices:
         :return:
         """
-        return DeviceAccessToken.objects.filter(device__in=devices).delete()
+        return DeviceAccessToken.objects.filter(device__in=list(devices)).delete()
 
     def update_fcm_id(self, device: Device, fcm_id: str = None):
         device.fcm_id = fcm_id
