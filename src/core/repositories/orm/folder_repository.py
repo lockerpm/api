@@ -1,4 +1,5 @@
 from core.repositories import IFolderRepository
+from core.utils.account_revision_date import bump_account_revision_date
 
 from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.folders import Folder
@@ -24,6 +25,7 @@ class FolderRepository(IFolderRepository):
         folder.save()
         user.revision_date = now()
         user.save()
+        bump_account_revision_date(user=folder.user)
         return folder
 
     def save_update_folder(self, user: User, folder: Folder, name: str) -> Folder:
@@ -31,4 +33,5 @@ class FolderRepository(IFolderRepository):
         folder.name = name
         folder.revision_date = now()
         folder.save()
+        bump_account_revision_date(user=folder.user)
         return folder
