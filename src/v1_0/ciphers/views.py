@@ -257,3 +257,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             "type": EVENT_CIPHER_SHARED, "cipher_id": cipher.id, "ip_address": ip
         })
         return Response(status=200, data={"id": cipher.id})
+
+    @action(methods=["get"], detail=False)
+    def share_members(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        cipher = self.get_object()
+        cipher_members = self.cipher_repository.get_cipher_members(cipher=cipher)
+        return Response(status=200, data=cipher_members)
