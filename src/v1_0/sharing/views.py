@@ -84,7 +84,11 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.sharing_repository.accept_invitation(member=sharing_invitation)
             primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
-            result = {"status": status, "owner": primary_owner.user_id, "team_name": sharing_invitation.team.name}
+            result = {
+                "status": status,
+                "owner": primary_owner.user_id,
+                "need_send_mail": True if not sharing_invitation.key else False,
+            }
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             result = {"status": status}
