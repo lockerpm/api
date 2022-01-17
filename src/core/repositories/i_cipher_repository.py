@@ -9,6 +9,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def get_cipher_members(self, cipher):
+        pass
+
+    @abstractmethod
     def get_multiple_by_ids(self, cipher_ids: list):
         pass
 
@@ -72,5 +76,4 @@ class ICipherRepository(ABC):
     @abstractmethod
     def import_multiple_cipher_team(self, team, ciphers, collections, collection_relationships):
         pass
-
 

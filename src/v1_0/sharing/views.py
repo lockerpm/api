@@ -84,7 +84,11 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.sharing_repository.accept_invitation(member=sharing_invitation)
             primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
-            result = {"status": status, "owner": primary_owner.user_id, "team_name": sharing_invitation.team.name}
+            result = {
+                "status": status,
+                "owner": primary_owner.user_id,
+                "need_send_mail": True if not sharing_invitation.key else False,
+            }
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             result = {"status": status}
@@ -113,6 +117,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         folder_obj = None
         folder_name = None
         folder_ciphers = None
+        shared_type_name = None
 
         # Validate the cipher
         if cipher:
@@ -135,6 +140,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 if cipher_obj.team.collections.exists() is True:
                     raise ValidationError(detail={"cipher": ["The cipher belongs to a collection"]})
             shared_cipher_data = json.loads(json.dumps(shared_cipher_data))
+            shared_type_name = cipher_obj.type
 
         if folder:
             folder_id = folder.get("id")
@@ -155,6 +161,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                         "The folder does not have the cipher {}".format(folder_cipher.get("id"))
                     ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
+            shared_type_name = "folder"
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
             sharing_key=sharing_key, members=members,
@@ -163,7 +170,12 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         )
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
 
-        return Response(status=200, data={"id": new_sharing.id})
+        return Response(status=200, data={
+            "id": new_sharing.id,
+            "shared_type_name": shared_type_name,
+            "existed_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users
+        })
 
     @action(methods=["post"], detail=False)
     def invitation_confirm(self, request, *args, **kwargs):
