@@ -12,9 +12,6 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     permission_classes = (SyncPwdPermission, )
     http_method_names = ["head", "options", "get"]
 
-    def list(self, request, *args, **kwargs):
-        return super(SyncPwdViewSet, self).list()
-
     @action(methods=["get"], detail=False)
     def sync(self, request, *args, **kwargs):
         user = self.request.user
