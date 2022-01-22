@@ -12,9 +12,6 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     permission_classes = (SyncPwdPermission, )
     http_method_names = ["head", "options", "get"]
 
-    def list(self, request, *args, **kwargs):
-        return super(SyncPwdViewSet, self).list()
-
     @action(methods=["get"], detail=False)
     def sync(self, request, *args, **kwargs):
         user = self.request.user
@@ -37,7 +34,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
 
         ciphers = self.cipher_repository.get_multiple_by_user(
             user=user, exclude_team_ids=block_team_ids
-        ).prefetch_related('collections_ciphers')
+        ).order_by('-revision_date').prefetch_related('collections_ciphers')
         total_cipher = ciphers.count()
         ciphers_page = self.paginate_queryset(ciphers)
         if ciphers_page is not None:

@@ -10,6 +10,9 @@ from rest_framework.exceptions import NotFound, ValidationError
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
+from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE
+from shared.services.fcm.fcm_request_entity import FCMRequestEntity
+from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
     SYNC_EVENT_CIPHER
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
@@ -84,11 +87,21 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.sharing_repository.accept_invitation(member=sharing_invitation)
             primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
+            need_send_notification = True if not sharing_invitation.key else False
             result = {
                 "status": status,
                 "owner": primary_owner.user_id,
-                "need_send_mail": True if not sharing_invitation.key else False,
+                "need_send_mail": need_send_notification
             }
+            # Push mobile notification
+            if need_send_notification:
+                fcm_ids = list(
+                    user.user_devices.exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
+                )
+                fcm_message = FCMRequestEntity(
+                    fcm_ids=fcm_ids, priority="high", data={"event": FCM_TYPE_CONFIRM_SHARE}
+                )
+                FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             result = {"status": status}
@@ -168,7 +181,22 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send(
+            data={"id": cipher.id}
+        )
+
+        # Push mobile notification
+        fcm_ids = list(
+            user.user_devices.exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
+        )
+        fcm_message = FCMRequestEntity(
+            fcm_ids=fcm_ids, priority="high",
+            data={
+                "event": FCM_TYPE_NEW_SHARE,
+                "share_type": shared_type_name
+            }
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
 
         return Response(status=200, data={
             "id": new_sharing.id,
