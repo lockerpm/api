@@ -86,7 +86,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         if status == "accept":
             self.sharing_repository.accept_invitation(member=sharing_invitation)
             primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
-            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
+            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id]).send()
             # If share a cipher:
             if sharing_invitation.team.collections.all().exists() is False:
                 share_cipher = sharing_invitation.team.ciphers.first()

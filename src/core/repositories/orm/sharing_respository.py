@@ -37,6 +37,7 @@ class SharingRepository(ISharingRepository):
         else:
             member.status = PM_MEMBER_STATUS_ACCEPTED
         member.save()
+        bump_account_revision_date(user=member.user)
 
     def reject_invitation(self, member: TeamMember):
         """
