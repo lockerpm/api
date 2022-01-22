@@ -181,7 +181,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send(
+            data={"id": cipher.id}
+        )
 
         # Push mobile notification
         fcm_ids = list(
