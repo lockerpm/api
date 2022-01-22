@@ -196,6 +196,7 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
         data["item_type"] = item_type
         data["share_type"] = sharing_repository.get_personal_share_type(member=instance)
         data["cipher_type"] = cipher_type
+        data["hide_passwords"] = instance.hide_passwords
         return data
 
 
