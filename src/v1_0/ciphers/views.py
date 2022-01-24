@@ -150,7 +150,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         user = self.request.user
-        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         cipher = self.get_object()
         cipher_obj = self.cipher_repository.get_multiple_by_user(
