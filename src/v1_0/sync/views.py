@@ -66,6 +66,24 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=sync_data)
 
     @action(methods=["get"], detail=False)
+    def sync_cipher_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        cipher = self.get_object()
+        cipher_obj = self.cipher_repository.get_multiple_by_user(
+            user=user, filter_ids=[cipher.id]
+        ).prefetch_related('collections_ciphers').first()
+        serializer = SyncCipherSerializer(cipher_obj, context={"user": user}, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_profile_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        serializer = SyncProfileSerializer(user, many=False).data
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
     def sync_org_detail(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
@@ -75,4 +93,5 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
         serializer = SyncOrgDetailSerializer(team_member, many=False)
-        return Response(status=200, data=serializer.data)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
