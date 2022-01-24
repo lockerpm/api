@@ -45,7 +45,8 @@ urlpatterns += [
 
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
-    url(r'^sync', views.SyncPwdViewSet.as_view({'get': 'sync'})),
+    url(r'^sync$', views.SyncPwdViewSet.as_view({'get': 'sync'})),
+    url(r'^sync/organizations/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_org_detail'})),
 ]
 
 
