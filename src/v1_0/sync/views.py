@@ -1,10 +1,12 @@
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
-    SyncCollectionSerializer, SyncPolicySerializer
+    SyncCollectionSerializer, SyncPolicySerializer, SyncOrgDetailSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -62,3 +64,15 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         }
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)
         return Response(status=200, data=sync_data)
+
+    @action(methods=["get"], detail=False)
+    def sync_org_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        try:
+            team_member = user.team_members.get(team_id=kwargs.get("pk"), team__key__isnull=False)
+        except ObjectDoesNotExist:
+            raise NotFound
+
+        serializer = SyncOrgDetailSerializer(team_member, many=False)
+        return Response(status=200, data=serializer.data)
