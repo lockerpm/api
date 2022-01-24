@@ -359,7 +359,13 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
         )
         # Re-sync data of the owner and removed member
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+        if cipher_obj:
+            PwdSync(
+                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id, removed_member_user_id]
+            ).send(data={"id": cipher_obj.id})
+        if collection_obj:
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
@@ -370,10 +376,19 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         # Retrieve member that accepted
         try:
             member = personal_share.team_members.exclude(role_id=MEMBER_ROLE_OWNER).get(user=user)
+            team = member.team
         except ObjectDoesNotExist:
             raise NotFound
-
         member_user_id = self.sharing_repository.leave_share(member=member)
+
         # Re-sync data of the member
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
+        # If share a cipher
+        if team.collections.all().exists() is False:
+            share_cipher = team.ciphers.first()
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[member_user_id]).send(data={"id": share_cipher.id})
+        # Else, share a folder
+        else:
+            share_collection = team.collections.first()
+            PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(data={"id": share_collection.id})
+
         return Response(status=200, data={"success": True})
