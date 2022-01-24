@@ -41,7 +41,6 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"id": new_folder.id})
 
     def retrieve(self, request, *args, **kwargs):
-        user = self.request.user
         self.check_pwd_session_auth(request=request)
         folder = self.get_object()
         serializer = self.get_serializer(folder)

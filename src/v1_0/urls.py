@@ -46,8 +46,8 @@ urlpatterns += [
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
     url(r'^sync$', views.SyncPwdViewSet.as_view({'get': 'sync'})),
-    url(r'^sync/ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'get': 'retrieve'})),
-    url(r'^sync/folders/(?P<pk>[0-9a-z\-]+)$', views.FolderPwdViewSet.as_view({'get': 'retrieve'})),
+    url(r'^sync/ciphers/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_cipher_detail'})),
+    url(r'^sync/folders/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_folder_detail'})),
     url(r'^sync/profile$', views.SyncPwdViewSet.as_view({'get': 'sync_profile_detail'})),
     url(r'^sync/organizations/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_org_detail'})),
 ]
