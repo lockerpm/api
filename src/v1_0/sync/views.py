@@ -108,7 +108,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     def sync_profile_detail(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-        serializer = SyncProfileSerializer(user, many=False).data
+        serializer = SyncProfileSerializer(user, many=False)
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         return Response(status=200, data=result)
 
