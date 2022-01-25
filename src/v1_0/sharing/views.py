@@ -14,7 +14,7 @@ from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_S
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
-    SYNC_EVENT_CIPHER, SYNC_EVENT_COLLECTION_UPDATE
+    SYNC_EVENT_CIPHER, SYNC_EVENT_COLLECTION_UPDATE, SYNC_EVENT_MEMBER_INVITATION
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -192,6 +192,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
+        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users).send()
         if cipher_obj:
             PwdSync(
                 event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=new_sharing, add_all=True
