@@ -279,7 +279,7 @@ class SharingRepository(ISharingRepository):
                 self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
 
         # Update revision date of the user
-        bump_account_revision_date(user=user)
+        bump_account_revision_date(team=new_sharing)
 
         return new_sharing, existed_member_users, non_existed_member_users
 
