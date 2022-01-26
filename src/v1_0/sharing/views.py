@@ -257,7 +257,18 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         self.sharing_repository.update_role_invitation(
             member=member, role_id=role, hide_passwords=hide_passwords
         )
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        # If share a cipher:
+        primary_member = self.team_member_repository.get_primary_member(team=member.team)
+        PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=[member.user_id, primary_member.user_id]).send()
+        if member.team.collections.all().exists() is False:
+            share_cipher = member.team.ciphers.first()
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[member.user_id]).send(data={"id": share_cipher.id})
+        # Else, share a folder
+        else:
+            share_collection = member.team.collections.first()
+            PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[member.user_id]).send(
+                data={"id": share_collection.id}
+            )
 
         return Response(status=200, data={"success": True})
 
