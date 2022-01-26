@@ -192,7 +192,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
         if cipher_obj:
             PwdSync(
                 event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=new_sharing, add_all=True
