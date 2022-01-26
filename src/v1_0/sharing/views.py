@@ -14,7 +14,7 @@ from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_S
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
-    SYNC_EVENT_CIPHER, SYNC_EVENT_COLLECTION_UPDATE, SYNC_EVENT_MEMBER_INVITATION
+    SYNC_EVENT_CIPHER, SYNC_EVENT_COLLECTION_UPDATE, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_MEMBER_REJECT
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -83,9 +83,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             )
         except ObjectDoesNotExist:
             raise NotFound
+
+        primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
         if status == "accept":
             self.sharing_repository.accept_invitation(member=sharing_invitation)
-            primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id]).send()
             # If share a cipher:
             if sharing_invitation.team.collections.all().exists() is False:
@@ -115,6 +116,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
+            PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id]).send()
             result = {"status": status}
         return Response(status=200, data=result)
 
