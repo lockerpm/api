@@ -258,7 +258,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             member=member, role_id=role, hide_passwords=hide_passwords
         )
         # If share a cipher:
-        primary_member = self.team_member_repository.get_primary_member(team=member.team)
+        primary_member = self.team_repository.get_primary_member(team=member.team)
         PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=[member.user_id, primary_member.user_id]).send()
         if member.team.collections.all().exists() is False:
             share_cipher = member.team.ciphers.first()
