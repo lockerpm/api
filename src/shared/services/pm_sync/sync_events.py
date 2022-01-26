@@ -13,6 +13,7 @@ SYNC_EVENT_GROUP_DELETE = "group_delete"
 
 SYNC_EVENT_MEMBER_INVITATION = "member_invitation"
 SYNC_EVENT_MEMBER_ACCEPTED = "member_accepted"
+SYNC_EVENT_MEMBER_REJECT = "member_rejected"
 
 SYNC_EVENT_VAULT = "sync_vault"
 
