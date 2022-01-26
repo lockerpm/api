@@ -13,8 +13,7 @@ from shared.permissions.locker_permissions.sharing_pwd_permission import Sharing
 from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
-    SYNC_EVENT_CIPHER, SYNC_EVENT_COLLECTION_UPDATE, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_MEMBER_REJECT
+from shared.services.pm_sync import *
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -361,6 +360,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, cipher_data=personal_cipher_data,
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
         )
+        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id, removed_member_user_id]).send()
         # Re-sync data of the owner and removed member
         if cipher_obj:
             PwdSync(
