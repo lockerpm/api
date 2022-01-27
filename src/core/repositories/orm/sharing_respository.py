@@ -341,8 +341,13 @@ class SharingRepository(ISharingRepository):
             members_qs = members_qs.exclude(role_id=MEMBER_ROLE_OWNER)
         return members_qs
 
-    def delete_share_with_me(self, user):
+    def delete_share_with_me(self, user: User):
         member_teams = user.team_members.filter(
             team__key__isnull=False, team__personal_share=True
         ).exclude(role__name=MEMBER_ROLE_OWNER)
+        shared_teams = member_teams.values_list('team_id', flat=True)
+        owners = TeamMember.objects.filter(
+            team__key__isnull=False, role_id=MEMBER_ROLE_OWNER, team_id__in=shared_teams
+        ).values_list('user_id', flat=True)
         member_teams.delete()
+        return owners
