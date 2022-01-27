@@ -55,9 +55,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         try:
             user_obj = self.user_repository.get_by_id(user_id=user_id)
             if not self.user_repository.is_activated(user=user_obj):
-                raise ValidationError(detail={"user_id": ["The user does not exist"]})
+                return Response(status=200, data={"public_key": None})
         except ObjectDoesNotExist:
-            raise ValidationError(detail={"user_id": ["The user does not exist"]})
+            return Response(status=200, data={"public_key": None})
         return Response(status=200, data={"public_key": user_obj.public_key})
 
     @action(methods=["get"], detail=False)

@@ -15,7 +15,7 @@ from shared.constants.event import *
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
+from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE
 from shared.utils.app import now
 from shared.utils.network import detect_device
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
@@ -380,7 +380,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
         )
         personal_share_teams.delete()
         # Share with me
-        self.sharing_repository.delete_share_with_me(user)
+        owners_share_with_me = self.sharing_repository.delete_share_with_me(user)
+        PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=owners_share_with_me).send()
 
         # Deactivated this account
         self.user_repository.delete_account(user)
