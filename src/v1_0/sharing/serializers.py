@@ -29,8 +29,8 @@ class MemberShareSerializer(serializers.Serializer):
                 "user_id": ["The user id or email is required"],
                 "email": ["The email or user id is required"]
             })
-        if user_id and not key:
-            raise serializers.ValidationError(detail={"key": ["This field is required"]})
+        # if user_id and not key:
+        #     raise serializers.ValidationError(detail={"key": ["This field is required"]})
         return data
 
 
