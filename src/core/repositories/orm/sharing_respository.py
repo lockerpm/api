@@ -215,11 +215,11 @@ class SharingRepository(ISharingRepository):
         non_existed_member_users = []
         existed_member_users = []
         for member in members:
-            member_user = None
             try:
-                member_user = User.objects.get(user_id=member.get("user_id"))
+                member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
                 email = None
             except User.DoesNotExist:
+                member_user = None
                 email = member.get("email")
             if member_user and new_sharing.team_members.filter(user=member_user).exists() is True:
                 continue
