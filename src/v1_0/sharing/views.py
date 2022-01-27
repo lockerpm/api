@@ -86,7 +86,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
         if status == "accept":
             self.sharing_repository.accept_invitation(member=sharing_invitation)
-            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id]).send()
+            PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
             # If share a cipher:
             if sharing_invitation.team.collections.all().exists() is False:
                 share_cipher = sharing_invitation.team.ciphers.first()
@@ -115,7 +115,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
-            PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id]).send()
+            PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id, user.user_id]).send()
             result = {"status": status}
         return Response(status=200, data=result)
 
