@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -40,10 +41,11 @@ class SyncPwdViewSet(PasswordManagerViewSet):
 
         paging_param = self.request.query_params.get("paging", "0")
         page_size_param = self.check_int_param(self.request.query_params.get("size", 50))
-        if paging_param == "0":
-            self.pagination_class = None
-        else:
-            self.pagination_class.page_size = page_size_param if page_size_param else 50
+        page_param = self.check_int_param(self.request.query_params.get("page", 1))
+        # if paging_param == "0":
+        #     self.pagination_class = None
+        # else:
+        #     self.pagination_class.page_size = page_size_param if page_size_param else 50
 
         policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('team')
         # Check team policies
@@ -57,11 +59,19 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             user=user, exclude_team_ids=block_team_ids
         ).order_by('-revision_date').prefetch_related('collections_ciphers')
         total_cipher = ciphers.count()
-        ciphers_page = self.paginate_queryset(ciphers)
-        if ciphers_page is not None:
-            ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
+        # ciphers_page = self.paginate_queryset(ciphers)
+        if paging_param == "0":
+            ciphers_page = ciphers
         else:
-            ciphers_serializer = SyncCipherSerializer(ciphers, many=True, context={"user": user})
+            paginator = Paginator(list(ciphers), page_size_param or 50)
+            ciphers_page = paginator.page(page_param).object_list
+
+        ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
+
+        # if ciphers_page is not None:
+        #     ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
+        # else:
+        #     ciphers_serializer = SyncCipherSerializer(ciphers, many=True, context={"user": user})
 
         folders = self.folder_repository.get_multiple_by_user(user=user)
         collections = self.collection_repository.get_multiple_user_collections(
