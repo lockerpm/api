@@ -47,3 +47,8 @@ class ISharingRepository(ABC):
     @abstractmethod
     def get_shared_members(self, personal_share_team, exclude_owner=True):
         pass
+
+    @abstractmethod
+    def delete_share_with_me(self, user):
+        pass
+

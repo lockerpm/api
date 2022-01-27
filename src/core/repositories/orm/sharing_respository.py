@@ -340,3 +340,9 @@ class SharingRepository(ISharingRepository):
         if exclude_owner:
             members_qs = members_qs.exclude(role_id=MEMBER_ROLE_OWNER)
         return members_qs
+
+    def delete_share_with_me(self, user):
+        member_teams = user.team_members.filter(
+            team__key__isnull=False, team__personal_share=True
+        ).exclude(role__name=MEMBER_ROLE_OWNER)
+        member_teams.delete()

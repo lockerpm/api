@@ -72,6 +72,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Verified and activated this user
         user.activated = True
         user.activated_date = now()
+        user.revision_date = now()
         user.save()
 
         # Upgrade trial plan
@@ -372,11 +373,14 @@ class UserPwdViewSet(PasswordManagerViewSet):
             default_team.delete()
 
         # Remove all share teams
+        # My share:
         personal_share_teams = owner_teams.filter(team__personal_share=True)
         self.cipher_repository.delete_permanent_multiple_cipher_by_teams(
             team_ids=list(personal_share_teams.values_list('team_id', flat=True))
         )
         personal_share_teams.delete()
+        # Share with me
+        self.sharing_repository.delete_share_with_me(user)
 
         # Deactivated this account
         self.user_repository.delete_account(user)
