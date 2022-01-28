@@ -223,6 +223,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def invitation_confirm(self, request, *args, **kwargs):
+        user = self.request.user
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(kwargs.get("pk"))
         member_id = kwargs.get("member_id")
@@ -236,6 +237,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.sharing_repository.confirm_invitation(member=member, key=key)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_CONFIRMED, user_ids=[member.user_id, user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)
