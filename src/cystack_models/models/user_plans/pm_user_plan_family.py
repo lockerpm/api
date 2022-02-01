@@ -1,5 +1,3 @@
-import stripe
-
 from django.db import models
 
 from shared.utils.app import now
@@ -10,11 +8,19 @@ from cystack_models.models.users.users import User
 class PMUserPlanFamily(models.Model):
     created_time = models.IntegerField()
     email = models.CharField(max_length=128, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pm_plan_family")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="pm_plan_family", null=True)
     root_user_plan = models.ForeignKey(PMUserPlan, on_delete=models.CASCADE, related_name="pm_plan_family")
 
     class Meta:
         db_table = 'cs_pm_user_plan_family'
+
+    @classmethod
+    def create(cls, root_user_plan, user, email):
+        new_pm_user_plan_family = cls(
+            root_user_plan=root_user_plan, email=email, user=user, created_time=now()
+        )
+        new_pm_user_plan_family.save()
+        return new_pm_user_plan_family
 
     @classmethod
     def create_multiple_by_email(cls, root_user_plan: PMUserPlan, *emails):

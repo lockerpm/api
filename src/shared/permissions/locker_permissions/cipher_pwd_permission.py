@@ -17,7 +17,7 @@ class CipherPwdPermission(LockerPermission):
         """
         if view.action in ["update", "share"]:
             return self.can_edit_cipher(request, obj)
-        if view.action in ["retrieve"]:
+        if view.action in ["retrieve", "share_members"]:
             return self.can_retrieve_cipher(request, obj)
 
         return super(CipherPwdPermission, self).has_object_permission(request, view, obj.team)

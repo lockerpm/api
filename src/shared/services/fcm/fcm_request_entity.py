@@ -45,16 +45,6 @@ class FCMRequestEntity:
             "priority": self.priority
         }
 
-    # def to_json_value_str(self):
-    #     return {
-    #         "collapse_key": str(self.collapse_key),
-    #         "time_to_live": str(self.time_to_live),
-    #         "delay_while_idle": str(self.delay_while_idle),
-    #         "registration_ids": str(self.registration_ids),
-    #         "data": str(self.data),
-    #         "priority": str(self.priority)
-    #     }
-
     def add_fcm_id(self, fcm_id):
         self._fcm_ids.append(fcm_id)
 

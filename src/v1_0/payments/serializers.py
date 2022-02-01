@@ -11,9 +11,7 @@ from cystack_models.models.payments.promo_codes import PromoCode
 class CalcSerializer(serializers.Serializer):
     plan_alias = serializers.CharField()
     promo_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    duration = serializers.ChoiceField(
-        choices=LIST_DURATION, default=DURATION_MONTHLY
-    )
+    duration = serializers.ChoiceField(choices=LIST_DURATION, default=DURATION_MONTHLY)
     number_members = serializers.IntegerField(default=1, min_value=1)
     currency = serializers.ChoiceField(
         choices=LIST_CURRENCY, default=CURRENCY_USD, required=False
@@ -28,15 +26,18 @@ class CalcSerializer(serializers.Serializer):
         except PMPlan.DoesNotExist:
             raise serializers.ValidationError(detail={"plan_alias": ["This plan alias does not exist"]})
 
-        if plan_alias == PLAN_TYPE_PM_FAMILY_DISCOUNT:
-            data["number_members"] = 1
-        elif plan_alias == PLAN_TYPE_PM_ENTERPRISE:
+        if plan.is_team_plan:
             if not data.get("number_members"):
                 raise serializers.ValidationError(detail={"max_members": ["This field is required"]})
-        elif plan_alias == PLAN_TYPE_PM_PERSONAL_PREMIUM:
+        else:
             data["number_members"] = 1
 
         return data
+
+
+class FamilyMemberSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(allow_null=True)
+    email = serializers.EmailField()
 
 
 class UpgradePlanSerializer(serializers.Serializer):
@@ -46,6 +47,9 @@ class UpgradePlanSerializer(serializers.Serializer):
     number_members = serializers.IntegerField(min_value=1, default=1)
     payment_method = serializers.ChoiceField(choices=LIST_PAYMENT_METHOD)
     bank_id = serializers.IntegerField(required=False)
+    # Metadata for family plan
+    family_members = FamilyMemberSerializer(many=True, required=False)
+    # Metadata for team plans
     key = serializers.CharField(required=False, allow_null=True)
     collection_name = serializers.CharField(required=False, allow_null=True)
 
@@ -53,30 +57,31 @@ class UpgradePlanSerializer(serializers.Serializer):
         current_user = self.context["request"].user
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         current_plan = user_repository.get_current_plan(user=current_user)
+
         # Validate plan
         plan_alias = data.get("plan_alias")
-        key = data.get("key")
-        collection_name = data.get("collection_name")
         try:
             plan = PMPlan.objects.get(alias=plan_alias)
             data["plan"] = plan
         except PMPlan.DoesNotExist:
             raise serializers.ValidationError(detail={'plan_alias': ["This plan does not exist"]})
 
-        if plan_alias == PLAN_TYPE_PM_PERSONAL_PREMIUM:
-            data["number_members"] = 1
-        elif plan_alias == PLAN_TYPE_PM_FAMILY_DISCOUNT:
-            data["number_members"] = 1
-        elif plan_alias == PLAN_TYPE_PM_ENTERPRISE:
+        # Check number members of the plan
+        if plan.is_team_plan:
             number_members = data.get("number_members")
             if not number_members:
                 raise serializers.ValidationError(detail={"number_members": ["This field is required"]})
             max_allow_member = current_plan.get_max_allow_members()
-            if number_members < max_allow_member:
+            if max_allow_member and number_members < max_allow_member:
                 raise serializers.ValidationError(detail={
                     "number_members": ["The minimum number of members is {}".format(max_allow_member)]
                 })
+        else:
+            data["number_members"] = 1
 
+        # Validate key and collection name of the team plan
+        key = data.get("key")
+        collection_name = data.get("collection_name")
         if plan.is_team_plan:
             if not key:
                 raise serializers.ValidationError(detail={"key": ["This field is required"]})
@@ -91,7 +96,7 @@ class UpgradePlanSerializer(serializers.Serializer):
                 raise serializers.ValidationError(detail={"promo_code": ["This coupon is expired or invalid"]})
             data["promo_code_obj"] = promo_code_obj
 
-        # Check plan
+        # Check plan duration
         duration = data.get("duration")
         current_plan_alias = current_plan.get_plan_type_alias()
         if current_plan_alias == plan.get_alias() and current_plan.duration == duration:
@@ -104,10 +109,19 @@ class UpgradePlanSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={
                 "payment_method": ["This payment method must be same as current payment method of your plan"]
             })
-        if payment_method == PAYMENT_METHOD_CARD:
-            data["currency"] = CURRENCY_USD
+        data["currency"] = CURRENCY_USD if payment_method == PAYMENT_METHOD_CARD else CURRENCY_VND
+
+        # Check family members
+        family_members = data.get("family_members", []) or []
+        if plan.is_family_plan:
+            if not family_members:
+                raise serializers.ValidationError(detail={"members": ["The family members are required"]})
+            if len(family_members) > plan.get_max_number_members() - 1:
+                raise serializers.ValidationError(detail={
+                    "members": ["The plan requires {} members including you".format(plan.get_max_number_members())]
+                })
         else:
-            data["currency"] = CURRENCY_VND
+            data["family_members"] = []
 
         return data
 

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, FloatField, ExpressionWrapper
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound, Throttled
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
@@ -15,8 +15,9 @@ from shared.constants.event import *
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT
+from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE
 from shared.utils.app import now
+from shared.utils.network import detect_device
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -71,10 +72,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Verified and activated this user
         user.activated = True
         user.activated_date = now()
+        user.revision_date = now()
         user.save()
 
         # Upgrade trial plan
         if trial_plan_obj:
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             if trial_plan_obj.is_team_plan:
                 plan_metadata = {
                     "start_period": now(),
@@ -83,15 +86,27 @@ class UserPwdViewSet(PasswordManagerViewSet):
                     "collection_name": validated_data.get("collection_name"),
                     "key": validated_data.get("team_key")
                 }
-            else:
+                self.user_repository.update_plan(
+                    user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                    duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+                )
+            elif current_plan.is_personal_trial_applied() is False:
                 plan_metadata = {
                     "start_period": now(),
                     "end_period": now() + TRIAL_PERSONAL_PLAN
                 }
-            self.user_repository.update_plan(
-                user=user, plan_type_alias=trial_plan_obj.get_alias(),
-                duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
-            )
+                self.user_repository.update_plan(
+                    user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                    duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+                )
+                current_plan.personal_trial_applied = True
+                current_plan.save()
+
+        # Upgrade plan if the user is a family member
+        self.user_repository.upgrade_member_family_plan(user=user)
+
+        # Update member confirmation
+        self.user_repository.invitations_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 
@@ -223,26 +238,31 @@ class UserPwdViewSet(PasswordManagerViewSet):
         not_sync_sso_token_ids = []
 
         # First, check the device exists
-        device_obj = self.device_repository.get_device_by_identifier(
+        device_existed = self.device_repository.get_device_by_identifier(
             user=user, device_identifier=device_identifier
         )
+        device_info = detect_device(ua_string=self.get_client_agent())
+        device_obj = user.user_devices.model.retrieve_or_create(user, **{
+            "client_id": client_id,
+            "device_name": device_name,
+            "device_type": device_type,
+            "device_identifier": device_identifier,
+            "os": device_info.get("os"),
+            "browser": device_info.get("browser"),
+            "scope": "api offline_access",
+            "token_type": "Bearer",
+            "refresh_token": secure_random_string(length=64, lower=False)
+        })
         # If the device does not exist => New device => Create new one
-        if not device_obj:
-            device_obj = user.user_devices.model.retrieve_or_create(user, **{
-                "client_id": client_id,
-                "device_name": device_name,
-                "device_type": device_type,
-                "device_identifier": device_identifier,
-                "scope": "api offline_access",
-                "token_type": "Bearer",
-                "refresh_token": secure_random_string(length=64, lower=False)
-            })
+        if not device_existed:
             all_devices = self.device_repository.get_device_user(user=user)
             if limit_sync_device and all_devices.count() > limit_sync_device:
                 old_devices = all_devices[:limit_sync_device]
-                not_sync_sso_token_ids = list(self.device_repository.get_devices_access_token(devices=old_devices).exclude(
-                    sso_token_id__isnull=True
-                ).values_list('sso_token_id', flat=True))
+                not_sync_sso_token_ids = list(
+                    self.device_repository.get_devices_access_token(devices=old_devices).exclude(
+                        sso_token_id__isnull=True
+                    ).values_list('sso_token_id', flat=True)
+                )
                 self.device_repository.remove_devices_access_token(devices=old_devices)
 
         # Set last login
@@ -337,9 +357,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
         default_team_id = default_team.id if default_team else None
 
         owner_teams = user.team_members.all().filter(
-            role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False
+            role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False,
         ).exclude(team_id=default_team_id)
-        if owner_teams.count() > 0:
+        business_teams = owner_teams.filter(team__personal_share=False)
+
+        if business_teams.count() > 0:
             raise ValidationError({"non_field_errors": [gen_error("1007")]})
 
         # Clear data of default team
@@ -349,6 +371,17 @@ class UserPwdViewSet(PasswordManagerViewSet):
             default_team.collections.all().order_by('id').delete()
             default_team.ciphers.all().order_by('id').delete()
             default_team.delete()
+
+        # Remove all share teams
+        # My share:
+        personal_share_teams = owner_teams.filter(team__personal_share=True)
+        self.cipher_repository.delete_permanent_multiple_cipher_by_teams(
+            team_ids=list(personal_share_teams.values_list('team_id', flat=True))
+        )
+        personal_share_teams.delete()
+        # Share with me
+        owners_share_with_me = self.sharing_repository.delete_share_with_me(user)
+        PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=owners_share_with_me).send()
 
         # Deactivated this account
         self.user_repository.delete_account(user)
@@ -404,7 +437,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request)
         # Get all team that user is a confirmed members and owner's plan is Family discount
         team_ids = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
-            user__pm_user_plan__pm_plan__alias=PLAN_TYPE_PM_FAMILY_DISCOUNT,
+            user__pm_user_plan__pm_plan__alias=PLAN_TYPE_PM_FAMILY,
             role_id=MEMBER_ROLE_OWNER,
             is_default=True, is_primary=True
         ).values_list('team_id', flat=True)
@@ -413,6 +446,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["get"], detail=False)
     def devices(self, request, *args, **kwargs):
         user = request.user
+        self.check_pwd_session_auth(request)
         devices = self.device_repository.get_device_user(user=user)
         serializer = self.get_serializer(devices, many=True)
         return Response(status=200, data=serializer.data)

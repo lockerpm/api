@@ -79,3 +79,6 @@ class UserPlan(models.Model):
         :param promo_code: (obj) Promo code object
         :return:
         """
+
+    def is_personal_trial_applied(self) -> bool:
+        pass

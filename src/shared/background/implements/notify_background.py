@@ -67,11 +67,9 @@ class NotifyBackground(ILockerBackground):
             user = payment.user
             current_plan = user_repository.get_current_plan(user=user, scope=scope)
             primary_team = user_repository.get_default_team(user=user)
-            if not primary_team:
-                return
             payment_data = {
-                "team_id": primary_team.id,
-                "team_name": primary_team.name,
+                "team_id": primary_team.id if primary_team else None,
+                "team_name": primary_team.name if primary_team else None,
                 "plan_name": current_plan.get_plan_type_name(),
                 "plan_price": current_plan.pm_plan.get_price(currency=payment.currency, duration=payment.duration),
                 "number_members": number_members

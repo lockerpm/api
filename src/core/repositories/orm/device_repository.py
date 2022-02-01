@@ -30,14 +30,14 @@ class DeviceRepository(IDeviceRepository):
             valid_access_token = DeviceAccessToken.create(device=device, **{
                 "access_token": self._gen_access_token_value(device=device),
                 "grant_type": "refresh_token",
-                "expires_in": 3600,
+                "expires_in": DeviceAccessToken.get_token_duration(client_id=device.client_id),
                 "sso_token_id": sso_token_id
             })
         return valid_access_token
 
     def _gen_access_token_value(self, device: Device):
         created_time = now()
-        expired_time = created_time + 3600
+        expired_time = created_time + DeviceAccessToken.get_token_duration(client_id=device.client_id)
         payload = {
             "nbf": created_time,
             "exp": expired_time,
@@ -94,7 +94,7 @@ class DeviceRepository(IDeviceRepository):
         :param devices:
         :return:
         """
-        return DeviceAccessToken.objects.filter(device__in=devices).order_by('-expired_time')
+        return DeviceAccessToken.objects.filter(device__in=list(devices)).order_by('-expired_time')
 
     def remove_devices_access_token(self, devices: List[Device]):
         """
@@ -102,7 +102,7 @@ class DeviceRepository(IDeviceRepository):
         :param devices:
         :return:
         """
-        return DeviceAccessToken.objects.filter(device__in=devices).delete()
+        return DeviceAccessToken.objects.filter(device__in=list(devices)).delete()
 
     def update_fcm_id(self, device: Device, fcm_id: str = None):
         device.fcm_id = fcm_id

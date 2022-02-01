@@ -1,10 +1,13 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
-    SyncCollectionSerializer, SyncPolicySerializer
+    SyncCollectionSerializer, SyncPolicySerializer, SyncOrgDetailSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -12,10 +15,37 @@ class SyncPwdViewSet(PasswordManagerViewSet):
     permission_classes = (SyncPwdPermission, )
     http_method_names = ["head", "options", "get"]
 
+    def get_cipher_obj(self):
+        try:
+            cipher = self.cipher_repository.get_by_id(cipher_id=self.kwargs.get("pk"))
+            if cipher.team:
+                self.check_object_permissions(request=self.request, obj=cipher)
+            else:
+                if cipher.user != self.request.user:
+                    raise NotFound
+            return cipher
+        except ObjectDoesNotExist:
+            raise NotFound
+
+    def get_folder_obj(self):
+        try:
+            folder = self.folder_repository.get_by_id(folder_id=self.kwargs.get("pk"), user=self.request.user)
+            return folder
+        except ObjectDoesNotExist:
+            raise NotFound
+
     @action(methods=["get"], detail=False)
     def sync(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
+
+        paging_param = self.request.query_params.get("paging", "0")
+        page_size_param = self.check_int_param(self.request.query_params.get("size", 50))
+        page_param = self.check_int_param(self.request.query_params.get("page", 1))
+        # if paging_param == "0":
+        #     self.pagination_class = None
+        # else:
+        #     self.pagination_class.page_size = page_size_param if page_size_param else 50
 
         policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('team')
         # Check team policies
@@ -27,7 +57,22 @@ class SyncPwdViewSet(PasswordManagerViewSet):
 
         ciphers = self.cipher_repository.get_multiple_by_user(
             user=user, exclude_team_ids=block_team_ids
-        ).prefetch_related('collections_ciphers')
+        ).order_by('-revision_date').prefetch_related('collections_ciphers')
+        total_cipher = ciphers.count()
+        # ciphers_page = self.paginate_queryset(ciphers)
+        if paging_param == "0":
+            ciphers_page = ciphers
+        else:
+            paginator = Paginator(list(ciphers), page_size_param or 50)
+            ciphers_page = paginator.page(page_param).object_list
+
+        ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
+
+        # if ciphers_page is not None:
+        #     ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
+        # else:
+        #     ciphers_serializer = SyncCipherSerializer(ciphers, many=True, context={"user": user})
+
         folders = self.folder_repository.get_multiple_by_user(user=user)
         collections = self.collection_repository.get_multiple_user_collections(
             user=user, exclude_team_ids=block_team_ids
@@ -35,8 +80,11 @@ class SyncPwdViewSet(PasswordManagerViewSet):
 
         sync_data = {
             "object": "sync",
+            "count": {
+                "ciphers": total_cipher,
+            },
             "profile": SyncProfileSerializer(user, many=False).data,
-            "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": user}).data,
+            "ciphers": ciphers_serializer.data,
             "collections": SyncCollectionSerializer(collections, many=True, context={"user": user}).data,
             "folders": SyncFolderSerializer(folders, many=True).data,
             "domains": None,
@@ -45,3 +93,44 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         }
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)
         return Response(status=200, data=sync_data)
+
+    @action(methods=["get"], detail=False)
+    def sync_cipher_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        cipher = self.get_cipher_obj()
+        cipher_obj = self.cipher_repository.get_multiple_by_user(
+            user=user, filter_ids=[cipher.id]
+        ).prefetch_related('collections_ciphers').first()
+        serializer = SyncCipherSerializer(cipher_obj, context={"user": user}, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_folder_detail(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        folder = self.get_folder_obj()
+        serializer = SyncFolderSerializer(folder, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_profile_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        serializer = SyncProfileSerializer(user, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_org_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        try:
+            team_member = user.team_members.get(team_id=kwargs.get("pk"), team__key__isnull=False)
+        except ObjectDoesNotExist:
+            raise NotFound
+
+        serializer = SyncOrgDetailSerializer(team_member, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)

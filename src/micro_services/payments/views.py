@@ -130,15 +130,18 @@ class PaymentViewSet(MicroServiceViewSet):
         current_plan = self.user_repository.get_current_plan(user=user, scope=scope)
         old_plan = current_plan.get_plan_type_name()
         current_plan.cancel_stripe_subscription()
-        self.user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=scope)
 
-        # Notify downgrade here
-        LockerBackgroundFactory.get_background(
-            bg_name=BG_NOTIFY, background=True
-        ).run(func_name="downgrade_plan", **{
-            "user_id": user.user_id, "old_plan": old_plan, "downgrade_time": now(),
-            "scope": settings.SCOPE_PWD_MANAGER, **{"payment_data": payment_data}
-        })
+        # if this plan is canceled because the user is added into family plan => Not notify
+        if not current_plan.user.pm_plan_family.exists():
+            self.user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=scope)
+
+            # Notify downgrade here
+            LockerBackgroundFactory.get_background(
+                bg_name=BG_NOTIFY, background=True
+            ).run(func_name="downgrade_plan", **{
+                "user_id": user.user_id, "old_plan": old_plan, "downgrade_time": now(),
+                "scope": settings.SCOPE_PWD_MANAGER, **{"payment_data": payment_data}
+            })
         return Response(status=200, data={"old_plan": old_plan})
 
     @action(methods=["post"], detail=False)

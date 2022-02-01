@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
@@ -6,20 +5,20 @@ from core.utils.data_helpers import convert_readable_date
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from cystack_models.models.users.users import User
+from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.collections import Collection
 from cystack_models.models.policy.policy import Policy
 
 
-class SyncProfileSerializer(serializers.ModelSerializer):
+class SyncOrgDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = TeamMember
         fields = '__all__'
 
     def to_representation(self, instance):
-        team_members = instance.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False)
-        constant_team_data = {
+        team_member_data = {
             "object": "profileOrganization",
             "has_public_and_private_keys": True,
             "identifier": None,
@@ -54,22 +53,82 @@ class SyncProfileSerializer(serializers.ModelSerializer):
             "use_reset_password": True,
             "use_sso": True,
             "use_totp": True,
-            "user_id": instance.internal_id,
+            "user_id": instance.user.internal_id,
             "users_get_premium": True,
+            "enabled": True if not instance.team.locked else False,
+            "id": instance.team_id,
+            "key": instance.key,
+            "name": instance.team.name,
+            "status": MAP_MEMBER_STATUS_TO_INT.get(instance.status),
+            "type": MAP_MEMBER_TYPE_BW.get(instance.role_id),
+            # "personal_share": team_member.team.personal_share,
         }
+        return team_member_data
+
+
+class SyncProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        team_members = instance.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False)
         organizations = []
         for team_member in team_members:
-            team_member_data = constant_team_data.copy()
-            team_member_data.update({
-                "enabled": True if not team_member.team.locked else False,
-                "id": team_member.team_id,
-                "key": team_member.key,
-                "name": team_member.team.name,
-                "status": MAP_MEMBER_STATUS_TO_INT.get(team_member.status),
-                "type": MAP_MEMBER_TYPE_BW.get(team_member.role_id),
-                # "personal_share": team_member.team.personal_share,
-            })
-            organizations.append(team_member_data)
+            organizations.append(SyncOrgDetailSerializer(team_member, many=False).data)
+
+        # constant_team_data = {
+        #     "object": "profileOrganization",
+        #     "has_public_and_private_keys": True,
+        #     "identifier": None,
+        #     "maxCollections": 32767,
+        #     "maxStorageGb": None,
+        #     "permissions": {
+        #         "access_business_portal": False,
+        #         "access_event_logs": False,
+        #         "access_import_export": False,
+        #         "access_reports": False,
+        #         "manage_all_collections": False,
+        #         "manage_assigned_collections": False,
+        #         "manage_groups": False,
+        #         "manage_policies": False,
+        #         "manage_reset_password": False,
+        #         "manage_sso": False,
+        #         "manage_users": False
+        #     },
+        #     "provider_id": None,
+        #     "provider_name": None,
+        #     "reset_password_enrolled": False,
+        #     "seats": 32767,
+        #     "self_host": True,
+        #     "sso_bound": False,
+        #     "use_2fa": True,
+        #     "use_api": True,
+        #     "use_business_portal": True,
+        #     "use_directory": True,
+        #     "use_events": True,
+        #     "use_groups": True,
+        #     "use_policies": True,
+        #     "use_reset_password": True,
+        #     "use_sso": True,
+        #     "use_totp": True,
+        #     "user_id": instance.internal_id,
+        #     "users_get_premium": True,
+        # }
+        # organizations = []
+        # for team_member in team_members:
+        #     team_member_data = constant_team_data.copy()
+        #     team_member_data.update({
+        #         "enabled": True if not team_member.team.locked else False,
+        #         "id": team_member.team_id,
+        #         "key": team_member.key,
+        #         "name": team_member.team.name,
+        #         "status": MAP_MEMBER_STATUS_TO_INT.get(team_member.status),
+        #         "type": MAP_MEMBER_TYPE_BW.get(team_member.role_id),
+        #         # "personal_share": team_member.team.personal_share,
+        #     })
+        #     organizations.append(team_member_data)
+
         data = {
             "object": "profile",
             "culture": "en-US",
@@ -80,7 +139,6 @@ class SyncProfileSerializer(serializers.ModelSerializer):
             "private_key": instance.private_key,
             "master_password_hint": instance.master_password_hint,
             "organizations": organizations,
-
             "email_verified": True,
             "force_password_reset": False,
             "premium": False,
@@ -108,12 +166,16 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         secure_note = cipher_detail if instance.type in [CIPHER_TYPE_NOTE, CIPHER_TYPE_TOTP] else None
         card = cipher_detail if instance.type == CIPHER_TYPE_CARD else None
         identity = cipher_detail if instance.type == CIPHER_TYPE_IDENTITY else None
+        crypto_account = cipher_detail if instance.type == CIPHER_TYPE_CRYPTO_ACCOUNT else None
+        crypto_wallet = cipher_detail if instance.type == CIPHER_TYPE_CRYPTO_WALLET else None
         folder_id = instance.get_folders().get(user.user_id)
         favorite = instance.get_favorites().get(user.user_id, False)
         data = {
             "object": "cipherDetails",
             "attachments": None,
             "card": card,
+            "crypto_account": crypto_account,
+            "crypto_wallet": crypto_wallet,
             "collection_ids": list(instance.collections_ciphers.values_list('collection_id', flat=True)),
             "data": data,
             "deleted_date": instance.deleted_date,
@@ -133,7 +195,6 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "revision_date": convert_readable_date(instance.revision_date),
             "secure_note": secure_note,
             "type": instance.type,
-            # "view_password": True
             "view_password": instance.view_password
         }
         return data

@@ -14,7 +14,6 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     This is a general view for Password Manager app
     """
     user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-    session_repository = CORE_CONFIG["repositories"]["ISessionRepository"]()
     device_repository = CORE_CONFIG["repositories"]["IDeviceRepository"]()
     payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
     cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
@@ -37,3 +36,6 @@ class PasswordManagerViewSet(AppGeneralViewSet):
         if not valid_token:
             raise AuthenticationFailed
         return valid_token
+
+    def get_client_agent(self):
+        return self.request.META.get("HTTP_LOCKER_CLIENT_AGENT")

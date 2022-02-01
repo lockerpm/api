@@ -42,12 +42,16 @@ class FCMSenderService:
             fcm_message = fcm_message.to_json()
 
         fcm_ids = list(set(fcm_message.get("fcm_ids", [])))
+        if not fcm_ids:
+            return [], []
+
         fcm_message_data = fcm_message.get("data")
         if "data" in fcm_message_data:
             fcm_message_data["data"] = json.dumps(fcm_message_data["data"])
 
         message = messaging.MulticastMessage(
-            data=fcm_message_data, tokens=fcm_ids,
+            data=fcm_message_data,
+            tokens=fcm_ids,
             android=messaging.AndroidConfig(
                 priority=fcm_message.get("priority") or "high"
             ),
@@ -55,7 +59,7 @@ class FCMSenderService:
                 headers={
                     'apns-push-type': 'background',
                     'apns-priority': '5',
-                    'apns-topic': 'io.cystack.ready'
+                    'apns-topic': 'com.cystack.lockerapp'
                 },
                 payload=messaging.APNSPayload(
                     aps=messaging.Aps(content_available=True)
