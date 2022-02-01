@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
@@ -6,7 +5,7 @@ from core.settings import CORE_CONFIG
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
-from shared.utils.app import diff_list
+from shared.utils.app import diff_list, get_cipher_detail_data
 from v1_0.folders.serializers import FolderSerializer
 from v1_0.sync.serializers import SyncCipherSerializer
 
@@ -31,6 +30,20 @@ class LoginVaultSerializer(serializers.Serializer):
     totp = serializers.CharField(allow_null=True, allow_blank=True)
     response = serializers.CharField(allow_null=True, allow_blank=True, default=None)
     uris = LoginUriVaultSerializer(many=True, allow_null=True)
+
+
+class CryptoAccountSerializer(serializers.Serializer):
+    username = serializers.CharField(allow_null=True, allow_blank=True)
+    password = serializers.CharField(allow_null=True, allow_blank=True)
+    phone = serializers.CharField(allow_null=True, allow_blank=True)
+    emailRecovery = serializers.CharField(allow_null=True, allow_blank=True)
+    response = serializers.CharField(allow_null=True, allow_blank=True, default=None)
+    uris = LoginUriVaultSerializer(many=True, allow_null=True)
+
+
+class CryptoWalletSerializer(serializers.Serializer):
+    email = serializers.CharField(allow_null=True, allow_blank=True)
+    seed = serializers.CharField(allow_null=True, allow_blank=True)
 
 
 class CardVaultSerializer(serializers.Serializer):
@@ -88,6 +101,8 @@ class VaultItemSerializer(serializers.Serializer):
     secureNote = SecurityNoteVaultSerializer(required=False, many=False, allow_null=True)
     card = CardVaultSerializer(required=False, many=False, allow_null=True)
     identity = IdentityVaultSerializer(required=False, many=False, allow_null=True)
+    cryptoAccount = CryptoAccountSerializer(required=False, many=False, allow_null=True)
+    cryptoWallet = CryptoWalletSerializer(required=False, many=False, allow_null=True)
 
     def validate(self, data):
         user = self.context["request"].user
@@ -97,6 +112,8 @@ class VaultItemSerializer(serializers.Serializer):
         secure_note = data.get("secureNote")
         card = data.get("card")
         identity = data.get("identity")
+        crypto_account = data.get("cryptoAccount")
+        crypto_wallet = data.get("cryptoWallet")
         if vault_type == CIPHER_TYPE_LOGIN and not login:
             raise serializers.ValidationError(detail={"login": ["This field is required"]})
         if vault_type == CIPHER_TYPE_NOTE and not secure_note:
@@ -107,6 +124,10 @@ class VaultItemSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
         if vault_type == CIPHER_TYPE_TOTP and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and not crypto_account:
+            raise serializers.ValidationError(detail={"cryptoAccount": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_CRYPTO_WALLET and not crypto_wallet:
+            raise serializers.ValidationError(detail={"cryptoWallet": ["This field is required"]})
 
         # Check folder id
         folder_id = data.get("folderId")
@@ -127,22 +148,23 @@ class VaultItemSerializer(serializers.Serializer):
                 team_member = user.team_members.get(
                     team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
                 )
-                # Get team object and check team is locked?
-                team_obj = team_member.team
-                if not team_obj.key:
-                    raise serializers.ValidationError(detail={"organizationId": [
-                        "This team does not exist", "Team này không tồn tại"
-                    ]})
-                if team_repository.is_locked(team=team_obj):
-                    raise serializers.ValidationError({"non_field_errors": [gen_error("3003")]})
-                data["team"] = team_obj
-                data["collectionIds"] = self.validate_collections(
-                    team_member=team_member, collection_ids=collection_ids
-                )
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": [
                     "This team does not exist", "Team này không tồn tại"
                 ]})
+            # Get team object and check team is locked?
+            team_obj = team_member.team
+            if not team_obj.key:
+                raise serializers.ValidationError(detail={"organizationId": [
+                    "This team does not exist", "Team này không tồn tại"
+                ]})
+            if team_repository.is_locked(team=team_obj):
+                raise serializers.ValidationError({"non_field_errors": [gen_error("3003")]})
+            data["team"] = team_obj
+            data["collectionIds"] = self.validate_collections(
+                team_member=team_member, collection_ids=collection_ids
+            )
+
         else:
             data["organizationId"] = None
             data["collectionIds"] = []
@@ -154,10 +176,15 @@ class VaultItemSerializer(serializers.Serializer):
         team_obj = team_member.team
         role_id = team_member.role_id
         if not collection_ids:
-            default_collection_id = team_repository.get_default_collection(team=team_obj).id
-            if role_id == MEMBER_ROLE_MANAGER and team_member.collections_members.filter(
-                    collection_id=default_collection_id
-            ).exists() is False:
+            try:
+                default_collection = team_repository.get_default_collection(team=team_obj)
+                default_collection_id = default_collection.id
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(detail={
+                    "collectionIds": ["Not found any collections"]
+                })
+            if role_id == MEMBER_ROLE_MANAGER and \
+                    team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
                 raise serializers.ValidationError(detail={
                     "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
                 })
@@ -183,7 +210,7 @@ class VaultItemSerializer(serializers.Serializer):
 
         # Get limit cipher type from personal and team plans
         allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
-        ciphers = cipher_repository.get_personal_ciphers(user=user)     # CHANGE LATER - list ciphers created by user
+        ciphers = cipher_repository.get_ciphers_created_by_user(user=user)
 
         vault_type = data.get("type")
         existed_ciphers_count = ciphers.filter(type=vault_type).count()
@@ -229,17 +256,8 @@ class VaultItemSerializer(serializers.Serializer):
             "score": validated_data.get("score", 0),
             "collection_ids": validated_data.get("collectionIds"),
         }
-        # Login data
-        if cipher_type == CIPHER_TYPE_LOGIN:
-            detail["data"] = dict(validated_data.get("login"))
-        elif cipher_type == CIPHER_TYPE_CARD:
-            detail["data"] = dict(validated_data.get("card"))
-        elif cipher_type == CIPHER_TYPE_IDENTITY:
-            detail["data"] = dict(validated_data.get("identity"))
-        elif cipher_type == CIPHER_TYPE_NOTE:
-            detail["data"] = dict(validated_data.get("secureNote"))
-        elif cipher_type == CIPHER_TYPE_TOTP:
-            detail["data"] = dict(validated_data.get("secureNote"))
+        # Cipher data
+        detail.update({"data": get_cipher_detail_data(validated_data)})
         detail["data"]["name"] = validated_data.get("name")
         if validated_data.get("notes"):
             detail["data"]["notes"] = validated_data.get("notes")
@@ -257,13 +275,18 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
         team_obj = team_member.team
         role_id = team_member.role_id
         if not collection_ids:
-            default_collection_id = team_repository.get_default_collection(team=team_obj).id
-            if role_id == MEMBER_ROLE_MANAGER and \
-                    team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
-                raise serializers.ValidationError(detail={
-                    "collectionIds": ["You do not have permission in default collections"]
-                })
-            return [default_collection_id]
+            # Get default collection
+            try:
+                default_collection = team_repository.get_default_collection(team=team_obj)
+                default_collection_id = default_collection.id
+                if role_id == MEMBER_ROLE_MANAGER and \
+                        team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
+                    raise serializers.ValidationError(detail={
+                        "collectionIds": ["You do not have permission in default collections"]
+                    })
+                return [default_collection_id]
+            except ObjectDoesNotExist:
+                return []
         else:
             team_collection_ids = team_repository.get_list_collection_ids(team=team_obj)
             for collection_id in collection_ids:
@@ -383,7 +406,7 @@ class ImportCipherSerializer(serializers.Serializer):
 
         return data
 
-    def validated_plan(self, data):
+    def validated_plan(self, data, existed_ciphers=None):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
         user = self.context["request"].user
@@ -392,9 +415,8 @@ class ImportCipherSerializer(serializers.Serializer):
 
         # Check limit ciphers by plan
         allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
-        existed_ciphers = cipher_repository.get_personal_ciphers(user=user)
-        # current_plan = user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        # plan_obj = current_plan.get_plan_obj()
+        if not existed_ciphers:
+            existed_ciphers = cipher_repository.get_ciphers_created_by_user(user=user)
         for vault_type in LIST_CIPHER_TYPE:
             limit_vault_type = None
             if vault_type == CIPHER_TYPE_LOGIN:
@@ -407,7 +429,7 @@ class ImportCipherSerializer(serializers.Serializer):
                 limit_vault_type = allow_cipher_type.get("limit_payment_card")
             elif vault_type == CIPHER_TYPE_TOTP:
                 limit_vault_type = allow_cipher_type.get("limit_totp")
-            elif vault_type == CIPHER_TYPE_CRYPTO:
+            elif vault_type in [CIPHER_TYPE_CRYPTO_ACCOUNT, CIPHER_TYPE_CRYPTO_WALLET]:
                 limit_vault_type = allow_cipher_type.get("limit_crypto_asset")
             import_ciphers_type = [cipher for cipher in ciphers if cipher["type"] == vault_type]
             # If this vault type is unlimited

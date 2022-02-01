@@ -10,8 +10,10 @@ from rest_framework.exceptions import NotFound, ValidationError
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_ACCEPTED, \
-    SYNC_EVENT_CIPHER
+from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE
+from shared.services.fcm.fcm_request_entity import FCMRequestEntity
+from shared.services.fcm.fcm_sender import FCMSenderService
+from shared.services.pm_sync import *
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer
 from v1_0.apps import PasswordManagerViewSet
@@ -53,9 +55,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         try:
             user_obj = self.user_repository.get_by_id(user_id=user_id)
             if not self.user_repository.is_activated(user=user_obj):
-                raise ValidationError(detail={"user_id": ["The user does not exist"]})
+                return Response(status=200, data={"public_key": None})
         except ObjectDoesNotExist:
-            raise ValidationError(detail={"user_id": ["The user does not exist"]})
+            return Response(status=200, data={"public_key": None})
         return Response(status=200, data={"public_key": user_obj.public_key})
 
     @action(methods=["get"], detail=False)
@@ -80,13 +82,40 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             )
         except ObjectDoesNotExist:
             raise NotFound
+
+        primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
         if status == "accept":
             self.sharing_repository.accept_invitation(member=sharing_invitation)
-            primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
-            result = {"status": status, "owner": primary_owner.user_id, "team_name": sharing_invitation.team.name}
+            # If share a cipher:
+            if sharing_invitation.team.collections.all().exists() is False:
+                share_cipher = sharing_invitation.team.ciphers.first()
+                PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
+            # Else, share a folder
+            else:
+                share_collection = sharing_invitation.team.collections.first()
+                PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
+                    data={"id": share_collection.id}
+                )
+
+            need_send_notification = True if not sharing_invitation.key else False
+            result = {
+                "status": status,
+                "owner": primary_owner.user_id,
+                "need_send_mail": need_send_notification
+            }
+            # Push mobile notification
+            if need_send_notification:
+                fcm_ids = list(
+                    user.user_devices.exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
+                )
+                fcm_message = FCMRequestEntity(
+                    fcm_ids=fcm_ids, priority="high", data={"event": FCM_TYPE_CONFIRM_SHARE}
+                )
+                FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
+            PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id, user.user_id]).send()
             result = {"status": status}
         return Response(status=200, data=result)
 
@@ -113,6 +142,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         folder_obj = None
         folder_name = None
         folder_ciphers = None
+        shared_type_name = None
 
         # Validate the cipher
         if cipher:
@@ -135,6 +165,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 if cipher_obj.team.collections.exists() is True:
                     raise ValidationError(detail={"cipher": ["The cipher belongs to a collection"]})
             shared_cipher_data = json.loads(json.dumps(shared_cipher_data))
+            shared_type_name = cipher_obj.type
 
         if folder:
             folder_id = folder.get("id")
@@ -155,18 +186,44 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                         "The folder does not have the cipher {}".format(folder_cipher.get("id"))
                     ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
+            shared_type_name = "folder"
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
             sharing_key=sharing_key, members=members,
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
+        if cipher_obj:
+            PwdSync(
+                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=new_sharing, add_all=True
+            ).send(data={"id": cipher_obj.id})
+        if folder_obj:
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
 
-        return Response(status=200, data={"id": new_sharing.id})
+        # Push mobile notification
+        fcm_ids = list(
+            user.user_devices.exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
+        )
+        fcm_message = FCMRequestEntity(
+            fcm_ids=fcm_ids, priority="high",
+            data={
+                "event": FCM_TYPE_NEW_SHARE,
+                "share_type": shared_type_name
+            }
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
+
+        return Response(status=200, data={
+            "id": new_sharing.id,
+            "shared_type_name": shared_type_name,
+            "existed_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users
+        })
 
     @action(methods=["post"], detail=False)
     def invitation_confirm(self, request, *args, **kwargs):
+        user = self.request.user
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(kwargs.get("pk"))
         member_id = kwargs.get("member_id")
@@ -180,6 +237,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.sharing_repository.confirm_invitation(member=member, key=key)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_CONFIRMED, user_ids=[member.user_id, user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)
@@ -201,7 +259,18 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         self.sharing_repository.update_role_invitation(
             member=member, role_id=role, hide_passwords=hide_passwords
         )
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
+        # If share a cipher:
+        primary_member = self.team_repository.get_primary_member(team=member.team)
+        PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=[member.user_id, primary_member.user_id]).send()
+        if member.team.collections.all().exists() is False:
+            share_cipher = member.team.ciphers.first()
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[member.user_id]).send(data={"id": share_cipher.id})
+        # Else, share a folder
+        else:
+            share_collection = member.team.collections.first()
+            PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[member.user_id]).send(
+                data={"id": share_collection.id}
+            )
 
         return Response(status=200, data={"success": True})
 
@@ -226,7 +295,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     "role": member.role_id,
                     "status": member.status,
                     "hide_passwords": member.hide_passwords,
-                    "share_type": self.sharing_repository.get_personal_share_type(member=member)
+                    "share_type": self.sharing_repository.get_personal_share_type(member=member),
+                    "pwd_user_id": member.user.internal_id if member.user else None
                 })
             team_data = {
                 "id": personal_shared_team.id,
@@ -303,8 +373,15 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher=cipher_obj, cipher_data=personal_cipher_data,
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
         )
+        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id, removed_member_user_id]).send()
         # Re-sync data of the owner and removed member
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+        if cipher_obj:
+            PwdSync(
+                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id, removed_member_user_id]
+            ).send(data={"id": cipher_obj.id})
+        if collection_obj:
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
@@ -315,10 +392,19 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         # Retrieve member that accepted
         try:
             member = personal_share.team_members.exclude(role_id=MEMBER_ROLE_OWNER).get(user=user)
+            team = member.team
         except ObjectDoesNotExist:
             raise NotFound
-
         member_user_id = self.sharing_repository.leave_share(member=member)
+
         # Re-sync data of the member
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
+        # If share a cipher
+        if team.collections.all().exists() is False:
+            share_cipher = team.ciphers.first()
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[member_user_id]).send(data={"id": share_cipher.id})
+        # Else, share a folder
+        else:
+            share_collection = team.collections.first()
+            PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(data={"id": share_collection.id})
+
         return Response(status=200, data={"success": True})

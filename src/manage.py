@@ -2,6 +2,7 @@
 """Django's commands-line utility for administrative tasks."""
 import os
 import sys
+import dotenv
 
 
 def main():
@@ -9,6 +10,8 @@ def main():
     env = os.getenv("PROD_ENV")
     if env not in valid_env:
         env = 'dev'
+    if env == 'dev':
+        dotenv.read_dotenv()
 
     setting = "server_config.settings.%s" % env
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", setting)

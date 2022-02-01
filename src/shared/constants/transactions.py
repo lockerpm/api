@@ -48,10 +48,6 @@ PLAN_TYPE_PM_FREE = "pm_free"
 PLAN_TYPE_PM_PREMIUM = "pm_premium"
 PLAN_TYPE_PM_FAMILY = "pm_family"
 
-PLAN_TYPE_PM_PERSONAL_PREMIUM = "pm_personal_premium"
-PLAN_TYPE_PM_FAMILY_DISCOUNT = "pm_family_discount"
-PLAN_TYPE_PM_ENTERPRISE = "pm_business_premium"
-
 
 FAMILY_MAX_MEMBER = 6
 

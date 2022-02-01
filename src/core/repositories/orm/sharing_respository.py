@@ -37,6 +37,7 @@ class SharingRepository(ISharingRepository):
         else:
             member.status = PM_MEMBER_STATUS_ACCEPTED
         member.save()
+        bump_account_revision_date(user=member.user)
 
     def reject_invitation(self, member: TeamMember):
         """
@@ -214,11 +215,11 @@ class SharingRepository(ISharingRepository):
         non_existed_member_users = []
         existed_member_users = []
         for member in members:
-            member_user = None
             try:
-                member_user = User.objects.get(user_id=member.get("user_id"))
+                member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
                 email = None
             except User.DoesNotExist:
+                member_user = None
                 email = member.get("email")
             if member_user and new_sharing.team_members.filter(user=member_user).exists() is True:
                 continue
@@ -243,7 +244,7 @@ class SharingRepository(ISharingRepository):
                     hide_passwords=member.get("hide_passwords", False)
                 )
             if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
-                shared_member.hide_passwords = member.get("hide_password", False)
+                shared_member.hide_passwords = member.get("hide_passwords", False)
                 shared_member.save()
 
             if shared_member.user_id:
@@ -278,7 +279,7 @@ class SharingRepository(ISharingRepository):
                 self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
 
         # Update revision date of the user
-        bump_account_revision_date(user=user)
+        bump_account_revision_date(team=new_sharing)
 
         return new_sharing, existed_member_users, non_existed_member_users
 
@@ -339,3 +340,14 @@ class SharingRepository(ISharingRepository):
         if exclude_owner:
             members_qs = members_qs.exclude(role_id=MEMBER_ROLE_OWNER)
         return members_qs
+
+    def delete_share_with_me(self, user: User):
+        member_teams = user.team_members.filter(
+            team__key__isnull=False, team__personal_share=True
+        ).exclude(role__name=MEMBER_ROLE_OWNER)
+        shared_teams = member_teams.values_list('team_id', flat=True)
+        owners = TeamMember.objects.filter(
+            team__key__isnull=False, role_id=MEMBER_ROLE_OWNER, team_id__in=shared_teams
+        ).values_list('user_id', flat=True)
+        member_teams.delete()
+        return owners

@@ -1,9 +1,6 @@
-from django.conf import settings
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
-from shared.constants.ciphers import *
-from shared.constants.transactions import PLAN_TYPE_PM_ENTERPRISE
 from shared.utils.app import now
 from cystack_models.models.teams.teams import Team
 from v1_0.ciphers.serializers import VaultItemSerializer, ImportCipherSerializer
@@ -30,9 +27,8 @@ class ListTeamSerializer(serializers.ModelSerializer):
         # Retrieve current plan of this team
         primary_member = team_repository.get_primary_member(team=instance)
         pm_plan = user_repository.get_current_plan(user=primary_member.user)
-        pm_plan_alias = pm_plan.get_plan_type_alias()
         pm_plan_name = pm_plan.get_plan_type_name()
-        data["is_business"] = True if pm_plan_alias == PLAN_TYPE_PM_ENTERPRISE else False
+        data["is_business"] = True if pm_plan.get_plan_obj().is_team_plan else False
         data["plan_name"] = pm_plan_name
         return data
 
@@ -78,52 +74,14 @@ class ImportTeamSerializer(ImportCipherSerializer):
             raise serializers.ValidationError(detail={"collections": ["You cannot import this much data at once"]})
         return data
 
-    def validated_plan(self, data):
-        return super(ImportTeamSerializer, self).validated_plan(data)
-        # user = self.context["request"].user
-        # user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        # cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
-        # # team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
-        # ciphers = data.get("ciphers", [])
-        # valid_ciphers = []
-        #
-        # # owner = team_repository.get_primary_member(team=team).user
-        # allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
-        # existed_ciphers = cipher_repository.get_personal_ciphers(user=user)
-        # # Get current plan of the team's owner
-        # # current_plan = user_repository.get_current_plan(user=owner, scope=settings.SCOPE_PWD_MANAGER)
-        # # plan_obj = current_plan.get_plan_obj()
-        # # Check limit ciphers by plan
-        # for vault_type in LIST_CIPHER_TYPE:
-        #     limit_vault_type = None
-        #     if vault_type == CIPHER_TYPE_LOGIN:
-        #         limit_vault_type = allow_cipher_type.get("limit_password")
-        #     elif vault_type == CIPHER_TYPE_NOTE:
-        #         limit_vault_type = allow_cipher_type.get("limit_secure_note")
-        #     elif vault_type == CIPHER_TYPE_IDENTITY:
-        #         limit_vault_type = allow_cipher_type.get("limit_identity")
-        #     elif vault_type == CIPHER_TYPE_CARD:
-        #         limit_vault_type = allow_cipher_type.get("limit_payment_card")
-        #     elif vault_type == CIPHER_TYPE_TOTP:
-        #         limit_vault_type = allow_cipher_type.get("limit_totp")
-        #     elif vault_type == CIPHER_TYPE_CRYPTO:
-        #         limit_vault_type = allow_cipher_type.get("limit_crypto_asset")
-        #
-        #     import_ciphers_type = [cipher for cipher in ciphers if cipher["type"] == vault_type]
-        #     # If this vault type is unlimited
-        #     if limit_vault_type is None:
-        #         vault_type += import_ciphers_type
-        #     else:
-        #         existed_ciphers_type_count = existed_ciphers.filter(type=vault_type).count()
-        #         if existed_ciphers_type_count < limit_vault_type:
-        #             valid_ciphers += import_ciphers_type[:(limit_vault_type - existed_ciphers_type_count)]
-        #
-        # data["ciphers"] = valid_ciphers
-        #
-        # return data
+    def validated_plan(self, data, existed_ciphers=None):
+        return super(ImportTeamSerializer, self).validated_plan(data, existed_ciphers)
 
     def save(self, **kwargs):
-        # team = kwargs.get("team")
+        cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
+        team = kwargs.get("team")
+        existed_ciphers = cipher_repository.get_team_ciphers(team=team) if team else None
+
         validated_data = self.validated_data
-        validated_data = self.validated_plan(validated_data)
+        validated_data = self.validated_plan(validated_data, existed_ciphers)
         return validated_data

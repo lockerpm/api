@@ -19,6 +19,7 @@ class PMUserPlan(UserPlan):
     )
     ref_plan_code = models.CharField(max_length=128, null=True, default=None)
     number_members = models.IntegerField(default=1)  # Number of member business
+    personal_trial_applied = models.BooleanField(default=False)     # Did this user apply the personal trial plan?
     pm_stripe_subscription = models.CharField(max_length=255, null=True)
     pm_stripe_subscription_created_time = models.IntegerField(null=True)
 
@@ -130,9 +131,10 @@ class PMUserPlan(UserPlan):
         return self.number_members
 
     def get_max_allow_members(self):
-        if self.get_plan_type_alias() == PLAN_TYPE_PM_ENTERPRISE:
+        plan_obj = self.get_plan_obj()
+        if plan_obj.is_team_plan:
             return self.number_members
-        return self.pm_plan.get_max_number_members()
+        return plan_obj.get_max_number_members()
 
     def set_default_payment_method(self, method):
         self.default_payment_method = method
@@ -261,3 +263,6 @@ class PMUserPlan(UserPlan):
 
         current_amount = max(round(total_price - discount, 2), 0)
         return current_amount
+
+    def is_personal_trial_applied(self) -> bool:
+        return self.personal_trial_applied

@@ -45,7 +45,11 @@ urlpatterns += [
 
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
-    url(r'^sync', views.SyncPwdViewSet.as_view({'get': 'sync'})),
+    url(r'^sync$', views.SyncPwdViewSet.as_view({'get': 'sync'})),
+    url(r'^sync/ciphers/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_cipher_detail'})),
+    url(r'^sync/folders/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_folder_detail'})),
+    url(r'^sync/profile$', views.SyncPwdViewSet.as_view({'get': 'sync_profile_detail'})),
+    url(r'^sync/organizations/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_org_detail'})),
 ]
 
 
@@ -60,6 +64,7 @@ urlpatterns += [
     url(r'^ciphers/sync/offline$', views.CipherPwdViewSet.as_view({'post': 'sync_offline'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
+    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share/members$', views.CipherPwdViewSet.as_view({'get': 'share_members'})),
 
 ]
 

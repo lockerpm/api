@@ -23,8 +23,45 @@ class CipherRepository(ICipherRepository):
     def get_by_id(self, cipher_id: str) -> Cipher:
         return Cipher.objects.get(id=cipher_id)
 
+    def get_cipher_members(self, cipher: Cipher):
+        if cipher.user:
+            return [{
+                "user_id": cipher.user.user_id,
+                "email": None,
+                "role": MEMBER_ROLE_OWNER,
+                "status": PM_MEMBER_STATUS_CONFIRMED
+            }]
+        if cipher.team:
+            team = cipher.team
+            members = team.team_members.all().order_by('access_time')
+            if team.personal_share:
+                cipher_members = members
+            else:
+                cipher_collections = cipher.collections_ciphers.values_list('collection_id', flat=True)
+                cipher_members = members.filter(
+                    Q(role__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]) |
+                    Q(groups_members__group__access_all=True) |
+                    Q(collections_members__collection_id__in=list(cipher_collections))
+                    # Q(collections_members__collection__collection_gr)
+                ).distinct()
+
+            cipher_members_list = []
+            for member in cipher_members:
+                cipher_members_list.append({
+                    "id": member.id,
+                    "user_id": member.user_id,
+                    "email": member.email,
+                    "role": member.role_id,
+                    "status": member.status
+                })
+            return cipher_members_list
+        return []
+
     def get_multiple_by_ids(self, cipher_ids: list):
         return Cipher.objects.filter(id__in=cipher_ids)
+
+    def get_ciphers_created_by_user(self, user):
+        return Cipher.objects.filter(created_by=user)
 
     def get_personal_ciphers(self, user):
         return Cipher.objects.filter(user=user)
@@ -259,6 +296,17 @@ class CipherRepository(ICipherRepository):
         for team in teams:
             bump_account_revision_date(team=team)
         bump_account_revision_date(user=user_deleted)
+
+    def delete_permanent_multiple_cipher_by_teams(self, team_ids):
+        """
+        Delete permanently ciphers by team ids
+        :param team_ids:
+        :return:
+        """
+        teams = Team.objects.filter(id__in=team_ids)
+        Cipher.objects.filter(team_id__in=team_ids).delete()
+        for team in teams:
+            bump_account_revision_date(team=team)
 
     def restore_multiple_cipher(self, cipher_ids: list, user_restored: User):
         """

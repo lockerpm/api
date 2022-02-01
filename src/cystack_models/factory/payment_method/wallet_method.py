@@ -85,6 +85,13 @@ class WalletPaymentMethod(IPaymentMethod):
             return current_plan.end_period
         return None
 
+    def cancel_immediately_recurring_subscription(self, **kwargs):
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        # Downgrade user plan
+        user_repository.update_plan(
+            user=self.user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=self.scope
+        )
+
     def recurring_subtract(self, amount: float, plan_type: str,
                            coupon=None, duration: str = DURATION_MONTHLY, **kwargs):
         return self.upgrade_recurring_subscription(

@@ -9,7 +9,15 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def get_cipher_members(self, cipher):
+        pass
+
+    @abstractmethod
     def get_multiple_by_ids(self, cipher_ids: list):
+        pass
+
+    @abstractmethod
+    def get_ciphers_created_by_user(self, user):
         pass
 
     @abstractmethod
@@ -46,6 +54,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def delete_permanent_multiple_cipher_by_teams(self, team_ids):
+        pass
+
+    @abstractmethod
     def restore_multiple_cipher(self, cipher_ids, user_restored):
         pass
 
@@ -64,5 +76,4 @@ class ICipherRepository(ABC):
     @abstractmethod
     def import_multiple_cipher_team(self, team, ciphers, collections, collection_relationships):
         pass
-
 

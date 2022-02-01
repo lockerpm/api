@@ -100,6 +100,7 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                     "start_period": start_period,
                     "end_period": end_period,
                     "promo_code": new_payment.promo_code,
+                    "family_members": stripe_metadata.get("family_members", []),
                     "key": stripe_metadata.get("key"),
                     "collection_name": stripe_metadata.get("collection_name")
                 }
@@ -110,8 +111,8 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                 )
                 primary_team = user_repository.get_default_team(user=new_payment.user)
                 result["payment_data"] = {
-                    "team_id": primary_team.id,
-                    "team_name": primary_team.name,
+                    "team_id": primary_team.id if primary_team else None,
+                    "team_name": primary_team.name if primary_team else None,
                     "plan_name": updated_user_plan.get_plan_type_name(),
                     "plan_price": updated_user_plan.pm_plan.get_price(
                         currency=new_payment.currency, duration=new_payment.duration

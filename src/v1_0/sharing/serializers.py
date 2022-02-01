@@ -4,8 +4,9 @@ from core.settings import CORE_CONFIG
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from cystack_models.models.members.team_members import TeamMember
+from shared.utils.app import get_cipher_detail_data
 from v1_0.ciphers.serializers import ItemFieldSerializer, LoginVaultSerializer, SecurityNoteVaultSerializer, \
-    CardVaultSerializer, IdentityVaultSerializer
+    CardVaultSerializer, IdentityVaultSerializer, CryptoAccountSerializer, CryptoWalletSerializer
 
 
 class UserPublicKeySerializer(serializers.Serializer):
@@ -28,8 +29,8 @@ class MemberShareSerializer(serializers.Serializer):
                 "user_id": ["The user id or email is required"],
                 "email": ["The email or user id is required"]
             })
-        if user_id and not key:
-            raise serializers.ValidationError(detail={"key": ["This field is required"]})
+        # if user_id and not key:
+        #     raise serializers.ValidationError(detail={"key": ["This field is required"]})
         return data
 
 
@@ -47,6 +48,8 @@ class CipherShareSerializer(serializers.Serializer):
     secureNote = SecurityNoteVaultSerializer(required=False, many=False, allow_null=True)
     card = CardVaultSerializer(required=False, many=False, allow_null=True)
     identity = IdentityVaultSerializer(required=False, many=False, allow_null=True)
+    cryptoAccount = CryptoAccountSerializer(required=False, many=False, allow_null=True)
+    cryptoWallet = CryptoWalletSerializer(required=False, many=False, allow_null=True)
 
 
 class FolderShareSerializer(serializers.Serializer):
@@ -77,26 +80,16 @@ class SharingSerializer(serializers.Serializer):
         return data
 
     def __get_shared_cipher_data(self, cipher):
-        cipher_type = cipher.get("type")
         shared_cipher_data = {
-            "type": cipher_type,
+            "type": cipher.get("type"),
             "score": cipher.get("score", 0),
             "reprompt": cipher.get("reprompt", 0),
             "attachments": None,
             "fields": cipher.get("fields"),
             "collection_ids": [],
+            "data": get_cipher_detail_data(cipher)
         }
         # Login data
-        if cipher_type == CIPHER_TYPE_LOGIN:
-            shared_cipher_data["data"] = dict(cipher.get("login"))
-        elif cipher_type == CIPHER_TYPE_CARD:
-            shared_cipher_data["data"] = dict(cipher.get("card"))
-        elif cipher_type == CIPHER_TYPE_IDENTITY:
-            shared_cipher_data["data"] = dict(cipher.get("identity"))
-        elif cipher_type == CIPHER_TYPE_NOTE:
-            shared_cipher_data["data"] = dict(cipher.get("secureNote"))
-        elif cipher_type == CIPHER_TYPE_TOTP:
-            shared_cipher_data["data"] = dict(cipher.get("secureNote"))
         shared_cipher_data["data"]["name"] = cipher.get("name")
         if cipher.get("notes"):
             shared_cipher_data["data"]["notes"] = cipher.get("notes")
@@ -142,24 +135,14 @@ class StopSharingSerializer(serializers.Serializer):
         return data
 
     def __get_personal_cipher_data(self, cipher):
-        cipher_type = cipher.get("type")
         shared_cipher_data = {
-            "type": cipher_type,
+            "type": cipher.get("type"),
             "score": cipher.get("score", 0),
             "reprompt": cipher.get("reprompt", 0),
-            "fields": cipher.get("fields")
+            "fields": cipher.get("fields"),
+            "data": get_cipher_detail_data(cipher)
         }
         # Login data
-        if cipher_type == CIPHER_TYPE_LOGIN:
-            shared_cipher_data["data"] = dict(cipher.get("login"))
-        elif cipher_type == CIPHER_TYPE_CARD:
-            shared_cipher_data["data"] = dict(cipher.get("card"))
-        elif cipher_type == CIPHER_TYPE_IDENTITY:
-            shared_cipher_data["data"] = dict(cipher.get("identity"))
-        elif cipher_type == CIPHER_TYPE_NOTE:
-            shared_cipher_data["data"] = dict(cipher.get("secureNote"))
-        elif cipher_type == CIPHER_TYPE_TOTP:
-            shared_cipher_data["data"] = dict(cipher.get("secureNote"))
         shared_cipher_data["data"]["name"] = cipher.get("name")
         if cipher.get("notes"):
             shared_cipher_data["data"]["notes"] = cipher.get("notes")
@@ -213,6 +196,7 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
         data["item_type"] = item_type
         data["share_type"] = sharing_repository.get_personal_share_type(member=instance)
         data["cipher_type"] = cipher_type
+        data["hide_passwords"] = instance.hide_passwords
         return data
 
 

@@ -6,6 +6,7 @@ src/.idea/
 *.iml
 *.conf
 *.log
+*.env
 
 # User-specific stuff:
 .idea/**/workspace.xml

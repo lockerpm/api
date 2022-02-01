@@ -8,11 +8,13 @@ from core.utils.account_revision_date import bump_account_revision_date
 from shared.background import *
 from shared.constants.event import *
 from shared.constants.members import *
+from shared.constants.transactions import PLAN_TYPE_PM_PREMIUM
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER, SYNC_EVENT_VAULT
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
 from v1_0.enterprise.members.serializers import DetailMemberSerializer, MemberGroupSerializer, UpdateMemberSerializer
 from v1_0.apps import PasswordManagerViewSet
 
@@ -322,22 +324,7 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         # Filter invitations of the teams
         invitations = TeamMember.objects.filter(email=email, team__key__isnull=False, status=PM_MEMBER_STATUS_INVITED)
         team_ids = invitations.values_list('team_id', flat=True)
-
-        for invitation in invitations:
-            team = invitation.team
-            # Check max number members
-            current_total_members = team.team_members.all().count()
-            primary_user = self.team_repository.get_primary_member(team=team).user
-            max_allow_members = self.user_repository.get_current_plan(
-                user=primary_user, scope=settings.SCOPE_PWD_MANAGER
-            ).get_max_allow_members()
-            if max_allow_members and current_total_members + 1 > max_allow_members:
-                continue
-
-            invitation.email = None
-            invitation.token_invitation = None
-            invitation.user = member_user
-            invitation.save()
+        self.user_repository.invitations_confirm(user=member_user)
 
         return Response(status=200, data={"success": True, "team_ids": list(team_ids)})
 

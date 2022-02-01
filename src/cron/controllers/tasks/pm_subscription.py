@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Count
 
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
@@ -13,7 +14,9 @@ def pm_subscription():
     # Filter PWD Subscription by VND wallet
     pm_user_plans = PMUserPlan.objects.filter(pm_stripe_subscription__isnull=True).exclude(
         pm_plan__alias=PLAN_TYPE_PM_FREE
-    ).exclude(end_period__isnull=True).filter(end_period__lte=now())
+    ).exclude(end_period__isnull=True).filter(end_period__lte=now()).annotate(
+        family_members_count=Count('user__pm_plan_family')
+    ).filter(family_members_count__lt=1)
     for pm_user_plan in pm_user_plans:
         user = pm_user_plan.user
         current_plan_name = pm_user_plan.get_plan_type_name()
