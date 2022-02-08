@@ -23,14 +23,11 @@ class MemberShareSerializer(serializers.Serializer):
     def validate(self, data):
         user_id = data.get("user_id")
         email = data.get("email")
-        key = data.get("key")
         if not user_id and not email:
             raise serializers.ValidationError(detail={
                 "user_id": ["The user id or email is required"],
                 "email": ["The email or user id is required"]
             })
-        # if user_id and not key:
-        #     raise serializers.ValidationError(detail={"key": ["This field is required"]})
         return data
 
 
@@ -107,10 +104,81 @@ class SharingSerializer(serializers.Serializer):
         folder = validated_data.get("folder")
         if folder:
             shared_ciphers = []
-            ciphers = validated_data.get("ciphers") or []
+            ciphers = folder.get("ciphers") or []
             for cipher in ciphers:
                 shared_ciphers.append(self.__get_shared_cipher_data(cipher=cipher))
             folder["ciphers"] = shared_ciphers
+
+        return validated_data
+
+
+class MultipleSharingSerializer(serializers.Serializer):
+    sharing_key = serializers.CharField(required=False, allow_null=True)
+    members = MemberShareSerializer(many=True)
+    ciphers = CipherShareSerializer(many=True, required=False, allow_null=True)
+    folders = FolderShareSerializer(many=True, required=False, allow_null=True)
+
+    def validate(self, data):
+        ciphers = data.get("ciphers")
+        folders = data.get("folders")
+        if not ciphers and not folders:
+            raise serializers.ValidationError(detail={
+                "ciphers": ["The ciphers or folders are required"],
+                "folder": ["The folders or ciphers is required"]
+            })
+        if ciphers and folders:
+            raise serializers.ValidationError(detail={
+                "ciphers": ["You can only share the ciphers or the folders"],
+                "folders": ["You can only share the ciphers or the folders"]
+            })
+
+        # Limit the number of the ciphers
+        if ciphers and len(ciphers) >= 20:
+            raise serializers.ValidationError(detail={
+                "ciphers": ["The maximum number of ciphers is 20"]
+            })
+        if folders and len(folders) >= 5:
+            raise serializers.ValidationError(detail={
+                "folders": ["The maximum number of folders is 5"]
+            })
+
+        return data
+
+    @staticmethod
+    def __get_shared_cipher_data(cipher):
+        shared_cipher_data = {
+            "type": cipher.get("type"),
+            "score": cipher.get("score", 0),
+            "reprompt": cipher.get("reprompt", 0),
+            "attachments": None,
+            "fields": cipher.get("fields"),
+            "collection_ids": [],
+            "data": get_cipher_detail_data(cipher)
+        }
+        # Login data
+        shared_cipher_data["data"]["name"] = cipher.get("name")
+        if cipher.get("notes"):
+            shared_cipher_data["data"]["notes"] = cipher.get("notes")
+        return shared_cipher_data
+
+    def save(self, **kwargs):
+        validated_data = self.validated_data
+        ciphers = validated_data.get("ciphers")
+
+        # Get shared ciphers data if the user shares the ciphers
+        if ciphers:
+            for cipher in ciphers:
+                cipher["shared_cipher_data"] = self.__get_shared_cipher_data(cipher=cipher)
+
+        # Get shared cipher data of the folders if the user shares the folders
+        folders = validated_data.get("folders")
+        if folders:
+            for folder in folders:
+                shared_ciphers = []
+                ciphers = folder.get("ciphers") or []
+                for cipher in ciphers:
+                    shared_ciphers.append(self.__get_shared_cipher_data(cipher=cipher))
+                folder["ciphers"] = shared_ciphers
 
         return validated_data
 

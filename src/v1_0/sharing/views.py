@@ -15,7 +15,7 @@ from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
-    StopSharingSerializer, UpdateInvitationRoleSerializer
+    StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -28,6 +28,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserPublicKeySerializer
         elif self.action == "share":
             self.serializer_class = SharingSerializer
+        elif self.action == "multiple_share":
+            self.serializer_class = MultipleSharingSerializer
         elif self.action == "invitations":
             self.serializer_class = SharingInvitationSerializer
         elif self.action == "stop_share":
@@ -220,6 +222,109 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "existed_member_users": existed_member_users,
             "non_existed_member_users": non_existed_member_users
         })
+
+    @action(methods=["put"], detail=False)
+    def multiple_share(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+
+        # Check plan of the user
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_personal_share() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        sharing_key = validated_data.get("sharing_key")
+        members = validated_data.get("members")
+        ciphers = validated_data.get("ciphers")
+        folders = validated_data.get("folders")
+
+        if ciphers:
+            for cipher in ciphers:
+                share_result = self.share_cipher_or_folder(
+                    sharing_key=sharing_key, members=members,
+                    cipher=cipher, shared_cipher_data=cipher.get("shared_cipher_data"), folder=None
+                )
+
+        if folders:
+            for folder in folders:
+                share_result = self.share_cipher_or_folder(
+                    sharing_key=sharing_key, members=members, cipher=None, shared_cipher_data=None, folder=folder
+                )
+
+        # Sync HERE
+        # CHANGE LATER ...
+
+        # Send mobile notification HERE
+        # CHANGE LATER ...
+
+        return Response(status=200, data={"success": True})
+
+    def share_cipher_or_folder(self, sharing_key, members, cipher, shared_cipher_data, folder):
+        user = self.request.user
+        cipher_obj = None
+        folder_obj = None
+        folder_name = None
+        folder_ciphers = None
+
+        # Validate the cipher
+        if cipher:
+            try:
+                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher.get("id"))
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            # If the cipher isn't shared?
+            if cipher_obj.user and cipher_obj.user != user:
+                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            # If the cipher obj belongs to a team
+            if cipher_obj.team:
+                # Check the team is a personal sharing team?
+                if cipher_obj.team.personal_share is False:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+                # Check the user is an owner?
+                if cipher_obj.team.team_members.filter(user=user, role_id=MEMBER_ROLE_OWNER).exists() is False:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+                # Check the team only shares this cipher?
+                if cipher_obj.team.collections.exists() is True:
+                    raise ValidationError(detail={"cipher": ["The cipher belongs to a collection"]})
+            shared_cipher_data = json.loads(json.dumps(shared_cipher_data))
+
+        if folder:
+            folder_id = folder.get("id")
+            folder_name = folder.get("name")
+            folder_ciphers = folder.get("ciphers") or []
+            try:
+                folder_obj = self.folder_repository.get_by_id(folder_id=folder_id, user=user)
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"folder": ["The folder does not exist"]})
+            # Check the list folder_ciphers in the folder
+            folder_ciphers_obj = user.ciphers.filter(
+                Q(folders__icontains="{}: '{}'".format(user.user_id, folder_id)) |
+                Q(folders__icontains='{}: "{}"'.format(user.user_id, folder_id))
+            ).values_list('id', flat=True)
+            for folder_cipher in folder_ciphers:
+                if folder_cipher.get("id") not in list(folder_ciphers_obj):
+                    raise ValidationError(detail={"folder": [
+                        "The folder does not have the cipher {}".format(folder_cipher.get("id"))
+                    ]})
+            folder_ciphers = json.loads(json.dumps(folder_ciphers))
+
+        new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
+            sharing_key=sharing_key, members=members,
+            cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
+            folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
+        )
+
+        return {
+            "new_sharing": new_sharing,
+            "exited_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users,
+            "cipher_obj": cipher_obj,
+            "folder_obj": folder_obj
+        }
 
     @action(methods=["post"], detail=False)
     def invitation_confirm(self, request, *args, **kwargs):
