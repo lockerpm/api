@@ -140,73 +140,32 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         cipher = validated_data.get("cipher")
         shared_cipher_data = validated_data.get("shared_cipher_data")
         folder = validated_data.get("folder")
-        cipher_obj = None
-        folder_obj = None
-        folder_name = None
-        folder_ciphers = None
+
         shared_type_name = None
+        try:
+            share_result = self.share_cipher_or_folder(
+                sharing_key=sharing_key, members=members, cipher=cipher, shared_cipher_data=shared_cipher_data, folder=folder
+            )
+        except Exception as e:
+            raise e
+        new_sharing = share_result.get("new_sharing")
+        existed_member_users = share_result.get("existed_member_users")
+        non_existed_member_users = share_result.get("non_existed_member_users")
 
-        # Validate the cipher
-        if cipher:
-            try:
-                cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher.get("id"))
-            except ObjectDoesNotExist:
-                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
-            # If the cipher isn't shared?
-            if cipher_obj.user and cipher_obj.user != user:
-                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
-            # If the cipher obj belongs to a team
-            if cipher_obj.team:
-                # Check the team is a personal sharing team?
-                if cipher_obj.team.personal_share is False:
-                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
-                # Check the user is an owner?
-                if cipher_obj.team.team_members.filter(user=user, role_id=MEMBER_ROLE_OWNER).exists() is False:
-                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
-                # Check the team only shares this cipher?
-                if cipher_obj.team.collections.exists() is True:
-                    raise ValidationError(detail={"cipher": ["The cipher belongs to a collection"]})
-            shared_cipher_data = json.loads(json.dumps(shared_cipher_data))
-            shared_type_name = cipher_obj.type
-
-        if folder:
-            folder_id = folder.get("id")
-            folder_name = folder.get("name")
-            folder_ciphers = folder.get("ciphers") or []
-            try:
-                folder_obj = self.folder_repository.get_by_id(folder_id=folder_id, user=user)
-            except ObjectDoesNotExist:
-                raise ValidationError(detail={"folder": ["The folder does not exist"]})
-            # Check the list folder_ciphers in the folder
-            folder_ciphers_obj = user.ciphers.filter(
-                Q(folders__icontains="{}: '{}'".format(user.user_id, folder_id)) |
-                Q(folders__icontains='{}: "{}"'.format(user.user_id, folder_id))
-            ).values_list('id', flat=True)
-            for folder_cipher in folder_ciphers:
-                if folder_cipher.get("id") not in list(folder_ciphers_obj):
-                    raise ValidationError(detail={"folder": [
-                        "The folder does not have the cipher {}".format(folder_cipher.get("id"))
-                    ]})
-            folder_ciphers = json.loads(json.dumps(folder_ciphers))
-            shared_type_name = "folder"
-
-        new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
-            sharing_key=sharing_key, members=members,
-            cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
-            folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
-        )
         PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
-        if cipher_obj:
-            PwdSync(
-                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=new_sharing, add_all=True
-            ).send(data={"id": cipher_obj.id})
-        if folder_obj:
-            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[request.user.user_id], team=new_sharing, add_all=True).send()
+        if cipher:
+            cipher_obj = new_sharing.ciphers.first()
+            shared_type_name = cipher_obj.type
+            if cipher_obj:
+                PwdSync(
+                    event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=new_sharing, add_all=True
+                ).send(data={"id": cipher_obj.id})
+        if folder:
+            shared_type_name = "folder"
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=new_sharing, add_all=True).send()
 
         # Push mobile notification
-        fcm_ids = list(
-            user.user_devices.exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
-        )
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users + [user.user_id])
         fcm_message = FCMRequestEntity(
             fcm_ids=fcm_ids, priority="high",
             data={
@@ -242,26 +201,53 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         ciphers = validated_data.get("ciphers")
         folders = validated_data.get("folders")
 
+        existed_member_users = []
+        non_existed_member_users = []
+
         if ciphers:
             for cipher in ciphers:
-                share_result = self.share_cipher_or_folder(
-                    sharing_key=sharing_key, members=members,
-                    cipher=cipher, shared_cipher_data=cipher.get("shared_cipher_data"), folder=None
-                )
+                try:
+                    share_result = self.share_cipher_or_folder(
+                        sharing_key=sharing_key, members=members,
+                        cipher=cipher, shared_cipher_data=cipher.get("shared_cipher_data"), folder=None
+                    )
+                except Exception as e:
+                    raise e
+                existed_member_users += share_result.get("existed_member_users", [])
+                non_existed_member_users += share_result.get("non_existed_member_users", [])
 
         if folders:
             for folder in folders:
-                share_result = self.share_cipher_or_folder(
-                    sharing_key=sharing_key, members=members, cipher=None, shared_cipher_data=None, folder=folder
-                )
+                try:
+                    share_result = self.share_cipher_or_folder(
+                        sharing_key=sharing_key, members=members, cipher=None, shared_cipher_data=None, folder=folder
+                    )
+                except Exception as e:
+                    raise e
+                existed_member_users += share_result.get("existed_member_users", [])
+                non_existed_member_users += share_result.get("non_existed_member_users", [])
 
-        # Sync HERE
-        # CHANGE LATER ...
+        # Sync the invitation
+        share_type = "folder" if folders else "cipher"
+        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
+        # Sync ciphers
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=existed_member_users + [user.user_id]).send()
+        # Send mobile notification
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users + [user.user_id])
+        fcm_message = FCMRequestEntity(
+            fcm_ids=fcm_ids, priority="high",
+            data={
+                "event": FCM_TYPE_NEW_SHARE,
+                "share_type": share_type
+            }
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
 
-        # Send mobile notification HERE
-        # CHANGE LATER ...
-
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={
+            "shared_type_name": share_type,
+            "existed_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users
+        })
 
     def share_cipher_or_folder(self, sharing_key, members, cipher, shared_cipher_data, folder):
         user = self.request.user
@@ -320,7 +306,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         return {
             "new_sharing": new_sharing,
-            "exited_member_users": existed_member_users,
+            "existed_member_users": existed_member_users,
             "non_existed_member_users": non_existed_member_users,
             "cipher_obj": cipher_obj,
             "folder_obj": folder_obj
