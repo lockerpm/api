@@ -104,6 +104,12 @@ class DeviceRepository(IDeviceRepository):
         """
         return DeviceAccessToken.objects.filter(device__in=list(devices)).delete()
 
+    def get_fcm_ids_by_user_ids(self, user_ids: List[int]):
+        fcm_ids = Device.objects.filter(
+            ser_id__in=user_ids
+        ).exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
+        return list(set(fcm_ids))
+
     def update_fcm_id(self, device: Device, fcm_id: str = None):
         device.fcm_id = fcm_id
         device.save()
