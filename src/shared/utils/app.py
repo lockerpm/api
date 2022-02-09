@@ -65,19 +65,19 @@ def url_decode(url):
 def get_cipher_detail_data(cipher):
     cipher_type = cipher.get("type")
     if cipher_type == CIPHER_TYPE_LOGIN:
-        data = dict(cipher.get("login"))
+        data = dict(cipher.get("login") or {})
     elif cipher_type == CIPHER_TYPE_CARD:
-        data = dict(cipher.get("card"))
+        data = dict(cipher.get("card") or {})
     elif cipher_type == CIPHER_TYPE_IDENTITY:
-        data = dict(cipher.get("identity"))
+        data = dict(cipher.get("identity") or {})
     elif cipher_type == CIPHER_TYPE_NOTE:
-        data = dict(cipher.get("secureNote"))
+        data = dict(cipher.get("secureNote") or {})
     elif cipher_type == CIPHER_TYPE_TOTP:
-        data = dict(cipher.get("secureNote"))
+        data = dict(cipher.get("secureNote") or {})
     elif cipher_type == CIPHER_TYPE_CRYPTO_ACCOUNT:
-        data = dict(cipher.get("cryptoAccount"))
+        data = dict(cipher.get("cryptoAccount") or {})
     elif cipher_type == CIPHER_TYPE_CRYPTO_WALLET:
-        data = dict(cipher.get("cryptoWallet"))
+        data = dict(cipher.get("cryptoWallet") or {})
     else:
         data = dict()
     return data
