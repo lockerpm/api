@@ -146,7 +146,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             share_result = self.share_cipher_or_folder(
                 sharing_key=sharing_key, members=members, cipher=cipher, shared_cipher_data=shared_cipher_data, folder=folder
             )
-        except Exception as e:
+        except ValidationError as e:
             raise e
         new_sharing = share_result.get("new_sharing")
         existed_member_users = share_result.get("existed_member_users")
@@ -211,8 +211,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                         sharing_key=sharing_key, members=members,
                         cipher=cipher, shared_cipher_data=cipher.get("shared_cipher_data"), folder=None
                     )
-                except Exception as e:
-                    raise e
+                except ValidationError as e:
+                    # raise e
+                    continue
                 existed_member_users += share_result.get("existed_member_users", [])
                 non_existed_member_users += share_result.get("non_existed_member_users", [])
 
@@ -222,8 +223,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     share_result = self.share_cipher_or_folder(
                         sharing_key=sharing_key, members=members, cipher=None, shared_cipher_data=None, folder=folder
                     )
-                except Exception as e:
-                    raise e
+                except ValidationError as e:
+                    # raise e
+                    continue
                 existed_member_users += share_result.get("existed_member_users", [])
                 non_existed_member_users += share_result.get("non_existed_member_users", [])
 
