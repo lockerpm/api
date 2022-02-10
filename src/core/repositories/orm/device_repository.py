@@ -106,7 +106,7 @@ class DeviceRepository(IDeviceRepository):
 
     def get_fcm_ids_by_user_ids(self, user_ids: List[int]):
         fcm_ids = Device.objects.filter(
-            ser_id__in=user_ids
+            user_id__in=user_ids
         ).exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
         return list(set(fcm_ids))
 
