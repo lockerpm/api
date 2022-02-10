@@ -177,7 +177,7 @@ class MultipleSharingSerializer(serializers.Serializer):
         # Get shared ciphers data if the user shares the ciphers
         if ciphers:
             for cipher in ciphers:
-                cipher["shared_cipher_data"] = self.__get_shared_cipher_data(cipher=cipher)
+                cipher["shared_cipher_data"] = self.__get_shared_cipher_data(cipher=cipher.get("cipher"))
 
         # Get shared cipher data of the folders if the user shares the folders
         folders = validated_data.get("folders")
