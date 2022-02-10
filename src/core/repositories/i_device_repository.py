@@ -37,5 +37,9 @@ class IDeviceRepository(ABC):
         pass
 
     @abstractmethod
+    def get_fcm_ids_by_user_ids(self, user_ids: List[int]):
+        pass
+
+    @abstractmethod
     def update_fcm_id(self, device: Device, fcm_id: str = None):
         pass
