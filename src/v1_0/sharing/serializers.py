@@ -112,11 +112,20 @@ class SharingSerializer(serializers.Serializer):
         return validated_data
 
 
+class CipherMemberSharingSerializer(serializers.Serializer):
+    members = MemberShareSerializer(many=True)
+    cipher = CipherShareSerializer(many=False, required=True, allow_null=False)
+
+
+class FolderMemberSharingSerializer(serializers.Serializer):
+    members = MemberShareSerializer(many=True)
+    folder = FolderShareSerializer(many=False, required=True, allow_null=False)
+
+
 class MultipleSharingSerializer(serializers.Serializer):
     sharing_key = serializers.CharField(required=False, allow_null=True)
-    members = MemberShareSerializer(many=True)
-    ciphers = CipherShareSerializer(many=True, required=False, allow_null=True)
-    folders = FolderShareSerializer(many=True, required=False, allow_null=True)
+    ciphers = CipherMemberSharingSerializer(many=True, required=False, allow_null=True)
+    folders = FolderMemberSharingSerializer(many=True, required=False, allow_null=True)
 
     def validate(self, data):
         ciphers = data.get("ciphers")

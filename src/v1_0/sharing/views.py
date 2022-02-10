@@ -197,7 +197,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.save()
         sharing_key = validated_data.get("sharing_key")
-        members = validated_data.get("members")
+        # members = validated_data.get("members")
         ciphers = validated_data.get("ciphers")
         folders = validated_data.get("folders")
 
@@ -208,7 +208,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for cipher in ciphers:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=members,
+                        sharing_key=sharing_key, members=cipher.get("members") or [],
                         cipher=cipher, shared_cipher_data=cipher.get("shared_cipher_data"), folder=None
                     )
                 except ValidationError as e:
@@ -221,7 +221,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for folder in folders:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=members, cipher=None, shared_cipher_data=None, folder=folder
+                        sharing_key=sharing_key, members=folder.get("members") or [],
+                        cipher=None, shared_cipher_data=None, folder=folder
                     )
                 except ValidationError as e:
                     # raise e
