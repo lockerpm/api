@@ -205,13 +205,17 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         non_existed_member_users = []
 
         if ciphers:
-            for cipher in ciphers:
+            print("AAAAAAAAAAAAAAAAA")
+            for cipher_member in ciphers:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=cipher.get("members") or [],
-                        cipher=cipher, shared_cipher_data=cipher.get("shared_cipher_data"), folder=None
+                        sharing_key=sharing_key, members=cipher_member.get("members") or [],
+                        cipher=cipher_member.get("cipher"),
+                        shared_cipher_data=cipher_member.get("shared_cipher_data"), folder=None
                     )
+                    print("Share result: ", share_result,  "\n-----------")
                 except ValidationError as e:
+                    print("Exception: ", e)
                     # raise e
                     continue
                 existed_member_users += share_result.get("existed_member_users", [])
@@ -264,9 +268,11 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             try:
                 cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher.get("id"))
             except ObjectDoesNotExist:
+                print("DEo ton tai db")
                 raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
             # If the cipher isn't shared?
             if cipher_obj.user and cipher_obj.user != user:
+                print("Khac user ")
                 raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
             # If the cipher obj belongs to a team
             if cipher_obj.team:
