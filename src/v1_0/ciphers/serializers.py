@@ -124,10 +124,10 @@ class VaultItemSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
         if vault_type == CIPHER_TYPE_TOTP and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and not crypto_account:
-            raise serializers.ValidationError(detail={"cryptoAccount": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_CRYPTO_WALLET and not crypto_wallet:
-            raise serializers.ValidationError(detail={"cryptoWallet": ["This field is required"]})
+        # if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and not crypto_account:
+        #     raise serializers.ValidationError(detail={"cryptoAccount": ["This field is required"]})
+        # if vault_type == CIPHER_TYPE_CRYPTO_WALLET and not crypto_wallet:
+        #     raise serializers.ValidationError(detail={"cryptoWallet": ["This field is required"]})
 
         # Check folder id
         folder_id = data.get("folderId")
@@ -209,7 +209,7 @@ class VaultItemSerializer(serializers.Serializer):
         user = self.context["request"].user
 
         # Get limit cipher type from personal and team plans
-        allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
+        allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user, personal_share=False)
         ciphers = cipher_repository.get_ciphers_created_by_user(user=user)
 
         vault_type = data.get("type")
