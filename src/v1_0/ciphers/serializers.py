@@ -124,10 +124,10 @@ class VaultItemSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
         if vault_type == CIPHER_TYPE_TOTP and not secure_note:
             raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and not crypto_account:
-            raise serializers.ValidationError(detail={"cryptoAccount": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_CRYPTO_WALLET and not crypto_wallet:
-            raise serializers.ValidationError(detail={"cryptoWallet": ["This field is required"]})
+        # if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and not crypto_account:
+        #     raise serializers.ValidationError(detail={"cryptoAccount": ["This field is required"]})
+        # if vault_type == CIPHER_TYPE_CRYPTO_WALLET and not crypto_wallet:
+        #     raise serializers.ValidationError(detail={"cryptoWallet": ["This field is required"]})
 
         # Check folder id
         folder_id = data.get("folderId")
