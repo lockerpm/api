@@ -132,9 +132,10 @@ class UserRepository(IUserRepository):
             from cystack_models.models.users.user_score import UserScore
             return UserScore.create(user=user)
 
-    def get_personal_team_plans(self, user: User):
+    def get_personal_team_plans(self, user: User, personal_share=False):
         user_team_ids = user.team_members.filter(
-            team__key__isnull=False, status=PM_MEMBER_STATUS_CONFIRMED
+            team__key__isnull=False, status=PM_MEMBER_STATUS_CONFIRMED,
+            team__personal_share=personal_share
         ).values_list('team_id', flat=True)
         primary_owners = TeamMember.objects.filter(team_id__in=list(user_team_ids)).filter(
             role_id=MEMBER_ROLE_OWNER
@@ -145,8 +146,8 @@ class UserRepository(IUserRepository):
         ).select_related('pm_plan')
         return personal_team_plans
 
-    def get_max_allow_cipher_type(self, user: User):
-        personal_team_plans = self.get_personal_team_plans(user=user)
+    def get_max_allow_cipher_type(self, user: User, personal_share=False):
+        personal_team_plans = self.get_personal_team_plans(user=user, personal_share=False)
         cipher_limits = PMPlan.objects.filter(id__in=personal_team_plans.values_list('pm_plan_id')).values(
             'limit_password', 'limit_secure_note', 'limit_identity', 'limit_payment_card', 'limit_crypto_asset'
         )
