@@ -209,7 +209,7 @@ class VaultItemSerializer(serializers.Serializer):
         user = self.context["request"].user
 
         # Get limit cipher type from personal and team plans
-        allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user)
+        allow_cipher_type = user_repository.get_max_allow_cipher_type(user=user, personal_share=False)
         ciphers = cipher_repository.get_ciphers_created_by_user(user=user)
 
         vault_type = data.get("type")
