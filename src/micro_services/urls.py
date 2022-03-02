@@ -23,4 +23,6 @@ urlpatterns += [
         views.PaymentViewSet.as_view({'post': 'webhook_unpaid_subscription', 'put': 'webhook_cancel_subscription'})),
     url(r'^payments/banking/callback$', views.PaymentViewSet.as_view({'post': 'banking_callback'})),
     url(r'^payments/referral$', views.PaymentViewSet.as_view({'post': 'referral_payment'})),
+
+    url(r'^payments/webhook/ios/validate$', views.MobilePaymentViewSet.as_view({'post': 'upgrade_plan'})),
 ]
