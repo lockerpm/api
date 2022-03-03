@@ -165,6 +165,14 @@ class UserRepository(IUserRepository):
             "limit_totp": None
         }
 
+    def get_mobile_user_plan(self, pm_mobile_subscription):
+        from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+        try:
+            user_plan = PMUserPlan.objects.get(pm_mobile_subscription=pm_mobile_subscription)
+            return user_plan
+        except PMUserPlan.DoesNotExist:
+            return None
+
     def get_current_plan(self, user: User, scope=None):
         try:
             return user.pm_user_plan
