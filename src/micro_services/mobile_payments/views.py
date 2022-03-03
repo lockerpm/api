@@ -74,8 +74,8 @@ class MobilePaymentViewSet(MicroServiceViewSet):
 
         # Upgrade new plan
         subscription_metadata = {
-            # "start_period": start_period,
-            # "end_period": end_period,
+            "start_period": validated_data.get("start_period"),
+            "end_period": validated_data.get("end_period"),
             "promo_code": new_payment.promo_code,
             "family_members": list(family_members),
             "key": validated_data.get("key"),
