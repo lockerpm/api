@@ -22,6 +22,7 @@ class PMUserPlan(UserPlan):
     personal_trial_applied = models.BooleanField(default=False)     # Did this user apply the personal trial plan?
     pm_stripe_subscription = models.CharField(max_length=255, null=True)
     pm_stripe_subscription_created_time = models.IntegerField(null=True)
+    pm_mobile_subscription = models.CharField(max_length=128, blank=True)
 
     pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
     promo_code = models.ForeignKey(
@@ -30,6 +31,9 @@ class PMUserPlan(UserPlan):
 
     class Meta:
         db_table = 'cs_pm_user_plan'
+        indexes = [
+            models.Index(fields=['pm_mobile_subscription', ]),
+        ]
 
     @classmethod
     def update_or_create(cls, user, pm_plan_alias=PLAN_TYPE_PM_FREE, duration=DURATION_MONTHLY):
@@ -102,6 +106,11 @@ class PMUserPlan(UserPlan):
         """
         self.pm_stripe_subscription = None
         self.pm_stripe_subscription_created_time = None
+        self.promo_code = None
+        self.save()
+
+    def cancel_mobile_subscription(self):
+        self.pm_mobile_subscription = None
         self.promo_code = None
         self.save()
 

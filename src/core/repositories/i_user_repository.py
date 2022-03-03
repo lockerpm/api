@@ -59,6 +59,10 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def get_mobile_user_plan(self, pm_mobile_subscription):
+        pass
+
+    @abstractmethod
     def get_current_plan(self, user: User, scope=None):
         pass
 
