@@ -52,6 +52,12 @@ class UserPlan(models.Model):
         :return:
         """
 
+    def cancel_mobile_subscription(self):
+        """
+        Cancel mobile subscription
+        :return:
+        """
+
     def get_next_billing_time(self, duration=None):
         """
         Get next billing time of this plan

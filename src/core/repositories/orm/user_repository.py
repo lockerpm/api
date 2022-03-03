@@ -165,6 +165,14 @@ class UserRepository(IUserRepository):
             "limit_totp": None
         }
 
+    def get_mobile_user_plan(self, pm_mobile_subscription):
+        from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+        try:
+            user_plan = PMUserPlan.objects.get(pm_mobile_subscription=pm_mobile_subscription)
+            return user_plan
+        except PMUserPlan.DoesNotExist:
+            return None
+
     def get_current_plan(self, user: User, scope=None):
         try:
             return user.pm_user_plan
@@ -280,6 +288,18 @@ class UserRepository(IUserRepository):
             return pm_user_plan
         # If this pm user plan has family members => Not create
         if pm_user_plan.pm_plan_family.exists():
+            family_members = pm_user_plan.pm_plan_family.all()
+            for family_member in family_members:
+                # Update period for the family members
+                if family_member.user:
+                    self.update_plan(
+                        user=family_member.user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
+                        scope=settings.SCOPE_PWD_MANAGER, **{
+                            "start_period": pm_user_plan.start_period,
+                            "end_period": pm_user_plan.end_period,
+                            "number_members": 1
+                        }
+                    )
             return pm_user_plan
 
         family_members = ast.literal_eval(str(family_members))

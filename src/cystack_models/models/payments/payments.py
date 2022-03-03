@@ -25,6 +25,7 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=64, null=True)
     failure_reason = models.CharField(max_length=128, null=True, blank=True)
     stripe_invoice_id = models.CharField(max_length=128, null=True)
+    mobile_invoice_id = models.CharField(max_length=128, null=True)
     code = models.CharField(max_length=128, null=True)
     bank_id = models.IntegerField(null=True, default=None)
 
@@ -50,6 +51,7 @@ class Payment(models.Model):
         description = data.get("description")
         payment_method = data.get("payment_method", PAYMENT_METHOD_CARD)
         stripe_invoice_id = data.get("stripe_invoice_id", None)
+        mobile_invoice_id = data.get("mobile_invoice_id", None)
         duration = data.get("duration", DURATION_MONTHLY)
         status = data.get("status", PAYMENT_STATUS_PENDING)
         currency = data.get('currency')
@@ -60,7 +62,8 @@ class Payment(models.Model):
             metadata = str(metadata)
         new_payment = cls(
             user=user, scope=scope, description=description, duration=duration, created_time=now(), plan=plan,
-            payment_method=payment_method, stripe_invoice_id=stripe_invoice_id, status=status,
+            payment_method=payment_method, stripe_invoice_id=stripe_invoice_id, mobile_invoice_id=mobile_invoice_id,
+            status=status,
             currency=currency, metadata=metadata
         )
         new_payment.save()

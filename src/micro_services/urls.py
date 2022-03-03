@@ -25,4 +25,6 @@ urlpatterns += [
     url(r'^payments/referral$', views.PaymentViewSet.as_view({'post': 'referral_payment'})),
 
     url(r'^payments/webhook/ios/validate$', views.MobilePaymentViewSet.as_view({'post': 'upgrade_plan'})),
+    url(r'^payments/webhook/mobile/renewal$', views.MobilePaymentViewSet.as_view({'post': 'mobile_renewal'})),
+    url(r'^payments/webhook/mobile/cancel$', views.MobilePaymentViewSet.as_view({'put': 'mobile_cancel_subscription'})),
 ]
