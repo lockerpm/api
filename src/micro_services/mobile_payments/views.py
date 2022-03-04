@@ -12,7 +12,7 @@ from shared.permissions.micro_service_permissions.mobile_payment_permissions imp
 from shared.utils.app import now
 from cystack_models.models.payments.payments import Payment
 from micro_services.mobile_payments.serializers import UpgradePlanSerializer, MobileRenewalSerializer, \
-    MobileCancelSubscriptionSerializer
+    MobileDestroySubscriptionSerializer, MobileCancelSubscriptionSerializer
 
 
 class MobilePaymentViewSet(MicroServiceViewSet):
@@ -26,6 +26,8 @@ class MobilePaymentViewSet(MicroServiceViewSet):
             self.serializer_class = MobileRenewalSerializer
         elif self.action == "mobile_cancel_subscription":
             self.serializer_class = MobileCancelSubscriptionSerializer
+        elif self.action == "mobile_destroy_subscription":
+            self.serializer_class = MobileDestroySubscriptionSerializer
         return super(MobilePaymentViewSet, self).get_serializer_class()
 
     @action(methods=["post"], detail=False)
@@ -190,6 +192,23 @@ class MobilePaymentViewSet(MicroServiceViewSet):
 
     @action(methods=["put"], detail=False)
     def mobile_cancel_subscription(self, request, *args, **kwargs):
+        scope = settings.SCOPE_PWD_MANAGER
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        cancel_at_period_end = validated_data.get("cancel_at_period_end")
+        user = validated_data.get("user")
+        current_plan = self.user_repository.get_current_plan(user=user, scope=scope)
+        current_plan.cancel_at_period_end = cancel_at_period_end
+        current_plan.save()
+        if cancel_at_period_end is True:
+            # Sending mail here
+            # CHANGE LATER ...
+            pass
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def mobile_destroy_subscription(self, request, *args, **kwargs):
         scope = settings.SCOPE_PWD_MANAGER
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
