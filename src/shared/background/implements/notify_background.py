@@ -33,6 +33,22 @@ class NotifyBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
+    def cancel_plan(self, user_id, old_plan, expired_date=None, scope=settings.SCOPE_PWD_MANAGER):
+        try:
+            url = API_NOTIFY_PAYMENT + "/notify_cancel"
+            notification_data = {
+                "user_id": user_id,
+                "old_plan": old_plan,
+                "expired_date": expired_date,
+                "scope": scope
+            }
+            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+        except Exception as e:
+            self.log_error(func_name="cancel_plan")
+        finally:
+            if self.background:
+                connection.close()
+
     def banking_expiring(self, user_id, current_plan, start_period, end_period, payment_method, scope):
         try:
             url = API_NOTIFY_PAYMENT + "/notify_expiring"
