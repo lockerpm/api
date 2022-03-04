@@ -72,6 +72,11 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         new_payment = Payment.create(**new_payment_data)
         new_payment = self.payment_repository.set_paid(payment=new_payment)
 
+        # Set pm mobile subscription
+        pm_user_plan = self.user_repository.get_current_plan(user=new_payment.user, scope=new_payment.scope)
+        pm_user_plan.pm_mobile_subscription = mobile_original_id
+        pm_user_plan.save()
+
         # Upgrade new plan
         subscription_metadata = {
             "start_period": validated_data.get("start_period"),
