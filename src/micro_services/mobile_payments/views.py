@@ -202,8 +202,14 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         current_plan.cancel_at_period_end = cancel_at_period_end
         current_plan.save()
         if cancel_at_period_end is True:
-            # Sending mail here
+            # Notify cancel plan here
             # CHANGE LATER ...
+            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=True).run(
+            #     func_name="cancel_plan", **{
+            #         "user_id": user.user_id, "old_plan": current_plan.get_plan_type_name(),
+            #         "expired_date": current_plan.end_period,
+            #     }
+            # )
             pass
         return Response(status=200, data={"success": True})
 
