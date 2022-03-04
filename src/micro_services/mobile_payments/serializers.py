@@ -67,6 +67,23 @@ class MobileRenewalSerializer(serializers.Serializer):
 
 class MobileCancelSubscriptionSerializer(serializers.Serializer):
     mobile_original_id = serializers.CharField()
+    cancel_at_period_end = serializers.BooleanField()
+    end_period = serializers.FloatField(required=False, allow_null=True)
+
+    def validate(self, data):
+        mobile_original_id = data.get("mobile_original_id")
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        user_plan = user_repository.get_mobile_user_plan(pm_mobile_subscription=mobile_original_id)
+        if not user_plan:
+            raise serializers.ValidationError(detail={
+                "mobile_original_id": ["The mobile subscription id does not exist"]
+            })
+        data["user"] = user_plan.user
+        return data
+
+
+class MobileDestroySubscriptionSerializer(serializers.Serializer):
+    mobile_original_id = serializers.CharField()
 
     def validate(self, data):
         mobile_original_id = data.get("mobile_original_id")
