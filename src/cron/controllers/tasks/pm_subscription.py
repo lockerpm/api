@@ -31,6 +31,10 @@ def pm_subscription():
             })
             continue
 
+        # If the subscription by mobile app => Continue
+        if pm_user_plan.default_payment_method in [PAYMENT_METHOD_MOBILE]:
+            continue
+
         # Else, subtract wallet
         coupon = pm_user_plan.promo_code
         if coupon is not None and user.payments.filter(promo_code=coupon).count() >= coupon.duration:
