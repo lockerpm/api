@@ -10,6 +10,11 @@ urlpatterns = [
     url(r'^', include(router.urls))
 ]
 
+# ------------------------------- Management Command ----------------------------- #
+urlpatterns += [
+    url(r'^managements/commands/(?P<pk>[a-z_]+)$', views.ManagementCommandPwdViewSet.as_view({'post': 'commands'})),
+]
+
 
 # ----------------------------------- Resources ----------------------------- #
 urlpatterns += [
