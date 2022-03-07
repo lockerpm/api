@@ -16,7 +16,7 @@ from micro_services.mobile_payments.serializers import UpgradePlanSerializer, Mo
 
 
 class MobilePaymentViewSet(MicroServiceViewSet):
-    permission_classes = (MobilePaymentPermission,)
+    permission_classes = (MobilePaymentPermission, )
     http_method_names = ["head", "options", "post", "put"]
 
     def get_serializer_class(self):

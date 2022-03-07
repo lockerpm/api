@@ -27,7 +27,7 @@ urlpatterns += [
     url(r'^payments/webhook/ios/validate$', views.MobilePaymentViewSet.as_view({'post': 'upgrade_plan'})),
     url(r'^payments/webhook/mobile/renewal$', views.MobilePaymentViewSet.as_view({'post': 'mobile_renewal'})),
     url(r'^payments/webhook/mobile/cancel$',
-        views.MobilePaymentViewSet.as_view({'post': 'mobile_cancel_subscription'})),
+        views.MobilePaymentViewSet.as_view({'put': 'mobile_cancel_subscription'})),
     url(r'^payments/webhook/mobile/destroy$',
         views.MobilePaymentViewSet.as_view({'put': 'mobile_destroy_subscription'})),
 ]
