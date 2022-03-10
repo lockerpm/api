@@ -263,7 +263,8 @@ class PMUserPlan(UserPlan):
         discount = 0.0
         if self.promo_code is not None:
             # If the promo code of this plan is still available
-            if self.user.payments.filter(promo_code=self.promo_code).count() < self.promo_code.duration:
+            max_promo_period = self.promo_code.get_number_applied_period(duration=self.duration)
+            if self.user.payments.filter(promo_code=self.promo_code).count() < max_promo_period:
                 discount = self.promo_code.get_discount(total_price, duration=self.duration)
             # Else, remove promo code
             else:
