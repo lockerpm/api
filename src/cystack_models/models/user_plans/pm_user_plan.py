@@ -22,7 +22,7 @@ class PMUserPlan(UserPlan):
     personal_trial_applied = models.BooleanField(default=False)     # Did this user apply the personal trial plan?
     pm_stripe_subscription = models.CharField(max_length=255, null=True)
     pm_stripe_subscription_created_time = models.IntegerField(null=True)
-    pm_mobile_subscription = models.CharField(max_length=255, blank=True)
+    pm_mobile_subscription = models.CharField(max_length=255, null=True, default=None)
 
     pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
     promo_code = models.ForeignKey(

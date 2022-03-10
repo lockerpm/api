@@ -62,8 +62,10 @@ class WalletPaymentMethod(IPaymentMethod):
             })
             payment_repository.set_paid(payment=new_invoice)
             # Upgrade user plan
+            plan_metadata = new_invoice.get_metadata()
+            plan_metadata.update({"promo_code": new_invoice.promo_code})
             user_repository.update_plan(
-                user=self.user, plan_type_alias=plan_type, duration=duration, scope=self.scope, **kwargs
+                user=self.user, plan_type_alias=plan_type, duration=duration, scope=self.scope, **plan_metadata
             )
             # Send mail
             LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
