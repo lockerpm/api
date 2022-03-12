@@ -27,6 +27,7 @@ urlpatterns += [
     url(r'^tools/breach$', views.ToolPwdViewSet.as_view({'post': 'breach'})),
 ]
 
+
 # ----------------------------------- Users ----------------------------- #
 urlpatterns += [
     url(r'^users/me$', views.UserPwdViewSet.as_view({'get': 'me', 'put': 'me'})),
@@ -145,6 +146,12 @@ urlpatterns += [
         views.PaymentPwdViewSet.as_view({'post': 'invoice_processing'})),
     url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/cancel$',
         views.PaymentPwdViewSet.as_view({'post': 'invoice_cancel'})),
+]
+
+
+# -------------------------------- Family Plan members  ------------------------------------- #
+urlpatterns += [
+    url(r'^family/members$', views.FamilyPwdViewSet.as_view({'get': 'member_list'})),
 ]
 
 
