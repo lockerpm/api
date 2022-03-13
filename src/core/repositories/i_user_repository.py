@@ -75,6 +75,10 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def add_to_family_sharing(self, family_user_plan, user_id: int = None, email: str = None):
+        pass
+
+    @abstractmethod
     def get_max_allow_member_pm_team(self, user: User, scope=None):
         pass
 

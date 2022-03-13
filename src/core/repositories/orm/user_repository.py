@@ -264,6 +264,43 @@ class UserRepository(IUserRepository):
         ).cancel_recurring_subscription()
         return end_time
 
+    def add_to_family_sharing(self, family_user_plan, user_id: int = None, email: str = None):
+        if user_id and family_user_plan.pm_plan_family.filter(user_id=user_id).exists():
+            return family_user_plan
+        if email and family_user_plan.pm_plan_family.filter(email=email).exists():
+            return family_user_plan
+
+        # Retrieve user
+        try:
+            family_member_user = User.objects.get(user_id=user_id, activated=True)
+        except User.DoesNotExist:
+            family_member_user = None
+
+        if family_member_user:
+            family_user_plan.pm_plan_family.model.create(family_user_plan, family_member_user, None)
+
+            # If the member user has a plan => Cancel this plan if this plan is not a team plan
+            current_member_plan = self.get_current_plan(user=family_member_user, scope=settings.SCOPE_PWD_MANAGER)
+            if current_member_plan.get_plan_obj().is_family_plan is False and \
+                    current_member_plan.get_plan_obj().is_team_plan is False:
+                from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+                PaymentMethodFactory.get_method(
+                    user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
+                    payment_method=current_member_plan.get_default_payment_method()
+                ).cancel_immediately_recurring_subscription()
+                # Then upgrade to Premium
+                self.update_plan(
+                    user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
+                    scope=settings.SCOPE_PWD_MANAGER, **{
+                        "start_period": family_user_plan.start_period,
+                        "end_period": family_user_plan.end_period,
+                        "number_members": 1
+                    }
+                )
+        else:
+            family_user_plan.pm_plan_family.model.create(family_user_plan, None, email)
+        return family_user_plan
+
     def __create_vault_team(self, user, key, collection_name):
         # Retrieve or create default team
         team = self.get_default_team(user=user, create_if_not_exist=True)
@@ -306,33 +343,35 @@ class UserRepository(IUserRepository):
         for family_member in family_members:
             email = family_member.get("email")
             user_id = family_member.get("user_id")
-            try:
-                family_member_user = User.objects.get(user_id=user_id, activated=True)
-            except User.DoesNotExist:
-                family_member_user = None
-            if family_member_user:
-                pm_user_plan.pm_plan_family.model.create(pm_user_plan, family_member_user, None)
-
-                # If the member user has a plan => Cancel this plan if this plan is not a team plan
-                current_member_plan = self.get_current_plan(user=family_member_user, scope=settings.SCOPE_PWD_MANAGER)
-                if current_member_plan.get_plan_obj().is_family_plan is False and \
-                        current_member_plan.get_plan_obj().is_team_plan is False:
-                    from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
-                    PaymentMethodFactory.get_method(
-                        user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
-                        payment_method=current_member_plan.get_default_payment_method()
-                    ).cancel_immediately_recurring_subscription()
-                    # Then upgrade to Premium
-                    self.update_plan(
-                        user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
-                        scope=settings.SCOPE_PWD_MANAGER, **{
-                            "start_period": pm_user_plan.start_period,
-                            "end_period": pm_user_plan.end_period,
-                            "number_members": 1
-                        }
-                    )
-            else:
-                pm_user_plan.pm_plan_family.model.create(pm_user_plan, None, email)
+            self.add_to_family_sharing(family_user_plan=pm_user_plan, user_id=user_id, email=email)
+            # try:
+            #     family_member_user = User.objects.get(user_id=user_id, activated=True)
+            # except User.DoesNotExist:
+            #     family_member_user = None
+            # if family_member_user:
+            #     pm_user_plan.pm_plan_family.model.create(pm_user_plan, family_member_user, None)
+            #
+            #     # If the member user has a plan => Cancel this plan if this plan is not a team plan
+            #     current_member_plan = self.get_current_plan(user=family_member_user, scope=settings.SCOPE_PWD_MANAGER)
+            #     if current_member_plan.get_plan_obj().is_family_plan is False and \
+            #             current_member_plan.get_plan_obj().is_team_plan is False:
+            #         from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+            #         PaymentMethodFactory.get_method(
+            #             user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
+            #             payment_method=current_member_plan.get_default_payment_method()
+            #         ).cancel_immediately_recurring_subscription()
+            #         # Then upgrade to Premium
+            #         self.update_plan(
+            #             user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
+            #             scope=settings.SCOPE_PWD_MANAGER, **{
+            #                 "start_period": pm_user_plan.start_period,
+            #                 "end_period": pm_user_plan.end_period,
+            #                 "number_members": 1
+            #             }
+            #         )
+            # else:
+            #     pm_user_plan.pm_plan_family.model.create(pm_user_plan, None, email)
+        return pm_user_plan
 
     def __cancel_family_members(self, pm_user_plan):
         family_members = pm_user_plan.pm_plan_family.all()
