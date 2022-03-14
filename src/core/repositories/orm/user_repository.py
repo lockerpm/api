@@ -235,13 +235,18 @@ class UserRepository(IUserRepository):
         # If the plan is team plan => Create vault org
         pm_plan = pm_user_plan.get_plan_obj()
         if pm_plan.is_team_plan:
+            # Leave other family plans if user is a member
+            user.pm_plan_family.all().delete()
+            # Create Vault Org here
             default_collection_name = kwargs.get("collection_name")
             key = kwargs.get("key")
-            # Create Vault Org here
             self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
 
         # If the plan is family plan => Upgrade plan for the user
         if pm_plan.is_family_plan:
+            # Leave other family plans if user is a member
+            user.pm_plan_family.all().delete()
+            # Create family members
             family_members = kwargs.get("family_members", [])
             self.__create_family_members(pm_user_plan=pm_user_plan, family_members=family_members)
 
@@ -277,12 +282,16 @@ class UserRepository(IUserRepository):
             family_member_user = None
 
         if family_member_user:
-            family_user_plan.pm_plan_family.model.create(family_user_plan, family_member_user, None)
 
             # If the member user has a plan => Cancel this plan if this plan is not a team plan
             current_member_plan = self.get_current_plan(user=family_member_user, scope=settings.SCOPE_PWD_MANAGER)
             if current_member_plan.get_plan_obj().is_family_plan is False and \
                     current_member_plan.get_plan_obj().is_team_plan is False:
+
+                # Add to family plan
+                family_user_plan.pm_plan_family.model.create(family_user_plan, family_member_user, None)
+
+                # Cancel current plan
                 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
                 PaymentMethodFactory.get_method(
                     user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
