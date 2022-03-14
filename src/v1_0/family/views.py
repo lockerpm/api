@@ -26,7 +26,7 @@ from v1_0.apps import PasswordManagerViewSet
 
 class FamilyPwdViewSet(PasswordManagerViewSet):
     permission_classes = (FamilyPwdPermission, )
-    http_method_names = ["head", "options", "get"]
+    http_method_names = ["head", "options", "get", "delete"]
 
     def get_serializer_class(self):
         if self.action == "member_list":
@@ -73,3 +73,21 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
             )
 
         return Response(status=200, data={"success": True})
+
+    @action(methods=["delete"], detail=False)
+    def member_create(self, request, *args, **kwargs):
+        user = self.request.user
+        member_id = kwargs.get("member_id")
+        pm_current_plan = self.get_object()
+        try:
+            family_member = pm_current_plan.pm_plan_family.get(id=member_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+        if family_member.user == user:
+            raise PermissionDenied
+        # Downgrade the plan of the member user
+        self.user_repository.update_plan(
+            user=family_member.user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
+        )
+        family_member.delete()
+        return Response(status=204)

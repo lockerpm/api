@@ -151,7 +151,8 @@ urlpatterns += [
 
 # -------------------------------- Family Plan members  ------------------------------------- #
 urlpatterns += [
-    url(r'^family/members$', views.FamilyPwdViewSet.as_view({'get': 'member_list'})),
+    url(r'^family/members$', views.FamilyPwdViewSet.as_view({'get': 'member_list', 'post': 'member_create'})),
+    url(r'^family/members/(?P<member_id>[0-9]+)$', views.FamilyPwdViewSet.as_view({'delete': 'member_destroy'})),
 ]
 
 
