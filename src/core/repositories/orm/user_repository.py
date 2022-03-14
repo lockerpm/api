@@ -290,7 +290,7 @@ class UserRepository(IUserRepository):
                 ).cancel_immediately_recurring_subscription()
                 # Then upgrade to Premium
                 self.update_plan(
-                    user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
+                    user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=family_user_plan.duration,
                     scope=settings.SCOPE_PWD_MANAGER, **{
                         "start_period": family_user_plan.start_period,
                         "end_period": family_user_plan.end_period,
