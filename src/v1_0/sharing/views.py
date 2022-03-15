@@ -165,12 +165,14 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=new_sharing, add_all=True).send()
 
         # Push mobile notification
-        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users + [user.user_id])
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users)
         fcm_message = FCMRequestEntity(
             fcm_ids=fcm_ids, priority="high",
             data={
                 "event": FCM_TYPE_NEW_SHARE,
-                "share_type": shared_type_name
+                "data": {
+                    "share_type": shared_type_name
+                }
             }
         )
         FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
@@ -239,12 +241,14 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         # Sync ciphers
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=existed_member_users + [user.user_id]).send()
         # Send mobile notification
-        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users + [user.user_id])
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users)
         fcm_message = FCMRequestEntity(
             fcm_ids=fcm_ids, priority="high",
             data={
                 "event": FCM_TYPE_NEW_SHARE,
-                "share_type": share_type
+                "data": {
+                    "share_type": share_type
+                }
             }
         )
         FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
