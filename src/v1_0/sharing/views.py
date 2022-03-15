@@ -255,7 +255,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
                     "pwd_user_ids": existed_member_users,
-                    "share_type": share_type,
+                    # "share_type": share_type,
                     "count": len(ciphers)
                 }
             }
