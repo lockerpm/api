@@ -126,7 +126,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 "timeout": user.timeout,
                 "timeout_action": user.timeout_action,
                 "is_pwd_manager": user.activated,
-                "pwd_user_id": user.user_id,
+                "pwd_user_id": str(user.user_id),
                 "default_team_id": default_team.id if default_team else None,
             })
 
