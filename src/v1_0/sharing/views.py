@@ -112,7 +112,13 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     user.user_devices.exclude(fcm_id__isnull=True).exclude(fcm_id="").values_list('fcm_id', flat=True)
                 )
                 fcm_message = FCMRequestEntity(
-                    fcm_ids=fcm_ids, priority="high", data={"event": FCM_TYPE_CONFIRM_SHARE}
+                    fcm_ids=fcm_ids, priority="high",
+                    data={
+                        "event": FCM_TYPE_CONFIRM_SHARE,
+                        "data": {
+                            "pwd_user_ids": [user.user_id],
+                        }
+                    }
                 )
                 FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
         else:
@@ -171,6 +177,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             data={
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
+                    "pwd_user_ids": existed_member_users,
                     "share_type": shared_type_name
                 }
             }
@@ -247,7 +254,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             data={
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
-                    "share_type": share_type
+                    "pwd_user_ids": existed_member_users,
+                    "share_type": share_type,
+                    "count": len(ciphers)
                 }
             }
         )
