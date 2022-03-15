@@ -40,7 +40,6 @@ class FCMSenderService:
         """
         if isinstance(fcm_message, FCMRequestEntity):
             fcm_message = fcm_message.to_json()
-
         fcm_ids = list(set(fcm_message.get("fcm_ids", [])))
         if not fcm_ids:
             return [], []
@@ -49,32 +48,36 @@ class FCMSenderService:
         if "data" in fcm_message_data:
             fcm_message_data["data"] = json.dumps(fcm_message_data["data"])
 
-        message = messaging.MulticastMessage(
-            data=fcm_message_data,
-            tokens=fcm_ids,
-            android=messaging.AndroidConfig(
-                priority=fcm_message.get("priority") or "high"
-            ),
-            apns=messaging.APNSConfig(
-                headers={
-                    'apns-push-type': 'background',
-                    'apns-priority': '5',
-                    'apns-topic': 'com.cystack.lockerapp'
-                },
-                payload=messaging.APNSPayload(
-                    aps=messaging.Aps(content_available=True)
+        failed_fcm_ids = []
+        success_fcm_ids = fcm_ids.copy()
+
+        batch_size = 450
+        for i in range(0, len(fcm_ids), batch_size):
+            batch_fcm_ids = fcm_ids[i:i+batch_size]
+            message = messaging.MulticastMessage(
+                data=fcm_message_data,
+                tokens=batch_fcm_ids,
+                android=messaging.AndroidConfig(
+                    priority=fcm_message.get("priority") or "high"
+                ),
+                apns=messaging.APNSConfig(
+                    headers={
+                        'apns-push-type': 'background',
+                        'apns-priority': '5',
+                        'apns-topic': 'com.cystack.lockerapp'
+                    },
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(content_available=True)
+                    )
                 )
             )
-        )
-        response = messaging.send_multicast(message)
-        failed_fcm_ids = []
-        success_fcm_ids = fcm_ids
-        if response.failure_count > 0:
-            responses = response.responses
-            for idx, resp in enumerate(responses):
-                if not resp.success:
-                    failed_fcm_ids.append(fcm_ids[idx])
-                    success_fcm_ids.remove(fcm_ids[idx])
+            response = messaging.send_multicast(message)
+            if response.failure_count > 0:
+                responses = response.responses
+                for idx, resp in enumerate(responses):
+                    if not resp.success:
+                        failed_fcm_ids.append(fcm_ids[idx])
+                        success_fcm_ids.remove(fcm_ids[idx])
 
         print("success; ", success_fcm_ids, failed_fcm_ids)
         return success_fcm_ids, failed_fcm_ids
