@@ -112,11 +112,19 @@ class StripePaymentMethod(IPaymentMethod):
             The subscription object will return `pending_update` dict in event webhook
             - Use proration_behavior='always_invoice' to invoice immediately for proration. 
             """
-            # First, update payment method
+            # First, update payment method and metadata
             new_stripe_subscription = stripe.Subscription.modify(
                 stripe_subscription.id,
-                default_payment_method=card.get("id_card")
+                default_payment_method=card.get("id_card"),
+                metadata={
+                    "user_id": self.user.user_id,
+                    "scope": self.scope,
+                    "family_members": str(kwargs.get("family_members", [])),
+                    "key": kwargs.get("key"),
+                    "collection_name": kwargs.get("collection_name")
+                },
             )
+            # Update item plan
             new_stripe_subscription = stripe.Subscription.modify(
                 stripe_subscription.id,
                 payment_behavior='pending_if_incomplete',
@@ -126,22 +134,18 @@ class StripePaymentMethod(IPaymentMethod):
                     'plan': stripe_plan_id,
                     'quantity': self.__get_new_quantity(**kwargs)
                 }],
-                metadata={
-                    "user_id": self.user.user_id,
-                    "scope": self.scope,
-                    "family_members": str(kwargs.get("family_members", [])),
-                    "key": kwargs.get("key"),
-                    "collection_name": kwargs.get("collection_name")
-                },
                 coupon=coupon
             )
         except stripe.error.CardError as e:
+            CyLog.debug(**{"message": "Upgrade CardError {}".format(self.handle_error(e))})
             return {
                 "success": False,
                 "stripe_error": True,
                 "error_details": self.handle_error(e)
             }
         except Exception as e:
+            tb = traceback.format_exc()
+            CyLog.debug(**{"message": "Upgrade failed {}".format(tb)})
             return {"success": False, "stripe_error": False, "error_details": None}
 
         # Upgrade successfully => Upgrade user plan
