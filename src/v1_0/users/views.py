@@ -56,7 +56,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         keys = validated_data.get("keys", {})
         master_password_hash = validated_data.get("master_password_hash")
         master_password_hint = validated_data.get("master_password_hint", "")
-        score = validated_data.get("score")
+        score = validated_data.get("score", 0)
         trial_plan_obj = validated_data.get("trial_plan_obj")
 
         # Register new user information
