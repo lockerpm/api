@@ -367,6 +367,9 @@ class CipherRepository(ICipherRepository):
         # Create multiple ciphers
         import_ciphers = []
         for cipher_data in ciphers:
+            # Only accepts ciphers which have name
+            if not cipher_data.get("name"):
+                continue
             cipher_type = cipher_data.get("type")
             if cipher_type == CIPHER_TYPE_LOGIN:
                 cipher_data["data"] = dict(cipher_data.get("login"))
@@ -392,6 +395,7 @@ class CipherRepository(ICipherRepository):
                     type=cipher_data.get("type"),
                     data=cipher_data.get("data"),
                     user_id=user.user_id,
+                    created_by_id=user.user_id,
                     folders=cipher_data.get("folders", ""),
                     team_id=cipher_data.get("organizationId")
                 )
@@ -561,6 +565,10 @@ class CipherRepository(ICipherRepository):
         # Create multiple ciphers
         import_ciphers = []
         for cipher_data in ciphers:
+            # Only accepts ciphers which have name
+            if not cipher_data.get("name"):
+                continue
+
             cipher_type = cipher_data.get("type")
             if cipher_type == CIPHER_TYPE_LOGIN:
                 cipher_data["data"] = dict(cipher_data.get("login"))
