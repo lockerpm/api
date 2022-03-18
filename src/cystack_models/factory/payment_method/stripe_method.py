@@ -123,6 +123,7 @@ class StripePaymentMethod(IPaymentMethod):
                     "key": kwargs.get("key"),
                     "collection_name": kwargs.get("collection_name")
                 },
+                coupon=coupon
             )
             # Update item plan
             new_stripe_subscription = stripe.Subscription.modify(
@@ -133,8 +134,7 @@ class StripePaymentMethod(IPaymentMethod):
                     'id': stripe_subscription['items']['data'][0].id,
                     'plan': stripe_plan_id,
                     'quantity': self.__get_new_quantity(**kwargs)
-                }],
-                coupon=coupon
+                }]
             )
         except stripe.error.CardError as e:
             CyLog.debug(**{"message": "Upgrade CardError {}".format(self.handle_error(e))})
