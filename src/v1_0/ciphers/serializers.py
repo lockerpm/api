@@ -396,9 +396,9 @@ class ImportCipherSerializer(serializers.Serializer):
     folderRelationships = FolderRelationshipSerializer(many=True)
 
     def validate(self, data):
-        ciphers = data.get("ciphers", [])
         folders = data.get("folders", [])
         folder_relationships = data.get("folderRelationships", [])
+        ciphers = data.get("ciphers", [])
         if len(ciphers) > 1000:
             raise serializers.ValidationError(detail={"ciphers": ["You cannot import this much data at once"]})
         if len(folder_relationships) > 1000:

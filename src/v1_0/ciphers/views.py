@@ -200,13 +200,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     def import_data(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-        import_data = request.data
-        # ciphers = import_data.get("ciphers")
-        # Only accepts ciphers which have name
-        # new_ciphers = [cipher for cipher in ciphers if cipher.get("name")]
-        # import_data["ciphers"] = new_ciphers
-
-        serializer = self.get_serializer(data=import_data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         ciphers = validated_data.get("ciphers", [])
