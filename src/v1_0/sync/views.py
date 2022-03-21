@@ -71,11 +71,6 @@ class SyncPwdViewSet(PasswordManagerViewSet):
 
         ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
 
-        # if ciphers_page is not None:
-        #     ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
-        # else:
-        #     ciphers_serializer = SyncCipherSerializer(ciphers, many=True, context={"user": user})
-
         folders = self.folder_repository.get_multiple_by_user(user=user)
         collections = self.collection_repository.get_multiple_user_collections(
             user=user, exclude_team_ids=block_team_ids
