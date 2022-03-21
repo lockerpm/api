@@ -97,19 +97,21 @@ class TeamPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def import_data(self, request, *args, **kwargs):
+        user = self.request.user
         self.check_pwd_session_auth(request=request)
         team = self.get_object()
         import_data = request.data
-        # ciphers = import_data.get("ciphers", [])
-        # new_ciphers = [cipher for cipher in ciphers if cipher.get("name")]
-        # import_data["ciphers"] = new_ciphers
         serializer = self.get_serializer(data=import_data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.save(**{"team": team})
+        validated_data = serializer.validated_data
         ciphers = validated_data.get("ciphers", [])
         collections = validated_data.get("collections", [])
         collection_relationships = validated_data.get("collectionRelationships", [])
-        self.cipher_repository.import_multiple_cipher_team(team, ciphers, collections, collection_relationships)
+
+        allow_cipher_type = self.user_repository.get_max_allow_cipher_type(user=user, personal_share=False)
+        self.cipher_repository.import_multiple_cipher_team(
+            team, ciphers, collections, collection_relationships, allow_cipher_type=allow_cipher_type
+        )
         PwdSync(event=SYNC_EVENT_VAULT, team=team).send()
         return Response(status=200, data={"success": True})
 
