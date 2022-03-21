@@ -73,15 +73,3 @@ class ImportTeamSerializer(ImportCipherSerializer):
         if len(collections) > 200:
             raise serializers.ValidationError(detail={"collections": ["You cannot import this much data at once"]})
         return data
-
-    def validated_plan(self, data, existed_ciphers=None):
-        return super(ImportTeamSerializer, self).validated_plan(data, existed_ciphers)
-
-    def save(self, **kwargs):
-        cipher_repository = CORE_CONFIG["repositories"]["ICipherRepository"]()
-        team = kwargs.get("team")
-        existed_ciphers = cipher_repository.get_team_ciphers(team=team) if team else None
-
-        validated_data = self.validated_data
-        validated_data = self.validated_plan(validated_data, existed_ciphers)
-        return validated_data
