@@ -170,13 +170,17 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         crypto_wallet = cipher_detail if instance.type == CIPHER_TYPE_CRYPTO_WALLET else None
         folder_id = instance.get_folders().get(user.user_id)
         favorite = instance.get_favorites().get(user.user_id, False)
+
+        collection_ids = []
+        if instance.collections_ciphers.exists() > 0:
+            collection_ids = list(instance.collections_ciphers.values_list('collection_id', flat=True))
         data = {
             "object": "cipherDetails",
             "attachments": None,
             "card": card,
             "crypto_account": crypto_account,
             "crypto_wallet": crypto_wallet,
-            "collection_ids": list(instance.collections_ciphers.values_list('collection_id', flat=True)),
+            "collection_ids": collection_ids,
             "data": data,
             "deleted_date": instance.deleted_date,
             "edit": True,
