@@ -55,7 +55,7 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def get_max_allow_cipher_type(self, user: User):
+    def get_max_allow_cipher_type(self, user: User, personal_share=False):
         pass
 
     @abstractmethod

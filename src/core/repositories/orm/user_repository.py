@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
+from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
@@ -147,7 +148,7 @@ class UserRepository(IUserRepository):
         return personal_team_plans
 
     def get_max_allow_cipher_type(self, user: User, personal_share=False):
-        personal_team_plans = self.get_personal_team_plans(user=user, personal_share=False)
+        personal_team_plans = self.get_personal_team_plans(user=user, personal_share=personal_share)
         cipher_limits = PMPlan.objects.filter(id__in=personal_team_plans.values_list('pm_plan_id')).values(
             'limit_password', 'limit_secure_note', 'limit_identity', 'limit_payment_card', 'limit_crypto_asset'
         )
@@ -157,12 +158,13 @@ class UserRepository(IUserRepository):
         limit_payment_card = [cipher_limit.get("limit_payment_card") for cipher_limit in cipher_limits]
         limit_crypto_asset = [cipher_limit.get("limit_crypto_asset") for cipher_limit in cipher_limits]
         return {
-            "limit_password": None if None in limit_password else max(limit_password),
-            "limit_secure_note": None if None in limit_secure_note else max(limit_secure_note),
-            "limit_identity": None if None in limit_identity else max(limit_identity),
-            "limit_payment_card": None if None in limit_payment_card else max(limit_payment_card),
-            "limit_crypto_asset": None if None in limit_crypto_asset else max(limit_crypto_asset),
-            "limit_totp": None
+            CIPHER_TYPE_LOGIN: None if None in limit_password else max(limit_password),
+            CIPHER_TYPE_NOTE: None if None in limit_secure_note else max(limit_secure_note),
+            CIPHER_TYPE_IDENTITY: None if None in limit_identity else max(limit_identity),
+            CIPHER_TYPE_CARD: None if None in limit_payment_card else max(limit_payment_card),
+            CIPHER_TYPE_CRYPTO_ACCOUNT: None if None in limit_crypto_asset else max(limit_crypto_asset),
+            CIPHER_TYPE_CRYPTO_WALLET: None if None in limit_crypto_asset else max(limit_crypto_asset),
+            CIPHER_TYPE_TOTP: None
         }
 
     def get_mobile_user_plan(self, pm_mobile_subscription):

@@ -212,7 +212,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         ciphers = validated_data.get("ciphers", [])
         folders = validated_data.get("folders", [])
         folder_relationships = validated_data.get("folderRelationships", [])
-        self.cipher_repository.import_multiple_cipher(user, ciphers, folders, folder_relationships)
+        allow_cipher_type = self.user_repository.get_max_allow_cipher_type(user=user)
+        self.cipher_repository.import_multiple_cipher(
+            user, ciphers, folders, folder_relationships, allow_cipher_type=allow_cipher_type
+        )
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
 

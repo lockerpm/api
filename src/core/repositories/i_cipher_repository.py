@@ -66,7 +66,7 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
-    def import_multiple_cipher(self, user, ciphers, folders, folder_relationships):
+    def import_multiple_cipher(self, user, ciphers, folders, folder_relationships, allow_cipher_type=None):
         pass
 
     @abstractmethod
@@ -74,6 +74,6 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
-    def import_multiple_cipher_team(self, team, ciphers, collections, collection_relationships):
+    def import_multiple_cipher_team(self, team, ciphers, collections, collection_relationships, allow_cipher_type=None):
         pass
 

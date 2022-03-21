@@ -1,12 +1,12 @@
 import json
 import uuid
 
-from django.db.models import Q, Case, When, Value, IntegerField, BooleanField
+from django.db.models import Q, Case, When, Value, IntegerField, BooleanField, Count
 
 from core.repositories import ICipherRepository
 from core.utils.account_revision_date import bump_account_revision_date
 from shared.constants.ciphers import *
-from shared.utils.app import now, diff_list
+from shared.utils.app import now, diff_list, get_cipher_detail_data
 from shared.constants.members import *
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.teams.teams import Team
@@ -336,7 +336,7 @@ class CipherRepository(ICipherRepository):
         # Bump revision date of user
         bump_account_revision_date(user=user_moved)
 
-    def import_multiple_cipher(self, user: User, ciphers, folders, folder_relationships):
+    def import_multiple_cipher(self, user: User, ciphers, folders, folder_relationships, allow_cipher_type=None):
         # Init id for folders
         existed_folder_ids = list(Folder.objects.filter(user=user).values_list('id', flat=True))
         for folder in folders:
@@ -364,23 +364,27 @@ class CipherRepository(ICipherRepository):
             )
         Folder.objects.bulk_create(import_folders, batch_size=100, ignore_conflicts=True)
 
+        # Check limit ciphers
+        existed_ciphers = self.get_ciphers_created_by_user(user=user).values('type').annotate(count=Count('type'))
+        existed_ciphers_count = {item["type"]: item["count"] for item in list(existed_ciphers)}
+
         # Create multiple ciphers
         import_ciphers = []
+        import_ciphers_count = {vault_type: 0 for vault_type in LIST_CIPHER_TYPE}
+
         for cipher_data in ciphers:
             # Only accepts ciphers which have name
             if not cipher_data.get("name"):
                 continue
             cipher_type = cipher_data.get("type")
-            if cipher_type == CIPHER_TYPE_LOGIN:
-                cipher_data["data"] = dict(cipher_data.get("login"))
-            elif cipher_type == CIPHER_TYPE_CARD:
-                cipher_data["data"] = dict(cipher_data.get("card"))
-            elif cipher_type == CIPHER_TYPE_IDENTITY:
-                cipher_data["data"] = dict(cipher_data.get("identity"))
-            elif cipher_type == CIPHER_TYPE_NOTE:
-                cipher_data["data"] = dict(cipher_data.get("secureNote"))
-            elif cipher_type == CIPHER_TYPE_TOTP:
-                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+
+            # Check limit ciphers
+            if allow_cipher_type and allow_cipher_type.get(cipher_type) and import_ciphers_count.get(cipher_type, 0) + \
+                    existed_ciphers_count.get(cipher_type, 0) >= allow_cipher_type.get(cipher_type):
+                continue
+            import_ciphers_count[cipher_type] = import_ciphers_count.get(cipher_type) + 1
+            # Get cipher data
+            cipher_data["data"] = get_cipher_detail_data(cipher=cipher_data)
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
@@ -521,7 +525,8 @@ class CipherRepository(ICipherRepository):
         )
         bump_account_revision_date(user=user)
 
-    def import_multiple_cipher_team(self, team: Team, ciphers, collections, collection_relationships):
+    def import_multiple_cipher_team(self, team: Team, ciphers, collections, collection_relationships,
+                                    allow_cipher_type=None):
         # Init id for collections
         existed_collection_ids = list(team.collections.values_list('id', flat=True))
         for collection in collections:
@@ -562,24 +567,26 @@ class CipherRepository(ICipherRepository):
             )
         Collection.objects.bulk_create(import_collections, batch_size=100, ignore_conflicts=True)
 
+        # Check limit ciphers
+        existed_ciphers = self.get_team_ciphers(team=team).values('type').annotate(count=Count('type'))
+        existed_ciphers_count = {item["type"]: item["count"] for item in list(existed_ciphers)}
+
         # Create multiple ciphers
         import_ciphers = []
+        import_ciphers_id = []
+        import_ciphers_count = {vault_type: 0 for vault_type in LIST_CIPHER_TYPE}
         for cipher_data in ciphers:
             # Only accepts ciphers which have name
             if not cipher_data.get("name"):
                 continue
-
             cipher_type = cipher_data.get("type")
-            if cipher_type == CIPHER_TYPE_LOGIN:
-                cipher_data["data"] = dict(cipher_data.get("login"))
-            elif cipher_type == CIPHER_TYPE_CARD:
-                cipher_data["data"] = dict(cipher_data.get("card"))
-            elif cipher_type == CIPHER_TYPE_IDENTITY:
-                cipher_data["data"] = dict(cipher_data.get("identity"))
-            elif cipher_type == CIPHER_TYPE_NOTE:
-                cipher_data["data"] = dict(cipher_data.get("secureNote"))
-            elif cipher_type == CIPHER_TYPE_TOTP:
-                cipher_data["data"] = dict(cipher_data.get("secureNote"))
+            # Check limit ciphers
+            if allow_cipher_type and allow_cipher_type.get(cipher_type) and import_ciphers_count.get(cipher_type, 0) + \
+                    existed_ciphers_count.get(cipher_type, 0) >= allow_cipher_type.get(cipher_type):
+                continue
+            import_ciphers_count[cipher_type] = import_ciphers_count.get(cipher_type) + 1
+            # Get cipher data
+            cipher_data["data"] = get_cipher_detail_data(cipher=cipher_data)
             cipher_data["data"]["name"] = cipher_data.get("name")
             if cipher_data.get("notes"):
                 cipher_data["data"]["notes"] = cipher_data.get("notes")
@@ -599,11 +606,14 @@ class CipherRepository(ICipherRepository):
                     folders=cipher_data.get("folders", ""),
                 )
             )
+            import_ciphers_id.append(cipher_data.get("id"))
         Cipher.objects.bulk_create(import_ciphers, batch_size=100, ignore_conflicts=True)
 
         # Create collection cipher
         import_collection_ciphers = []
         for collection_cipher in collection_ciphers:
+            if collection_cipher.get("cipher_id") not in import_ciphers_id:
+                continue
             import_collection_ciphers.append(
                 CollectionCipher(
                     cipher_id=collection_cipher.get("cipher_id"),
