@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -63,8 +63,11 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         if paging_param == "0":
             ciphers_page = ciphers
         else:
-            paginator = Paginator(list(ciphers), page_size_param or 50)
-            ciphers_page = paginator.page(page_param).object_list
+            try:
+                paginator = Paginator(list(ciphers), page_size_param or 50)
+                ciphers_page = paginator.page(page_param).object_list
+            except EmptyPage:
+                ciphers_page = []
 
         ciphers_serializer = SyncCipherSerializer(ciphers_page, many=True, context={"user": user})
 
