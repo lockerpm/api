@@ -4,10 +4,12 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 
 from micro_services.apps import MicroServiceViewSet
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.transactions import *
+from shared.error_responses.error import gen_error
 from shared.permissions.micro_service_permissions.mobile_payment_permissions import MobilePaymentPermission
 from shared.utils.app import now
 from cystack_models.models.payments.payments import Payment
@@ -46,8 +48,14 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         platform = validated_data.get("platform")
         mobile_invoice_id = validated_data.get("mobile_invoice_id")
         mobile_original_id = validated_data.get("mobile_original_id")
+        confirm_original_id = validated_data.get("confirm_original_id")
         currency = validated_data.get("currency", CURRENCY_USD)
         failure_reason = validated_data.get("failure_reason")
+
+        # Check confirm original id
+        if confirm_original_id:
+            if self.user_repository.get_mobile_user_plan(pm_mobile_subscription=confirm_original_id):
+                raise ValidationError(detail={"non_field_errors": [gen_error("7011")]})
 
         new_payment_data = {
             "user": user,
