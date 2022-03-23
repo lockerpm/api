@@ -23,6 +23,7 @@ class UpgradePlanSerializer(serializers.Serializer):
     platform = serializers.ChoiceField(choices=["ios", "android"])
     mobile_invoice_id = serializers.CharField(required=False, allow_null=True)
     mobile_original_id = serializers.CharField(required=False, allow_null=True)
+    confirm_original_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     currency = serializers.CharField(required=False, default=CURRENCY_USD)
     failure_reason = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
     end_period = serializers.FloatField(required=False, allow_null=True)

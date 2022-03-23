@@ -127,37 +127,37 @@ APP_CODE += [
     {
         "code": "7002",
         "message": "You need upgrade your plan to execute this operator",
-        "description": "Bạn cần nâng cấp gói để thực hiện hạn động này"
+        "vi_message": "Bạn cần nâng cấp gói để thực hiện hạn động này"
     },
     {
         "code": "7003",
         "message": "You don't need pay to execute this operator",
-        "description": "Bạn không cần trả tiền để thực hiện hành động này"
+        "vi_message": "Bạn không cần trả tiền để thực hiện hành động này"
     },
     {
         "code": "7004",
         "message": "You can not cancel the default plan",
-        "description": "Bạn không thể hủy gói mặc định"
+        "vi_message": "Bạn không thể hủy gói mặc định"
     },
     {
         "code": "7005",
         "message": "An unexpected error has occurred when connecting to Stripe",
-        "description": "Kết nối tới Stripe đã xảy ra lỗi"
+        "vi_message": "Kết nối tới Stripe đã xảy ra lỗi"
     },
     {
         "code": "7006",
         "message": "This card was existed",
-        "description": "Thẻ đã tồn tại"
+        "vi_message": "Thẻ đã tồn tại"
     },
     {
         "code": "7007",
         "message": "This user doesn't have any card",
-        "description": "User chưa có thẻ nào"
+        "vi_message": "User chưa có thẻ nào"
     },
     {
         "code": "7008",
         "message": "This user doesn't have any subscription",
-        "description": "User chưa đăng ký gói nào"
+        "vi_message": "User chưa đăng ký gói nào"
     },
     {
         "code": "7009",
@@ -166,6 +166,11 @@ APP_CODE += [
     {
         "code": "7010",
         "message": "Your current plan is a subscription plan and not support this operator"
+    },
+    {
+        "code": "7011",
+        "message": "This account's original transaction id is registered. Please use other account or use family plan",
+        "vi_message": "Mobile Transaction đã được sử dụng. Vui lòng dùng tài khoản khác hoặc dùng gói family"
     }
 ]
 
