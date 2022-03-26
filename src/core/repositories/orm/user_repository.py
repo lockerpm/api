@@ -219,6 +219,7 @@ class UserRepository(IUserRepository):
         if plan_type_alias == PLAN_TYPE_PM_FREE:
             pm_user_plan.start_period = None
             pm_user_plan.end_period = None
+            pm_user_plan.cancel_mobile_subscription()
             # Lock all primary teams
             primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
             for primary_owner in primary_owners:
