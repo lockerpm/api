@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from core.repositories import IUserRepository
+from core.utils.account_revision_date import bump_account_revision_date
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.constants.transactions import *
@@ -486,6 +487,7 @@ class UserRepository(IUserRepository):
     def purge_account(self, user: User):
         user.folders.all().delete()
         user.ciphers.all().delete()
+        bump_account_revision_date(user=user)
         return user
 
     def revoke_all_sessions(self, user: User):
