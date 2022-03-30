@@ -138,30 +138,40 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         failure_reason = validated_data.get("failure_reason")
         end_period = validated_data.get("end_period")
 
-        new_payment_data = {
-            "user": user,
-            "description": description,
-            "plan": plan,
-            "duration": duration,
-            "promo_code": promo_code,
-            "currency": currency,
-            "payment_method": PAYMENT_METHOD_MOBILE,
-            "mobile_invoice_id": mobile_invoice_id,
-            "metadata": {
-                "platform": platform,
+        # Check the invoice with mobile_invoice_id exists or not?
+        mobile_invoice_exist = False
+        if mobile_invoice_id:
+            mobile_invoice_exist = Payment.objects.filter(mobile_invoice_id=mobile_invoice_id).exists()
+
+        # If we done have any payment with mobile_invoice_id => Create new onew
+        if mobile_invoice_exist is False:
+            new_payment_data = {
+                "user": user,
+                "description": description,
+                "plan": plan,
+                "duration": duration,
+                "promo_code": promo_code,
+                "currency": currency,
+                "payment_method": PAYMENT_METHOD_MOBILE,
                 "mobile_invoice_id": mobile_invoice_id,
-                "mobile_original_id": mobile_original_id,
-                "user_id": user.user_id,
-                "scope": settings.SCOPE_PWD_MANAGER,
-                "key": validated_data.get("key"),
-                "collection_name": validated_data.get("collection_name")
+                "metadata": {
+                    "platform": platform,
+                    "mobile_invoice_id": mobile_invoice_id,
+                    "mobile_original_id": mobile_original_id,
+                    "user_id": user.user_id,
+                    "scope": settings.SCOPE_PWD_MANAGER,
+                    "key": validated_data.get("key"),
+                    "collection_name": validated_data.get("collection_name")
+                }
             }
-        }
-        # Create new payment
-        new_payment = Payment.create(**new_payment_data)
+            # Create new payment
+            new_payment = Payment.create(**new_payment_data)
+        # Else, retrieving the payment with mobile_invoice_id
+        else:
+            new_payment = Payment.objects.filter(mobile_invoice_id=mobile_invoice_id).first()
+
         # Set paid or not
         if status == PAYMENT_STATUS_PAID:
-            self.payment_repository.set_paid(payment=new_payment)
             # Upgrade new plan
             subscription_metadata = {
                 "end_period": end_period,
@@ -180,10 +190,13 @@ class MobilePaymentViewSet(MicroServiceViewSet):
                 current_plan.set_default_payment_method(PAYMENT_METHOD_MOBILE)
             except ObjectDoesNotExist:
                 pass
-            # Send mail
-            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-                func_name="pay_successfully", **{"payment": new_payment}
-            )
+
+            if new_payment.status != PAYMENT_STATUS_PAID:
+                self.payment_repository.set_paid(payment=new_payment)
+                # Send mail
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                    func_name="pay_successfully", **{"payment": new_payment}
+                )
         elif status == PAYMENT_STATUS_PAST_DUE:
             self.payment_repository.set_past_due(payment=new_payment, failure_reason=failure_reason)
         else:
