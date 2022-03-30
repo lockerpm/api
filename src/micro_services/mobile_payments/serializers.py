@@ -60,7 +60,7 @@ class MobileRenewalSerializer(serializers.Serializer):
         user_plan = user_repository.get_mobile_user_plan(pm_mobile_subscription=mobile_original_id)
         if not user_plan:
             raise serializers.ValidationError(detail={
-                "mobile_original_id": ["The mobile subscription id does not exist"]
+                "mobile_original_id": ["The mobile subscription id {} does not exist".format(mobile_original_id)]
             })
         data["user"] = user_plan.user
         return data
@@ -77,7 +77,7 @@ class MobileCancelSubscriptionSerializer(serializers.Serializer):
         user_plan = user_repository.get_mobile_user_plan(pm_mobile_subscription=mobile_original_id)
         if not user_plan:
             raise serializers.ValidationError(detail={
-                "mobile_original_id": ["The mobile subscription id does not exist"]
+                "mobile_original_id": ["The mobile subscription id {} does not exist".format(mobile_original_id)]
             })
         data["user"] = user_plan.user
         return data
@@ -92,7 +92,7 @@ class MobileDestroySubscriptionSerializer(serializers.Serializer):
         user_plan = user_repository.get_mobile_user_plan(pm_mobile_subscription=mobile_original_id)
         if not user_plan:
             raise serializers.ValidationError(detail={
-                "mobile_original_id": ["The mobile subscription id does not exist"]
+                "mobile_original_id": ["The mobile subscription id {} does not exist".format(mobile_original_id)]
             })
         data["user"] = user_plan.user
         return data
