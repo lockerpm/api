@@ -53,7 +53,7 @@ class CronTask:
             close_old_connections()
 
     def start(self):
-        schedule.every(480).minutes.do(self.subscription_by_wallet)
+        schedule.every(180).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
         schedule.every(20).minutes.do(self.emergency_access_approve)
         self.logger.info("[+] Starting Platform cron task")
