@@ -60,7 +60,8 @@ class MobilePaymentViewSet(MicroServiceViewSet):
             # Downgrade plan of the existed mobile original id
             if mobile_original_id_registered and mobile_original_id_registered.user_id != user.user_id:
                 self.user_repository.update_plan(
-                    user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
+                    user=mobile_original_id_registered.user, plan_type_alias=PLAN_TYPE_PM_FREE,
+                    scope=settings.SCOPE_PWD_MANAGER
                 )
 
             # if self.user_repository.get_mobile_user_plan(pm_mobile_subscription=confirm_original_id):
