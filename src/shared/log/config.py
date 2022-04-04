@@ -35,30 +35,6 @@ logging_config = {
             'level': logging.DEBUG,
             'filters': ['site_filter']
         },
-        'slack_cystack_platform': {
-            'class': 'shared.log.handlers.SlackCyStackPlatformHandler',
-            'formatter': 'medium',
-            'level': logging.DEBUG,
-            'filters': ['site_filter']
-        },
-        'endpoint': {
-            'class': 'shared.log.handlers.EndpointHandler',
-            'formatter': 'medium',
-            'level': logging.DEBUG,
-            'filters': ['site_filter']
-        },
-        'bitwarden': {
-            'class': 'shared.log.handlers.BitwardenHandler',
-            'formatter': 'medium',
-            'level': logging.DEBUG,
-            'filters': ['site_filter']
-        },
-        'plan': {
-            'class': 'shared.log.handlers.SlackPlanHandler',
-            'formatter': 'medium',
-            'level': logging.DEBUG,
-            'filters': ['site_filter']
-        },
         'console': {
             'level': logging.DEBUG,
             'class': 'logging.StreamHandler',
@@ -74,30 +50,6 @@ logging_config = {
     'loggers': {
         'slack_service': {
             'handlers': ['slack', ],
-            'level': 'DEBUG',
-            'propagate': True,
-            'filters': ['site_filter']
-        },
-        'slack_cystack_platform_service': {
-            'handlers': ['slack_cystack_platform', ],
-            'level': 'DEBUG',
-            'propagate': True,
-            'filters': ['site_filter']
-        },
-        'endpoint_service': {
-            'handlers': ['endpoint', ],
-            'level': 'DEBUG',
-            'propagate': True,
-            'filters': ['site_filter']
-        },
-        'bitwarden_service': {
-            'handlers': ['bitwarden', ],
-            'level': 'DEBUG',
-            'propagate': True,
-            'filters': ['site_filter']
-        },
-        'plan_service': {
-            'handlers': ['plan', ],
             'level': 'DEBUG',
             'propagate': True,
             'filters': ['site_filter']

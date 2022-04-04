@@ -18,14 +18,6 @@ class CyLog:
                 cls.log_to_slack(message, severity)
             elif output_type == "stdout":
                 cls.log_to_screen(message, severity)
-            elif output_type == "platform":
-                cls.log_to_slack_cystack_platform(message, severity)
-            elif output_type == "endpoint":
-                cls.log_to_endpoint(message, severity)
-            elif output_type == "bitwarden":
-                cls.log_to_bitwarden(message, severity)
-            elif output_type == "plan":
-                cls.log_to_plan(message, severity)
 
     # Log to Slack
     @staticmethod
@@ -46,63 +38,6 @@ class CyLog:
     @staticmethod
     def log_to_screen(message, severity):
         logger = logging.getLogger('stdout_service')
-        if severity == "debug":
-            logger.debug(message)
-        elif severity == "info":
-            logger.info(message)
-        elif severity == "warning":
-            logger.warning(message)
-        elif severity == "error":
-            logger.error(message)
-        elif severity == "critical":
-            logger.critical(message)
-
-    # Log to slack cloud result channel
-    @staticmethod
-    def log_to_slack_cystack_platform(message, severity):
-        logger = logging.getLogger('slack_cystack_platform_service')
-        if severity == "debug":
-            logger.debug(message)
-        elif severity == "info":
-            logger.info(message)
-        elif severity == "warning":
-            logger.warning(message)
-        elif severity == "error":
-            logger.error(message)
-        elif severity == "critical":
-            logger.critical(message)
-
-    @staticmethod
-    def log_to_endpoint(message, severity):
-        logger = logging.getLogger('endpoint_service')
-        if severity == "debug":
-            logger.debug(message)
-        elif severity == "info":
-            logger.info(message)
-        elif severity == "warning":
-            logger.warning(message)
-        elif severity == "error":
-            logger.error(message)
-        elif severity == "critical":
-            logger.critical(message)
-
-    @staticmethod
-    def log_to_bitwarden(message, severity):
-        logger = logging.getLogger('bitwarden_service')
-        if severity == "debug":
-            logger.debug(message)
-        elif severity == "info":
-            logger.info(message)
-        elif severity == "warning":
-            logger.warning(message)
-        elif severity == "error":
-            logger.error(message)
-        elif severity == "critical":
-            logger.critical(message)
-
-    @staticmethod
-    def log_to_plan(message, severity):
-        logger = logging.getLogger('plan_service')
         if severity == "debug":
             logger.debug(message)
         elif severity == "info":
