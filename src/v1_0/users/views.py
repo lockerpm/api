@@ -394,9 +394,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.user_repository.purge_account(user=user)
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id]).send()
-        return Response(status=200, data={"success": True})
+        shared_ciphers_members = self.user_repository.purge_account(user=user)
+
+        shared_member_user_ids = [cipher_member.get("shared_member") for cipher_member in shared_ciphers_members]
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id] + shared_member_user_ids).send()
+        return Response(status=200, data=shared_ciphers_members)
 
     @action(methods=["get"], detail=False)
     def invitations(self, request, *args, **kwargs):

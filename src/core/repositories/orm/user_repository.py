@@ -5,6 +5,7 @@ from typing import Dict
 import stripe
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.db.models import OuterRef, Subquery
 
 from core.repositories import IUserRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -14,7 +15,9 @@ from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
 from cystack_models.models.users.users import User
+from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.users.device_access_tokens import DeviceAccessToken
+from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
@@ -485,10 +488,26 @@ class UserRepository(IUserRepository):
         user.save()
 
     def purge_account(self, user: User):
+        # Delete all their folders
         user.folders.all().delete()
+        # Delete all personal ciphers
         user.ciphers.all().delete()
+        # Delete all team ciphers
+        owners = user.team_members.filter(role_id=MEMBER_ROLE_OWNER, team__personal_share=True)
+        team_ids = owners.values_list('team_id', flat=True)
+        other_members = TeamMember.objects.filter(
+            team_id__in=team_ids, is_primary=False, team_id=OuterRef('team_id')
+        ).order_by('id')
+        shared_ciphers = Cipher.objects.filter(team_id__in=team_ids)
+        shared_ciphers_members = shared_ciphers.annotate(
+            shared_member=Subquery(other_members.values('user_id')[:1])
+        ).exclude(shared_member__isnull=True).values('id', 'shared_member')
+        shared_ciphers.delete()
+        Team.objects.filter(id__in=team_ids).delete()
+
+        # Bump revision date
         bump_account_revision_date(user=user)
-        return user
+        return list(shared_ciphers_members)
 
     def revoke_all_sessions(self, user: User):
         DeviceAccessToken.objects.filter(device__user=user).delete()
