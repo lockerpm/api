@@ -26,7 +26,7 @@ from v1_0.apps import PasswordManagerViewSet
 
 class FamilyPwdViewSet(PasswordManagerViewSet):
     permission_classes = (FamilyPwdPermission, )
-    http_method_names = ["head", "options", "get", "delete"]
+    http_method_names = ["head", "options", "get", "post", "delete"]
 
     def get_serializer_class(self):
         if self.action == "member_list":
@@ -49,7 +49,7 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(family_members, many=True)
         return Response(status=200, data=serializer.data)
 
-    @action(methods=["get"], detail=False)
+    @action(methods=["post"], detail=False)
     def member_create(self, request, *args, **kwargs):
         pm_current_plan = self.get_object()
 
@@ -75,7 +75,7 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"success": True})
 
     @action(methods=["delete"], detail=False)
-    def member_create(self, request, *args, **kwargs):
+    def member_destroy(self, request, *args, **kwargs):
         user = self.request.user
         member_id = kwargs.get("member_id")
         pm_current_plan = self.get_object()
