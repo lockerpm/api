@@ -13,4 +13,19 @@ class PaymentMethodFactory:
             return WalletPaymentMethod(user=user, scope=scope)
         elif payment_method == PAYMENT_METHOD_BANKING:
             return BankingPaymentMethod(user=user, scope=scope)
-        raise Exception('Payment method {} is not supported'.format(payment_method))
+        raise PaymentMethodNotSupportException(payment_method=payment_method)
+
+
+class PaymentMethodNotSupportException(BaseException):
+    """
+
+    """
+
+    def __init__(self, payment_method, message="Destination device mismatched"):
+        message = "Payment method {} is not supported".format(payment_method) if payment_method else message
+        super(PaymentMethodNotSupportException, self).__init__(message)
+        self._payment_method = payment_method
+
+    @property
+    def payment_method(self):
+        return self._payment_method
