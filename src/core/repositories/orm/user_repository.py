@@ -294,16 +294,22 @@ class UserRepository(IUserRepository):
             current_member_plan = self.get_current_plan(user=family_member_user, scope=settings.SCOPE_PWD_MANAGER)
             if current_member_plan.get_plan_obj().is_family_plan is False and \
                     current_member_plan.get_plan_obj().is_team_plan is False:
+                # Cancel current plan
+                from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory, \
+                    PaymentMethodNotSupportException
+
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=current_member_plan.get_default_payment_method()
+                    ).cancel_immediately_recurring_subscription()
+                except PaymentMethodNotSupportException as e:
+                    CyLog.warning(**{"message": "cancel_immediately_recurring_subscription user {} {} failed".format(
+                        family_member_user, e.payment_method
+                    )})
 
                 # Add to family plan
                 family_user_plan.pm_plan_family.model.create(family_user_plan, family_member_user, None)
-
-                # Cancel current plan
-                from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
-                PaymentMethodFactory.get_method(
-                    user=family_member_user, scope=settings.SCOPE_PWD_MANAGER,
-                    payment_method=current_member_plan.get_default_payment_method()
-                ).cancel_immediately_recurring_subscription()
                 # Then upgrade to Premium
                 self.update_plan(
                     user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=family_user_plan.duration,
