@@ -86,8 +86,9 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
         if family_member.user == user:
             raise PermissionDenied
         # Downgrade the plan of the member user
-        self.user_repository.update_plan(
-            user=family_member.user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
-        )
+        if family_member.user:
+            self.user_repository.update_plan(
+                user=family_member.user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
+            )
         family_member.delete()
         return Response(status=204)
