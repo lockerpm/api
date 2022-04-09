@@ -38,8 +38,14 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
     def get_object(self):
         user = self.request.user
         pm_current_plan = self.user_repository.get_current_plan(user=user)
-        if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FAMILY:
-            raise PermissionDenied
+        current_plan_alias = pm_current_plan.get_plan_type_alias()
+        # Check permission here
+        if self.action == "member_list":
+            if current_plan_alias != PLAN_TYPE_PM_FAMILY or user.pm_plan_family.exists() is False:
+                raise PermissionDenied
+        else:
+            if current_plan_alias != PLAN_TYPE_PM_FAMILY:
+                raise PermissionDenied
         return pm_current_plan
 
     @action(methods=["get"], detail=False)
