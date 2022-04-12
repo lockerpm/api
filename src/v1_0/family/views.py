@@ -113,5 +113,7 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
             self.user_repository.update_plan(
                 user=family_member.user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
             )
+        family_user_id = family_member.user_id
+        family_email = family_member.email
         family_member.delete()
-        return Response(status=204)
+        return Response(status=200, data={"user_id": family_user_id, "email": family_email})
