@@ -41,7 +41,7 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
         current_plan_alias = pm_current_plan.get_plan_type_alias()
         # Check permission here
         if self.action == "member_list":
-            if current_plan_alias != PLAN_TYPE_PM_FAMILY or user.pm_plan_family.exists() is False:
+            if current_plan_alias != PLAN_TYPE_PM_FAMILY and user.pm_plan_family.exists() is False:
                 raise PermissionDenied
         else:
             if current_plan_alias != PLAN_TYPE_PM_FAMILY:
