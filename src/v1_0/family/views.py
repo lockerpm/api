@@ -51,7 +51,20 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
     @action(methods=["get"], detail=False)
     def member_list(self, request, *args, **kwargs):
         pm_current_plan = self.get_object()
-        family_members = pm_current_plan.pm_plan_family.all().order_by('-user_id', '-created_time')
+        pm_current_plan_alias = pm_current_plan.get_plan_type_alias()
+        # The retrieving user is owner of the family plan
+        if pm_current_plan_alias == PLAN_TYPE_PM_FAMILY:
+            family_members = pm_current_plan.pm_plan_family.all().order_by('-user_id', '-created_time')
+        # Else, user is a member
+        else:
+            user = request.user
+            family_user_plan = user.pm_plan_family.first()
+            if family_user_plan:
+                family_members = family_user_plan.root_user_plan.pm_plan_family.all().order_by(
+                    '-user_id', '-created_time'
+                )
+            else:
+                family_members = []
         serializer = self.get_serializer(family_members, many=True)
         return Response(status=200, data=serializer.data)
 
