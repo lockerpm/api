@@ -399,11 +399,11 @@ class ImportCipherSerializer(serializers.Serializer):
         folders = data.get("folders", [])
         folder_relationships = data.get("folderRelationships", [])
         ciphers = data.get("ciphers", [])
-        if len(ciphers) > 1000:
+        if len(ciphers) > 2000:
             raise serializers.ValidationError(detail={"ciphers": ["You cannot import this much data at once"]})
-        if len(folder_relationships) > 1000:
+        if len(folder_relationships) > 2000:
             raise serializers.ValidationError(detail={"folderRelationships": ["You cannot import this much data at once"]})
-        if len(folders) > 200:
+        if len(folders) > 400:
             raise serializers.ValidationError(detail={"folders": ["You cannot import this much data at once"]})
 
         return data
