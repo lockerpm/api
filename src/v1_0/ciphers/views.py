@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from core.utils.data_helpers import camel_snake_data
-from shared.background import BG_EVENT, LockerBackgroundFactory
+from shared.background import BG_EVENT, LockerBackgroundFactory, BG_CIPHER
 from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
@@ -90,13 +90,18 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_ids = validated_data.get("ids")
 
         # Check permission of user and update deleted_date of the ciphers here
-        deleted_cipher_ids = self.cipher_repository.delete_multiple_cipher(
-            cipher_ids=cipher_ids, user_deleted=request.user
-        )
-        # Sync event
-        deleted_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=deleted_cipher_ids)
-        teams = self.team_repository.get_multiple_team_by_ids(deleted_ciphers.values_list('team_id', flat=True))
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_CIPHER).run(func_name="multiple_delete", **{
+            "cipher_ids": cipher_ids, "user": request.user
+        })
+
+        # # Check permission of user and update deleted_date of the ciphers here
+        # deleted_cipher_ids = self.cipher_repository.delete_multiple_cipher(
+        #     cipher_ids=cipher_ids, user_deleted=request.user
+        # )
+        # # Sync event
+        # deleted_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=deleted_cipher_ids)
+        # teams = self.team_repository.get_multiple_team_by_ids(deleted_ciphers.values_list('team_id', flat=True))
+        # PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
 
         # Log: team's event
         # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
@@ -144,13 +149,9 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
         # We will check permission and set deleted_date of cipher to null
         # Then bump revision date of users and send sync event to all relational users
-        restored_cipher_ids = self.cipher_repository.restore_multiple_cipher(
-            cipher_ids=cipher_ids, user_restored=request.user
-        )
-        # Sync event
-        restored_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=restored_cipher_ids)
-        teams = self.team_repository.get_multiple_team_by_ids(list(restored_ciphers.values_list('team_id', flat=True)))
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        LockerBackgroundFactory.get_background(bg_name=BG_CIPHER).run(func_name="multiple_restore", **{
+            "cipher_ids": cipher_ids, "user": request.user
+        })
 
         # Log: team's event
         # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
