@@ -89,15 +89,20 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         cipher_ids = validated_data.get("ids")
 
-        # Check permission of user here
-        ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
-        teams = self.team_repository.get_multiple_team_by_ids(ciphers.values_list('team_id', flat=True))
-        self.cipher_repository.delete_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
+        # Check permission of user and update deleted_date of the ciphers here
+        deleted_cipher_ids = self.cipher_repository.delete_multiple_cipher(
+            cipher_ids=cipher_ids, user_deleted=request.user
+        )
+        # Sync event
+        deleted_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=deleted_cipher_ids)
+        teams = self.team_repository.get_multiple_team_by_ids(deleted_ciphers.values_list('team_id', flat=True))
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
-            "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_CIPHER_SOFT_DELETED, "ciphers": ciphers, "ip_address": ip
-        })
+
+        # Log: team's event
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
+        #     "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_CIPHER_SOFT_DELETED, "ciphers": deleted_ciphers, "ip_address": ip
+        # })
 
         return Response(status=200, data={"success": True})
 
@@ -119,10 +124,12 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Finally, we send sync event to all relational users
         self.cipher_repository.delete_permanent_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
-            "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_CIPHER_DELETED, "ciphers": ciphers, "ip_address": ip
-        })
+
+        # Log: Team's event
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
+        #     "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_CIPHER_DELETED, "ciphers": ciphers, "ip_address": ip
+        # })
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)
@@ -135,17 +142,21 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         cipher_ids = validated_data.get("ids")
 
-        # Check permission of user here
-        ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=cipher_ids)
-        teams = self.team_repository.get_multiple_team_by_ids(team_ids=list(ciphers.values_list('team_id', flat=True)))
-        # We will set deleted_date of cipher to null
+        # We will check permission and set deleted_date of cipher to null
         # Then bump revision date of users and send sync event to all relational users
-        self.cipher_repository.restore_multiple_cipher(cipher_ids=cipher_ids, user_restored=request.user)
+        restored_cipher_ids = self.cipher_repository.restore_multiple_cipher(
+            cipher_ids=cipher_ids, user_restored=request.user
+        )
+        # Sync event
+        restored_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=restored_cipher_ids)
+        teams = self.team_repository.get_multiple_team_by_ids(list(restored_ciphers.values_list('team_id', flat=True)))
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
-            "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_CIPHER_RESTORE, "ciphers": ciphers, "ip_address": ip
-        })
+
+        # Log: team's event
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
+        #     "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_CIPHER_RESTORE, "ciphers": ciphers, "ip_address": ip
+        # })
         return Response(status=200, data={"success": True})
 
     def retrieve(self, request, *args, **kwargs):
