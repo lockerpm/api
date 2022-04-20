@@ -276,7 +276,7 @@ class CipherRepository(ICipherRepository):
         for cipher in ciphers:
             cipher.revision_date = current_time
             cipher.deleted_date = current_time
-        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_data'], batch_size=100)
+        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_date'], batch_size=100)
 
         # Bump revision date: teams and user
         team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
@@ -331,7 +331,7 @@ class CipherRepository(ICipherRepository):
         for cipher in ciphers:
             cipher.revision_date = current_time
             cipher.deleted_date = None
-        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_data'], batch_size=100)
+        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_date'], batch_size=100)
 
         # Bump revision date: teams and user
         teams = ciphers.exclude(team__isnull=True).values_list('team', flat=True)
