@@ -101,6 +101,13 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Import ------------------------------- #
+urlpatterns += [
+    url(r'^import/folders$', views.ImportDataPwdViewSet.as_view({'post': 'import_folders'})),
+    url(r'^import/ciphers$', views.ImportDataPwdViewSet.as_view({'post': 'import_ciphers'})),
+]
+
+
 # -------------------------------- Emergency Access ------------------------------- #
 urlpatterns += [
     url(r'^emergency_access/trusted$', views.EmergencyAccessPwdViewSet.as_view({'get': 'trusted'})),
