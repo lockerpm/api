@@ -267,18 +267,24 @@ class CipherRepository(ICipherRepository):
         :param user_deleted: (obj) User deleted
         :return:
         """
+        current_time = now()
         # Update deleted_date of the ciphers
-        # ciphers = Cipher.objects.filter(id__in=cipher_ids, deleted_date__isnull=True)
         ciphers = self.get_multiple_by_user(user=user_deleted, only_edited=True).filter(
             id__in=cipher_ids, deleted_date__isnull=True
         )
-        team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
-        ciphers.update(revision_date=now(), deleted_date=now())
+        deleted_cipher_ids = list(ciphers.values_list('id', flat=True))
+        for cipher in ciphers:
+            cipher.revision_date = current_time
+            cipher.deleted_date = current_time
+        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_data'], batch_size=100)
+
         # Bump revision date: teams and user
+        team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
         teams = Team.objects.filter(id__in=team_ids)
         for team in teams:
             bump_account_revision_date(team=team)
         bump_account_revision_date(user=user_deleted)
+        return deleted_cipher_ids
 
     def delete_permanent_multiple_cipher(self, cipher_ids: list, user_deleted: User):
         """
@@ -315,17 +321,25 @@ class CipherRepository(ICipherRepository):
         :param user_restored: (obj) User object
         :return:
         """
+        current_time = now()
         # Filter list ciphers from trash
         ciphers = self.get_multiple_by_user(user=user_restored, only_edited=True).filter(
             id__in=cipher_ids, deleted_date__isnull=False
         )
         # Restore all cipher by setting deleted_date as null
-        ciphers.update(revision_date=now(), deleted_date=None)
+        restored_cipher_ids = list(ciphers.values_list('id', flat=True))
+        for cipher in ciphers:
+            cipher.revision_date = current_time
+            cipher.deleted_date = None
+        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_data'], batch_size=100)
+
         # Bump revision date: teams and user
         teams = ciphers.exclude(team__isnull=True).values_list('team', flat=True)
         for team in teams:
             bump_account_revision_date(team=team)
         bump_account_revision_date(user=user_restored)
+
+        return restored_cipher_ids
 
     def move_multiple_cipher(self, cipher_ids, user_moved, folder_id):
         # Filter list ciphers of users
