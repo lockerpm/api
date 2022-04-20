@@ -1,3 +1,5 @@
+import uuid
+
 from core.repositories import IFolderRepository
 from core.utils.account_revision_date import bump_account_revision_date
 
@@ -35,3 +37,25 @@ class FolderRepository(IFolderRepository):
         folder.save()
         bump_account_revision_date(user=folder.user)
         return folder
+
+    def import_multiple_folders(self, user: User, folders):
+        folder_ids = []
+        import_folders = []
+        existed_folder_ids = list(user.folders.values_list('id', flat=True))
+        # Init id for folders
+        for folder in folders:
+            while True:
+                new_folder_id = str(uuid.uuid4())
+                if new_folder_id not in existed_folder_ids:
+                    break
+            folder["id"] = new_folder_id
+            folder_ids.append(new_folder_id)
+        # Create folders
+        for folder in folders:
+            import_folders.append(
+                Folder(id=folder["id"], name=folder["name"], user=user, creation_date=now(), revision_date=now())
+            )
+        Folder.objects.bulk_create(import_folders, batch_size=100, ignore_conflicts=True)
+        bump_account_revision_date(user=user)
+
+        return folder_ids

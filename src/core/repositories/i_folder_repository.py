@@ -20,3 +20,7 @@ class IFolderRepository(ABC):
     @abstractmethod
     def save_update_folder(self, user: User, folder: Folder, name: str) -> Folder:
         pass
+
+    @abstractmethod
+    def import_multiple_folders(self, user: User, folders):
+        pass

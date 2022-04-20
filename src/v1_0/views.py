@@ -5,6 +5,7 @@ from v1_0.sync.views import SyncPwdViewSet
 from v1_0.ciphers.views import CipherPwdViewSet
 from v1_0.sharing.views import SharingPwdViewSet
 from v1_0.folders.views import FolderPwdViewSet
+from v1_0.import_data.views import ImportDataPwdViewSet
 from v1_0.payments.views import PaymentPwdViewSet
 
 from v1_0.enterprise.teams.views import TeamPwdViewSet
