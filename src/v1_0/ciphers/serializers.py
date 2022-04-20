@@ -362,8 +362,8 @@ class MutipleItemIdsSerializer(serializers.Serializer):
         ids = data.get("ids")
         if not ids:
             raise serializers.ValidationError(detail={"ids": ["This field is required"]})
-        if len(ids) > 200:
-            raise serializers.ValidationError(detail={"ids": ["You can only select up to 200 items at a time"]})
+        # if len(ids) > 200:
+        #     raise serializers.ValidationError(detail={"ids": ["You can only select up to 200 items at a time"]})
         return data
 
 
