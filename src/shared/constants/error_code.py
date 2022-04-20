@@ -118,6 +118,11 @@ APP_CODE += [
         "code": "5000",
         "message": "This cipher already belongs to an organization",
         "vi_message": "Bản ghi đã thuộc về một team"
+    },
+    {
+        "code": "5001",
+        "message": "You can only select up to 10000 items at a time",
+        "vi_message": "Bạn chỉ có thể chọn tối đa 10000 items trong một lần"
     }
 ]
 
