@@ -48,7 +48,7 @@ APP_CODE += [
     },
     {
         "code": "1005",
-        "message": "This user is not a admin account",
+        "message": "This user is not an admin account",
         "description": "Tài khoản này không phải là admin"
     },
     {
@@ -58,7 +58,7 @@ APP_CODE += [
     },
     {
         "code": "1007",
-        "message": "Cannot delete this user because it is the sole owner of at least one organization. "
+        "message": "Cannot delete this user because he/she is the sole owner of at least one organization. "
                    "Please delete these organizations",
         "description": "Không thể xóa account này thì account là owner của ít nhất một chương trình. "
                        "Hãy xóa các chương trình mà bạn đã tạo."
@@ -106,7 +106,7 @@ APP_CODE += [
 APP_CODE += [
     {
         "code": "4000",
-        "message": "You can not delete the default team",
+        "message": "You can not delete the default folder of the team",
         "vi_message": "Bạn không thể xóa thư mực mặc định của teams"
     },
 ]
@@ -131,12 +131,12 @@ APP_CODE += [
 APP_CODE += [
     {
         "code": "7002",
-        "message": "You need upgrade your plan to execute this operator",
+        "message": "You need to upgrade your plan to execute this operator",
         "vi_message": "Bạn cần nâng cấp gói để thực hiện hạn động này"
     },
     {
         "code": "7003",
-        "message": "You don't need pay to execute this operator",
+        "message": "You don't need to pay to execute this operator",
         "vi_message": "Bạn không cần trả tiền để thực hiện hành động này"
     },
     {
@@ -151,7 +151,7 @@ APP_CODE += [
     },
     {
         "code": "7006",
-        "message": "This card was existed",
+        "message": "This card existed",
         "vi_message": "Thẻ đã tồn tại"
     },
     {
@@ -170,11 +170,11 @@ APP_CODE += [
     },
     {
         "code": "7010",
-        "message": "Your current plan is a subscription plan and not support this operator"
+        "message": "Your current plan is a subscription plan and does not support this operator"
     },
     {
         "code": "7011",
-        "message": "This account's original transaction id is registered. Please use other account or use family plan",
+        "message": "This account's original transaction id is registered. Please use another account or use the family plan",
         "vi_message": "Mobile Transaction đã được sử dụng. Vui lòng dùng tài khoản khác hoặc dùng gói family"
     }
 ]
