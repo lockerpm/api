@@ -16,6 +16,7 @@ from django.db import close_old_connections
 from cron.controllers.utils.logger import Logger
 from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_notify
 from cron.controllers.tasks.emergency_access_auto_approve import emergency_access_auto_approve
+from cron.controllers.tasks.feedback import upgrade_survey_emails
 
 
 class CronTask:
@@ -52,9 +53,20 @@ class CronTask:
         finally:
             close_old_connections()
 
+    def feedback_tasks(self):
+        try:
+            upgrade_survey_emails()
+            self.logger.info("[+] feedback_tasks Done")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.logger.error("[!] feedback_tasks error: {}".format(tb))
+        finally:
+            close_old_connections()
+
     def start(self):
         schedule.every(180).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
+        schedule.every().day.at("10:00").do(self.feedback_tasks)
         schedule.every(20).minutes.do(self.emergency_access_approve)
         self.logger.info("[+] Starting Platform cron task")
         while True:
