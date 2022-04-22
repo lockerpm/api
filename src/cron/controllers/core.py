@@ -16,7 +16,7 @@ from django.db import close_old_connections
 from cron.controllers.utils.logger import Logger
 from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_notify
 from cron.controllers.tasks.emergency_access_auto_approve import emergency_access_auto_approve
-from cron.controllers.tasks.feedback import upgrade_survey_emails
+from cron.controllers.tasks.feedback import upgrade_survey_emails, log_new_users
 
 
 class CronTask:
@@ -55,6 +55,7 @@ class CronTask:
 
     def feedback_tasks(self):
         try:
+            log_new_users()
             upgrade_survey_emails()
             self.logger.info("[+] feedback_tasks Done")
         except Exception as e:
