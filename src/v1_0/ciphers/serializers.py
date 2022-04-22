@@ -79,7 +79,7 @@ class IdentityVaultSerializer(serializers.Serializer):
 
 
 class SecurityNoteVaultSerializer(serializers.Serializer):
-    type = serializers.IntegerField()
+    type = serializers.IntegerField(required=False)
     response = serializers.CharField(allow_null=True, allow_blank=True, default=None)
 
 
