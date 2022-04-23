@@ -20,8 +20,8 @@ def log_new_users():
     current_time_str = datetime.fromtimestamp(now()).strftime("%d-%b-%Y")
 
     devices = Device.objects.filter(user_id=OuterRef("user_id")).order_by('last_login')
-
-    new_users = User.objects.filter(
+    users = User.objects.filter(activated=True)
+    new_users = users.filter(
         activated=True,
         activated_date__lte=current_time, activated_date__gt=current_time - 86400
     ).annotate(
@@ -51,6 +51,8 @@ def log_new_users():
         )
 
     CyLog.info(**{
-        "message": "Date: {}\nTotal: {}\nUsers:\n{}".format(current_time_str, len(new_users), notification),
+        "message": "Date: {}\nTotal: {}\nNew users: {}\n{}".format(
+            current_time_str, users.count(), len(new_users), notification
+        ),
         "output": ["slack_new_users"]
     })
