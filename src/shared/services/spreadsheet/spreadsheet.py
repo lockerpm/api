@@ -57,7 +57,7 @@ class LockerSpreadSheet:
         # Loop: Upgrade user
         for user_data in users_data:
             user = self.get_user_obj(user_id=user_data["id"])
-            CyLog.info(**{"message": "[upgrade_survey_email] user: {} - {}".format(user, user.activated)})
+            CyLog.info(**{"message": "[upgrade_survey_email] user: {}".format(user)})
             # Not found Locker account => continue
             if not user or user.activated is False:
                 continue
