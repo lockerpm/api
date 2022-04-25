@@ -46,26 +46,21 @@ class LockerSpreadSheet:
         not_upgraded_records = [record for record in all_records if record[5] != '1']
         emails = [record[1] for record in not_upgraded_records if record[1] != '']
 
-        CyLog.info(**{"message": "[upgrade_survey_email] emails: {}".format(emails)})
-
         # Get user data from Gateway
         users_data = self.get_users_data(emails=emails)
-        CyLog.info(**{"message": "[upgrade_survey_email] users_data: {}".format(users_data)})
         if not users_data:
             return
 
         # Loop: Upgrade user
         for user_data in users_data:
             user = self.get_user_obj(user_id=user_data["id"])
-            CyLog.info(**{"message": "[upgrade_survey_email] user: {}".format(user)})
             # Not found Locker account => continue
             if not user or user.activated is False:
                 continue
             # If current plan of the user is not Free => continue
             current_plan = self.user_repository.get_current_plan(user=user)
-            CyLog.info(**{"message": "[upgrade_survey_email] current_plan: {}".format(current_plan.get_plan_type_alias())})
-            # if current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
-            #     continue
+            if current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
+                continue
 
             # Upgrade user to Premium
             self.user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, scope=settings.SCOPE_PWD_MANAGER, **{
