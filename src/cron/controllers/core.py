@@ -67,7 +67,7 @@ class CronTask:
     def start(self):
         schedule.every(180).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
-        schedule.every().day.at("10:33").do(self.feedback_tasks)
+        schedule.every().day.at("10:39").do(self.feedback_tasks)
         schedule.every(20).minutes.do(self.emergency_access_approve)
         self.logger.info("[+] Starting Platform cron task")
         while True:
