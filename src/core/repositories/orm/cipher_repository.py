@@ -446,7 +446,7 @@ class CipherRepository(ICipherRepository):
 
             # Get folder id
             folder_id = None
-            if cipher_data.get("folderId") and  cipher_data.get("folderId") in existed_folder_ids:
+            if cipher_data.get("folderId") and cipher_data.get("folderId") in existed_folder_ids:
                 folder_id = cipher_data.get("folderId")
             folders = "{%d: '%s'}" % (user.user_id, folder_id) if folder_id else ""
 
