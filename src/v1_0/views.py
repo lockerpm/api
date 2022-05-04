@@ -20,3 +20,6 @@ from v1_0.tools.views import ToolPwdViewSet
 from v1_0.emergency_access.views import EmergencyAccessPwdViewSet
 
 from v1_0.family.views import FamilyPwdViewSet
+
+from v1_0.referrals.views import ReferralPwdViewSet
+
