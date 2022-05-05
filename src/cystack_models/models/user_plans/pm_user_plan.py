@@ -24,6 +24,8 @@ class PMUserPlan(UserPlan):
     pm_stripe_subscription_created_time = models.IntegerField(null=True)
     pm_mobile_subscription = models.CharField(max_length=255, null=True, default=None)
 
+    extra_time = models.IntegerField(default=0)
+
     pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
     promo_code = models.ForeignKey(
         PromoCode, on_delete=models.SET_NULL, related_name="pm_user_plans", null=True, default=None
