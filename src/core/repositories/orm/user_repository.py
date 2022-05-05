@@ -201,6 +201,7 @@ class UserRepository(IUserRepository):
         end_period = kwargs.get("end_period")
         number_members = kwargs.get("number_members", 1)
         promo_code = kwargs.get("promo_code")
+        cancel_at_period_end = kwargs.get("cancel_at_period_end", False)
         if start_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
             start_period = now(return_float=True)
         if end_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
@@ -217,7 +218,7 @@ class UserRepository(IUserRepository):
         pm_user_plan.end_period = end_period
         pm_user_plan.number_members = number_members
         pm_user_plan.promo_code = promo_code
-        pm_user_plan.cancel_at_period_end = False
+        pm_user_plan.cancel_at_period_end = cancel_at_period_end
         pm_user_plan.save()
 
         if plan_type_alias == PLAN_TYPE_PM_FREE:
@@ -230,6 +231,19 @@ class UserRepository(IUserRepository):
                 primary_owner.team.lock_pm_team(lock=True)
             # Downgrade all family members
             self.__cancel_family_members(pm_user_plan)
+
+            # If this plan has extra time => Upgade to Premium
+            extra_time = pm_user_plan.extra_time
+            if extra_time > 0:
+                pm_user_plan.default_payment_method = PAYMENT_METHOD_WALLET
+                pm_user_plan.extra_time = 0
+                pm_user_plan.save()
+                self.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
+                    "start_period": now(),
+                    "end_period": now() + pm_user_plan.extra_time,
+                    "cancel_at_period_end": True
+                })
+
         else:
             # Unlock all their PM teams
             primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)

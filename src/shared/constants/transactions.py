@@ -3,6 +3,9 @@ TRIAL_BETA_EXPIRED = 1654016400         # 1/6/2022 00:00:00
 TRIAL_TEAM_PLAN = 10 * 86400            # 10 days
 TRIAL_TEAM_MEMBERS = 2
 
+REFERRAL_EXTRA_TIME = 86400 * 30        # 30 days
+
+
 # ------------------- Currency ------------------------------------- #
 CURRENCY_VND = "VND"
 CURRENCY_USD = "USD"
