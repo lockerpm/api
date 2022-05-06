@@ -50,7 +50,7 @@ class ReferralPwdViewSet(PasswordManagerViewSet):
         if referred_user_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
             self.user_repository.update_plan(user=referred_by_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
                 "start_period": current_time,
-                "end_period": current_time + 30 * 86400,
+                "end_period": current_time + REFERRAL_EXTRA_TIME,
                 "cancel_at_period_end": True
             })
         # Else, update extra time
