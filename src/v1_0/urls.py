@@ -163,6 +163,12 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Family Plan members  ------------------------------------- #
+urlpatterns += [
+    url(r'^referrals/claim$', views.ReferralPwdViewSet.as_view({'post': 'claim'}))
+]
+
+
 # -------------------------------- ENTERPRISE ------------------------------ #
 """ Teams Management """
 urlpatterns += [
