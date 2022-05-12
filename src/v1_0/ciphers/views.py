@@ -167,8 +167,28 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_obj = self.cipher_repository.get_multiple_by_user(
             user=user, filter_ids=[cipher.id]
         ).prefetch_related('collections_ciphers').first()
+
         serializer = DetailCipherSerializer(cipher_obj, context={"user": user}, many=False)
-        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        data = serializer.data
+        if cipher.team.personal_share is True:
+            shared_members = self.sharing_repository.get_shared_members(
+                personal_shared_team=cipher.team, exclude_owner=True
+            )
+            data["sharing"] = [{
+                "id": member.id,
+                "access_time": member.access_time,
+                "user_id": member.user_id,
+                "email": member.email,
+                "role": member.role_id,
+                "status": member.status,
+                "hide_passwords": member.hide_passwords,
+                "share_type": self.sharing_repository.get_personal_share_type(member=member),
+                "pwd_user_id": member.user.internal_id if member.user else None
+            } for member in shared_members]
+
+        else:
+            data["sharing"] = []
+        result = camel_snake_data(data, snake_to_camel=True)
         return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
