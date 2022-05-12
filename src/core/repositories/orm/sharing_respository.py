@@ -336,7 +336,7 @@ class SharingRepository(ISharingRepository):
         ]
         members_qs = personal_shared_team.team_members.annotate(
             order_field=Case(*order_whens, output_field=IntegerField(), default=Value(4))
-        ).order_by("order_field")
+        ).order_by("order_field").select_related('user').select_related('role')
         if exclude_owner:
             members_qs = members_qs.exclude(role_id=MEMBER_ROLE_OWNER)
         return members_qs
