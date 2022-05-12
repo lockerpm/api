@@ -172,7 +172,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         data = serializer.data
         if cipher.team.personal_share is True:
             shared_members = self.sharing_repository.get_shared_members(
-                personal_shared_team=cipher.team, exclude_owner=True
+                personal_shared_team=cipher.team, exclude_owner=False
             )
             data["sharing"] = [{
                 "id": member.id,
