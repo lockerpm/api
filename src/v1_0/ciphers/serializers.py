@@ -215,27 +215,29 @@ class VaultItemSerializer(serializers.Serializer):
         vault_type = data.get("type")
         existed_ciphers_count = ciphers.filter(type=vault_type).count()
         # limit_vault_type = plan_obj.get_limit_ciphers_by_type(vault_type=vault_type)
-        if vault_type == CIPHER_TYPE_LOGIN and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"login": ["The maximum number of login ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_NOTE and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"secureNote": ["The maximum number of note ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_CARD and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"card": ["The maximum number of card ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_IDENTITY and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"identity": ["The maximum number of identity ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_TOTP and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"secureNote": ["The maximum number of totp ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"cryptoAccount": ["The maximum number of crypto ciphers is reached"]})
-        if vault_type == CIPHER_TYPE_CRYPTO_WALLET and allow_cipher_type.get(vault_type) and \
-                existed_ciphers_count >= allow_cipher_type.get(vault_type):
-            raise serializers.ValidationError(detail={"cryptoWallet": ["The maximum number of crypto ciphers is reached"]})
+        if allow_cipher_type.get(vault_type) and existed_ciphers_count >= allow_cipher_type.get(vault_type):
+            raise serializers.ValidationError(detail={"non_field_errors": [gen_error("5002")]})
+        # if vault_type == CIPHER_TYPE_LOGIN and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"login": ["The maximum number of login ciphers is reached"]})
+        # if vault_type == CIPHER_TYPE_NOTE and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"secureNote": ["The maximum number of note ciphers is reached"]})
+        # if vault_type == CIPHER_TYPE_CARD and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"card": ["The maximum number of card ciphers is reached"]})
+        # if vault_type == CIPHER_TYPE_IDENTITY and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"identity": ["The maximum number of identity ciphers is reached"]})
+        # if vault_type == CIPHER_TYPE_TOTP and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"secureNote": ["The maximum number of totp ciphers is reached"]})
+        # if vault_type == CIPHER_TYPE_CRYPTO_ACCOUNT and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"cryptoAccount": ["The maximum number of crypto ciphers is reached"]})
+        # if vault_type == CIPHER_TYPE_CRYPTO_WALLET and allow_cipher_type.get(vault_type) and \
+        #         existed_ciphers_count >= allow_cipher_type.get(vault_type):
+        #     raise serializers.ValidationError(detail={"cryptoWallet": ["The maximum number of crypto ciphers is reached"]})
         return data
 
     def save(self, **kwargs):
