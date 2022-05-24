@@ -18,3 +18,13 @@ LIST_CIPHER_TYPE = [
 
 # Duration to sync data when update on multiple device
 SYNC_DURATION_EXPIRED = 1           # 1 second
+
+
+# List custom field types
+CUSTOM_FIELD_TYPE_TEXT = 0
+CUSTOM_FIELD_TYPE_HIDDEN = 1
+CUSTOM_FIELD_TYPE_BOOLEAN = 2
+
+LIST_CUSTOM_FIELD_TYPE = [
+    CUSTOM_FIELD_TYPE_TEXT, CUSTOM_FIELD_TYPE_HIDDEN, CUSTOM_FIELD_TYPE_BOOLEAN
+]

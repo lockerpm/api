@@ -126,7 +126,7 @@ APP_CODE += [
     },
     {
         "code": "5002",
-        "message": "The maximum number of cipher is reached. Please check your trash if any",
+        "message": "The maximum number of ciphers is reached. Please check your trash if any",
         "vi_message": "Giới hạn số lượng cipher đã đạt giới hạn. Vui lòng kiểm tra thùng rác"
     }
 ]
