@@ -399,9 +399,9 @@ class CipherRepository(ICipherRepository):
             import_ciphers_count[cipher_type] = import_ciphers_count.get(cipher_type) + 1
             # Get cipher data
             cipher_data["data"] = get_cipher_detail_data(cipher=cipher_data)
-            cipher_data["data"]["name"] = cipher_data.get("name")
-            if cipher_data.get("notes"):
-                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            # cipher_data["data"]["name"] = cipher_data.get("name")
+            # if cipher_data.get("notes"):
+            #     cipher_data["data"]["notes"] = cipher_data.get("notes")
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(
                 Cipher(
@@ -452,9 +452,9 @@ class CipherRepository(ICipherRepository):
 
             # Get cipher data
             cipher_data["data"] = get_cipher_detail_data(cipher=cipher_data)
-            cipher_data["data"]["name"] = cipher_data.get("name")
-            if cipher_data.get("notes"):
-                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            # cipher_data["data"]["name"] = cipher_data.get("name")
+            # if cipher_data.get("notes"):
+            #     cipher_data["data"]["notes"] = cipher_data.get("notes")
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(
                 Cipher(
@@ -512,9 +512,9 @@ class CipherRepository(ICipherRepository):
                 continue
             # Get cipher data
             cipher_data["data"] = get_cipher_detail_data(cipher=cipher_data)
-            cipher_data["data"]["name"] = cipher_data.get("name")
-            if cipher_data.get("notes"):
-                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            # cipher_data["data"]["name"] = cipher_data.get("name")
+            # if cipher_data.get("notes"):
+            #     cipher_data["data"]["notes"] = cipher_data.get("notes")
             cipher_data = json.loads(json.dumps(cipher_data))
 
             sync_create_ciphers.append(
@@ -645,9 +645,9 @@ class CipherRepository(ICipherRepository):
             import_ciphers_count[cipher_type] = import_ciphers_count.get(cipher_type) + 1
             # Get cipher data
             cipher_data["data"] = get_cipher_detail_data(cipher=cipher_data)
-            cipher_data["data"]["name"] = cipher_data.get("name")
-            if cipher_data.get("notes"):
-                cipher_data["data"]["notes"] = cipher_data.get("notes")
+            # cipher_data["data"]["name"] = cipher_data.get("name")
+            # if cipher_data.get("notes"):
+            #     cipher_data["data"]["notes"] = cipher_data.get("notes")
             cipher_data.pop("team", None)
             cipher_data = json.loads(json.dumps(cipher_data))
             import_ciphers.append(

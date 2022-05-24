@@ -14,7 +14,7 @@ from shared.constants.transactions import PLAN_TYPE_PM_FREE
 class Command(BaseCommand):
     def handle(self, *args, **options):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        users = User.objects.filter(user_id__in=[6037])
+        users = User.objects.filter(user_id__in=[6960])
         for user in users:
             primary_team = user_repository.get_default_team(user=user)
             if primary_team:

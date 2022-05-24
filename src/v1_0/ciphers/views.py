@@ -170,7 +170,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
 
         serializer = DetailCipherSerializer(cipher_obj, context={"user": user}, many=False)
         data = serializer.data
-        if cipher.team.personal_share is True:
+        if cipher.team and cipher.team.personal_share is True:
             shared_members = self.sharing_repository.get_shared_members(
                 personal_shared_team=cipher.team, exclude_owner=False
             )
