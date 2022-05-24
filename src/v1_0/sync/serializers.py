@@ -108,7 +108,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         cipher_detail = data.copy()
         cipher_detail.pop("name", None)
         cipher_detail.pop("notes", None)
-        # fields = cipher_detail.get("fields")
+        fields = cipher_detail.get("fields")
         cipher_detail.pop("fields", None)
 
         login = cipher_detail if instance.type == CIPHER_TYPE_LOGIN else None
@@ -134,7 +134,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "deleted_date": instance.deleted_date,
             "edit": True,
             "favorite": favorite,
-            # "fields": None,
+            "fields": fields,
             "folder_id": folder_id,
             "id": instance.id,
             "identity": identity,
