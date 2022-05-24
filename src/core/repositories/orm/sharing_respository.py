@@ -226,7 +226,7 @@ class SharingRepository(ISharingRepository):
             if email and new_sharing.team_members.filter(email=email).exists():
                 continue
             shared_member = new_sharing.team_members.model.objects.create(
-                user_id=member.get("user_id"),
+                user=member_user,
                 email=email,
                 role_id=member.get("role"),
                 team=new_sharing,
