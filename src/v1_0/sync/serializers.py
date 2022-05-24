@@ -76,59 +76,6 @@ class SyncProfileSerializer(serializers.ModelSerializer):
         organizations = []
         for team_member in team_members:
             organizations.append(SyncOrgDetailSerializer(team_member, many=False).data)
-
-        # constant_team_data = {
-        #     "object": "profileOrganization",
-        #     "has_public_and_private_keys": True,
-        #     "identifier": None,
-        #     "maxCollections": 32767,
-        #     "maxStorageGb": None,
-        #     "permissions": {
-        #         "access_business_portal": False,
-        #         "access_event_logs": False,
-        #         "access_import_export": False,
-        #         "access_reports": False,
-        #         "manage_all_collections": False,
-        #         "manage_assigned_collections": False,
-        #         "manage_groups": False,
-        #         "manage_policies": False,
-        #         "manage_reset_password": False,
-        #         "manage_sso": False,
-        #         "manage_users": False
-        #     },
-        #     "provider_id": None,
-        #     "provider_name": None,
-        #     "reset_password_enrolled": False,
-        #     "seats": 32767,
-        #     "self_host": True,
-        #     "sso_bound": False,
-        #     "use_2fa": True,
-        #     "use_api": True,
-        #     "use_business_portal": True,
-        #     "use_directory": True,
-        #     "use_events": True,
-        #     "use_groups": True,
-        #     "use_policies": True,
-        #     "use_reset_password": True,
-        #     "use_sso": True,
-        #     "use_totp": True,
-        #     "user_id": instance.internal_id,
-        #     "users_get_premium": True,
-        # }
-        # organizations = []
-        # for team_member in team_members:
-        #     team_member_data = constant_team_data.copy()
-        #     team_member_data.update({
-        #         "enabled": True if not team_member.team.locked else False,
-        #         "id": team_member.team_id,
-        #         "key": team_member.key,
-        #         "name": team_member.team.name,
-        #         "status": MAP_MEMBER_STATUS_TO_INT.get(team_member.status),
-        #         "type": MAP_MEMBER_TYPE_BW.get(team_member.role_id),
-        #         # "personal_share": team_member.team.personal_share,
-        #     })
-        #     organizations.append(team_member_data)
-
         data = {
             "object": "profile",
             "culture": "en-US",
@@ -161,6 +108,8 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         cipher_detail = data.copy()
         cipher_detail.pop("name", None)
         cipher_detail.pop("notes", None)
+        fields = cipher_detail.get("fields")
+        cipher_detail.pop("fields", None)
 
         login = cipher_detail if instance.type == CIPHER_TYPE_LOGIN else None
         secure_note = cipher_detail if instance.type in [CIPHER_TYPE_NOTE, CIPHER_TYPE_TOTP] else None
@@ -185,7 +134,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "deleted_date": instance.deleted_date,
             "edit": True,
             "favorite": favorite,
-            "fields": None,
+            "fields": fields,
             "folder_id": folder_id,
             "id": instance.id,
             "identity": identity,

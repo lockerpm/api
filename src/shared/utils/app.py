@@ -3,6 +3,8 @@ import random
 import string
 import time
 import urllib.parse
+from turtle import circle
+
 import pytz
 from datetime import datetime
 
@@ -80,4 +82,10 @@ def get_cipher_detail_data(cipher):
         data = dict(cipher.get("cryptoWallet") or {})
     else:
         data = dict()
+    data.update({
+        "name": cipher.get("name"),
+        "fields": cipher.get("fields")
+    })
+    if cipher.get("notes"):
+        data.update({"notes": cipher.get("notes")})
     return data
