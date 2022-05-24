@@ -3,7 +3,6 @@ import random
 import string
 import time
 import urllib.parse
-from turtle import circle
 
 import pytz
 from datetime import datetime
