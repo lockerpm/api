@@ -1,6 +1,6 @@
 from django.db import models
 
-from shared.constants.transactions import DURATION_MONTHLY, PAYMENT_METHOD_WALLET
+from shared.constants.transactions import DURATION_MONTHLY, PAYMENT_METHOD_CARD
 
 
 class UserPlan(models.Model):
@@ -9,7 +9,7 @@ class UserPlan(models.Model):
     end_period = models.FloatField(null=True, default=None)
     cancel_at_period_end = models.BooleanField(default=False)
     custom_endtime = models.FloatField(null=True, default=None)  # Custom endtime for some special cases
-    default_payment_method = models.CharField(max_length=128, default=PAYMENT_METHOD_WALLET)
+    default_payment_method = models.CharField(max_length=128, default=PAYMENT_METHOD_CARD)
 
     class Meta:
         abstract = True

@@ -232,10 +232,10 @@ class UserRepository(IUserRepository):
             # Downgrade all family members
             self.__cancel_family_members(pm_user_plan)
 
-            # If this plan has extra time => Upgade to Premium
+            # If this plan has extra time => Upgrade to Premium
             extra_time = pm_user_plan.extra_time
             if extra_time > 0:
-                pm_user_plan.default_payment_method = PAYMENT_METHOD_WALLET
+                # pm_user_plan.default_payment_method = PAYMENT_METHOD_WALLET
                 pm_user_plan.extra_time = 0
                 pm_user_plan.save()
                 self.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
