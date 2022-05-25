@@ -187,7 +187,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def takeover(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+        if emergency_access.type != EMERGENCY_ACCESS_TYPE_TAKEOVER and\
+                emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         grantor = emergency_access.grantor
         result = {
@@ -202,7 +203,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def password(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
-        if emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+        if emergency_access.type != EMERGENCY_ACCESS_TYPE_TAKEOVER and \
+                emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
