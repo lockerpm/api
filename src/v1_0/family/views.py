@@ -83,7 +83,14 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
 
         existed_family_members = pm_current_plan.pm_plan_family.all()
         pm_plan = pm_current_plan.get_plan_obj()
+
+        from shared.log.cylog import CyLog
+        CyLog.debug(**{"message": "FAMILY count: {} {} {}".format(
+            pm_plan.get_max_number_members(), existed_family_members.count(), len(family_members)
+        )})
+
         if len(family_members) > pm_plan.get_max_number_members() - existed_family_members.count():
+
             raise ValidationError(detail={"family_members": [
                 "The plan only accepts {} members including you".format(pm_plan.get_max_number_members())
             ]})
