@@ -92,6 +92,8 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                 pm_user_plan = user_repository.get_current_plan(user=new_payment.user, scope=scope)
                 pm_user_plan.pm_stripe_subscription = stripe_subscription_id
                 pm_user_plan.pm_stripe_subscription_created_time = now()
+                if stripe_subscription_obj.status == "trialing":
+                    pm_user_plan.personal_trial_applied = True
                 pm_user_plan.save()
                 stripe_metadata = stripe_subscription_obj.get("metadata", {})
                 start_period = None if not stripe_subscription_obj else stripe_subscription_obj.current_period_start
