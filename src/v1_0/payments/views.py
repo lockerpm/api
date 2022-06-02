@@ -13,6 +13,7 @@ from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
 from cystack_models.models.payments.payments import Payment
+from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer
@@ -119,8 +120,13 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "number_members": number_members,
             "family_members": list(family_members),
             "key": validated_data.get("key"),
-            "collection_name": validated_data.get("collection_name")
+            "collection_name": validated_data.get("collection_name"),
         }
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        if current_plan.is_personal_trial_applied() is False:
+            metadata.update({
+                "trial_end": now() + TRIAL_PERSONAL_PLAN
+            })
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
         calc_payment = self._calc_payment(
