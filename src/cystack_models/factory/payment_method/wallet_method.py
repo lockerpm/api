@@ -41,7 +41,10 @@ class WalletPaymentMethod(IPaymentMethod):
         # If user uses trial plan => Don't need to pay
         trial_end = kwargs.get("trial_end")
         if trial_end and trial_end > now():
-            pay_success = True
+            pm_user_plan = user_repository.get_current_plan(user=self.user, scope=self.scope)
+            pm_user_plan.personal_trial_applied = True
+            pm_user_plan.save()
+
             # Create invoice
             new_invoice = Payment.create(**{
                 "user": self.user,
