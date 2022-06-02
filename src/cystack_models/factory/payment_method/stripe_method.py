@@ -61,7 +61,8 @@ class StripePaymentMethod(IPaymentMethod):
                     "key": kwargs.get("key"),
                     "collection_name": kwargs.get("collection_name")
                 },
-                coupon=coupon
+                coupon=coupon,
+                trial_end=kwargs.get("trial_end")
             )
         except stripe.error.CardError as e:
             return {
