@@ -85,10 +85,7 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
         pm_plan = pm_current_plan.get_plan_obj()
 
         if len(family_members) > pm_plan.get_max_number_members() - existed_family_members.count() - 1:
-
-            raise ValidationError(detail={"family_members": [
-                "The plan only accepts {} members including you".format(pm_plan.get_max_number_members())
-            ]})
+            raise ValidationError(detail={"non_field_errors": [gen_error("7012")]})
 
         for family_member in family_members:
             email = family_member.get("email")

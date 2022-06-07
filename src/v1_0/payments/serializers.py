@@ -6,6 +6,7 @@ from shared.constants.transactions import *
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.payments.promo_codes import PromoCode
+from shared.error_responses.error import gen_error
 
 
 class CalcSerializer(serializers.Serializer):
@@ -117,9 +118,7 @@ class UpgradePlanSerializer(serializers.Serializer):
             if not family_members:
                 raise serializers.ValidationError(detail={"members": ["The family members are required"]})
             if len(family_members) > plan.get_max_number_members() - 1:
-                raise serializers.ValidationError(detail={
-                    "members": ["The plan requires {} members including you".format(plan.get_max_number_members())]
-                })
+                raise serializers.ValidationError(detail={"non_field_errors": [gen_error("7012")]})
         else:
             data["family_members"] = []
 

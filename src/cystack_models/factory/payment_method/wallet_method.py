@@ -5,6 +5,7 @@ from django.conf import settings
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
+from shared.utils.app import now
 from cystack_models.factory.payment_method.i_payment_method import IPaymentMethod
 from cystack_models.models.payments.payments import Payment
 
@@ -12,7 +13,7 @@ from cystack_models.models.payments.payments import Payment
 PAYMENT_API = "{}/micro_services/cystack_platform/payments/wallet".format(settings.GATEWAY_API)
 
 HEADERS = {
-    'User-agent': 'CyStack Cloud Security',
+    'User-agent': 'Locker Password Manager API',
     "Authorization": settings.MICRO_SERVICE_USER_AUTH
 }
 
@@ -36,6 +37,40 @@ class WalletPaymentMethod(IPaymentMethod):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         payment_repository = CORE_CONFIG["repositories"]["IPaymentRepository"]()
         currency = kwargs.get("currency", CURRENCY_VND)
+
+        # If user uses trial plan => Don't need to pay
+        trial_end = kwargs.get("trial_end")
+        if trial_end and trial_end > now():
+            pm_user_plan = user_repository.get_current_plan(user=self.user, scope=self.scope)
+            pm_user_plan.personal_trial_applied = True
+            pm_user_plan.save()
+
+            # Create invoice
+            new_invoice = Payment.create(**{
+                "user": self.user,
+                "plan": plan_type,
+                "description": "Upgrade plan",
+                "payment_method": PAYMENT_METHOD_WALLET,
+                "duration": duration,
+                "currency": currency,
+                "promo_code": coupon.id if coupon else None,
+                "customer": user_repository.get_customer_data(user=self.user),
+                "scope": self.scope,
+                "metadata": kwargs
+            })
+            payment_repository.set_paid(payment=new_invoice)
+            # Upgrade user plan
+            plan_metadata = kwargs
+            plan_metadata.update({
+                "promo_code": coupon if coupon else None,
+                "start_period": now(),
+                "end_period": trial_end,
+            })
+            user_repository.update_plan(
+                user=self.user, plan_type_alias=plan_type, duration=duration, scope=self.scope, **plan_metadata
+            )
+            return {"success": True}
+
         # First, call to CyStack ID to pay
         payment_data = {
             "user_id": self.user.user_id,

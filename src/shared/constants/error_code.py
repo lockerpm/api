@@ -181,6 +181,11 @@ APP_CODE += [
         "code": "7011",
         "message": "This account's original transaction id is registered. Please use another account or use the family plan",
         "vi_message": "Mobile Transaction đã được sử dụng. Vui lòng dùng tài khoản khác hoặc dùng gói family"
+    },
+    {
+        "code": "7012",
+        "message": "The number of members including you has exceeded the limit of the subscription plan allowed",
+        "vi_message": "Số lượng thành viên bao gồm cả bạn đã vượt quá giới hạn gói đăng ký cho phép"
     }
 ]
 
