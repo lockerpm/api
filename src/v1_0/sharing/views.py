@@ -178,7 +178,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
                     "pwd_user_ids": existed_member_users,
-                    "share_type": shared_type_name
+                    "share_type": shared_type_name,
+                    "owner_name": request.data.get("owner_name")
                 }
             }
         )
@@ -255,8 +256,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
                     "pwd_user_ids": existed_member_users,
-                    # "share_type": share_type,
-                    "count": len(ciphers)
+                    "count": len(ciphers),
+                    "owner_name": request.data.get("owner_name")
                 }
             }
         )
