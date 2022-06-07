@@ -13,7 +13,7 @@ from cystack_models.models.payments.payments import Payment
 PAYMENT_API = "{}/micro_services/cystack_platform/payments/wallet".format(settings.GATEWAY_API)
 
 HEADERS = {
-    'User-agent': 'CyStack Cloud Security',
+    'User-agent': 'Locker Password Manager API',
     "Authorization": settings.MICRO_SERVICE_USER_AUTH
 }
 

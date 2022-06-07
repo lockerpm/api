@@ -10,7 +10,7 @@ from shared.constants.transactions import PAYMENT_STATUS_PAID
 
 API_NOTIFY_PAYMENT = "{}/micro_services/cystack_platform/payments".format(settings.GATEWAY_API)
 HEADERS = {
-    'User-agent': 'CyStack Cloud Security',
+    'User-agent': 'Locker Password Manager API',
     "Authorization": settings.MICRO_SERVICE_USER_AUTH
 }
 

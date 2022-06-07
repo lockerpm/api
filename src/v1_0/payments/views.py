@@ -81,6 +81,12 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=result)
 
     @action(methods=["get"], detail=False)
+    def check_trial(self, request, *args, **kwargs):
+        user = self.request.user
+        pm_current_plan = self.user_repository.get_current_plan(user=user)
+        return Response(status=200, data={"personal_trial_applied": pm_current_plan.is_personal_trial_applied()})
+
+    @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):
         user = self.request.user
         pm_current_plan = self.user_repository.get_current_plan(user=user)

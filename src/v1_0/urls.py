@@ -143,6 +143,7 @@ urlpatterns += [
     url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
 
     url(r'^payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
+    url(r'^payments/trial$', views.PaymentPwdViewSet.as_view({'get': 'check_trial'})),
     url(r'^payments/plan$', views.PaymentPwdViewSet.as_view({'get': 'current_plan', 'post': 'upgrade_plan'})),
     url(r'^payments/plan/cancel$', views.PaymentPwdViewSet.as_view({'post': 'cancel_plan'})),
 
