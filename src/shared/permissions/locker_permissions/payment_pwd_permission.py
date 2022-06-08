@@ -6,7 +6,7 @@ class PaymentPwdPermission(LockerPermission):
         if view.action in ["webhook_create", "webhook_set_status",
                            "webhook_unpaid_subscription", "webhook_cancel_subscription"]:
             return True
-        elif view.action in ["list", "set_invoice_status"]:
+        elif view.action in ["list", "set_invoice_status", "user_invoices"]:
             return self.is_admin(request)
         return self.is_auth(request)
 

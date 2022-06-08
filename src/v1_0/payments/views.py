@@ -13,6 +13,7 @@ from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
 from cystack_models.models.payments.payments import Payment
+from cystack_models.models.users.users import User
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
@@ -29,7 +30,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = CalcSerializer
         elif self.action == "upgrade_plan":
             self.serializer_class = UpgradePlanSerializer
-        elif self.action in ["invoices", "list"]:
+        elif self.action in ["invoices", "list", "user_invoices"]:
             self.serializer_class = ListInvoiceSerializer
         if self.action == "retrieve_invoice":
             self.serializer_class = DetailInvoiceSerializer
@@ -44,6 +45,13 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             return invoice
         except Payment.DoesNotExist:
             raise NotFound
+
+    def get_user(self, user_id):
+        try:
+            user = User.objects.get(user_id=user_id)
+            return user
+        except User.DoesNotExist:
+            return None
 
     def get_queryset(self):
         all_pm_invoices = Payment.objects.filter().order_by('-created_time')
@@ -63,6 +71,22 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
     def list(self, request, *args, **kwargs):
         return super(PaymentPwdViewSet, self).list(request, *args, **kwargs)
+
+    @action(methods=["get"], detail=False)
+    def user_invoices(self, request, *args, **kwargs):
+        user = self.get_user(user_id=kwargs.get("pk"))
+        if not user:
+            raise NotFound
+        invoices = self.get_queryset().filter(user=user)
+        queryset = self.filter_queryset(invoices)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(methods=["post"], detail=False)
     def calc(self, request, *args, **kwargs):
