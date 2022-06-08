@@ -7,4 +7,6 @@ class UserPwdPermission(LockerPermission):
             return True
         if view.action in ["register", "prelogin", "me", "session"]:
             return self.is_auth(request)
+        elif view.action in ["retrieve"]:
+            return self.is_admin(request)
         return self.is_auth(request) and request.user.activated

@@ -23,6 +23,13 @@ from cystack_models.models.user_plans.pm_plans import PMPlan
 
 
 class UserRepository(IUserRepository):
+    def list_users(self, **filter_params):
+        users = User.objects.all().order_by('-creation_date')
+        q_param = filter_params.get("q")
+        if q_param:
+            users = users.filter(user_id__in=q_param.split(","))
+        return users
+
     def retrieve_or_create_by_id(self, user_id, creation_date=None) -> User:
         try:
             user = self.get_by_id(user_id=user_id)

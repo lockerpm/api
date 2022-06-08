@@ -130,3 +130,21 @@ class UserDeviceSerializer(serializers.ModelSerializer):
         data["browser"] = instance.get_browser()
         data["is_active"] = instance.device_access_tokens.filter().exists()
         return data
+
+
+class ListUserSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        data = {
+            "id": instance.user_id,
+            "internal_id": instance.internal_id,
+            "creation_data": instance.creation_date,
+            "revision_data": instance.revision_date,
+            "first_login": instance.first_login,
+            "activated": instance.activated,
+            "activated_data": instance.activated_date,
+            "account_revision_date": instance.account_revision_date,
+            "master_password_score": instance.master_password_score,
+            "timeout": instance.timeout,
+            "timeout_action": instance.timeout_action
+        }
+        return data

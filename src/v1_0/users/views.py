@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import F, FloatField, ExpressionWrapper
+from django.db.models import F, FloatField, ExpressionWrapper, Count
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
@@ -19,7 +19,8 @@ from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EV
 from shared.utils.app import now
 from shared.utils.network import detect_device
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
-    UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer
+    UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
+    ListUserSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -42,7 +43,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = DeviceFcmSerializer
         elif self.action == "devices":
             self.serializer_class = UserDeviceSerializer
+        elif self.action in ["retrieve"]:
+            self.serializer_class = ListUserSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
+
+    def get_object(self):
+        try:
+            user = self.user_repository.get_by_id(user_id=self.kwargs.get("pk"))
+            return user
+        except ObjectDoesNotExist:
+            raise NotFound
 
     @action(methods=["post"], detail=False)
     def register(self, request, *args, **kwargs):
@@ -453,3 +463,30 @@ class UserPwdViewSet(PasswordManagerViewSet):
         devices = self.device_repository.get_device_user(user=user)
         serializer = self.get_serializer(devices, many=True)
         return Response(status=200, data=serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        statistic_param = self.request.query_params.get("statistic", "0")
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+
+        if statistic_param == "1":
+            policies = self.team_repository.get_multiple_policy_by_user(user=instance).select_related('team')
+            # Check team policies
+            block_team_ids = []
+            for policy in policies:
+                check_policy = self.team_repository.check_team_policy(request=request, team=policy.team)
+                if check_policy is False:
+                    block_team_ids.append(policy.team_id)
+
+            ciphers = self.cipher_repository.get_multiple_by_user(
+                user=instance, exclude_team_ids=block_team_ids
+            ).order_by('-revision_date').values('type').annotate(count=Count('type'))
+            ciphers_count = {item["type"]: item["count"] for item in list(ciphers)}
+            data["items"] = ciphers_count
+
+            data["current_plan"] = self.user_repository.get_current_plan(
+                user=instance, scope=settings.SCOPE_PWD_MANAGER
+            ).get_plan_type_alias()
+
+        return Response(status=200, data=data)
