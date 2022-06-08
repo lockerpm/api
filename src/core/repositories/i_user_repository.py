@@ -7,6 +7,10 @@ from cystack_models.models.users.users import User
 
 class IUserRepository(ABC):
     @abstractmethod
+    def list_users(self, **filter_params):
+        pass
+
+    @abstractmethod
     def retrieve_or_create_by_id(self, user_id, creation_date=None) -> User:
         pass
 
