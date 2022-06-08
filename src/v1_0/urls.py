@@ -16,6 +16,16 @@ urlpatterns += [
 ]
 
 
+# ----------------------------------- Admin --------------------------------- #
+urlpatterns += [
+    url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
+    url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
+
+    url(r'^admin/users/(?P<pk>[0-9]+)$', views.UserPwdViewSet.as_view({'get': 'retrieve'})),
+
+]
+
+
 # ----------------------------------- Resources ----------------------------- #
 urlpatterns += [
     url(r'^resources/plans$', views.ResourcePwdViewSet.as_view({'get': 'plans'})),
@@ -139,9 +149,6 @@ urlpatterns += [
 
 # ------------------------------- Payment ------------------------------------- #
 urlpatterns += [
-    url(r'^admin/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
-    url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
-
     url(r'^payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
     url(r'^payments/trial$', views.PaymentPwdViewSet.as_view({'get': 'check_trial'})),
     url(r'^payments/plan$', views.PaymentPwdViewSet.as_view({'get': 'current_plan', 'post': 'upgrade_plan'})),
