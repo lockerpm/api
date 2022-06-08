@@ -22,6 +22,7 @@ urlpatterns += [
     url(r'^admin/payments/invoices/(?P<pk>[A-Z0-9]+)$', views.PaymentPwdViewSet.as_view({'put': 'set_invoice_status'})),
 
     url(r'^admin/users/(?P<pk>[0-9]+)$', views.UserPwdViewSet.as_view({'get': 'retrieve'})),
+    url(r'^admin/users/(?P<pk>[0-9]+)/invoices$', views.PaymentPwdViewSet.as_view({'get': 'user_invoices'})),
 
 ]
 
