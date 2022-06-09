@@ -26,8 +26,14 @@ class UserRepository(IUserRepository):
     def list_users(self, **filter_params):
         users = User.objects.all().order_by('-creation_date')
         q_param = filter_params.get("q")
+        register_from_param = filter_params.get("register_from")
+        register_to_param = filter_params.get("register_to")
         if q_param:
             users = users.filter(user_id__in=q_param.split(","))
+        if register_from_param:
+            users = users.filter(creation_date__gte=register_from_param)
+        if register_to_param:
+            users = users.filter(creation_date__lte=register_to_param)
         return users
 
     def retrieve_or_create_by_id(self, user_id, creation_date=None) -> User:
