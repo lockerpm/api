@@ -1,8 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Dict, Union, Any
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import F, FloatField, ExpressionWrapper, Count
+from django.db.models import F, FloatField, ExpressionWrapper, Count, CharField
+from django.db.models.expressions import RawSQL
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
@@ -490,3 +492,95 @@ class UserPwdViewSet(PasswordManagerViewSet):
             ).get_plan_type_alias()
 
         return Response(status=200, data=data)
+
+    @action(methods=["get"], detail=False)
+    def dashboard(self, request, *args, **kwargs):
+        current_time = now()
+        register_from_param = self.check_int_param(
+            self.request.query_params.get("register_from")
+        ) or current_time - 3 * 30 * 86400
+        register_to_param = self.check_int_param(self.request.query_params.get("")) or current_time
+        duration_param = self.request.query_params.get("duration") or "weekly"
+
+        users = self.user_repository.list_users()
+        total_all_time = users.count()
+        if register_from_param:
+            users = users.filter(creation_date__gte=register_from_param)
+        if register_to_param:
+            users = users.filter(creation_date__lte=register_to_param)
+
+        dashboard_result = {
+            "total": total_all_time,
+            "total_duration": users.count(),
+            "time": self._statistic_users_by_time(users, register_from_param, register_to_param, duration_param)
+        }
+        return Response(status=200, data=dashboard_result)
+
+    @staticmethod
+    def _total_duration(dt, duration="monthly"):
+        if duration == "monthly":
+            return dt.month + 12 * dt.year
+        elif duration == "weekly":
+            return
+        return
+
+    @staticmethod
+    def _generate_duration_init_data(start, end, duration="monthly"):
+        durations_list = []
+        for i in range((end - start).days + 1):
+            date = start + timedelta(days=i)
+            if duration == "daily":
+                d = "{}-{:02}-{:02}".format(date.year, date.month, date.day)
+            elif duration == "weekly":
+                d = date.isocalendar()[:2]   # e.g. (2022, 24)
+                d = "{}-{:02}".format(*d)
+            else:
+                d = "{}-{:02}".format(date.year, date.month)
+            durations_list.append(d)
+        duration_init = dict()
+        for d in sorted(set(durations_list), reverse=True):
+            duration_init[d] = None
+
+        # # Get annotation query
+        if duration == "daily":
+            query = "CONCAT(YEAR(FROM_UNIXTIME(creation_date)), '-', " \
+                    "LPAD(MONTH(FROM_UNIXTIME(creation_date)), 2, '0'), '-', " \
+                    "LPAD(DAY(FROM_UNIXTIME(creation_date)), 2, '0') )"
+        elif duration == "weekly":
+            query = "CONCAT(YEAR(FROM_UNIXTIME(creation_date)), '-', LPAD(WEEK(FROM_UNIXTIME(creation_date)), 2, '0'))"
+        else:
+            query = "CONCAT(YEAR(FROM_UNIXTIME(creation_date)), '-', LPAD(MONTH(FROM_UNIXTIME(creation_date)), 2, '0'))"
+
+        return {
+            "duration_init": duration_init,
+            "query": query
+        }
+
+    def _statistic_users_by_time(self, users, from_param, to_param, duration="weekly"):
+        if to_param is None:
+            to_param = now()
+        if from_param is None:
+            if users.first():
+                from_param = users.first().creation_date
+            else:
+                from_param = now() - 365 * 86400
+
+        duration_init_data = self._generate_duration_init_data(
+            start=datetime.fromtimestamp(from_param),
+            end=datetime.fromtimestamp(to_param),
+            duration=duration
+        )
+        data = duration_init_data.get("duration_init") or {}
+        query = duration_init_data.get("query")
+
+        users_by_duration = users.filter(creation_date__gte=from_param, creation_date__lte=to_param).annotate(
+            duration=RawSQL(query, [], output_field=CharField())
+        ).order_by().values('duration').annotate(count=Count('duration'))
+        for user_by_duration in users_by_duration:
+            duration_string = user_by_duration.get("duration")
+            duration_count = user_by_duration.get("count")
+            if duration_string:
+                data.update({duration_string: {"count": duration_count}})
+                # data[duration_string] = {"count": duration_count}
+
+        return data
