@@ -3,8 +3,8 @@ from typing import Dict, Union, Any
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import F, FloatField, ExpressionWrapper, Count, CharField
-from django.db.models.expressions import RawSQL
+from django.db.models import F, FloatField, ExpressionWrapper, Count, CharField, IntegerField
+from django.db.models.expressions import RawSQL, Case, When
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.decorators import action
@@ -501,6 +501,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         ) or current_time - 3 * 30 * 86400
         register_to_param = self.check_int_param(self.request.query_params.get("")) or current_time
         duration_param = self.request.query_params.get("duration") or "weekly"
+        device_type_param = self.request.query_params.get("device_type") or "mobile"
 
         users = self.user_repository.list_users()
         total_all_time = users.count()
@@ -509,10 +510,35 @@ class UserPwdViewSet(PasswordManagerViewSet):
         if register_to_param:
             users = users.filter(creation_date__lte=register_to_param)
 
+        statistic_time = self._statistic_users_by_time(users, register_from_param, register_to_param, duration_param)
+
+        device_users = users.annotate(
+            web_device_count=Count(
+                Case(When(user_devices__client_id='web', then=1), output_field=IntegerField())
+            ),
+            mobile_device_count=Count(
+                Case(When(user_devices__client_id='mobile', then=1), output_field=IntegerField())
+            ),
+            extension_device_count=Count(
+                Case(When(user_devices__client_id='browser', then=1), output_field=IntegerField())
+            ),
+        )
+        if device_type_param == "mobile":
+            device_users = device_users.filter(mobile_device_count__gt=0)
+        if device_type_param == "web":
+            device_users = device_users.filter(web_device_count__gt=0)
+        if device_type_param == "browser":
+            device_users = device_users.filter(extension_device_count__gt=0)
+        statistic_device = self._statistic_users_by_time(
+            device_users, register_from_param, register_to_param, duration_param
+        )
+
         dashboard_result = {
             "total": total_all_time,
             "total_duration": users.count(),
-            "time": self._statistic_users_by_time(users, register_from_param, register_to_param, duration_param)
+            "total_device": device_users.count(),
+            "time": statistic_time,
+            "device": statistic_device
         }
         return Response(status=200, data=dashboard_result)
 
