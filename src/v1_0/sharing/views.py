@@ -86,9 +86,11 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
         primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
-        need_send_notification = True if not sharing_invitation.key else False
+
+        # Accept this invitation
         if status == "accept":
-            self.sharing_repository.accept_invitation(member=sharing_invitation)
+            member = self.sharing_repository.accept_invitation(member=sharing_invitation)
+            member_status = member.status
             PwdSync(event=SYNC_EVENT_MEMBER_ACCEPTED, user_ids=[primary_owner.user_id, user.user_id]).send()
             # If share a cipher:
             if sharing_invitation.team.collections.all().exists() is False:
@@ -103,35 +105,33 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                         data={"id": share_collection.id}
                     )
 
+        # Reject this invitation
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
+            member_status = None
             PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id, user.user_id]).send()
 
-        result = {
+        # Push mobile notification
+        fcm_ids = primary_owner.user.user_devices.exclude(
+            fcm_id__isnull=True
+        ).exclude(fcm_id="").values_list('fcm_id', flat=True)
+        fcm_message = FCMRequestEntity(
+            fcm_ids=list(fcm_ids), priority="high",
+            data={
+                "event": FCM_TYPE_CONFIRM_SHARE if status == "accept" else FCM_TYPE_REJECT_SHARE,
+                "data": {
+                    "id": sharing_invitation.team_id,
+                    "pwd_user_ids": [primary_owner.user_id],
+                    "name": request.data.get("user_fullname")
+                }
+            }
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
+        return Response(status=200, data={
             "status": status,
             "owner": primary_owner.user_id,
-            "need_send_mail": need_send_notification
-        }
-        # Push mobile notification
-        if need_send_notification:
-            fcm_ids = list(
-                primary_owner.user.user_devices.exclude(
-                    fcm_id__isnull=True
-                ).exclude(fcm_id="").values_list('fcm_id', flat=True)
-            )
-            fcm_message = FCMRequestEntity(
-                fcm_ids=fcm_ids, priority="high",
-                data={
-                    "event": FCM_TYPE_CONFIRM_SHARE if status == "accept" else FCM_TYPE_REJECT_SHARE,
-                    "data": {
-                        "id": sharing_invitation.team_id,
-                        "pwd_user_ids": [primary_owner.user_id],
-                        "name": request.data.get("user_fullname")
-                    }
-                }
-            )
-            FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
-        return Response(status=200, data=result)
+            "member_status": member_status
+        })
 
     @action(methods=["put"], detail=False)
     def share(self, request, *args, **kwargs):
