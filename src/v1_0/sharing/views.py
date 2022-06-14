@@ -93,13 +93,15 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             # If share a cipher:
             if sharing_invitation.team.collections.all().exists() is False:
                 share_cipher = sharing_invitation.team.ciphers.first()
-                PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
+                if share_cipher:
+                    PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
             # Else, share a folder
             else:
                 share_collection = sharing_invitation.team.collections.first()
-                PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
-                    data={"id": share_collection.id}
-                )
+                if share_collection:
+                    PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
+                        data={"id": share_collection.id}
+                    )
 
         else:
             self.sharing_repository.reject_invitation(member=sharing_invitation)
