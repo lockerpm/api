@@ -17,7 +17,7 @@ from cystack_models.models.users.users import User
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
-    DetailInvoiceSerializer
+    DetailInvoiceSerializer, AdminUpgradePlanSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -32,8 +32,10 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpgradePlanSerializer
         elif self.action in ["invoices", "list", "user_invoices"]:
             self.serializer_class = ListInvoiceSerializer
-        if self.action == "retrieve_invoice":
+        elif self.action == "retrieve_invoice":
             self.serializer_class = DetailInvoiceSerializer
+        elif self.action == "admin_upgrade_plan":
+            self.serializer_class = AdminUpgradePlanSerializer
         
         return super(PaymentPwdViewSet, self).get_serializer_class()
 
@@ -87,6 +89,28 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(methods=["post"], detail=False)
+    def admin_upgrade_plan(self, request, *args, **kwargs):
+        user = self.get_user(user_id=kwargs.get("pk"))
+        if not user:
+            raise NotFound
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        plan_alias = validated_data.get("plan_alias")
+        end_period = validated_data.get("end_period")
+        start_period = now()
+        # Upgrade plan of the user
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=plan_alias, scope=settings.SCOPE_PWD_MANAGER,
+            **{
+                "start_period": start_period,
+                "end_period": end_period
+            }
+        )
+        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def calc(self, request, *args, **kwargs):
