@@ -7,6 +7,7 @@ from cystack_models.models.user_plans.pm_plans import PMPlan
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.payments.promo_codes import PromoCode
 from shared.error_responses.error import gen_error
+from shared.utils.app import now
 
 
 class CalcSerializer(serializers.Serializer):
@@ -150,3 +151,26 @@ class DetailInvoiceSerializer(ListInvoiceSerializer):
         data["bank_id"] = instance.bank_id
 
         return data
+
+
+class AdminUpgradePlanSerializer(serializers.Serializer):
+    plan_alias = serializers.CharField()
+    end_period = serializers.IntegerField(allow_null=True)
+
+    def validate(self, data):
+        # Validate plan
+        plan_alias = data.get("plan_alias")
+        try:
+            plan = PMPlan.objects.get(alias=plan_alias)
+            data["plan"] = plan
+        except PMPlan.DoesNotExist:
+            raise serializers.ValidationError(detail={"plan_alias": ["This plan does not exist"]})
+
+        end_period = data.get("end_period")
+        if plan.get_alias() == PLAN_TYPE_PM_FREE:
+            data["end_period"] = None
+        else:
+            data["end_period"] = end_period or now() + 30 * 86400
+
+        return data
+
