@@ -219,7 +219,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         self.user_repository.revoke_all_sessions(user=grantor)
         # Remove grantor from all teams unless Owner
         grantor_teams = self.team_repository.get_multiple_team_by_user(
-            user=grantor, status=PM_MEMBER_STATUS_CONFIRMED
+            user=grantor, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
         ).order_by('-creation_date')
         for grantor_team in grantor_teams:
             member = grantor_team.team_members.get(user=grantor)
