@@ -88,7 +88,9 @@ class NotifyBackground(ILockerBackground):
                 "team_name": primary_team.name if primary_team else None,
                 "plan_name": current_plan.get_plan_type_name(),
                 "plan_price": current_plan.pm_plan.get_price(currency=payment.currency, duration=payment.duration),
-                "number_members": number_members
+                "number_members": number_members,
+                "start_period": current_plan.start_period,
+                "end_period": current_plan.end_period
             }
             subtotal = payment.total_price + payment.discount
             notification_data = {
