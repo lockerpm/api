@@ -81,7 +81,7 @@ class CronTask:
         schedule.every().day.at("10:00").do(self.feedback_tasks)
         schedule.every(20).minutes.do(self.emergency_access_approve)
         # schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
-        self.logger.info("[+] Starting Platform cron task")
+        self.logger.info("[+] Starting Locker cron task")
         while True:
             schedule.run_pending()
             time.sleep(1)
