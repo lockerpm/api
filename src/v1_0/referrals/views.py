@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 
-from shared.constants.transactions import PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FREE, REFERRAL_EXTRA_TIME
+from shared.constants.transactions import PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FREE, REFERRAL_EXTRA_TIME, REFERRAL_LIMIT
 from shared.log.cylog import CyLog
 from shared.permissions.locker_permissions.referral_pwd_permission import ReferralPwdPermission
 from shared.utils.app import now
@@ -30,6 +30,7 @@ class ReferralPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         referred_by = validated_data.get("referred_by")
+        count = validated_data.get("count")
         CyLog.info(**{"message": "Claim referral code: {} {}".format(user, validated_data)})
         try:
             referred_by_user = self.user_repository.get_by_id(user_id=referred_by)
@@ -43,18 +44,19 @@ class ReferralPwdViewSet(PasswordManagerViewSet):
             "cancel_at_period_end": True
         })
         # Get current plan of the referred user
-        referred_user_plan = self.user_repository.get_current_plan(
-            user=referred_by_user, scope=settings.SCOPE_PWD_MANAGER
-        )
-        # Upgrade plan of the referred user if the plan is Free
-        if referred_user_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
-            self.user_repository.update_plan(user=referred_by_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
-                "start_period": current_time,
-                "end_period": current_time + REFERRAL_EXTRA_TIME,
-                "cancel_at_period_end": True
-            })
-        # Else, update extra time
-        else:
-            referred_user_plan.extra_time = F('extra_time') + REFERRAL_EXTRA_TIME
-            referred_user_plan.save()
+        if count < REFERRAL_LIMIT:
+            referred_user_plan = self.user_repository.get_current_plan(
+                user=referred_by_user, scope=settings.SCOPE_PWD_MANAGER
+            )
+            # Upgrade plan of the referred user if the plan is Free
+            if referred_user_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
+                self.user_repository.update_plan(user=referred_by_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
+                    "start_period": current_time,
+                    "end_period": current_time + REFERRAL_EXTRA_TIME,
+                    "cancel_at_period_end": True
+                })
+            # Else, update extra time
+            else:
+                referred_user_plan.extra_time = F('extra_time') + REFERRAL_EXTRA_TIME
+                referred_user_plan.save()
         return Response(status=200, data={"success": True})
