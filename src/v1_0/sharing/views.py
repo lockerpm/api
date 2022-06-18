@@ -10,7 +10,8 @@ from rest_framework.exceptions import NotFound, ValidationError
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
-from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE, FCM_TYPE_REJECT_SHARE
+from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE, FCM_TYPE_REJECT_SHARE, \
+    FCM_TYPE_ACCEPT_SHARE
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
@@ -86,7 +87,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
         primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
-
+        shared_type_name = None
         # Accept this invitation
         if status == "accept":
             member = self.sharing_repository.accept_invitation(member=sharing_invitation)
@@ -96,33 +97,49 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             if sharing_invitation.team.collections.all().exists() is False:
                 share_cipher = sharing_invitation.team.ciphers.first()
                 if share_cipher:
+                    shared_type_name = share_cipher.type
                     PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
             # Else, share a folder
             else:
                 share_collection = sharing_invitation.team.collections.first()
                 if share_collection:
+                    shared_type_name = "folder"
                     PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
                         data={"id": share_collection.id}
                     )
 
         # Reject this invitation
         else:
+            if sharing_invitation.team.collections.all().exists() is False:
+                share_cipher = sharing_invitation.team.ciphers.first()
+                shared_type_name = share_cipher.type if share_cipher else shared_type_name
+            else:
+                shared_type_name = "folder"
+
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             member_status = None
             PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id, user.user_id]).send()
 
         # Push mobile notification
+        if member_status == PM_MEMBER_STATUS_ACCEPTED:
+            fcm_event = FCM_TYPE_CONFIRM_SHARE
+        elif member_status == PM_MEMBER_STATUS_CONFIRMED:
+            fcm_event = FCM_TYPE_ACCEPT_SHARE
+        else:
+            fcm_event = FCM_TYPE_REJECT_SHARE
         fcm_ids = primary_owner.user.user_devices.exclude(
             fcm_id__isnull=True
         ).exclude(fcm_id="").values_list('fcm_id', flat=True)
         fcm_message = FCMRequestEntity(
             fcm_ids=list(fcm_ids), priority="high",
             data={
-                "event": FCM_TYPE_CONFIRM_SHARE if status == "accept" else FCM_TYPE_REJECT_SHARE,
+                "event": fcm_event,
                 "data": {
                     "id": sharing_invitation.team_id,
+                    "share_type": shared_type_name,
                     "pwd_user_ids": [primary_owner.user_id],
-                    "name": request.data.get("user_fullname")
+                    "name": request.data.get("user_fullname"),
+                    "recipient_name": request.data.get("user_fullname"),
                 }
             }
         )
