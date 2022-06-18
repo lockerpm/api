@@ -119,7 +119,9 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                     "plan_price": updated_user_plan.pm_plan.get_price(
                         currency=new_payment.currency, duration=new_payment.duration
                     ),
-                    "number_members": new_payment.get_metadata().get("number_members", 1) or 1
+                    "number_members": new_payment.get_metadata().get("number_members", 1) or 1,
+                    "start_period": start_period,
+                    "end_period": end_period,
                 }
 
         else:
