@@ -4,6 +4,7 @@ TRIAL_TEAM_PLAN = 10 * 86400            # 10 days
 TRIAL_TEAM_MEMBERS = 2
 
 REFERRAL_EXTRA_TIME = 86400 * 30        # 30 days
+REFERRAL_LIMIT = 3
 
 
 # ------------------- Currency ------------------------------------- #

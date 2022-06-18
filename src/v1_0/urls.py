@@ -174,7 +174,7 @@ urlpatterns += [
 ]
 
 
-# -------------------------------- Family Plan members  ------------------------------------- #
+# -------------------------------- Referral  ------------------------------------- #
 urlpatterns += [
     url(r'^referrals/claim$', views.ReferralPwdViewSet.as_view({'post': 'claim'}))
 ]
