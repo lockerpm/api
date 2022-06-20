@@ -27,6 +27,7 @@ class UpgradePlanSerializer(serializers.Serializer):
     currency = serializers.CharField(required=False, default=CURRENCY_USD)
     failure_reason = serializers.CharField(required=False, allow_null=True, allow_blank=True, default=None)
     end_period = serializers.FloatField(required=False, allow_null=True)
+    is_trial_period = serializers.BooleanField(default=False)
 
     def validate(self, data):
         user_id = data.get("user_id")
