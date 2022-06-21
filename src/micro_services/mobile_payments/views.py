@@ -51,6 +51,7 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         confirm_original_id = validated_data.get("confirm_original_id")
         currency = validated_data.get("currency", CURRENCY_USD)
         failure_reason = validated_data.get("failure_reason")
+        is_trial_period = validated_data.get("is_trial_period", False)
 
         # Check confirm original id
         if confirm_original_id:
@@ -113,9 +114,14 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         )
 
         # Set default payment method
+        send_trial_mail = False
         try:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             current_plan.set_default_payment_method(PAYMENT_METHOD_MOBILE)
+            if current_plan.is_personal_trial_applied() is False and is_trial_period is True:
+                current_plan.personal_trial_applied = True
+                current_plan.save()
+                send_trial_mail = True
         except ObjectDoesNotExist:
             pass
 
@@ -123,6 +129,10 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
             func_name="pay_successfully", **{"payment": new_payment}
         )
+        if send_trial_mail is True:
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                func_name="trial_successfully", **{"payment": new_payment}
+            )
         return Response(status=200, data={
             "success": True,
             "scope": new_payment.scope,
