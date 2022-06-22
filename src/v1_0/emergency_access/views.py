@@ -81,7 +81,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             wait_time_days=validated_data.get("wait_time_days"),
             grantor=grantor,
             grantee=validated_data.get("grantee"),
-            email=validated_data.get("email")
+            email=validated_data.get("email"),
+            key_encrypted=validated_data.get("key")
         )
         # Send notification via ws for grantee
         if new_emergency_access.grantee_id:
@@ -107,8 +108,20 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         emergency_access = self.get_object()
         if emergency_access.status != EMERGENCY_ACCESS_STATUS_INVITED:
             raise NotFound
-        self.emergency_repository.accept_emergency_access(emergency_access)
-        return Response(status=200, data={"success": True, "grantor_user_id": emergency_access.grantor.user_id})
+        if emergency_access.key_encrypted:
+            emergency_access = self.emergency_repository.confirm_emergency_access(
+                emergency_access, emergency_access.key_encrypted
+            )
+        else:
+            emergency_access = self.emergency_repository.accept_emergency_access(emergency_access)
+
+        return Response(status=200, data={
+            "success": True,
+            "grantor_user_id": emergency_access.grantor.user_id,
+            "grantee_user_id": emergency_access.grantee.user_id if emergency_access.grantee else None,
+            "grantee_email": emergency_access.email,
+            "status": emergency_access.status
+        })
 
     @action(methods=["get"], detail=True)
     def public_key(self, request, *args, **kwargs):

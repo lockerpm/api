@@ -42,6 +42,7 @@ class InviteEmergencyAccessSerializer(serializers.Serializer):
     email = serializers.EmailField(allow_null=True, required=False, default=None)
     type = serializers.ChoiceField(choices=[EMERGENCY_ACCESS_TYPE_VIEW, EMERGENCY_ACCESS_TYPE_TAKEOVER])
     wait_time_days = serializers.IntegerField(min_value=1, max_value=90)
+    key = serializers.CharField(max_length=512, allow_null=True, required=False)
 
     def validate(self, data):
         emergency_repository = CORE_CONFIG["repositories"]["IEmergencyAccessRepository"]()
