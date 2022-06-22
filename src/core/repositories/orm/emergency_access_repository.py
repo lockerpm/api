@@ -62,9 +62,11 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
             bump_account_revision_date(user=emergency_access.grantee)
         emergency_access.delete()
 
-    def invite_emergency_access(self, access_type, wait_time_days, grantor, grantee=None, email=None):
+    def invite_emergency_access(self, access_type, wait_time_days, grantor, grantee=None, email=None,
+                                key_encrypted=None):
         emergency_access = EmergencyAccess.create(
-            grantor=grantor, access_type=access_type, wait_time_days=wait_time_days, grantee=grantee, email=email
+            grantor=grantor, access_type=access_type, wait_time_days=wait_time_days, grantee=grantee, email=email,
+            key_encrypted=key_encrypted
         )
         return emergency_access
 
@@ -73,6 +75,7 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         emergency_access.status = EMERGENCY_ACCESS_STATUS_ACCEPTED
         emergency_access.save()
         bump_account_revision_date(user=emergency_access.grantee)
+        return emergency_access
 
     def confirm_emergency_access(self, emergency_access: EmergencyAccess, key_encrypted: str):
         emergency_access.email = None
@@ -80,6 +83,7 @@ class EmergencyAccessRepository(IEmergencyAccessRepository):
         emergency_access.key_encrypted = key_encrypted
         emergency_access.save()
         bump_account_revision_date(user=emergency_access.grantee)
+        return emergency_access
 
     def initiate_emergency_access(self, emergency_access: EmergencyAccess):
         emergency_access.status = EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED
