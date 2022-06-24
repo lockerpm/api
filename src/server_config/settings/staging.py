@@ -15,7 +15,7 @@ DATABASES = {
         'PORT': os.getenv("MYSQL_STAGING_PORT"),
         'CONN_MAX_AGE': 120,
         'OPTIONS': {
-            'init_command': "ALTER DATABASE `%s CHARACTER SET utf8; "
+            'init_command': "ALTER DATABASE `%s` CHARACTER SET utf8; "
                             "SET block_encryption_mode = 'aes-256-cbc'" % (os.getenv("MYSQL_STAGING_DATABASE")),
             'charset': 'utf8',  # <--- Use this
             'isolation_level': 'read committed'
