@@ -122,17 +122,22 @@ class MobilePaymentViewSet(MicroServiceViewSet):
                 current_plan.personal_trial_applied = True
                 current_plan.save()
                 send_trial_mail = True
+                # Update payment -> trial
+                new_payment.total_price = 0
+                new_payment.discount = 0
+                new_payment.save()
         except ObjectDoesNotExist:
             pass
 
         # Send mail
-        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-            func_name="pay_successfully", **{"payment": new_payment}
-        )
         if send_trial_mail is True:
             LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
                 func_name="trial_successfully", **{"payment": new_payment}
             )
+        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+            func_name="pay_successfully", **{"payment": new_payment}
+        )
+
         return Response(status=200, data={
             "success": True,
             "scope": new_payment.scope,
