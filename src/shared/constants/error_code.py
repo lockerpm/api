@@ -116,7 +116,7 @@ APP_CODE += [
 APP_CODE += [
     {
         "code": "5000",
-        "message": "This cipher already belongs to an organization",
+        "message": "This item already belongs to an organization",
         "vi_message": "Bản ghi đã thuộc về một team"
     },
     {
@@ -126,8 +126,8 @@ APP_CODE += [
     },
     {
         "code": "5002",
-        "message": "The maximum number of ciphers is reached. Please check your trash if any",
-        "vi_message": "Giới hạn số lượng cipher đã đạt giới hạn. Vui lòng kiểm tra thùng rác"
+        "message": "The maximum number of items is reached. Please check your trash if any",
+        "vi_message": "Giới hạn số lượng item đã đạt giới hạn. Vui lòng kiểm tra thùng rác"
     }
 ]
 
