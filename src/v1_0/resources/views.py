@@ -17,7 +17,7 @@ class ResourcePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["get"], detail=False)
     def plans(self, request, *args, **kwargs):
-        all_plans = PMPlan.objects.all().exclude().order_by('id')
+        all_plans = PMPlan.objects.all().exclude(is_team_plan=True).order_by('id')
         serializer = self.get_serializer(all_plans, many=True)
         return Response(status=200, data=serializer.data)
 
