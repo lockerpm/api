@@ -37,6 +37,12 @@ from cystack_models.models.teams.collections_members import CollectionMember
 from cystack_models.models.policy.policy import Policy
 
 
+# ------------------------ Domain Ownership Models ----------------- #
+# from cystack_models.models.domains.domains import Domain
+# from cystack_models.models.domains.ownership import Ownership
+# from cystack_models.models.domains.domain_ownership import DomainOwnership
+
+
 # ------------------------ Permission Models ----------------------- #
 from cystack_models.models.permissions.permissions import Permission
 from cystack_models.models.permissions.role_permissions import RolePermission
