@@ -240,39 +240,27 @@ class PMUserPlan(UserPlan):
         total_amount = max(total_amount, 0)
         discount = promo_code_obj.get_discount(total_amount, duration=new_duration) if promo_code_obj else 0.0
         immediate_amount = max(round(total_amount - discount, 2), 0)
-        # Return result
+
+        result = {
+            "alias": new_plan.get_alias(),
+            "price": round(new_plan_price, 2),
+            "total_price": total_amount,
+            "discount": discount,
+            "duration": new_duration,
+            "currency": currency,
+            "immediate_payment": immediate_amount,
+            "next_billing_time": next_billing_time,
+            "personal_trial_applied": self.is_personal_trial_applied(),
+            "promo_description": {
+                "en": promo_description_en,
+                "vi": promo_description_vi
+            },
+            "error_promo": error_promo
+        }
         if self.is_personal_trial_applied() is False:
-            result = {
-                "alias": new_plan.get_alias(),
-                "price": round(new_plan_price, 2),
-                "total_price": total_amount,
-                "discount": discount,
-                "duration": new_duration,
-                "currency": currency,
-                "immediate_payment": 0,
-                "next_billing_time": now() + TRIAL_PERSONAL_PLAN,
-                "promo_description": {
-                    "en": promo_description_en,
-                    "vi": promo_description_vi
-                },
-                "error_promo": error_promo
-            }
-        else:
-            result = {
-                "alias": new_plan.get_alias(),
-                "price": round(new_plan_price, 2),
-                "total_price": total_amount,
-                "discount": discount,
-                "duration": new_duration,
-                "currency": currency,
-                "immediate_payment": immediate_amount,
-                "next_billing_time": next_billing_time,
-                "promo_description": {
-                    "en": promo_description_en,
-                    "vi": promo_description_vi
-                },
-                "error_promo": error_promo
-            }
+            result["next_billing_time"] = now() + TRIAL_PERSONAL_PLAN
+            result["next_billing_payment"] = immediate_amount
+            result["immediate_payment"] = 0
         return result
 
     def calc_current_payment_price(self, currency):
