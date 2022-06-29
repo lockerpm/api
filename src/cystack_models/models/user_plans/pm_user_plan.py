@@ -273,7 +273,7 @@ class PMUserPlan(UserPlan):
         #         },
         #         "error_promo": error_promo
         #     }
-        if self.is_personal_trial_applied():
+        if self.is_personal_trial_applied() is False:
             next_billing_time = now() + TRIAL_PERSONAL_PLAN
         result = {
             "alias": new_plan.get_alias(),
