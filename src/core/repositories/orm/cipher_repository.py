@@ -233,12 +233,12 @@ class CipherRepository(ICipherRepository):
         cipher.save()
         # Set favorite
         if user_created_id:
-            favorite = cipher_data.get("favorite", cipher.get_favorites().get(user_cipher_id, False))
-            cipher.set_favorite(user_id=user_cipher_id, is_favorite=favorite)
+            favorite = cipher_data.get("favorite", cipher.get_favorites().get(user_created_id, False))
+            cipher.set_favorite(user_id=user_created_id, is_favorite=favorite)
 
         # Set folder id
-        folder_id = cipher_data.get("folder_id", cipher.get_folders().get(user_cipher_id))
-        cipher.set_folder(user_cipher_id, folder_id)
+        folder_id = cipher_data.get("folder_id", cipher.get_folders().get(user_created_id))
+        cipher.set_folder(user_created_id, folder_id)
         # Create CipherCollections
         if team_id:
             existed_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))

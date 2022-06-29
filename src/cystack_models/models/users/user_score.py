@@ -12,6 +12,9 @@ class UserScore(models.Model):
     cipher2 = models.FloatField(default=0)
     cipher3 = models.FloatField(default=0)
     cipher4 = models.FloatField(default=0)
+    cipher5 = models.FloatField(default=0)
+    cipher6 = models.FloatField(default=0)
+    cipher7 = models.FloatField(default=0)
 
     class Meta:
         db_table = 'cs_user_score'
