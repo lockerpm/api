@@ -147,7 +147,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "cancel_at_period_end": pm_current_plan.is_cancel_at_period_end(),
             "payment_method": pm_current_plan.get_default_payment_method(),
             "number_members": pm_current_plan.get_current_number_members(),
-            "is_family": user.pm_plan_family.exists()
+            "is_family": user.pm_plan_family.exists(),
+            "personal_trial_applied": pm_current_plan.is_personal_trial_applied()
         })
         return Response(status=200, data=result)
 
