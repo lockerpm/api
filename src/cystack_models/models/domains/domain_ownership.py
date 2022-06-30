@@ -33,7 +33,7 @@ class DomainOwnership(models.Model):
             if ownership.id == TYPE_DNS_TXT:
                 key = "@"
                 value = "locker-verification={}".format(verification_code)
-                # key = 'locker-verification.{}'.format(domain.address)
+                # key = 'locker-verification.{}'.format(domain.domain)
                 cls.objects.create(key=key, value=value, domain=domain, ownership=ownership)
 
     def set_verified(self):
