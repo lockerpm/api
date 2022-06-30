@@ -177,7 +177,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
             return Response(status=400, data=error_detail)
 
         user_teams = list(self.team_repository.get_multiple_team_by_user(
-            user=user, status=PM_MEMBER_STATUS_CONFIRMED
+            user=user, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
         ).values_list('id', flat=True))
         ip = request.data.get("ip")
         serializer = self.get_serializer(data=request.data)
@@ -192,45 +192,46 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Login failed
         if user.check_master_password(raw_password=password) is False:
             # Create event here
-            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-                "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-                "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
-            })
-            # Check policy
-            login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
-                failed_login_attempts__isnull=False
-            ).annotate(
-                rate_limit=ExpressionWrapper(
-                    F('failed_login_attempts') * 1.0 / F('failed_login_duration'), output_field=FloatField()
-                )
-            ).order_by('rate_limit').first()
-            if login_policy_limit:
-                failed_login_attempts = login_policy_limit.failed_login_attempts
-                failed_login_duration = login_policy_limit.failed_login_duration
-                failed_login_block_time = login_policy_limit.failed_login_block_time
-                latest_request_login = user.last_request_login
+            if user_teams:
+                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+                    "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+                    "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
+                })
+                # Check policy
+                login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
+                    failed_login_attempts__isnull=False
+                ).annotate(
+                    rate_limit=ExpressionWrapper(
+                        F('failed_login_attempts') * 1.0 / F('failed_login_duration'), output_field=FloatField()
+                    )
+                ).order_by('rate_limit').first()
+                if login_policy_limit:
+                    failed_login_attempts = login_policy_limit.failed_login_attempts
+                    failed_login_duration = login_policy_limit.failed_login_duration
+                    failed_login_block_time = login_policy_limit.failed_login_block_time
+                    latest_request_login = user.last_request_login
 
-                user.login_failed_attempts = user.login_failed_attempts + 1
-                user.last_request_login = now()
-                user.save()
-
-                if user.login_failed_attempts >= failed_login_attempts and \
-                        latest_request_login and now() - latest_request_login < failed_login_duration:
-                    # Lock login of this member
-                    user.login_block_until = now() + failed_login_block_time
+                    user.login_failed_attempts = user.login_failed_attempts + 1
+                    user.last_request_login = now()
                     user.save()
-                    owner = self.team_repository.get_primary_member(team=login_policy_limit.team).user_id
-                    raise ValidationError(detail={
-                        "password": ["Password is not correct"],
-                        "owner": owner,
-                        "lock_time": "{} (UTC+00)".format(
-                            datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
-                        ),
-                        "unlock_time": "{} (UTC+00)".format(
-                            datetime.utcfromtimestamp(user.login_block_until).strftime('%H:%M:%S %d-%m-%Y')
-                        ),
-                        "ip": ip
-                    })
+
+                    if user.login_failed_attempts >= failed_login_attempts and \
+                            latest_request_login and now() - latest_request_login < failed_login_duration:
+                        # Lock login of this member
+                        user.login_block_until = now() + failed_login_block_time
+                        user.save()
+                        owner = self.team_repository.get_primary_member(team=login_policy_limit.team).user_id
+                        raise ValidationError(detail={
+                            "password": ["Password is not correct"],
+                            "owner": owner,
+                            "lock_time": "{} (UTC+00)".format(
+                                datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
+                            ),
+                            "unlock_time": "{} (UTC+00)".format(
+                                datetime.utcfromtimestamp(user.login_block_until).strftime('%H:%M:%S %d-%m-%Y')
+                            ),
+                            "ip": ip
+                        })
 
             raise ValidationError(detail={"password": ["Password is not correct"]})
 
@@ -297,10 +298,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "not_sync": not_sync_sso_token_ids
         }
         # Create event login successfully
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-            "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_USER_LOGIN, "ip_address": ip
-        })
+        if user_teams:
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+                "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_USER_LOGIN, "ip_address": ip
+            })
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)

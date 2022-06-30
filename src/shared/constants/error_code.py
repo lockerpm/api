@@ -98,6 +98,11 @@ APP_CODE += [
         "message": "The invitation is expired. Please contact admin to re-invite",
         "vi_message": "Lời mời đã hết hạn. Vui lòng liên hệ admin để được mời lại"
     },
+    {
+        "code": "3005",
+        "message": "The domain ownership is not verified",
+        "vi_message": "Domain chưa được xác thực"
+    },
 
 ]
 
