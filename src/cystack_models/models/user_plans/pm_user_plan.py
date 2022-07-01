@@ -3,7 +3,6 @@ import stripe
 from django.conf import settings
 from django.db import models
 
-from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from shared.constants.transactions import *
 from shared.utils.app import now
 from cystack_models.interfaces.user_plans.user_plan import UserPlan
@@ -195,6 +194,7 @@ class PMUserPlan(UserPlan):
 
         # If user subscribes by Stripe => Using Stripe service
         if self.pm_stripe_subscription:
+            from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
             total_amount, next_billing_time = PaymentMethodFactory.get_method(
                 user=self.user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
             ).calc_update_total_amount(new_plan=new_plan, new_duration=new_duration, new_quantity=new_quantity)
