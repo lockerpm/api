@@ -489,9 +489,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             ciphers_count = {item["type"]: item["count"] for item in list(ciphers)}
             data["items"] = ciphers_count
 
-            data["current_plan"] = self.user_repository.get_current_plan(
-                user=instance, scope=settings.SCOPE_PWD_MANAGER
-            ).get_plan_type_alias()
+        data["current_plan"] = self.user_repository.get_current_plan(
+            user=instance, scope=settings.SCOPE_PWD_MANAGER
+        ).get_plan_type_alias()
 
         return Response(status=200, data=data)
 
