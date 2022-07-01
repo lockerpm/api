@@ -45,7 +45,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = DeviceFcmSerializer
         elif self.action == "devices":
             self.serializer_class = UserDeviceSerializer
-        elif self.action in ["retrieve"]:
+        elif self.action in ["retrieve", "list"]:
             self.serializer_class = ListUserSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
@@ -55,6 +55,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
             return user
         except ObjectDoesNotExist:
             raise NotFound
+
+    def get_queryset(self):
+        users = self.user_repository.list_users(**{
+            "register_from": self.check_int_param(self.request.query_params.get("register_from")),
+            "register_to": self.check_int_param(self.request.query_params.get("register_to")),
+            "plan": self.request.query_params.get("plan"),
+            "q": self.request.query_params.get("q")
+        })
+        return users
 
     @action(methods=["post"], detail=False)
     def register(self, request, *args, **kwargs):
@@ -494,6 +503,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
         ).get_plan_type_alias()
 
         return Response(status=200, data=data)
+
+    @action(methods=["get"], detail=False)
+    def list_user_ids(self, request, *args, **kwargs):
+        users = self.get_queryset()
+        user_ids = users.values_list('user_id', flat=True)
+        return Response(status=200, data={"user_ids": list(user_ids)})
 
     @action(methods=["get"], detail=False)
     def dashboard(self, request, *args, **kwargs):

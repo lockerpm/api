@@ -5,7 +5,7 @@ from typing import Dict
 import stripe
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Subquery, Q
 
 from core.repositories import IUserRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -28,12 +28,18 @@ class UserRepository(IUserRepository):
         q_param = filter_params.get("q")
         register_from_param = filter_params.get("register_from")
         register_to_param = filter_params.get("register_to")
+        plan_param = filter_params.get("plan")
         if q_param:
             users = users.filter(user_id__in=q_param.split(","))
         if register_from_param:
             users = users.filter(creation_date__gte=register_from_param)
         if register_to_param:
             users = users.filter(creation_date__lte=register_to_param)
+        if plan_param:
+            if plan_param == PLAN_TYPE_PM_FREE:
+                users = users.filter(Q(pm_user_plan__isnull=True) | Q(pm_user_plan__pm_plan__alias=plan_param))
+            else:
+                users = users.filter(pm_user_plan__pm_plan__alias=plan_param)
         return users
 
     def retrieve_or_create_by_id(self, user_id, creation_date=None) -> User:
