@@ -29,6 +29,7 @@ class UserRepository(IUserRepository):
         register_from_param = filter_params.get("register_from")
         register_to_param = filter_params.get("register_to")
         plan_param = filter_params.get("plan")
+        activated_param = filter_params.get("activated")
         if q_param:
             users = users.filter(user_id__in=q_param.split(","))
         if register_from_param:
@@ -40,6 +41,11 @@ class UserRepository(IUserRepository):
                 users = users.filter(Q(pm_user_plan__isnull=True) | Q(pm_user_plan__pm_plan__alias=plan_param))
             else:
                 users = users.filter(pm_user_plan__pm_plan__alias=plan_param)
+        if activated_param:
+            if activated_param == "0":
+                users = users.filter(activated=False)
+            elif activated_param == "1":
+                users = users.filter(activated=True)
         return users
 
     def retrieve_or_create_by_id(self, user_id, creation_date=None) -> User:

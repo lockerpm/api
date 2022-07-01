@@ -61,7 +61,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "register_from": self.check_int_param(self.request.query_params.get("register_from")),
             "register_to": self.check_int_param(self.request.query_params.get("register_to")),
             "plan": self.request.query_params.get("plan"),
-            "q": self.request.query_params.get("q")
+            "q": self.request.query_params.get("q"),
+            "activated": self.request.query_params.get("activated")
         })
         return users
 
