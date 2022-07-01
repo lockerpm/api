@@ -485,7 +485,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
             ciphers = self.cipher_repository.get_multiple_by_user(
                 user=instance, exclude_team_ids=block_team_ids
-            ).order_by('-revision_date').values('type').annotate(count=Count('type'))
+            ).order_by('-revision_date').values('type').annotate(count=Count('type')).order_by('-count')
             ciphers_count = {item["type"]: item["count"] for item in list(ciphers)}
             data["items"] = ciphers_count
 
