@@ -74,8 +74,8 @@ class DomainPwdViewSet(PasswordManagerViewSet):
 
         if request.method == "GET":
             ownerships = domain.get_verifications()
-            ownership = ownerships[0] if ownerships else {}
-            return Response(status=200, data=ownership)
+            # ownership = ownerships[0] if ownerships else {}
+            return Response(status=200, data=ownerships)
 
         elif request.method == "POST":
             if domain.verification is True:
