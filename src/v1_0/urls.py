@@ -193,6 +193,17 @@ urlpatterns += [
 ]
 
 
+""" Domain Management """
+urlpatterns += [
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/domains$', views.DomainPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/domains/(?P<domain_id>[0-9]+)$',
+        views.DomainPwdViewSet.as_view({'delete': 'destroy'})),
+    url(r'^teams/(?P<pk>[0-9a-z\-]+)/domains/(?P<domain_id>[0-9]+)/verification$',
+        views.DomainPwdViewSet.as_view({'get': 'verification', 'post': 'verification'})),
+
+]
+
+
 """ Folder Management """
 urlpatterns += [
     url(r'^collections/(?P<collection_id>[0-9a-z\-]+)$', views.TeamCollectionPwdViewSet.as_view({'get': 'retrieve'})),

@@ -4,7 +4,7 @@ from cystack_models.models.domains.domains import Domain
 from shared.utils.network import is_valid_domain, extract_root_domain
 
 
-class ListDomainSerializer(serializers.Serializer):
+class ListDomainSerializer(serializers.ModelSerializer):
     class Meta:
         model = Domain
         fields = ('id', 'created_time', 'updated_time', 'domain', 'verification')
