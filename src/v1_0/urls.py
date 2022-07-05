@@ -28,7 +28,8 @@ urlpatterns += [
     url(r'^admin/users/(?P<pk>[0-9]+)/plan$', views.PaymentPwdViewSet.as_view({'post': 'admin_upgrade_plan'})),
 
     url(r'^admin/affiliate_submissions$', views.AffiliateSubmissionPwdViewSet.as_view({'get': 'list'})),
-    url(r'^admin/affiliate_submissions/(?P<pk>[0-9]+)$', views.AffiliateSubmissionPwdViewSet.as_view({'delete': 'destroy'})),
+    url(r'^admin/affiliate_submissions/(?P<pk>[0-9]+)$',
+        views.AffiliateSubmissionPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
 
 ]
 
