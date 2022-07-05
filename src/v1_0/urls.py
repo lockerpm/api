@@ -27,6 +27,9 @@ urlpatterns += [
     url(r'^admin/users/(?P<pk>[0-9]+)/invoices$', views.PaymentPwdViewSet.as_view({'get': 'user_invoices'})),
     url(r'^admin/users/(?P<pk>[0-9]+)/plan$', views.PaymentPwdViewSet.as_view({'post': 'admin_upgrade_plan'})),
 
+    url(r'^admin/affiliate_submissions$', views.AffiliateSubmissionPwdViewSet.as_view({'get': 'list'})),
+    url(r'^admin/affiliate_submissions/(?P<pk>[0-9]+)$', views.AffiliateSubmissionPwdViewSet.as_view({'delete': 'destroy'})),
+
 ]
 
 
@@ -268,3 +271,8 @@ urlpatterns += [
 #     url(r'^members/share$', views.MemberPwdViewSet.as_view({'post': 'create_member_share'})),
 #     url(r'^invitations/share$', views.MemberPwdViewSet.as_view({'post': 'create_invitation_share'})),
 # ]
+
+# --------------------------------- Form submission ---------------------------- #
+urlpatterns += [
+    url(r'^affiliate_submissions$', views.AffiliateSubmissionPwdViewSet.as_view({'post': 'create'})),
+]
