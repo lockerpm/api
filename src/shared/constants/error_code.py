@@ -195,6 +195,16 @@ APP_CODE += [
 ]
 
 
+# ------------------------------- RELAY ------------------------------------- #
+APP_CODE += [
+    {
+        "code": "8000",
+        "message": "The number of relay addresses is reached",
+        "vi_message": "Số lượng địa chỉ relay đã đạt tối đa"
+    },
+]
+
+
 def get_app_code_content(code):
     try:
         return [content for content in APP_CODE if content["code"] == code][0]['message']
