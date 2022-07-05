@@ -24,3 +24,4 @@ from v1_0.family.views import FamilyPwdViewSet
 
 from v1_0.referrals.views import ReferralPwdViewSet
 
+from v1_0.form_submissions.affiliate_submissions.views import AffiliateSubmissionPwdViewSet

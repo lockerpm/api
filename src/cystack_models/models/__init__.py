@@ -54,3 +54,7 @@ from cystack_models.models.events.events import Event
 
 # ------------------------ Emergency Access ------------------------ #
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
+
+
+# ------------------------- Form submissions ------------------------ #
+from cystack_models.models.form_submissions.affiliate_submissions import AffiliateSubmission

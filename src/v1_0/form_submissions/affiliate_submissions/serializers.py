@@ -4,12 +4,14 @@ from rest_framework import serializers
 
 from cystack_models.models import Country
 from cystack_models.models.form_submissions.affiliate_submissions import AffiliateSubmission
+from shared.utils.app import now
 
 
 class AffiliateSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AffiliateSubmission
-        read_only_fields = ('id', )
+        fields = '__all__'
+        read_only_fields = ('id',)
 
     def validate(self, data):
         country = data.get("country")
@@ -22,3 +24,7 @@ class AffiliateSubmissionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(detail={"phone": ["The phone number is not valid"]})
 
         return data
+    
+    def to_internal_value(self, data):
+        data["created_time"] = now()
+        return super(AffiliateSubmissionSerializer, self).to_internal_value(data)

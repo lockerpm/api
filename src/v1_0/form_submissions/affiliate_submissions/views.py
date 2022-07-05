@@ -9,7 +9,7 @@ from v1_0.form_submissions.affiliate_submissions.serializers import AffiliateSub
 
 class AffiliateSubmissionPwdViewSet(PasswordManagerViewSet):
     permission_classes = (FormSubmissionPermission, )
-    http_method_names = ["head", "options", "get"]
+    http_method_names = ["head", "options", "get", "post", "delete"]
     serializer_class = AffiliateSubmissionSerializer
 
     def get_serializer_class(self):
@@ -31,6 +31,8 @@ class AffiliateSubmissionPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
     def list(self, request, *args, **kwargs):
+        page_size_param = self.check_int_param(self.request.query_params.get("size", 20))
+        self.pagination_class.page_size = page_size_param if page_size_param else 20
         return super(AffiliateSubmissionPwdViewSet, self).list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
