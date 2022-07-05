@@ -1,0 +1,1 @@
+from relay.relay_addresses.views import RelayAddressViewSet

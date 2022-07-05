@@ -58,3 +58,9 @@ from cystack_models.models.emergency_access.emergency_access import EmergencyAcc
 
 # ------------------------- Form submissions ------------------------ #
 from cystack_models.models.form_submissions.affiliate_submissions import AffiliateSubmission
+
+
+# -------------------------- RELAY ADDRESS -------------------------- #
+from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
+from cystack_models.models.relay.relay_domains import RelayDomain
+from cystack_models.models.relay.relay_addresses import RelayAddress
