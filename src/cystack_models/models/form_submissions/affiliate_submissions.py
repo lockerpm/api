@@ -9,6 +9,7 @@ class AffiliateSubmission(models.Model):
     phone = models.CharField(max_length=128)
     company = models.CharField(max_length=128, blank=True, null=True, default="")
     country = models.CharField(max_length=128, null=True, default=None)
+    status = models.CharField(max_length=64, default="submitted")
 
     class Meta:
         db_table = 'cs_affiliate_submissions'

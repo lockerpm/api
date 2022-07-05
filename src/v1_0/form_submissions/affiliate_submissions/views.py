@@ -4,15 +4,18 @@ from rest_framework.response import Response
 from cystack_models.models.form_submissions.affiliate_submissions import AffiliateSubmission
 from shared.permissions.locker_permissions.form_submission_permission import FormSubmissionPermission
 from v1_0.apps import PasswordManagerViewSet
-from v1_0.form_submissions.affiliate_submissions.serializers import AffiliateSubmissionSerializer
+from v1_0.form_submissions.affiliate_submissions.serializers import AffiliateSubmissionSerializer, \
+    UpdateStatusSerializer
 
 
 class AffiliateSubmissionPwdViewSet(PasswordManagerViewSet):
     permission_classes = (FormSubmissionPermission, )
-    http_method_names = ["head", "options", "get", "post", "delete"]
+    http_method_names = ["head", "options", "get", "post", "put", "delete"]
     serializer_class = AffiliateSubmissionSerializer
 
     def get_serializer_class(self):
+        if self.action == "update":
+            self.serializer_class = UpdateStatusSerializer
         return super(AffiliateSubmissionPwdViewSet, self).get_serializer_class()
 
     def get_queryset(self):
@@ -42,6 +45,16 @@ class AffiliateSubmissionPwdViewSet(PasswordManagerViewSet):
         new_affiliate_submission = AffiliateSubmission(**validated_data)
         new_affiliate_submission.save()
         return Response(status=201, data={"id": new_affiliate_submission.id})
+
+    def update(self, request, *args, **kwargs):
+        affiliate_submission = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        status = validated_data.get("status")
+        affiliate_submission.status = status
+        affiliate_submission.save()
+        return Response(status=200, data={"success": True})
 
     def destroy(self, request, *args, **kwargs):
         affiliate_submission = self.get_object()

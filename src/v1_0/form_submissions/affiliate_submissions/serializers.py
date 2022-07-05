@@ -28,3 +28,7 @@ class AffiliateSubmissionSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         data["created_time"] = now()
         return super(AffiliateSubmissionSerializer, self).to_internal_value(data)
+
+
+class UpdateStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["submitted", "replied", "cancelled"])
