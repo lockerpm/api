@@ -29,7 +29,9 @@ class NotificationSettingPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         if user.notification_settings.all().exists() is False:
             user.notification_settings.model.create_default_multiple(user)
-        notification_settings = user.notification_settings.all().order_by('category_id')
+        notification_settings = user.notification_settings.all().select_related(
+            'category'
+        ).order_by('category__order_number')
         type_param = self.request.query_params.get("type")
         if type_param == "notification":
             notification_settings = notification_settings.filter(category__notification=True)
