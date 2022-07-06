@@ -1,3 +1,3 @@
-DEFAULT_RELAY_DOMAIN = "relaytest.com"
+DEFAULT_RELAY_DOMAIN = "maily.org"
 
 MAX_FREE_RElAY_DOMAIN = 5

@@ -2,7 +2,7 @@
   {
     "model": "cystack_models.RelayDomain",
     "fields": {
-      "id": "relaytest.com"
+      "id": "maily.org"
     }
   }
 ]
