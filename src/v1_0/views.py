@@ -1,6 +1,7 @@
 from v1_0.management_commands.views import ManagementCommandPwdViewSet
 from v1_0.resources.views import ResourcePwdViewSet
 from v1_0.users.views import UserPwdViewSet
+from v1_0.notification_settings.views import NotificationSettingPwdViewSet
 from v1_0.sync.views import SyncPwdViewSet
 from v1_0.ciphers.views import CipherPwdViewSet
 from v1_0.sharing.views import SharingPwdViewSet

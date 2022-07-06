@@ -12,6 +12,11 @@ from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
 from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
 
 
+# ------------------------- Notification Settings ---------------- #
+from cystack_models.models.notifications.notification_category import NotificationCategory
+from cystack_models.models.notifications.notification_settings import NotificationSetting
+
+
 # ------------------------- Payments --------------------------- #
 from cystack_models.models.payments.promo_code_types import PromoCodeType
 from cystack_models.models.payments.promo_codes import PromoCode

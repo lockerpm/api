@@ -1,0 +1,92 @@
+[
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "system",
+      "name": "System email",
+      "notification": false,
+      "mail": true,
+      "order_number": 1
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "change_master_password",
+      "name": "Master Password Change",
+      "notification": false,
+      "mail": true,
+      "order_number": 2
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "login_new_device",
+      "name": "Login with new device",
+      "notification": false,
+      "mail": true,
+      "order_number": 3
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "item_sharing",
+      "name": "Item sharing",
+      "notification": true,
+      "mail": true,
+      "order_number": 4
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "emergency_access",
+      "name": "Emergency Access",
+      "notification": true,
+      "mail": true,
+      "order_number": 5
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "data_breach",
+      "name": "Data Breach",
+      "notification": true,
+      "mail": true,
+      "order_number": 6
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "password_tip_trick",
+      "name": "Password tips & tricks",
+      "notification": true,
+      "mail": true,
+      "order_number": 7
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "marketing",
+      "name": "Marketing & Promotion",
+      "notification": true,
+      "mail": true,
+      "order_number": 8
+    }
+  },
+  {
+    "model": "cystack_models.NotificationCategory",
+    "fields": {
+      "id": "other",
+      "name": "Other",
+      "notification": true,
+      "mail": true,
+      "order_number": 9
+    }
+  }
+]

@@ -67,6 +67,13 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Notification Settings ------------------ #
+urlpatterns += [
+    url(r'^notifcation/settings$', views.NotificationSettingPwdViewSet.as_view({'get': 'list'})),
+    url(r'^notifcation/settings/(?P<category_id>[a-z_]+)$',
+        views.NotificationSettingPwdViewSet.as_view({'put': 'update'})),
+]
+
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
     url(r'^sync$', views.SyncPwdViewSet.as_view({'get': 'sync'})),
