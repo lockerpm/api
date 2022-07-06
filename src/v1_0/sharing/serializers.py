@@ -214,16 +214,13 @@ class StopSharingSerializer(serializers.Serializer):
 
     def __get_personal_cipher_data(self, cipher):
         shared_cipher_data = {
+            "id": cipher.get("id"),
             "type": cipher.get("type"),
             "score": cipher.get("score", 0),
             "reprompt": cipher.get("reprompt", 0),
             "fields": cipher.get("fields"),
             "data": get_cipher_detail_data(cipher)
         }
-        # # Login data
-        # shared_cipher_data["data"]["name"] = cipher.get("name")
-        # if cipher.get("notes"):
-        #     shared_cipher_data["data"]["notes"] = cipher.get("notes")
         return shared_cipher_data
 
     def save(self, **kwargs):
@@ -238,7 +235,7 @@ class StopSharingSerializer(serializers.Serializer):
         folder = validated_data.get("folder")
         if folder:
             personal_ciphers = []
-            ciphers = validated_data.get("ciphers") or []
+            ciphers = folder.get("ciphers") or []
             for cipher in ciphers:
                 personal_ciphers.append(self.__get_personal_cipher_data(cipher=cipher))
             folder["ciphers"] = personal_ciphers

@@ -115,14 +115,17 @@ class SharingRepository(ISharingRepository):
                 ciphers = team.ciphers.filter(id__in=shared_folder_cipher_ids)
 
                 # Update new cipher data
-                for cipher in ciphers:
+                for c in ciphers:
                     personal_cipher_data = next(
-                        (item for item in personal_folder_ciphers if item["id"] == cipher.id), {}
+                        (item for item in personal_folder_ciphers if item["id"] == c.id), {}
                     )
-                    self._stop_share_cipher(cipher=cipher, user_id=user_owner.id, cipher_data=personal_cipher_data)
+                    self._stop_share_cipher(cipher=c, user_id=user_owner.user_id, cipher_data=personal_cipher_data)
 
                 # Update folder
-                ciphers.update(folder=str({user_owner.id: str(personal_folder.id)}))
+                Cipher.objects.filter(id__in=shared_folder_cipher_ids).update(
+                    folders=str({user_owner.user_id: str(personal_folder.id)})
+                )
+                # ciphers.update(folders=str({user_owner.user_id: str(personal_folder.id)}))
 
             # If the team shared a cipher
             if cipher:

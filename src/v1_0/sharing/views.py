@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -416,8 +416,24 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         user = request.user
 
         my_shared_teams = []
-        personal_shared_teams = self.sharing_repository.get_my_personal_shared_teams(user=user)
+        personal_shared_teams = self.sharing_repository.get_my_personal_shared_teams(user=user).annotate(
+            collection_count=Count('collections')
+        )
+
+        type_param = self.request.query_params.get("type")
+        if type_param == "item":
+            personal_shared_teams = personal_shared_teams.exclude(collection_count__gte=1)
+        elif type_param == "folder":
+            personal_shared_teams = personal_shared_teams.filter(collection_count__gte=1)
+
         for personal_shared_team in personal_shared_teams:
+            # collection_obj = personal_shared_team.collections.first()
+            # collection_data = None
+            # if collection_obj:
+            #     collection_data = {
+            #         "id": collection_obj.id,
+            #         "name": collection_obj.name
+            #     }
             shared_members = self.sharing_repository.get_shared_members(
                 personal_shared_team=personal_shared_team, exclude_owner=True
             )
@@ -440,6 +456,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 "description": personal_shared_team.description,
                 "organization_id": personal_shared_team.id,
                 "members": shared_members_data
+                # "collection": collection_data
             }
             my_shared_teams.append(team_data)
         return Response(status=200, data=my_shared_teams)
