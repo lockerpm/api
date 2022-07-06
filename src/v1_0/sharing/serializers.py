@@ -278,3 +278,7 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
 class UpdateInvitationRoleSerializer(serializers.Serializer):
     hide_passwords = serializers.BooleanField(default=False)
     role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
+
+
+class UpdateShareFolderSerializer(serializers.Serializer):
+    name = serializers.CharField()
