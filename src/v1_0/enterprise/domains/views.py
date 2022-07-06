@@ -84,15 +84,11 @@ class DomainPwdViewSet(PasswordManagerViewSet):
                     "domain": domain.domain,
                 })
 
-            is_success = False
-            domain_ownerships = domain.domain_ownership.all().select_related('ownership')
-            for domain_ownership in domain_ownerships:
-                if domain_ownership.ownership_id == TYPE_DNS_TXT:
-                    if domain_ownership.verify_dns("TXT") or domain_ownership.verify_dns("CNAME"):
-                        domain_ownership.set_verified()
-                        domain.set_verified()
-                        is_success = True
-                        break
-            if is_success:
-                return Response(status=200, data={"success": True, "domain": domain.domain})
+            is_verify = domain.check_verification()
+            if is_verify is True:
+                return Response(status=200, data={
+                    "success": True,
+                    "domain": domain.domain,
+                    "organization_name": domain.team.name
+                })
             return Response(status=200, data=refer_error(gen_error("3005")))

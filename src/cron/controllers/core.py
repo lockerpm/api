@@ -18,6 +18,7 @@ from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_
 from cron.controllers.tasks.emergency_access_auto_approve import emergency_access_auto_approve
 from cron.controllers.tasks.feedback import upgrade_survey_emails, log_new_users
 from cron.controllers.tasks.delete_trash_ciphers import delete_trash_ciphers
+from cron.controllers.tasks.domain_verification import domain_verification
 
 
 class CronTask:
@@ -75,11 +76,23 @@ class CronTask:
         finally:
             close_old_connections()
 
+    def domain_verification(self):
+        try:
+            domain_verification()
+            self.logger.info("[+] domain_verification Done")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.logger.error("[!] domain_verification error: {}".format(tb))
+        finally:
+            close_old_connections()
+
     def start(self):
         schedule.every(180).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
         schedule.every().day.at("10:00").do(self.feedback_tasks)
         schedule.every(20).minutes.do(self.emergency_access_approve)
+        # schedule.every(120).minutes.do(self.domain_verification)
+
         # schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
         self.logger.info("[+] Starting Locker cron task")
         while True:

@@ -257,17 +257,18 @@ class SharingRepository(ISharingRepository):
         if folder and shared_collection:
             shared_collection_cipher_ids = [collection_cipher["id"] for collection_cipher in shared_collection_ciphers]
             ciphers = user.ciphers.filter(id__in=shared_collection_cipher_ids)
-
+            shared_cipher_ids = []
             # Update new cipher data
             for cipher in ciphers:
                 shared_cipher_data = next(
                     (item for item in shared_collection_ciphers if item["id"] == cipher.id), {}
                 )
+                shared_cipher_ids.append(cipher.id)
                 self._share_cipher(cipher=cipher, team_id=new_sharing.id, cipher_data=shared_cipher_data)
+
             # Delete all folders of the ciphers
-            ciphers.update(team=new_sharing, user=None, folders='')
+            Cipher.objects.filter(id__in=shared_cipher_ids).update(folders="")
             # Create a collection for the shared ciphers
-            shared_cipher_ids = ciphers.values_list('id', flat=True)
             shared_collection.collections_ciphers.model.create_multiple_for_collection(
                 shared_collection.id, *shared_cipher_ids
             )

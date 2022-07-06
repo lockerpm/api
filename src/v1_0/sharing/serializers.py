@@ -78,6 +78,7 @@ class SharingSerializer(serializers.Serializer):
 
     def __get_shared_cipher_data(self, cipher):
         shared_cipher_data = {
+            "id": cipher.get("id"),
             "type": cipher.get("type"),
             "score": cipher.get("score", 0),
             "reprompt": cipher.get("reprompt", 0),
