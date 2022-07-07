@@ -282,3 +282,31 @@ class UpdateInvitationRoleSerializer(serializers.Serializer):
 
 class UpdateShareFolderSerializer(serializers.Serializer):
     name = serializers.CharField()
+
+
+class StopSharingFolderSerializer(serializers.Serializer):
+    folder = FolderShareSerializer(many=False, required=True)
+
+    def __get_personal_cipher_data(self, cipher):
+        shared_cipher_data = {
+            "id": cipher.get("id"),
+            "type": cipher.get("type"),
+            "score": cipher.get("score", 0),
+            "reprompt": cipher.get("reprompt", 0),
+            "fields": cipher.get("fields"),
+            "data": get_cipher_detail_data(cipher)
+        }
+        return shared_cipher_data
+
+    def save(self, **kwargs):
+        validated_data = self.validated_data
+
+        # Get personal cipher data of the collection if the user stop sharing a collection
+        folder = validated_data.get("folder")
+        personal_ciphers = []
+        ciphers = folder.get("ciphers") or []
+        for cipher in ciphers:
+            personal_ciphers.append(self.__get_personal_cipher_data(cipher=cipher))
+        folder["ciphers"] = personal_ciphers
+
+        return validated_data
