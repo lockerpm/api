@@ -25,9 +25,18 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def stop_share_all_members(self, team, cipher=None, cipher_data=None,
+                               collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
+        pass
+
+    @abstractmethod
     def stop_share(self, member: TeamMember,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
+        pass
+
+    @abstractmethod
+    def delete_share_folder(self, team, collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         pass
 
     @abstractmethod
@@ -38,6 +47,10 @@ class ISharingRepository(ABC):
     def create_new_sharing(self, sharing_key: str, members,
                            cipher=None, shared_cipher_data=None,
                            folder=None, shared_collection_name: str = None, shared_collection_ciphers=None):
+        pass
+
+    @abstractmethod
+    def add_members(self, team, shared_collection, members):
         pass
 
     @abstractmethod

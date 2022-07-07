@@ -114,8 +114,13 @@ urlpatterns += [
         views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/leave$',  views.SharingPwdViewSet.as_view({'post': 'leave'})),
 
+    url(r'^sharing/(?P<pk>[0-9]+)/members$',  views.SharingPwdViewSet.as_view({'post': 'add_member'})),
     url(r'^sharing/(?P<pk>[0-9]+)/folders/(?P<folder_id>[0-9a-z\-]+)$',
         views.SharingPwdViewSet.as_view({'put': 'update_share_folder'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/folders/(?P<folder_id>[0-9a-z\-]+)/delete$',
+        views.SharingPwdViewSet.as_view({'post': 'delete_share_folder'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/folders/(?P<folder_id>[0-9a-z\-]+)/stop$',
+        views.SharingPwdViewSet.as_view({'post': 'stop_share_folder'})),
 
     url(r'^sharing/my_share$', views.SharingPwdViewSet.as_view({'get': 'my_share'})),
 

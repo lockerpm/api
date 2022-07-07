@@ -77,6 +77,50 @@ class SharingRepository(ISharingRepository):
         bump_account_revision_date(user=member.user)
         return member
 
+    def stop_share_all_members(self, team, cipher=None, cipher_data=None,
+                               collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
+
+        # Get owner
+        user_owner = team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
+        other_members = list(team.team_members.exclude(user=user_owner).values_list('user_id', flat=True))
+
+        # If the team shared a folder
+        if collection:
+            # Create personal folder of the owner
+            personal_folder = Folder(
+                name=personal_folder_name, user=user_owner, creation_date=now(), revision_date=now()
+            )
+            personal_folder.save()
+            # Get all ciphers of the shared team
+            shared_folder_cipher_ids = [cipher["id"] for cipher in personal_folder_ciphers]
+            ciphers = team.ciphers.filter(id__in=shared_folder_cipher_ids)
+
+            # Update new cipher data
+            for c in ciphers:
+                personal_cipher_data = next(
+                    (item for item in personal_folder_ciphers if item["id"] == c.id), {}
+                )
+                self._stop_share_cipher(cipher=c, user_id=user_owner.user_id, cipher_data=personal_cipher_data)
+
+            # Update folder
+            Cipher.objects.filter(id__in=shared_folder_cipher_ids).update(
+                folders=str({user_owner.user_id: str(personal_folder.id)})
+            )
+
+        # If the team shared a cipher
+        if cipher:
+            self._stop_share_cipher(cipher=cipher, user_id=user_owner.user_id, cipher_data=cipher_data)
+
+        # Delete this team
+        team.ciphers.all().delete()
+        team.collections.all().delete()
+        team.groups.all().delete()
+        team.delete()
+
+        # Update revision date of user
+        bump_account_revision_date(user=user_owner)
+        return other_members
+
     def stop_share(self, member: TeamMember,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
@@ -103,45 +147,44 @@ class SharingRepository(ISharingRepository):
         # If the team does not have any members (excluding owner)
         # => Remove shared team and change the cipher/collection to personal cipher/personal folder
         if team.team_members.exclude(role_id=MEMBER_ROLE_OWNER).exists() is False:
-            # If the team shared a folder
-            if collection:
-                # Create personal folder of the owner
-                personal_folder = Folder(
-                    name=personal_folder_name, user=user_owner, creation_date=now(), revision_date=now()
-                )
-                personal_folder.save()
-                # Get all ciphers of the shared team
-                shared_folder_cipher_ids = [cipher["id"] for cipher in personal_folder_ciphers]
-                ciphers = team.ciphers.filter(id__in=shared_folder_cipher_ids)
-
-                # Update new cipher data
-                for c in ciphers:
-                    personal_cipher_data = next(
-                        (item for item in personal_folder_ciphers if item["id"] == c.id), {}
-                    )
-                    self._stop_share_cipher(cipher=c, user_id=user_owner.user_id, cipher_data=personal_cipher_data)
-
-                # Update folder
-                Cipher.objects.filter(id__in=shared_folder_cipher_ids).update(
-                    folders=str({user_owner.user_id: str(personal_folder.id)})
-                )
-                # ciphers.update(folders=str({user_owner.user_id: str(personal_folder.id)}))
-
-            # If the team shared a cipher
-            if cipher:
-                self._stop_share_cipher(cipher=cipher, user_id=user_owner.user_id, cipher_data=cipher_data)
-
-            # Delete this team
-            team.ciphers.all().delete()
-            team.collections.all().delete()
-            team.groups.all().delete()
-            team.delete()
+            self.stop_share_all_members(team=team, cipher=cipher, cipher_data=cipher_data,
+                                        collection=collection, personal_folder_name=personal_folder_name,
+                                        personal_folder_ciphers=personal_folder_ciphers)
 
         # Update revision date of user
         bump_account_revision_date(user=member_user)
         bump_account_revision_date(user=user_owner)
 
         return member_user_id
+
+    def delete_share_folder(self, team, collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
+        # Get owner
+        user_owner = team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
+        other_members = list(team.team_members.exclude(user=user_owner).values_list('user_id', flat=True))
+
+        # Get all ciphers of the shared team
+        shared_folder_cipher_ids = [cipher["id"] for cipher in personal_folder_ciphers]
+        ciphers = team.ciphers.filter(id__in=shared_folder_cipher_ids)
+
+        # Update new cipher data
+        for c in ciphers:
+            personal_cipher_data = next(
+                (item for item in personal_folder_ciphers if item["id"] == c.id), {}
+            )
+            self._stop_share_cipher(cipher=c, user_id=user_owner.user_id, cipher_data=personal_cipher_data)
+
+        # Move ciphers to the trash
+        Cipher.objects.filter(id__in=shared_folder_cipher_ids).update(revision_date=now(), deleted_date=now())
+
+        # Delete this team
+        team.ciphers.all().delete()
+        team.collections.all().delete()
+        team.groups.all().delete()
+        team.delete()
+
+        # Update revision date of user
+        bump_account_revision_date(user=user_owner)
+        return other_members
 
     def leave_share(self, member: TeamMember):
         """
@@ -216,45 +259,9 @@ class SharingRepository(ISharingRepository):
             })
 
         # Create sharing members
-        non_existed_member_users = []
-        existed_member_users = []
-        for member in members:
-            try:
-                member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
-                email = None
-            except User.DoesNotExist:
-                member_user = None
-                email = member.get("email")
-            if member_user and new_sharing.team_members.filter(user=member_user).exists() is True:
-                continue
-            if email and new_sharing.team_members.filter(email=email).exists():
-                continue
-            shared_member = new_sharing.team_members.model.objects.create(
-                user=member_user,
-                email=email,
-                role_id=member.get("role"),
-                team=new_sharing,
-                access_time=now(),
-                is_primary=False,
-                is_default=False,
-                status=PM_MEMBER_STATUS_INVITED,
-                key=member.get("key"),
-            )
-
-            # Create collection for this shared member
-            if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
-                shared_member.collections_members.model.objects.create(
-                    collection=shared_collection, member=shared_member,
-                    hide_passwords=member.get("hide_passwords", False)
-                )
-            if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
-                shared_member.hide_passwords = member.get("hide_passwords", False)
-                shared_member.save()
-
-            if shared_member.user_id:
-                existed_member_users.append(shared_member.user_id)
-            if shared_member.email:
-                non_existed_member_users.append(shared_member.email)
+        existed_member_users, non_existed_member_users = self.add_members(
+            team=new_sharing, shared_collection=shared_collection, members=members
+        )
 
         # Sharing the folder
         if folder and shared_collection:
@@ -311,6 +318,48 @@ class SharingRepository(ISharingRepository):
         cipher.team_id = None
         cipher.save()
         return cipher
+
+    def add_members(self, team, shared_collection, members):
+        non_existed_member_users = []
+        existed_member_users = []
+        for member in members:
+            try:
+                member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
+                email = None
+            except User.DoesNotExist:
+                member_user = None
+                email = member.get("email")
+            if member_user and team.team_members.filter(user=member_user).exists() is True:
+                continue
+            if email and team.team_members.filter(email=email).exists():
+                continue
+            shared_member = team.team_members.model.objects.create(
+                user=member_user,
+                email=email,
+                role_id=member.get("role"),
+                team=team,
+                access_time=now(),
+                is_primary=False,
+                is_default=False,
+                status=PM_MEMBER_STATUS_INVITED,
+                key=member.get("key"),
+            )
+
+            # Create collection for this shared member
+            if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
+                shared_member.collections_members.model.objects.create(
+                    collection=shared_collection, member=shared_member,
+                    hide_passwords=member.get("hide_passwords", False)
+                )
+            if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
+                shared_member.hide_passwords = member.get("hide_passwords", False)
+                shared_member.save()
+
+            if shared_member.user_id:
+                existed_member_users.append(shared_member.user_id)
+            if shared_member.email:
+                non_existed_member_users.append(shared_member.email)
+        return existed_member_users, non_existed_member_users
 
     def get_my_personal_shared_teams(self, user: User):
         """
