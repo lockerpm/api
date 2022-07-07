@@ -7,7 +7,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from cystack_models.models.notifications.notification_settings import NotificationSetting
 from shared.constants.members import *
+from shared.constants.user_notification import NOTIFY_SHARING
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
 from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE, FCM_TYPE_REJECT_SHARE, \
@@ -128,15 +130,18 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             PwdSync(event=SYNC_EVENT_MEMBER_REJECT, user_ids=[primary_owner.user_id, user.user_id]).send()
 
         # Push mobile notification
+        mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=[primary_owner.user_id])
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_SHARING, user_ids=[primary_owner.user_id]
+        )
+
         if member_status == PM_MEMBER_STATUS_ACCEPTED:
             fcm_event = FCM_TYPE_CONFIRM_SHARE
         elif member_status == PM_MEMBER_STATUS_CONFIRMED:
             fcm_event = FCM_TYPE_ACCEPT_SHARE
         else:
             fcm_event = FCM_TYPE_REJECT_SHARE
-        fcm_ids = primary_owner.user.user_devices.exclude(
-            fcm_id__isnull=True
-        ).exclude(fcm_id="").values_list('fcm_id', flat=True)
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
         fcm_message = FCMRequestEntity(
             fcm_ids=list(fcm_ids), priority="high",
             data={
@@ -154,6 +159,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={
             "status": status,
             "owner": primary_owner.user_id,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids,
             "member_status": member_status
         })
 
@@ -200,14 +207,19 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             shared_type_name = "folder"
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=new_sharing, add_all=True).send()
 
+        mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_SHARING, user_ids=existed_member_users
+        )
+
         # Push mobile notification
-        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users)
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
         fcm_message = FCMRequestEntity(
             fcm_ids=fcm_ids, priority="high",
             data={
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
-                    "pwd_user_ids": existed_member_users,
+                    "pwd_user_ids": notification_user_ids,
                     "share_type": shared_type_name,
                     "owner_name": request.data.get("owner_name")
                 }
@@ -218,8 +230,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={
             "id": new_sharing.id,
             "shared_type_name": shared_type_name,
-            "existed_member_users": existed_member_users,
-            "non_existed_member_users": non_existed_member_users
+            # "existed_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids,
         })
 
     @action(methods=["put"], detail=False)
@@ -275,17 +289,26 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         # Sync the invitation
         share_type = "folder" if folders else "cipher"
-        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
+        sync_user_ids = existed_member_users + [user.user_id]
+        # Sync member invitation
+        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=sync_user_ids).send()
         # Sync ciphers
-        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=existed_member_users + [user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=sync_user_ids).send()
+
+        # Get notification user: Mail and notification
+        mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_SHARING, user_ids=existed_member_users
+        )
+
         # Send mobile notification
-        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=existed_member_users)
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
         fcm_message = FCMRequestEntity(
             fcm_ids=fcm_ids, priority="high",
             data={
                 "event": FCM_TYPE_NEW_SHARE,
                 "data": {
-                    "pwd_user_ids": existed_member_users,
+                    "pwd_user_ids": notification_user_ids,
                     "count": len(ciphers),
                     "owner_name": request.data.get("owner_name")
                 }
@@ -295,8 +318,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         return Response(status=200, data={
             "shared_type_name": share_type,
-            "existed_member_users": existed_member_users,
-            "non_existed_member_users": non_existed_member_users
+            # "existed_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids,
         })
 
     def share_cipher_or_folder(self, sharing_key, members, cipher, shared_cipher_data, folder):
@@ -584,11 +609,16 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         existed_member_users, non_existed_member_users = self.sharing_repository.add_members(
             team=personal_share, shared_collection=share_folder, members=members
         )
+        mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_SHARING, user_ids=existed_member_users
+        )
         return Response(status=200, data={
             "id": personal_share.id,
             "shared_type_name": "folder",
-            "existed_member_users": existed_member_users,
-            "non_existed_member_users": non_existed_member_users
+            "non_existed_member_users": non_existed_member_users,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
         })
 
     @action(methods=["put"], detail=False)

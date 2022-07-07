@@ -11,10 +11,12 @@ from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
+from cystack_models.models.notifications.notification_settings import NotificationSetting
 from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
 from shared.constants.transactions import *
+from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE
@@ -348,7 +350,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
             "type": EVENT_USER_CHANGE_PASSWORD, "ip_address": ip
         })
-        return Response(status=200, data={"success": True})
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[user.user_id]
+        )
+        return Response(status=200, data={"notification": True if user.user_id in mail_user_ids else False})
 
     @action(methods=["post"], detail=False)
     def password_hint(self, request, *args, **kwargs):
@@ -422,7 +427,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         shared_member_user_ids = [cipher_member.get("shared_member") for cipher_member in shared_ciphers_members]
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id] + shared_member_user_ids).send()
-        return Response(status=200, data=shared_ciphers_members)
+
+        # mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=shared_member_user_ids)
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_SHARING, user_ids=shared_member_user_ids
+        )
+        notification = [c for c in shared_ciphers_members if c.get("shared_member") in notification_user_ids]
+        return Response(status=200, data=notification)
 
     @action(methods=["get"], detail=False)
     def invitations(self, request, *args, **kwargs):

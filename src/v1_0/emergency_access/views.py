@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from cystack_models.models.notifications.notification_settings import NotificationSetting
 from shared.constants.members import *
 from shared.constants.emergency_access import *
+from shared.constants.user_notification import NOTIFY_EMERGENCY_ACCESS, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.emergency_access_pwd_permission import EmergencyAccessPermission
 from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS
@@ -85,9 +87,22 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             key_encrypted=validated_data.get("key")
         )
         # Send notification via ws for grantee
+        mail_user_ids = []
+        notification_user_ids = []
         if new_emergency_access.grantee_id:
             PwdSync(event=SYNC_EMERGENCY_ACCESS, user_ids=[new_emergency_access.grantee_id]).send()
-        return Response(status=200, data={"id": new_emergency_access.id})
+            mail_user_ids = NotificationSetting.get_user_mail(
+                category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[new_emergency_access.grantee_id]
+            )
+            notification_user_ids = NotificationSetting.get_user_notification(
+                category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[new_emergency_access.grantee_id]
+            )
+
+        return Response(status=200, data={
+            "id": new_emergency_access.id,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
+        })
 
     @action(methods=["post"], detail=False)
     def reinvite(self, request, *args, **kwargs):
@@ -98,8 +113,20 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if emergency_access.grantee_id:
             PwdSync(event=SYNC_EMERGENCY_ACCESS, user_ids=[emergency_access.grantee_id]).send()
         grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        mail_user_ids = []
+        notification_user_ids = []
+        if grantee_user_id:
+            mail_user_ids = NotificationSetting.get_user_mail(
+                category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+            )
+            notification_user_ids = NotificationSetting.get_user_notification(
+                category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+            )
+
         return Response(status=200, data={
-            "id": emergency_access.id, "grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email
+            "id": emergency_access.id, "grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
         })
 
     @action(methods=["post"], detail=True)
@@ -115,12 +142,23 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         else:
             emergency_access = self.emergency_repository.accept_emergency_access(emergency_access)
 
+        grantor_user_id = emergency_access.grantor.user_id
+        grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantor_user_id, grantee_user_id]
+        )
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantor_user_id, grantee_user_id]
+        )
+
         return Response(status=200, data={
             "success": True,
-            "grantor_user_id": emergency_access.grantor.user_id,
-            "grantee_user_id": emergency_access.grantee.user_id if emergency_access.grantee else None,
+            "grantor_user_id": grantor_user_id,
+            "grantee_user_id": grantee_user_id,
             "grantee_email": emergency_access.email,
-            "status": emergency_access.status
+            "status": emergency_access.status,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
         })
 
     @action(methods=["get"], detail=True)
@@ -143,7 +181,18 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.emergency_repository.confirm_emergency_access(emergency_access, key_encrypted)
         grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
-        return Response(status=200, data={"grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email})
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+        return Response(status=200, data={
+            "grantee_user_id": grantee_user_id,
+            "grantee_email": emergency_access.email,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
+        })
 
     @action(methods=["post"], detail=True)
     def initiate(self, request, *args, **kwargs):
@@ -152,8 +201,17 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if emergency_access.status != EMERGENCY_ACCESS_STATUS_CONFIRMED:
             raise NotFound
         self.emergency_repository.initiate_emergency_access(emergency_access)
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[emergency_access.grantor.user_id]
+        )
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[emergency_access.grantor.user_id]
+        )
         return Response(status=200, data={
-            "type": emergency_access.type, "grantor_user_id": emergency_access.grantor.user_id
+            "type": emergency_access.type,
+            "grantor_user_id": emergency_access.grantor.user_id,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
         })
 
     @action(methods=["post"], detail=True)
@@ -166,7 +224,19 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.emergency_repository.reject_emergency_access(emergency_access)
         grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
-        return Response(status=200, data={"grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email})
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+
+        return Response(status=200, data={
+            "grantee_user_id": grantee_user_id,
+            "grantee_email": emergency_access.email,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
+        })
 
     @action(methods=["post"], detail=True)
     def approve(self, request, *args, **kwargs):
@@ -177,7 +247,18 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         self.emergency_repository.approve_emergency_access(emergency_access)
         grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
-        return Response(status=200, data={"grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email})
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+        return Response(status=200, data={
+            "grantee_user_id": grantee_user_id,
+            "grantee_email": emergency_access.email,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
+        })
 
     @action(methods=["post"], detail=True)
     def view(self, request, *args, **kwargs):
@@ -239,4 +320,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             if member.role.name != MEMBER_ROLE_OWNER:
                 member.delete()
 
-        return Response(status=200, data={"success": True})
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[grantor.user_id]
+        )
+
+        return Response(status=200, data={"notification": True if grantor.user_id in mail_user_ids else False})
