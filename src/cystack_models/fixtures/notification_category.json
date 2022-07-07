@@ -2,16 +2,6 @@
   {
     "model": "cystack_models.NotificationCategory",
     "fields": {
-      "id": "system",
-      "name": "System email",
-      "notification": false,
-      "mail": true,
-      "order_number": 1
-    }
-  },
-  {
-    "model": "cystack_models.NotificationCategory",
-    "fields": {
       "id": "change_master_password",
       "name": "Master Password Change",
       "notification": false,
