@@ -11,3 +11,9 @@ router.register(r'addresses', views.RelayAddressViewSet, 'addresses')
 urlpatterns = [
     url(r'^', include(router.urls))
 ]
+
+
+# ----------------------- Hooks ----------------------- #
+urlpatterns += [
+    url(r'^hook$', views.RelayHookViewSet.as_view({'post': 'sendgrid_hook'})),
+]

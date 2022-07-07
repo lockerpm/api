@@ -1,6 +1,7 @@
 from django.db import models
 
 from cystack_models.models.teams.teams import Team
+from shared.constants.domain_ownership import TYPE_DNS_TXT
 from shared.utils.app import now
 
 
@@ -46,3 +47,13 @@ class Domain(models.Model):
 
             })
         return results
+
+    def check_verification(self) -> bool:
+        domain_ownerships = self.domain_ownership.all().select_related('ownership')
+        for domain_ownership in domain_ownerships:
+            if domain_ownership.ownership_id == TYPE_DNS_TXT:
+                if domain_ownership.verify_dns("TXT") or domain_ownership.verify_dns("CNAME"):
+                    domain_ownership.set_verified()
+                    self.set_verified()
+                    return True
+        return False

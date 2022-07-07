@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -16,7 +16,7 @@ from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
-    StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer
+    StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -37,6 +37,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = StopSharingSerializer
         elif self.action == "update_role":
             self.serializer_class = UpdateInvitationRoleSerializer
+        elif self.action == "update_share_folder":
+            self.serializer_class = UpdateShareFolderSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
     def get_personal_share(self, sharing_id):
@@ -416,8 +418,24 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         user = request.user
 
         my_shared_teams = []
-        personal_shared_teams = self.sharing_repository.get_my_personal_shared_teams(user=user)
+        personal_shared_teams = self.sharing_repository.get_my_personal_shared_teams(user=user).annotate(
+            collection_count=Count('collections')
+        )
+
+        type_param = self.request.query_params.get("type")
+        if type_param == "item":
+            personal_shared_teams = personal_shared_teams.exclude(collection_count__gte=1)
+        elif type_param == "folder":
+            personal_shared_teams = personal_shared_teams.filter(collection_count__gte=1)
+
         for personal_shared_team in personal_shared_teams:
+            # collection_obj = personal_shared_team.collections.first()
+            # collection_data = None
+            # if collection_obj:
+            #     collection_data = {
+            #         "id": collection_obj.id,
+            #         "name": collection_obj.name
+            #     }
             shared_members = self.sharing_repository.get_shared_members(
                 personal_shared_team=personal_shared_team, exclude_owner=True
             )
@@ -440,6 +458,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 "description": personal_shared_team.description,
                 "organization_id": personal_shared_team.id,
                 "members": shared_members_data
+                # "collection": collection_data
             }
             my_shared_teams.append(team_data)
         return Response(status=200, data=my_shared_teams)
@@ -544,3 +563,45 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(data={"id": share_collection.id})
 
         return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def update_share_folder(self, request, *args, **kwargs):
+        user = request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(kwargs.get("pk"))
+        # Retrieve collection
+        try:
+            collection = personal_share.collections.get(id=kwargs.get("folder_id"))
+        except ObjectDoesNotExist:
+            raise NotFound
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        name = validated_data.get("name")
+        collection = self.collection_repository.save_update_collection(collection=collection, name=name)
+
+        PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id], team=personal_share, add_all=True).send(
+            data={"id": collection.id}
+        )
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_COLLECTION_UPDATED, "collection_id": collection.id, "ip_address": ip
+        # })
+        return Response(status=200, data={"id": collection.id})
+
+    # @action(methods=["delete"], detail=False)
+    # def destroy_share_folder(self, request, *args, **kwargs):
+    #     user = request.user
+    #     self.check_pwd_session_auth(request)
+    #     personal_share = self.get_personal_share(kwargs.get("pk"))
+    #     # Retrieve collection
+    #     try:
+    #         collection = personal_share.collections.get(id=kwargs.get("folder_id"))
+    #     except ObjectDoesNotExist:
+    #         raise NotFound
+    #
+    #     # member_user_ids = personal_share.team_members.all().values_list('user_id', flat=True)
+    #     # cipher_ids = collection.collections_ciphers.values_list('cipher_id', flat=True)
+    #     #
+    #     PwdSync(event=SYNC_EVENT_COLLECTION_DELETE, user_ids=list(member_user_ids), add_all=True).send()
+    #     return Response(status=204)
