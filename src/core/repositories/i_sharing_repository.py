@@ -50,6 +50,10 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def add_members(self, team, shared_collection, members):
+        pass
+
+    @abstractmethod
     def get_my_personal_shared_teams(self, user):
         pass
 

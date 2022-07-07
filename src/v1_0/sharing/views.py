@@ -17,7 +17,7 @@ from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
-    StopSharingFolderSerializer
+    StopSharingFolderSerializer, AddMemberSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -42,6 +42,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpdateShareFolderSerializer
         elif self.action in ["stop_share_folder", "delete_share_folder"]:
             self.serializer_class = StopSharingFolderSerializer
+        elif self.action == "add_member":
+            self.serializer_class = AddMemberSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
     def get_personal_share(self, sharing_id):
@@ -566,6 +568,28 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(data={"id": share_collection.id})
 
         return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def add_member(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(kwargs.get("pk"))
+        share_folder = personal_share.collections.first()
+        if not share_folder:
+            raise NotFound
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        members = validated_data.get("members")
+
+        existed_member_users, non_existed_member_users = self.sharing_repository.add_members(
+            team=personal_share, shared_collection=share_folder, members=members
+        )
+        return Response(status=200, data={
+            "id": personal_share.id,
+            "shared_type_name": "folder",
+            "existed_member_users": existed_member_users,
+            "non_existed_member_users": non_existed_member_users
+        })
 
     @action(methods=["put"], detail=False)
     def update_share_folder(self, request, *args, **kwargs):

@@ -275,6 +275,10 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
         return data
 
 
+class AddMemberSerializer(serializers.Serializer):
+    members = MemberShareSerializer(many=True)
+
+
 class UpdateInvitationRoleSerializer(serializers.Serializer):
     hide_passwords = serializers.BooleanField(default=False)
     role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
