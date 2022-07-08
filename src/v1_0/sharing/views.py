@@ -17,6 +17,7 @@ from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_S
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
+from shared.utils.app import now
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
     StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer
@@ -724,6 +725,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def add_item_share_folder(self, request, *args, **kwargs):
+        user = self.request.user
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
         serializer = self.get_serializer(data=request.data)
@@ -742,16 +744,22 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_data.get("id"))
             if cipher_obj.team_id:
                 raise ValidationError({"non_field_errors": [gen_error("5000")]})
-            if cipher_obj.user != self.request.user:
+            if cipher_obj.user != user:
                 raise ValidationError(detail={"cipher": {"id": ["The cipher id does not exist"]}})
         except ObjectDoesNotExist:
-            raise NotFound
+            raise ValidationError(detail={"cipher": {"id": ["The cipher id does not exist"]}})
 
+        cipher_data["team_id"] = personal_share.id
+        cipher_data["collection_ids"] = [collection_obj.id]
+        cipher_data["user_id"] = user.user_id
         cipher_data = json.loads(json.dumps(cipher_data))
         cipher = self.cipher_repository.save_share_cipher(cipher=cipher_obj, cipher_data=cipher_data)
+        collection_obj.revision_date = now()
+        collection_obj.save()
+
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
-            user_ids=[request.user.user_id],
+            user_ids=[user.user_id],
             team=personal_share,
             add_all=True
         ).send(data={"id": cipher.id})
