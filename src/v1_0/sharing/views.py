@@ -603,7 +603,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise NotFound
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.save()
+        validated_data = serializer.validated_data
         members = validated_data.get("members")
 
         existed_member_users, non_existed_member_users = self.sharing_repository.add_members(
