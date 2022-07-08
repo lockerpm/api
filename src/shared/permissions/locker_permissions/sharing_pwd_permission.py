@@ -16,7 +16,8 @@ class SharingPwdPermission(LockerPermission):
         if view.action in ["leave"]:
             return role.name in [MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER]
 
-        elif view.action in ["delete_share_folder", "stop_share_folder"]:
+        elif view.action in ["update_role", "invitation_confirm", "stop_share", "add_member",
+                             "delete_share_folder", "stop_share_folder"]:
             return role.name in [MEMBER_ROLE_OWNER]
 
         return role.name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
