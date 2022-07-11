@@ -37,6 +37,9 @@ class AffiliateSubmissionPwdViewSet(PasswordManagerViewSet):
         page_size_param = self.check_int_param(self.request.query_params.get("size", 20))
         self.pagination_class.page_size = page_size_param if page_size_param else 20
         return super(AffiliateSubmissionPwdViewSet, self).list(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super(AffiliateSubmissionPwdViewSet, self).retrieve(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

@@ -29,7 +29,7 @@ urlpatterns += [
 
     url(r'^admin/affiliate_submissions$', views.AffiliateSubmissionPwdViewSet.as_view({'get': 'list'})),
     url(r'^admin/affiliate_submissions/(?P<pk>[0-9]+)$',
-        views.AffiliateSubmissionPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+        views.AffiliateSubmissionPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
 
 ]
 
