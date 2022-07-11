@@ -17,9 +17,10 @@ from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_S
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
+from shared.utils.app import now
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
-    StopSharingFolderSerializer, AddMemberSerializer
+    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -46,6 +47,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = StopSharingFolderSerializer
         elif self.action == "add_member":
             self.serializer_class = AddMemberSerializer
+
+        elif self.action in ["add_item_share_folder", "remove_item_share_folder"]:
+            self.serializer_class = AddItemShareFolderSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
     def get_personal_share(self, sharing_id):
@@ -717,4 +721,85 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         )
         PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id] + removed_members_user_id).send()
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_members_user_id).send()
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def add_item_share_folder(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        cipher_data = validated_data.get("cipher")
+        # Get collection of the team
+        try:
+            collection_obj = self.collection_repository.get_team_collection_by_id(
+                collection_id=kwargs.get("folder_id"), team_id=personal_share.id
+            )
+        except ObjectDoesNotExist:
+            raise ValidationError(detail={"folder": ["The folder does not exist"]})
+
+        try:
+            cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_data.get("id"))
+            if cipher_obj.team_id:
+                raise ValidationError({"non_field_errors": [gen_error("5000")]})
+            if cipher_obj.user != user:
+                raise ValidationError(detail={"cipher": {"id": ["The cipher id does not exist"]}})
+        except ObjectDoesNotExist:
+            raise ValidationError(detail={"cipher": {"id": ["The cipher id does not exist"]}})
+
+        cipher_data["team_id"] = personal_share.id
+        cipher_data["collection_ids"] = [collection_obj.id]
+        cipher_data["user_id"] = user.user_id
+        cipher_data = json.loads(json.dumps(cipher_data))
+        cipher = self.cipher_repository.save_share_cipher(cipher=cipher_obj, cipher_data=cipher_data)
+        collection_obj.revision_date = now()
+        collection_obj.save()
+
+        PwdSync(
+            event=SYNC_EVENT_CIPHER_UPDATE,
+            user_ids=[user.user_id],
+            team=personal_share,
+            add_all=True
+        ).send(data={"id": cipher.id})
+
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def remove_item_share_folder(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        cipher_data = validated_data.get("cipher")
+        # Get collection of the team
+        try:
+            collection_obj = self.collection_repository.get_team_collection_by_id(
+                collection_id=kwargs.get("folder_id"), team_id=personal_share.id
+            )
+        except ObjectDoesNotExist:
+            raise ValidationError(detail={"folder": ["The folder does not exist"]})
+
+        try:
+            cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher_data.get("id"))
+            if cipher_obj.team_id != personal_share.id:
+                raise ValidationError(detail={"cipher": {"id": ["The cipher id does not exist"]}})
+        except ObjectDoesNotExist:
+            raise ValidationError(detail={"cipher": {"id": ["The cipher id does not exist"]}})
+
+        cipher_data["team_id"] = None
+        cipher_data["collection_ids"] = []
+        cipher_data["user_id"] = user.user_id
+        cipher_data = json.loads(json.dumps(cipher_data))
+        cipher = self.cipher_repository.save_share_cipher(cipher=cipher_obj, cipher_data=cipher_data)
+        collection_obj.revision_date = now()
+        collection_obj.save()
+
+        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=personal_share, add_all=True).send(
+            data={"id": cipher.id}
+        )
+
         return Response(status=200, data={"success": True})

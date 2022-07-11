@@ -246,6 +246,8 @@ class CipherRepository(ICipherRepository):
             added_collection_ids = diff_list(collection_ids, existed_collection_ids)
             cipher.collections_ciphers.filter(collection_id__in=removed_collection_ids).delete()
             cipher.collections_ciphers.model.create_multiple(cipher.id, *added_collection_ids)
+        else:
+            cipher.collections_ciphers.all().delete()
 
         # Update revision date of user (if this cipher is personal)
         # or all related cipher members (if this cipher belongs to a team)

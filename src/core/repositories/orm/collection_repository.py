@@ -65,6 +65,7 @@ class CollectionRepository(ICollectionRepository):
 
     def save_update_collection(self, collection: Collection, name: str, groups=None) -> Collection:
         collection.name = name
+        collection.revision_date = now()
         collection.save()
         if groups:
             collection.collections_groups.all().delete()

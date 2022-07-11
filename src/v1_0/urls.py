@@ -29,7 +29,7 @@ urlpatterns += [
 
     url(r'^admin/affiliate_submissions$', views.AffiliateSubmissionPwdViewSet.as_view({'get': 'list'})),
     url(r'^admin/affiliate_submissions/(?P<pk>[0-9]+)$',
-        views.AffiliateSubmissionPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+        views.AffiliateSubmissionPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
 
 ]
 
@@ -122,6 +122,8 @@ urlpatterns += [
     url(r'^sharing/(?P<pk>[0-9]+)/folders/(?P<folder_id>[0-9a-z\-]+)/stop$',
         views.SharingPwdViewSet.as_view({'post': 'stop_share_folder'})),
 
+    url(r'^sharing/(?P<pk>[0-9]+)/folders/(?P<folder_id>[0-9a-z\-]+)/items$',
+        views.SharingPwdViewSet.as_view({'post': 'add_item_share_folder', 'put': 'remove_item_share_folder'})),
     url(r'^sharing/my_share$', views.SharingPwdViewSet.as_view({'get': 'my_share'})),
 
 ]

@@ -181,7 +181,7 @@ class SyncCollectionSerializer(serializers.ModelSerializer):
             "object": "collectionDetails",
             "id": instance.id,
             "name": instance.name,
-            "revision_date": instance.revision_date,
+            "revision_date": convert_readable_date(instance.revision_date),
             "organization_id": instance.team_id,
             "hide_passwords": instance.hide_passwords,
             "read_only": True if role == MEMBER_ROLE_MEMBER else False,
