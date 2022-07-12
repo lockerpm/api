@@ -146,11 +146,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         if request.method == "GET":
             default_team = self.user_repository.get_default_team(user=user)
+            user_type = self.user_repository.get_user_type(user_id=user.user_id)
             return Response(status=200, data={
                 "timeout": user.timeout,
                 "timeout_action": user.timeout_action,
                 "is_pwd_manager": user.activated,
                 "pwd_user_id": str(user.user_id),
+                "pwd_user_type": user_type,
                 "default_team_id": default_team.id if default_team else None,
             })
 

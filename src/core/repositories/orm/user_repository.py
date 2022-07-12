@@ -9,6 +9,7 @@ from django.db.models import OuterRef, Subquery, Q
 
 from core.repositories import IUserRepository
 from core.utils.account_revision_date import bump_account_revision_date
+from shared.constants.account import ACCOUNT_TYPE_ENTERPRISE, ACCOUNT_TYPE_PERSONAL
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.constants.transactions import *
@@ -154,6 +155,14 @@ class UserRepository(IUserRepository):
 
     def is_activated(self, user: User) -> bool:
         return user.activated
+
+    def get_user_type(self, user_id: int) -> str:
+        if TeamMember.objects.filter(
+            user_id=user_id, status=PM_MEMBER_STATUS_CONFIRMED,
+            team__key__isnull=False, team__personal_share=False
+        ).exists():
+            return ACCOUNT_TYPE_ENTERPRISE
+        return ACCOUNT_TYPE_PERSONAL
 
     def retrieve_or_create_user_score(self, user: User):
         try:
