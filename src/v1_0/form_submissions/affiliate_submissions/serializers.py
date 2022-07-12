@@ -31,4 +31,4 @@ class AffiliateSubmissionSerializer(serializers.ModelSerializer):
 
 
 class UpdateStatusSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=["submitted", "replied", "cancelled"])
+    status = serializers.ChoiceField(choices=["submitted", "replied", "processing", "canceled",  "finished"])
