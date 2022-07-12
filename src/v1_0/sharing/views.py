@@ -374,9 +374,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             ).values_list('id', flat=True)
             for folder_cipher in folder_ciphers:
                 if folder_cipher.get("id") not in list(folder_ciphers_obj):
-                    raise ValidationError(detail={"folder": [
-                        "The folder does not have the cipher {}".format(folder_cipher.get("id"))
-                    ]})
+                    raise ValidationError({"non_field_errors": [gen_error("5000")]})
+                    # raise ValidationError(detail={"folder": [
+                    #     "The folder does not have the cipher {}".format(folder_cipher.get("id"))
+                    # ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
