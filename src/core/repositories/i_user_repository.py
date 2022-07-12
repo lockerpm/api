@@ -51,6 +51,10 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def get_user_type(self, user_id: int) -> str:
+        pass
+
+    @abstractmethod
     def retrieve_or_create_user_score(self, user: User):
         pass
 
