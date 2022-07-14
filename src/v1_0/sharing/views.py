@@ -37,7 +37,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = MultipleSharingSerializer
         elif self.action == "invitations":
             self.serializer_class = SharingInvitationSerializer
-        elif self.action == "stop_share":
+        elif self.action in ["stop_share", "stop_share_cipher_folder"]:
             self.serializer_class = StopSharingSerializer
         elif self.action == "update_role":
             self.serializer_class = UpdateInvitationRoleSerializer
@@ -596,6 +596,67 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         else:
             share_collection = team.collections.first()
             PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(data={"id": share_collection.id})
+
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def stop_share_cipher_folder(self, request, *args, **kwargs):
+        user = request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        cipher = validated_data.get("cipher")
+        personal_cipher_data = validated_data.get("personal_cipher_data")
+        folder = validated_data.get("folder")
+        cipher_obj = None
+        collection_obj = None
+        folder_name = None
+        folder_ciphers = None
+
+        if cipher:
+            cipher_id = cipher.get("id")
+            try:
+                cipher_obj = self.cipher_repository.get_by_id(cipher_id)
+                if cipher_obj.team != personal_share:
+                    raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
+            personal_cipher_data = json.loads(json.dumps(personal_cipher_data))
+        if folder:
+            folder_id = folder.get("id")
+            folder_name = folder.get("name")
+            folder_ciphers = folder.get("ciphers") or []
+            # Get collection of the team
+            try:
+                collection_obj = self.collection_repository.get_team_collection_by_id(
+                    collection_id=folder_id, team_id=personal_share.id
+                )
+            except ObjectDoesNotExist:
+                raise ValidationError(detail={"folder": ["The folder does not exist"]})
+            # Check the list folder_ciphers in the folder
+            collection_ciphers_obj = collection_obj.collections_ciphers.values_list('cipher_id', flat=True)
+            for folder_cipher in folder_ciphers:
+                if folder_cipher.get("id") not in list(collection_ciphers_obj):
+                    raise ValidationError(detail={"folder": [
+                        "The collection does not have the cipher {}".format(folder_cipher.get("id"))
+                    ]})
+            folder_ciphers = json.loads(json.dumps(folder_ciphers))
+
+        removed_members_user_id = self.sharing_repository.stop_share_all_members(
+            team=personal_share,
+            cipher=cipher_obj, cipher_data=personal_cipher_data,
+            collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
+        )
+        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id] + removed_members_user_id).send()
+        # Re-sync data of the owner and removed member
+        if cipher_obj:
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id] + removed_members_user_id).send(
+                data={"id": cipher_obj.id}
+            )
+        if collection_obj:
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_members_user_id).send()
 
         return Response(status=200, data={"success": True})
 

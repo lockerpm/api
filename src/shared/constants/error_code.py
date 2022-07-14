@@ -25,6 +25,11 @@ APP_CODE = [
         "code": "0008",
         "message": "Unknown Error",
         "vi_message": "Khong biet loi"
+    },
+    {
+        "code": "0009",
+        "message": "Service temporarily unavailable, try again later.",
+        "vi_message": "Service temporarily unavailable, try again later."
     }
 ]
 

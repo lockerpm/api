@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FREE
+from shared.external_request.requester import requester
 from shared.log.cylog import CyLog
 from shared.utils.app import now
 
@@ -80,7 +81,7 @@ class LockerSpreadSheet:
 
     @staticmethod
     def get_users_data(emails):
-        users_res = requests.post(url=API_USERS, headers=HEADERS, json={"emails": emails})
+        users_res = requester(method="POST", url=API_USERS, headers=HEADERS, data_send={"emails": emails})
         if users_res.status_code != 200:
             CyLog.error(**{"message": "[LockerSpreadSheet] Get users from Gateway error: {} {}".format(
                 users_res.status_code, users_res.text

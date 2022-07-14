@@ -26,7 +26,7 @@ DATABASES = {
 
 LOCKER_WEB_URL = "https://staging.locker.io"
 
-GATEWAY_API = "https://gateway.staging.cystack.org"
+GATEWAY_API = "https://api.cystack.org"
 MICRO_SERVICE_USER_AUTH = os.getenv("MICRO_SERVICE_USER_AUTH")
 
 

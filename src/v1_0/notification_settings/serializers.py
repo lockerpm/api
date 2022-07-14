@@ -13,6 +13,7 @@ class ListNotificationSettingSerializer(serializers.ModelSerializer):
         data["category"] = {
             "id": instance.category.id,
             "name": instance.category.name,
+            "name_vi": instance.category.name_vi,
             "mail": instance.category.mail,
             "notification": instance.category.notification
         }

@@ -5,6 +5,7 @@ from django.conf import settings
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
+from shared.external_request.requester import requester
 from shared.utils.app import now
 from cystack_models.factory.payment_method.i_payment_method import IPaymentMethod
 from cystack_models.models.payments.payments import Payment
@@ -78,7 +79,7 @@ class WalletPaymentMethod(IPaymentMethod):
             "amount": amount,
             "scope": self.scope,
         }
-        res = requests.post(url=PAYMENT_API, headers=HEADERS, json=payment_data, verify=False)
+        res = requester(method="POST", url=PAYMENT_API, headers=HEADERS, data_send=payment_data)
         if res.status_code == 400:
             return {"success": False, "error": res.json()}
         if res.status_code == 200:
