@@ -7,6 +7,7 @@ from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password, is_password_usable, make_password
 
 from shared.constants.account import DEFAULT_KDF_ITERATIONS
+from shared.external_request.requester import requester
 
 
 class User(models.Model):
@@ -72,7 +73,7 @@ class User(models.Model):
         """
         url = "{}/micro_services/users/{}".format(settings.GATEWAY_API, self.user_id)
         headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
-        res = requests.get(url=url, headers=headers, verify=False)
+        res = requester(method="GET", url=url, headers=headers)
         if res.status_code == 200:
             return res.json()
         return {}

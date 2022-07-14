@@ -6,7 +6,7 @@ from django.db import connection
 from core.settings import CORE_CONFIG
 from shared.background.i_background import ILockerBackground
 from shared.constants.transactions import PAYMENT_STATUS_PAID
-
+from shared.external_request.requester import requester
 
 API_NOTIFY_PAYMENT = "{}/micro_services/cystack_platform/payments".format(settings.GATEWAY_API)
 API_NOTIFY_DOMAIN = "{}/micro_services/cystack_platform/pm/domains".format(settings.GATEWAY_API)
@@ -27,7 +27,7 @@ class NotifyBackground(ILockerBackground):
                 "payment_data": metadata.get("payment_data"),
                 "scope": scope
             }
-            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
         except Exception as e:
             self.log_error(func_name="downgrade_plan")
         finally:
@@ -43,7 +43,7 @@ class NotifyBackground(ILockerBackground):
                 "expired_date": expired_date,
                 "scope": scope
             }
-            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
         except Exception as e:
             self.log_error(func_name="cancel_plan")
         finally:
@@ -62,7 +62,7 @@ class NotifyBackground(ILockerBackground):
                 "scope": scope,
                 "demo": False
             }
-            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
         except Exception as e:
             self.log_error(func_name="banking_expiring")
         finally:
@@ -78,7 +78,7 @@ class NotifyBackground(ILockerBackground):
                 "plan": payment.plan,
                 "payment_method": payment.payment_method,
             }
-            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
         except Exception:
             self.log_error(func_name="trial_successfully")
         finally:
@@ -128,7 +128,7 @@ class NotifyBackground(ILockerBackground):
                 "payment_method": payment.payment_method,
                 "payment_data": payment_data
             }
-            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
 
         except Exception:
             self.log_error(func_name="notify_pay_successfully")
@@ -144,7 +144,7 @@ class NotifyBackground(ILockerBackground):
                 "domain": domain,
                 "organization_name": organization_name,
             }
-            requests.post(url=url, headers=HEADERS, json=notification_data, verify=False)
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
         except Exception as e:
             self.log_error(func_name="domain_verified")
         finally:
