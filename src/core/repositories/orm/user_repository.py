@@ -95,7 +95,7 @@ class UserRepository(IUserRepository):
             primary_plan = self.get_current_plan(user=primary_user, scope=settings.SCOPE_PWD_MANAGER)
             plan_obj = primary_plan.get_plan_obj()
             if plan_obj.allow_personal_share() or plan_obj.is_team_plan or plan_obj.is_family_plan:
-                if plan_obj.is_team_plan:
+                if plan_obj.is_team_plan and team.personal_share is False:
                     current_total_members = team.team_members.all().count()
                     max_allow_members = primary_plan.get_max_allow_members()
                     if max_allow_members and current_total_members + 1 > max_allow_members:
