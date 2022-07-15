@@ -132,7 +132,12 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         # Send mail
         if send_trial_mail is True:
             LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-                func_name="trial_successfully", **{"payment": new_payment}
+                func_name="trial_successfully", **{
+                    "user_id": new_payment.user_id,
+                    "scope": new_payment.scope,
+                    "plan": new_payment.plan,
+                    "payment_method": new_payment.payment_method,
+                }
             )
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
             func_name="pay_successfully", **{"payment": new_payment}

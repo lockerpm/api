@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
 from cystack_models.models.notifications.notification_settings import NotificationSetting
-from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
 from shared.constants.transactions import *
@@ -125,6 +125,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 )
                 current_plan.personal_trial_applied = True
                 current_plan.save()
+                # Send trial mail
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                    func_name="trial_successfully", **{
+                        "user_id": user.user_id,
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "plan": trial_plan_obj.get_alias(),
+                        "payment_method": None,
+                    }
+                )
 
         # Upgrade plan if the user is a family member
         self.user_repository.upgrade_member_family_plan(user=user)
