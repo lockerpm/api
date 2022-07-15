@@ -69,14 +69,14 @@ class NotifyBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
-    def trial_successfully(self, payment):
+    def trial_successfully(self, user_id: int, scope: str, plan: str, payment_method: str):
         url = API_NOTIFY_PAYMENT + "/notify_trial"
         try:
             notification_data = {
-                "user_id": payment.user.user_id,
-                "scope": payment.scope,
-                "plan": payment.plan,
-                "payment_method": payment.payment_method,
+                "user_id": user_id,
+                "scope": scope,
+                "plan": plan,
+                "payment_method": payment_method,
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
         except Exception:
