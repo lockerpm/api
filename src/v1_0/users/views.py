@@ -114,10 +114,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
                     user=user, plan_type_alias=trial_plan_obj.get_alias(),
                     duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
                 )
-            elif current_plan.is_personal_trial_applied() is False and now() < TRIAL_BETA_EXPIRED:
+            elif current_plan.is_personal_trial_applied() is False:
                 plan_metadata = {
                     "start_period": now(),
-                    "end_period": TRIAL_BETA_EXPIRED
+                    "end_period": now() + TRIAL_PERSONAL_PLAN
                 }
                 self.user_repository.update_plan(
                     user=user, plan_type_alias=trial_plan_obj.get_alias(),
