@@ -100,7 +100,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user.save()
 
         # Upgrade trial plan
-        if trial_plan_obj:
+        if trial_plan_obj and trial_plan_obj.get_alias() != PLAN_TYPE_PM_FREE:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             if trial_plan_obj.is_team_plan:
                 plan_metadata = {
