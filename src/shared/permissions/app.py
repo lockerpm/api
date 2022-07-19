@@ -9,6 +9,7 @@ from shared.constants.token import TOKEN_PREFIX
 
 
 CACHE_ROLE_PERMISSION_PREFIX = "cs_role_permission_"
+CACHE_ROLE_ENTERPRISE_PERMISSION_PREFIX = "e_role_permission_"
 
 
 class AppBasePermission(BasePermission):
