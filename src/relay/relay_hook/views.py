@@ -40,10 +40,11 @@ class RelayHookViewSet(RelayViewSet):
             return Response(status=400, data={"message": ["Invalid JSON data"]})
 
         receiver = mail_data.get("to")
+        CyLog.error(**{"message": "[sendgrid_hook] RelayAddress {}".format(receiver)})
         try:
             relay_address = self.get_relay_address_obj(email=receiver)
         except RelayAddress.DoesNotExist:
-            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress does not exist"})
+            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress {} does not exist".format(receiver)})
             return Response(status=200, data={
                 "success": False,
                 "error": "The email {} does not exist".format(receiver)
