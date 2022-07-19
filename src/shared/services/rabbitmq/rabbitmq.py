@@ -27,6 +27,8 @@ class RabbitMQ(MessageBroker):
         return connection
 
     def send(self, data):
+        from shared.log.cylog import CyLog
+
         if self.queue_name is None:
             print("VLC None")
             raise QueueNotSetError
@@ -35,6 +37,8 @@ class RabbitMQ(MessageBroker):
         try:
             channel = self.connection.channel()
             channel.queue_declare(queue=self.queue_name, durable=True)
+
+            CyLog.debug(**{"message": "Start publish data: {}".format(data)})
             channel.basic_publish(
                 exchange='',
                 routing_key=self.queue_name,
