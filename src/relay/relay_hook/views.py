@@ -29,6 +29,7 @@ class RelayHookViewSet(RelayViewSet):
     def sendgrid_hook(self, request, *args, **kwargs):
         token = self.request.query_params.get("token")
         if not token or token != settings.MAIL_WEBHOOK_TOKEN:
+            CyLog.error(**{"message": "[sendgrid_hook] Permission denied"})
             raise PermissionDenied
 
         mail_data = request.data
@@ -42,6 +43,7 @@ class RelayHookViewSet(RelayViewSet):
         try:
             relay_address = self.get_relay_address_obj(email=receiver)
         except RelayAddress.DoesNotExist:
+            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress does not exist"})
             return Response(status=200, data={
                 "success": False,
                 "error": "The email {} does not exist".format(receiver)
@@ -50,6 +52,7 @@ class RelayHookViewSet(RelayViewSet):
         user = relay_address.user
         email = user.get_from_cystack_id().get("email")
         if not email:
+            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress not found email"})
             return Response(status=200, data={
                 "success": False,
                 "error": "The email of user {} does not exist".format(user.user_id)
@@ -57,6 +60,7 @@ class RelayHookViewSet(RelayViewSet):
 
         # Send to queue
         mail_data["destination"] = email
+        CyLog.error(**{"message": "[sendgrid_hook] Starting send data: {}".format(mail_data)})
         RelayQueue().send(data=mail_data)
 
         return Response(status=200, data={"success": True})
