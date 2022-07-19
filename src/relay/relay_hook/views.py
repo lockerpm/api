@@ -30,7 +30,7 @@ class RelayHookViewSet(RelayViewSet):
         envelope = mail_data.get("envelope")
         if isinstance(envelope, list) and envelope:
             envelope = envelope[0]
-        envelope = json.loads(json.dumps(envelope))
+        envelope = json.loads(envelope)
         receiver = envelope.get("to")
         if isinstance(receiver, list) and receiver:
             return receiver[0]
