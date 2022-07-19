@@ -9,6 +9,7 @@ class Enterprise(models.Model):
     description = models.CharField(max_length=255, blank=True, default="")
     creation_date = models.FloatField()
     revision_date = models.FloatField(null=True)
+    locked = models.BooleanField(default=False)
     # key = models.CharField(max_length=512, null=True)
     # default_collection_name = models.CharField(max_length=512, null=True)
     # public_key = models.TextField(null=True)
@@ -36,6 +37,6 @@ class Enterprise(models.Model):
 
         # Create team members
         members = data.get("members", [])
-        # TODO: Create enterprise members when create the enterprise
+        new_enterprise.enterprise_members.model.create_multiple(new_enterprise, *members)
 
         return new_enterprise
