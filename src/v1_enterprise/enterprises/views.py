@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.constants.enterprise_members import *
 from shared.error_responses.error import gen_error
-from shared.permissions.locker_permissions.enterprise_permission import EnterprisePwdPermission
+from shared.permissions.locker_permissions.enterprise.enterprise_permission import EnterprisePwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import ListEnterpriseSerializer, UpdateEnterpriseSerializer
 
