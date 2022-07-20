@@ -29,6 +29,8 @@ class LockerPermission(AppBasePermission):
         role_id = member.role_id
         if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
             return True
+        if role_id in [MEMBER_ROLE_MEMBER, MEMBER_ROLE_MANAGER] and cipher.team.personal_share is True:
+            return True
 
         # Check member collection: Member belongs to one of collections of cipher and member has read permission
         if self._member_belongs_cipher_collections(member=member, cipher=cipher):

@@ -69,7 +69,8 @@ class CipherRepository(ICipherRepository):
     def get_team_ciphers(self, team):
         return Cipher.objects.filter(team=team)
 
-    def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False, only_edited=False,
+    def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False,
+                             only_edited=False, only_deleted=False,
                              exclude_team_ids=None, filter_ids=None):
         """
         Get list ciphers of user
@@ -77,6 +78,7 @@ class CipherRepository(ICipherRepository):
         :param only_personal: (bool) if True => Only get list personal ciphers
         :param only_managed_team: (bool) if True => Only get list ciphers of non-locked teams
         :param only_edited: (bool) if True => Only get list ciphers that user is allowed edit permission
+        :param only_deleted: (bool) if True => Only get list ciphers that user is allowed delete permission
         :param exclude_team_ids: (list) Excluding all ciphers have team_id in this list
         :param filter_ids: (list) List filtered cipher ids
         :return:
@@ -91,14 +93,11 @@ class CipherRepository(ICipherRepository):
         confirmed_team_members = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         if only_managed_team:
             confirmed_team_members = confirmed_team_members.filter(team__locked=False)
-
         if exclude_team_ids:
             confirmed_team_members = confirmed_team_members.exclude(team_id__in=exclude_team_ids)
 
         confirmed_team_ids = confirmed_team_members.values_list('team_id', flat=True)
-        team_ciphers = Cipher.objects.filter(
-            team_id__in=confirmed_team_ids
-        )
+        team_ciphers = Cipher.objects.filter(team_id__in=confirmed_team_ids)
         if filter_ids:
             team_ciphers = team_ciphers.filter(id__in=filter_ids)
 
@@ -152,6 +151,11 @@ class CipherRepository(ICipherRepository):
         if only_edited:
             team_ciphers = team_ciphers.filter(
                 team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
+                team__team_members__user=user
+            )
+        if only_deleted:
+            team_ciphers = team_ciphers.filter(
+                team__team_members__role_id__in=[MEMBER_ROLE_OWNER],
                 team__team_members__user=user
             )
         return Cipher.objects.filter(
@@ -271,7 +275,7 @@ class CipherRepository(ICipherRepository):
         """
         current_time = now()
         # Update deleted_date of the ciphers
-        ciphers = self.get_multiple_by_user(user=user_deleted, only_edited=True).filter(
+        ciphers = self.get_multiple_by_user(user=user_deleted, only_deleted=True).filter(
             id__in=cipher_ids, deleted_date__isnull=True
         )
         deleted_cipher_ids = list(ciphers.values_list('id', flat=True))
@@ -295,7 +299,7 @@ class CipherRepository(ICipherRepository):
         :param user_deleted: (obj) User deleted
         :return:
         """
-        ciphers = self.get_multiple_by_user(user=user_deleted, only_edited=True).filter(id__in=cipher_ids)
+        ciphers = self.get_multiple_by_user(user=user_deleted, only_deleted=True).filter(id__in=cipher_ids)
         team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
         # Delete ciphers objects
         ciphers.delete()
@@ -325,7 +329,7 @@ class CipherRepository(ICipherRepository):
         """
         current_time = now()
         # Filter list ciphers from trash
-        ciphers = self.get_multiple_by_user(user=user_restored, only_edited=True).filter(
+        ciphers = self.get_multiple_by_user(user=user_restored, only_deleted=True).filter(
             id__in=cipher_ids, deleted_date__isnull=False
         )
         # Restore all cipher by setting deleted_date as null
