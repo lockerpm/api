@@ -86,10 +86,18 @@ class InvoiceWebhookSerializer(serializers.Serializer):
 
         result = {}
         paid = validated_data.get("paid")
+        extra_time = 0
+        extra_plan = None
         if paid is True:
             new_payment = payment_repository.set_paid(payment=new_payment)
             if stripe_subscription_obj:
                 pm_user_plan = user_repository.get_current_plan(user=new_payment.user, scope=scope)
+                # if this user is in a trial plan => Set extra time
+                if pm_user_plan.end_period and pm_user_plan.pm_stripe_subscription is None and \
+                        pm_user_plan.pm_mobile_subscription is None:
+                    extra_time = max(pm_user_plan.end_period - now(), 0)
+                    extra_plan = pm_user_plan.get_plan_obj().get_alias()
+
                 pm_user_plan.pm_stripe_subscription = stripe_subscription_id
                 pm_user_plan.pm_stripe_subscription_created_time = now()
                 if stripe_subscription_obj.status == "trialing":
@@ -104,7 +112,9 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                     "promo_code": new_payment.promo_code,
                     "family_members": stripe_metadata.get("family_members", []),
                     "key": stripe_metadata.get("key"),
-                    "collection_name": stripe_metadata.get("collection_name")
+                    "collection_name": stripe_metadata.get("collection_name"),
+                    "extra_time": extra_time,
+                    "extra_plan": extra_plan
                 }
 
                 updated_user_plan = user_repository.update_plan(

@@ -172,3 +172,19 @@ class AdminUpgradePlanSerializer(serializers.Serializer):
 
         return data
 
+
+class UpgradeTrialSerializer(serializers.Serializer):
+    trial_plan = serializers.ChoiceField(choices=[PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FAMILY])
+
+    def validate(self, data):
+        trial_plan = data.get("trial_plan")
+        try:
+            trial_plan_obj = PMPlan.objects.get(alias=trial_plan)
+            data["trial_plan_obj"] = trial_plan_obj
+        except PMPlan.DoesNotExist:
+            raise serializers.ValidationError(detail={"trial_plan": ["The trial plan does not exist"]})
+        return data
+
+
+class CancelPlanSerializer(serializers.Serializer):
+    immediately = serializers.BooleanField(default=False)

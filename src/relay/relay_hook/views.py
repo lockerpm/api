@@ -25,6 +25,17 @@ class RelayHookViewSet(RelayViewSet):
         relay_address = RelayAddress.objects.get(address=address, domain=domain)
         return relay_address
 
+    @staticmethod
+    def get_receiver(mail_data):
+        envelope = mail_data.get("envelope")
+        if isinstance(envelope, list) and envelope:
+            envelope = envelope[0]
+        envelope = json.loads(envelope)
+        receiver = envelope.get("to")
+        if isinstance(receiver, list) and receiver:
+            return receiver[0]
+        return receiver
+
     @action(methods=["post"], detail=False)
     def sendgrid_hook(self, request, *args, **kwargs):
         token = self.request.query_params.get("token")
@@ -39,11 +50,12 @@ class RelayHookViewSet(RelayViewSet):
             CyLog.error(**{"message": "[sendgrid_hook] Json loads error"})
             return Response(status=400, data={"message": ["Invalid JSON data"]})
 
-        receiver = mail_data.get("to")
+        receiver = self.get_receiver(mail_data=mail_data)
+        CyLog.error(**{"message": "[sendgrid_hook] RelayAddress {}".format(receiver)})
         try:
             relay_address = self.get_relay_address_obj(email=receiver)
         except RelayAddress.DoesNotExist:
-            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress does not exist"})
+            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress {} does not exist".format(receiver)})
             return Response(status=200, data={
                 "success": False,
                 "error": "The email {} does not exist".format(receiver)

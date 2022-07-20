@@ -94,8 +94,8 @@ urlpatterns += [
     url(r'^ciphers/import$', views.CipherPwdViewSet.as_view({'post': 'import_data'})),
     url(r'^ciphers/sync/offline$', views.CipherPwdViewSet.as_view({'post': 'sync_offline'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
-    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
-    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share/members$', views.CipherPwdViewSet.as_view({'get': 'share_members'})),
+    # url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
+    # url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share/members$', views.CipherPwdViewSet.as_view({'get': 'share_members'})),
 
 ]
 
@@ -178,7 +178,7 @@ urlpatterns += [
 # ------------------------------- Payment ------------------------------------- #
 urlpatterns += [
     url(r'^payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
-    url(r'^payments/trial$', views.PaymentPwdViewSet.as_view({'get': 'check_trial'})),
+    url(r'^payments/trial$', views.PaymentPwdViewSet.as_view({'get': 'check_trial', 'post': 'upgrade_trial'})),
     url(r'^payments/plan$', views.PaymentPwdViewSet.as_view({'get': 'current_plan', 'post': 'upgrade_plan'})),
     url(r'^payments/plan/cancel$', views.PaymentPwdViewSet.as_view({'post': 'cancel_plan'})),
 

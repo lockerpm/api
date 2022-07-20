@@ -17,7 +17,7 @@ from cystack_models.models.users.users import User
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
-    DetailInvoiceSerializer, AdminUpgradePlanSerializer
+    DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -36,6 +36,10 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = DetailInvoiceSerializer
         elif self.action == "admin_upgrade_plan":
             self.serializer_class = AdminUpgradePlanSerializer
+        elif self.action == "upgrade_trial":
+            self.serializer_class = UpgradeTrialSerializer
+        elif self.action == "cancel_plan":
+            self.serializer_class = CancelPlanSerializer
         
         return super(PaymentPwdViewSet, self).get_serializer_class()
 
@@ -133,6 +137,38 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         pm_current_plan = self.user_repository.get_current_plan(user=user)
         return Response(status=200, data={"personal_trial_applied": pm_current_plan.is_personal_trial_applied()})
+
+    @action(methods=["post"], detail=False)
+    def upgrade_trial(self, request, *args, **kwargs):
+        user = self.request.user
+        pm_current_plan = self.user_repository.get_current_plan(user=user)
+        trial_applied = pm_current_plan.is_personal_trial_applied()
+        if trial_applied is True:
+            raise ValidationError({"non_field_errors": [gen_error("7013")]})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        trial_plan_obj = validated_data.get("trial_plan_obj")
+        plan_metadata = {
+            "start_period": now(),
+            "end_period": now() + TRIAL_PERSONAL_PLAN
+        }
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=trial_plan_obj.get_alias(),
+            duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
+        pm_current_plan.personal_trial_applied = True
+        pm_current_plan.save()
+        # Send trial mail
+        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+            func_name="trial_successfully", **{
+                "user_id": user.user_id,
+                "scope": settings.SCOPE_PWD_MANAGER,
+                "plan": trial_plan_obj.get_alias(),
+                "payment_method": None,
+            }
+        )
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):
@@ -232,7 +268,13 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if pm_plan_alias == PLAN_TYPE_PM_FREE:
             raise ValidationError({"non_field_errors": [gen_error("7004")]})
 
-        end_time = self.user_repository.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        immediately = validated_data.get("immediately", False)
+        end_time = self.user_repository.cancel_plan(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, immediately=immediately
+        )
         if end_time:
             return Response(status=200, data={
                 "user_ids": [user.user_id],
