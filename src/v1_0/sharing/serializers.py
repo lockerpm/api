@@ -165,10 +165,6 @@ class MultipleSharingSerializer(serializers.Serializer):
             "collection_ids": [],
             "data": get_cipher_detail_data(cipher)
         }
-        # # Login data
-        # shared_cipher_data["data"]["name"] = cipher.get("name")
-        # if cipher.get("notes"):
-        #     shared_cipher_data["data"]["notes"] = cipher.get("notes")
         return shared_cipher_data
 
     def save(self, **kwargs):

@@ -56,8 +56,6 @@ class UserRepository(IUserRepository):
             creation_date = now() if not creation_date else float(creation_date)
             user = User(user_id=user_id, creation_date=creation_date)
             user.save()
-            # Create default team for this new user
-            # self.get_default_team(user=user, create_if_not_exist=True)
             # Create default plan for this user
             self.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         return user

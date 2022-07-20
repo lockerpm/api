@@ -191,7 +191,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         shared_type_name = None
         try:
             share_result = self.share_cipher_or_folder(
-                sharing_key=sharing_key, members=members, cipher=cipher, shared_cipher_data=shared_cipher_data, folder=folder
+                sharing_key=sharing_key, members=members,
+                cipher=cipher, shared_cipher_data=shared_cipher_data, folder=folder
             )
         except ValidationError as e:
             raise e
@@ -255,7 +256,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.save()
         sharing_key = validated_data.get("sharing_key")
-        # members = validated_data.get("members")
         ciphers = validated_data.get("ciphers")
         folders = validated_data.get("folders")
 
@@ -270,10 +270,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                         cipher=cipher_member.get("cipher"),
                         shared_cipher_data=cipher_member.get("shared_cipher_data"), folder=None
                     )
-                except ValidationError as e:
-                    # raise e
-                    # tb = traceback.format_exc()
-                    # CyLog.debug(**{"message": "Share cipher error:\nData: {}\n{}".format(cipher_member, tb)})
+                except ValidationError:
                     continue
                 existed_member_users += share_result.get("existed_member_users", [])
                 non_existed_member_users += share_result.get("non_existed_member_users", [])
@@ -322,7 +319,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         return Response(status=200, data={
             "shared_type_name": share_type,
-            # "existed_member_users": existed_member_users,
             "non_existed_member_users": non_existed_member_users,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
@@ -340,11 +336,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             try:
                 cipher_obj = self.cipher_repository.get_by_id(cipher_id=cipher.get("id"))
             except ObjectDoesNotExist:
-                print("DEo ton tai db")
                 raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
             # If the cipher isn't shared?
             if cipher_obj.user and cipher_obj.user != user:
-                print("Khac user ")
                 raise ValidationError(detail={"cipher": ["The cipher does not exist"]})
             # If the cipher obj belongs to a team
             if cipher_obj.team:
@@ -375,9 +369,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for folder_cipher in folder_ciphers:
                 if folder_cipher.get("id") not in list(folder_ciphers_obj):
                     raise ValidationError({"non_field_errors": [gen_error("5000")]})
-                    # raise ValidationError(detail={"folder": [
-                    #     "The folder does not have the cipher {}".format(folder_cipher.get("id"))
-                    # ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
@@ -464,13 +455,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             personal_shared_teams = personal_shared_teams.filter(collection_count__gte=1)
 
         for personal_shared_team in personal_shared_teams:
-            # collection_obj = personal_shared_team.collections.first()
-            # collection_data = None
-            # if collection_obj:
-            #     collection_data = {
-            #         "id": collection_obj.id,
-            #         "name": collection_obj.name
-            #     }
             shared_members = self.sharing_repository.get_shared_members(
                 personal_shared_team=personal_shared_team, exclude_owner=True
             )
@@ -493,7 +477,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 "description": personal_shared_team.description,
                 "organization_id": personal_shared_team.id,
                 "members": shared_members_data
-                # "collection": collection_data
             }
             my_shared_teams.append(team_data)
         return Response(status=200, data=my_shared_teams)
