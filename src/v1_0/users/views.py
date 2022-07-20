@@ -82,6 +82,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         master_password_hint = validated_data.get("master_password_hint", "")
         score = validated_data.get("score", 0)
         trial_plan_obj = validated_data.get("trial_plan_obj")
+        is_trial_promotion = validated_data.get("is_trial_promotion", False)
 
         # Register new user information
         user.kdf = kdf
@@ -115,9 +116,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
                     duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
                 )
             elif current_plan.is_personal_trial_applied() is False:
+                end_period = now() + TRIAL_PERSONAL_PLAN
+                if is_trial_promotion is True and trial_plan_obj.get_alias() == PLAN_TYPE_PM_FAMILY:
+                    end_period = now() + TRIAL_PROMOTION
                 plan_metadata = {
                     "start_period": now(),
-                    "end_period": now() + TRIAL_PERSONAL_PLAN
+                    "end_period": end_period
                 }
                 self.user_repository.update_plan(
                     user=user, plan_type_alias=trial_plan_obj.get_alias(),
