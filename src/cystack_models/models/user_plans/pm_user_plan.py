@@ -74,6 +74,13 @@ class PMUserPlan(UserPlan):
             return True
         return False
 
+    def is_trailing(self):
+        stripe_subscription = self.get_stripe_subscription()
+        if stripe_subscription:
+            return stripe_subscription.status == "trialing"
+        mobile_subscription = self.pm_mobile_subscription
+        return self.start_period and self.end_period and self.personal_trial_applied and mobile_subscription is None
+
     def is_cancel_at_period_end(self) -> bool:
         stripe_subscription = self.get_stripe_subscription()
         if stripe_subscription:

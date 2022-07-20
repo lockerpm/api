@@ -180,6 +180,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "next_billing_time": next_billing_time,
             "duration": pm_current_plan.duration,
             "subscribing": pm_current_plan.is_subscription(),
+            "is_trailing": pm_current_plan.is_trailing(),
             "cancel_at_period_end": pm_current_plan.is_cancel_at_period_end(),
             "payment_method": pm_current_plan.get_default_payment_method(),
             "number_members": pm_current_plan.get_current_number_members(),
