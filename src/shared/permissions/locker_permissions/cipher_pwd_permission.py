@@ -19,16 +19,8 @@ class CipherPwdPermission(LockerPermission):
             return self.can_edit_cipher(request, obj)
         if view.action in ["retrieve", "share_members"]:
             return self.can_retrieve_cipher(request, obj)
-
-        return super(CipherPwdPermission, self).has_object_permission(request, view, obj.team)
+        return False
+        # return super(CipherPwdPermission, self).has_object_permission(request, view, obj.team)
 
     def get_role_pattern(self, view):
-        # map_action_to_perm = {
-        #     "multiple_delete": "destroy",
-        #     "multiple_permanent_delete": "destroy",
-        #     "multiple_restore": "destroy",
-        #     "vaults": "create"
-        # }
-        # if view.action in list(map_action_to_perm.keys()):
-        #     return "{}.{}".format(self.scope, map_action_to_perm.get(view.action))
         return super(CipherPwdPermission, self).get_role_pattern(view)
