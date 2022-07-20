@@ -234,6 +234,8 @@ class UserRepository(IUserRepository):
         number_members = kwargs.get("number_members", 1)
         promo_code = kwargs.get("promo_code")
         cancel_at_period_end = kwargs.get("cancel_at_period_end", False)
+        extra_time = kwargs.get("extra_time")
+        extra_plan = kwargs.get("extra_plan")
         if start_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
             start_period = now(return_float=True)
         if end_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
@@ -251,6 +253,10 @@ class UserRepository(IUserRepository):
         pm_user_plan.number_members = number_members
         pm_user_plan.promo_code = promo_code
         pm_user_plan.cancel_at_period_end = cancel_at_period_end
+        if extra_time and extra_time > 0:
+            pm_user_plan.extra_time += extra_time
+            if extra_plan:
+                pm_user_plan.extra_plan = extra_plan
         pm_user_plan.save()
 
         if plan_type_alias == PLAN_TYPE_PM_FREE:
@@ -267,14 +273,18 @@ class UserRepository(IUserRepository):
             # If this plan has extra time => Upgrade to Premium
             extra_time = pm_user_plan.extra_time
             if extra_time > 0:
-                # pm_user_plan.default_payment_method = PAYMENT_METHOD_WALLET
                 pm_user_plan.extra_time = 0
+                pm_user_plan.extra_plan = None
                 pm_user_plan.save()
-                self.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
-                    "start_period": now(),
-                    "end_period": now() + pm_user_plan.extra_time,
-                    "cancel_at_period_end": True
-                })
+                self.update_plan(
+                    user=user,
+                    plan_type_alias=pm_user_plan.extra_plan or PLAN_TYPE_PM_PREMIUM,
+                    **{
+                        "start_period": now(),
+                        "end_period": now() + pm_user_plan.extra_time,
+                        "cancel_at_period_end": True
+                    }
+                )
 
         else:
             # Unlock all their PM teams
