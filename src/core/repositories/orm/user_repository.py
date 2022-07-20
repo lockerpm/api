@@ -305,7 +305,7 @@ class UserRepository(IUserRepository):
 
         return pm_user_plan
 
-    def cancel_plan(self, user: User, scope=None):
+    def cancel_plan(self, user: User, scope=None, immediately=False):
         current_plan = self.get_current_plan(user=user, scope=scope)
         pm_plan_alias = current_plan.get_plan_type_alias()
         if pm_plan_alias == PLAN_TYPE_PM_FREE:
@@ -317,9 +317,15 @@ class UserRepository(IUserRepository):
             payment_method = PAYMENT_METHOD_WALLET
 
         from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
-        end_time = PaymentMethodFactory.get_method(
-            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
-        ).cancel_recurring_subscription()
+        if immediately is False:
+            end_time = PaymentMethodFactory.get_method(
+                user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
+            ).cancel_recurring_subscription()
+        else:
+            PaymentMethodFactory.get_method(
+                user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
+            ).cancel_immediately_recurring_subscription()
+            end_time = now()
         return end_time
 
     def add_to_family_sharing(self, family_user_plan, user_id: int = None, email: str = None):

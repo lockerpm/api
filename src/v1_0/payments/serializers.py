@@ -184,3 +184,7 @@ class UpgradeTrialSerializer(serializers.Serializer):
         except PMPlan.DoesNotExist:
             raise serializers.ValidationError(detail={"trial_plan": ["The trial plan does not exist"]})
         return data
+
+
+class CancelPlanSerializer(serializers.Serializer):
+    immediately = serializers.BooleanField(default=False)

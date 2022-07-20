@@ -103,6 +103,20 @@ class StripePaymentMethod(IPaymentMethod):
         # Firstly, check old subscription has coupon? If the coupon exists, we will remove old coupon
         if stripe_subscription.discount is not None:
             stripe.Subscription.delete_discount(stripe_subscription.id)
+
+        # Cancel the current plan immediately
+        is_cancel_successfully = self.cancel_immediately_recurring_subscription()
+        # Then, create new subscription
+        if is_cancel_successfully is True:
+            return self.create_recurring_subscription(amount, plan_type, coupon, duration, **kwargs)
+        else:
+            CyLog.error(**{
+                "message": "Upgrade existed plan Error: Cannot cancel the current subscription: {} - kwarg {}".format(
+                    self.user, kwargs
+                )
+            })
+            return {"success": False, "stripe_error": False, "error_details": None}
+
         # Re-formatting Stripe coupon and Stripe plans
         coupon = None if coupon is None else "{}_{}".format(coupon.id, duration)
         stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
