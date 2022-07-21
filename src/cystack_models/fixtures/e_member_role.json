@@ -1,0 +1,20 @@
+[
+  {
+    "model": "cystack_models.EnterpriseMemberRole",
+    "fields": {
+      "name": "primary_admin"
+    }
+  },
+  {
+    "model": "cystack_models.EnterpriseMemberRole",
+    "fields": {
+      "name": "admin"
+    }
+  },
+  {
+    "model": "cystack_models.EnterpriseMemberRole",
+    "fields": {
+      "name": "member"
+    }
+  }
+]

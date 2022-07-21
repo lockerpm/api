@@ -56,6 +56,7 @@ PLAN_TYPE_PM_FREE = "pm_free"
 PLAN_TYPE_PM_PREMIUM = "pm_premium"
 PLAN_TYPE_PM_FAMILY = "pm_family"
 
+PLAN_TYPE_PM_ENTERPRISE = "pm_enterprise"
 
 FAMILY_MAX_MEMBER = 6
 
