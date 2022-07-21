@@ -25,7 +25,7 @@ class EnterpriseMember(models.Model):
 
     class Meta:
         db_table = 'e_members'
-        unique_together = ('user', 'team', 'role')
+        unique_together = ('user', 'enterprise', 'role')
 
     @classmethod
     def create_multiple(cls, enterprise: Enterprise, *members: [Dict]):
