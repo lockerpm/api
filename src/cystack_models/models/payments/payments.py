@@ -147,6 +147,7 @@ class Payment(models.Model):
             "postal_code": self.customer.postal_code,
             "phone_number": self.customer.phone_number,
             "last4": self.customer.last4,
+            "brand": self.customer.brand,
             "country": "" if not self.customer.country else self.customer.country.country_name
         }
 

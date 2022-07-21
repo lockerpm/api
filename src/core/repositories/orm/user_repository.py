@@ -497,7 +497,8 @@ class UserRepository(IUserRepository):
                     "organization": customer_stripe.get("metadata").get("company", ""),
                     "city": data_customer_stripe.get("address_city", ""),
                     "state": data_customer_stripe.get("address_state", ""),
-                    "postal_code": data_customer_stripe.get("address_zip", "")
+                    "postal_code": data_customer_stripe.get("address_zip", ""),
+                    "brand": data_customer_stripe.get("brand", "")
                 }
             else:
                 customer_data = {
@@ -508,7 +509,8 @@ class UserRepository(IUserRepository):
                     "organization": cystack_user_data.get("organization"),
                     "city": cystack_user_data.get("city", ""),
                     "state": cystack_user_data.get("state", ""),
-                    "postal_code": cystack_user_data.get("postal_code", "")
+                    "postal_code": cystack_user_data.get("postal_code", ""),
+                    "brand": cystack_user_data.get("brand", "")
                 }
         # Else, get from specific card
         else:
@@ -521,7 +523,8 @@ class UserRepository(IUserRepository):
                 "organization": card.get("organization"),
                 "city": card.get("address_city", ""),
                 "state": card.get("address_state", ""),
-                "postal_code": card.get("address_zip", "")
+                "postal_code": card.get("address_zip", ""),
+                "brand": card.get("brand", "")
             }
         return customer_data
 
