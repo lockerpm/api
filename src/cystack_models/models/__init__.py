@@ -45,6 +45,7 @@ from cystack_models.models.policy.policy import Policy
 # ------------------------ Permission Models ----------------------- #
 from cystack_models.models.permissions.permissions import Permission
 from cystack_models.models.permissions.role_permissions import RolePermission
+from cystack_models.models.permissions.enterprise_role_permissions import EnterpriseRolePermission
 
 
 # ------------------------ Activity Log Models --------------------- #
