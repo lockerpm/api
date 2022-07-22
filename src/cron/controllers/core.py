@@ -18,7 +18,7 @@ from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_
 from cron.controllers.tasks.emergency_access_auto_approve import emergency_access_auto_approve
 from cron.controllers.tasks.feedback import upgrade_survey_emails, log_new_users
 from cron.controllers.tasks.delete_trash_ciphers import delete_trash_ciphers
-# from cron.controllers.tasks.domain_verification import domain_verification
+from cron.controllers.tasks.domain_verification import domain_verification
 
 
 class CronTask:
@@ -77,7 +77,6 @@ class CronTask:
             close_old_connections()
 
     def domain_verification(self):
-        return 
         try:
             domain_verification()
             self.logger.info("[+] domain_verification Done")
