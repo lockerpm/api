@@ -29,6 +29,9 @@ class UserPlan(models.Model):
     def is_subscription(self):
         raise NotImplementedError
 
+    def is_trailing(self):
+        raise NotImplementedError
+
     def is_cancel_at_period_end(self) -> bool:
         raise NotImplementedError
 

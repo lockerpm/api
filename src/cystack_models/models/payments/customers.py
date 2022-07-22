@@ -13,6 +13,7 @@ class Customer(models.Model):
     postal_code = models.CharField(max_length=16, blank=True, default="", null=True)
     phone_number = models.CharField(max_length=32, blank=True, default="", null=True)
     last4 = models.CharField(max_length=10, blank=True, default="", null=True)
+    brand = models.CharField(max_length=32, blank=True, default="", null=True)
     country = models.ForeignKey(Country, on_delete=models.SET_NULL, related_name="customers", default=None, null=True)
 
     class Meta:
@@ -46,10 +47,11 @@ class Customer(models.Model):
         if phone_number is not None:
             phone_number = phone_number.strip()
         country = data.get("country", None)  # This is country code
+        brand = data.get("brand", "")
 
         new_customer = cls(
             full_name=full_name, organization=organization, address=address,
-            city=city, state=state, phone_number=phone_number, postal_code=postal_code, last4=last4
+            city=city, state=state, phone_number=phone_number, postal_code=postal_code, last4=last4, brand=brand
         )
         new_customer.save()
         if (country is not None) and (country != ""):

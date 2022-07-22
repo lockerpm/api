@@ -24,6 +24,7 @@ class PMUserPlan(UserPlan):
     pm_mobile_subscription = models.CharField(max_length=255, null=True, default=None)
 
     extra_time = models.IntegerField(default=0)
+    extra_plan = models.CharField(max_length=128, null=True, default=None)
 
     pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
     promo_code = models.ForeignKey(
@@ -72,6 +73,13 @@ class PMUserPlan(UserPlan):
         if self.start_period and self.end_period and self.end_period >= now():
             return True
         return False
+
+    def is_trailing(self):
+        stripe_subscription = self.get_stripe_subscription()
+        if stripe_subscription:
+            return stripe_subscription.status == "trialing"
+        mobile_subscription = self.pm_mobile_subscription
+        return self.start_period and self.end_period and self.personal_trial_applied and mobile_subscription is None
 
     def is_cancel_at_period_end(self) -> bool:
         stripe_subscription = self.get_stripe_subscription()
@@ -193,48 +201,51 @@ class PMUserPlan(UserPlan):
                 promo_description_vi = promo_code_obj.description_vi
 
         # If user subscribes by Stripe => Using Stripe service
-        if self.pm_stripe_subscription:
-            from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
-            total_amount, next_billing_time = PaymentMethodFactory.get_method(
-                user=self.user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
-            ).calc_update_total_amount(new_plan=new_plan, new_duration=new_duration, new_quantity=new_quantity)
-        # Else, calc manually
-        else:
-            # Calc immediate amount and next billing time
-            # If this is the first time user register subscription
-            if not self.end_period or not self.start_period:
-                # Diff_price is price of the plan that user will subscribe
-                total_amount = new_plan_price * new_quantity
-                next_billing_time = self.get_next_billing_time(duration=new_duration)
-            # Else, update the existed subscription
-            else:
-                # Calc old amount with discount
-                old_price = self.pm_plan.get_price(duration=self.duration, currency=currency)
-                old_amount = old_price * self.number_members
-                if self.promo_code:
-                    discount = self.promo_code.get_discount(old_amount, duration=self.duration)
-                    old_amount = old_amount - discount
-                # If new plan has same duration, next billing time does not change
-                # Money used: (now - start) / (end - start) * old_price
-                # Money remain: old_price - money_used
-                # => Diff price: new_price - money_remain
-                if self.duration == new_duration:
-                    old_remain = old_amount * (
-                            1 - (current_time - self.start_period) / (self.end_period - self.start_period)
-                    )
-                    new_remain = new_plan_price * new_quantity * (
-                            (self.end_period - current_time) / (self.end_period - self.start_period)
-                    )
-                    total_amount = new_remain - old_remain
-                    next_billing_time = self.get_next_billing_time(duration=new_duration)
-                # Else, new plan has difference duration, the start of plan will be restarted
-                else:
-                    old_used = old_amount * (
-                            (current_time - self.start_period) / (self.end_period - self.start_period)
-                    )
-                    old_remain = old_amount - old_used
-                    total_amount = new_plan_price * new_quantity - old_remain
-                    next_billing_time = current_time + duration_next_billing_month * 30 * 86400
+        # if self.pm_stripe_subscription:
+        #     from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+        #     total_amount, next_billing_time = PaymentMethodFactory.get_method(
+        #         user=self.user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+        #     ).calc_update_total_amount(new_plan=new_plan, new_duration=new_duration, new_quantity=new_quantity)
+        # # Else, calc manually
+        # else:
+        #     # Calc immediate amount and next billing time
+        #     # If this is the first time user register subscription
+        #     if not self.end_period or not self.start_period:
+        #         # Diff_price is price of the plan that user will subscribe
+        #         total_amount = new_plan_price * new_quantity
+        #         next_billing_time = self.get_next_billing_time(duration=new_duration)
+        #     # Else, update the existed subscription
+        #     else:
+        #         # Calc old amount with discount
+        #         old_price = self.pm_plan.get_price(duration=self.duration, currency=currency)
+        #         old_amount = old_price * self.number_members
+        #         if self.promo_code:
+        #             discount = self.promo_code.get_discount(old_amount, duration=self.duration)
+        #             old_amount = old_amount - discount
+        #         # If new plan has same duration, next billing time does not change
+        #         # Money used: (now - start) / (end - start) * old_price
+        #         # Money remain: old_price - money_used
+        #         # => Diff price: new_price - money_remain
+        #         if self.duration == new_duration:
+        #             old_remain = old_amount * (
+        #                     1 - (current_time - self.start_period) / (self.end_period - self.start_period)
+        #             )
+        #             new_remain = new_plan_price * new_quantity * (
+        #                     (self.end_period - current_time) / (self.end_period - self.start_period)
+        #             )
+        #             total_amount = new_remain - old_remain
+        #             next_billing_time = self.get_next_billing_time(duration=new_duration)
+        #         # Else, new plan has difference duration, the start of plan will be restarted
+        #         else:
+        #             old_used = old_amount * (
+        #                     (current_time - self.start_period) / (self.end_period - self.start_period)
+        #             )
+        #             old_remain = old_amount - old_used
+        #             total_amount = new_plan_price * new_quantity - old_remain
+        #             next_billing_time = current_time + duration_next_billing_month * 30 * 86400
+
+        total_amount = new_plan_price * new_quantity
+        next_billing_time = current_time + duration_next_billing_month * 30 * 86400
 
         # Discount and immediate payment
         total_amount = max(total_amount, 0)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from cystack_models.models.domains.domains import Domain
+from cystack_models.models.enterprises.domains.domains import Domain
 from shared.utils.network import is_valid_domain, extract_root_domain
 
 

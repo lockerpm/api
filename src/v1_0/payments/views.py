@@ -17,7 +17,7 @@ from cystack_models.models.users.users import User
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
-    DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer
+    DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -38,6 +38,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = AdminUpgradePlanSerializer
         elif self.action == "upgrade_trial":
             self.serializer_class = UpgradeTrialSerializer
+        elif self.action == "cancel_plan":
+            self.serializer_class = CancelPlanSerializer
         
         return super(PaymentPwdViewSet, self).get_serializer_class()
 
@@ -178,6 +180,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "next_billing_time": next_billing_time,
             "duration": pm_current_plan.duration,
             "subscribing": pm_current_plan.is_subscription(),
+            "is_trailing": pm_current_plan.is_trailing(),
             "cancel_at_period_end": pm_current_plan.is_cancel_at_period_end(),
             "payment_method": pm_current_plan.get_default_payment_method(),
             "number_members": pm_current_plan.get_current_number_members(),
@@ -266,7 +269,13 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if pm_plan_alias == PLAN_TYPE_PM_FREE:
             raise ValidationError({"non_field_errors": [gen_error("7004")]})
 
-        end_time = self.user_repository.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        immediately = validated_data.get("immediately", False)
+        end_time = self.user_repository.cancel_plan(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, immediately=immediately
+        )
         if end_time:
             return Response(status=200, data={
                 "user_ids": [user.user_id],

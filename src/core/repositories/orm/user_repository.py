@@ -234,6 +234,8 @@ class UserRepository(IUserRepository):
         number_members = kwargs.get("number_members", 1)
         promo_code = kwargs.get("promo_code")
         cancel_at_period_end = kwargs.get("cancel_at_period_end", False)
+        extra_time = kwargs.get("extra_time")
+        extra_plan = kwargs.get("extra_plan")
         if start_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
             start_period = now(return_float=True)
         if end_period is None and plan_type_alias != PLAN_TYPE_PM_FREE:
@@ -251,6 +253,10 @@ class UserRepository(IUserRepository):
         pm_user_plan.number_members = number_members
         pm_user_plan.promo_code = promo_code
         pm_user_plan.cancel_at_period_end = cancel_at_period_end
+        if extra_time and extra_time > 0:
+            pm_user_plan.extra_time += extra_time
+            if extra_plan:
+                pm_user_plan.extra_plan = extra_plan
         pm_user_plan.save()
 
         if plan_type_alias == PLAN_TYPE_PM_FREE:
@@ -267,14 +273,18 @@ class UserRepository(IUserRepository):
             # If this plan has extra time => Upgrade to Premium
             extra_time = pm_user_plan.extra_time
             if extra_time > 0:
-                # pm_user_plan.default_payment_method = PAYMENT_METHOD_WALLET
                 pm_user_plan.extra_time = 0
+                pm_user_plan.extra_plan = None
                 pm_user_plan.save()
-                self.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
-                    "start_period": now(),
-                    "end_period": now() + pm_user_plan.extra_time,
-                    "cancel_at_period_end": True
-                })
+                self.update_plan(
+                    user=user,
+                    plan_type_alias=pm_user_plan.extra_plan or PLAN_TYPE_PM_PREMIUM,
+                    **{
+                        "start_period": now(),
+                        "end_period": now() + pm_user_plan.extra_time,
+                        "cancel_at_period_end": True
+                    }
+                )
 
         else:
             # Unlock all their PM teams
@@ -305,7 +315,7 @@ class UserRepository(IUserRepository):
 
         return pm_user_plan
 
-    def cancel_plan(self, user: User, scope=None):
+    def cancel_plan(self, user: User, scope=None, immediately=False):
         current_plan = self.get_current_plan(user=user, scope=scope)
         pm_plan_alias = current_plan.get_plan_type_alias()
         if pm_plan_alias == PLAN_TYPE_PM_FREE:
@@ -317,9 +327,15 @@ class UserRepository(IUserRepository):
             payment_method = PAYMENT_METHOD_WALLET
 
         from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
-        end_time = PaymentMethodFactory.get_method(
-            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
-        ).cancel_recurring_subscription()
+        if immediately is False:
+            end_time = PaymentMethodFactory.get_method(
+                user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
+            ).cancel_recurring_subscription()
+        else:
+            PaymentMethodFactory.get_method(
+                user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
+            ).cancel_immediately_recurring_subscription()
+            end_time = now()
         return end_time
 
     def add_to_family_sharing(self, family_user_plan, user_id: int = None, email: str = None):
@@ -481,7 +497,8 @@ class UserRepository(IUserRepository):
                     "organization": customer_stripe.get("metadata").get("company", ""),
                     "city": data_customer_stripe.get("address_city", ""),
                     "state": data_customer_stripe.get("address_state", ""),
-                    "postal_code": data_customer_stripe.get("address_zip", "")
+                    "postal_code": data_customer_stripe.get("address_zip", ""),
+                    "brand": data_customer_stripe.get("brand", "")
                 }
             else:
                 customer_data = {
@@ -492,7 +509,8 @@ class UserRepository(IUserRepository):
                     "organization": cystack_user_data.get("organization"),
                     "city": cystack_user_data.get("city", ""),
                     "state": cystack_user_data.get("state", ""),
-                    "postal_code": cystack_user_data.get("postal_code", "")
+                    "postal_code": cystack_user_data.get("postal_code", ""),
+                    "brand": cystack_user_data.get("brand", "")
                 }
         # Else, get from specific card
         else:
@@ -505,7 +523,8 @@ class UserRepository(IUserRepository):
                 "organization": card.get("organization"),
                 "city": card.get("address_city", ""),
                 "state": card.get("address_state", ""),
-                "postal_code": card.get("address_zip", "")
+                "postal_code": card.get("address_zip", ""),
+                "brand": card.get("brand", "")
             }
         return customer_data
 

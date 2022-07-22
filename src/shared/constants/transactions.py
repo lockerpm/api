@@ -1,4 +1,6 @@
 TRIAL_PERSONAL_PLAN = 14 * 86400        # 14 days
+TRIAL_PROMOTION = 6 * 30 * 86400        # 6 months
+
 TRIAL_BETA_EXPIRED = 1654016400         # 1/6/2022 00:00:00
 TRIAL_TEAM_PLAN = 10 * 86400            # 10 days
 TRIAL_TEAM_MEMBERS = 2
@@ -54,6 +56,7 @@ PLAN_TYPE_PM_FREE = "pm_free"
 PLAN_TYPE_PM_PREMIUM = "pm_premium"
 PLAN_TYPE_PM_FAMILY = "pm_family"
 
+PLAN_TYPE_PM_ENTERPRISE = "pm_enterprise"
 
 FAMILY_MAX_MEMBER = 6
 
