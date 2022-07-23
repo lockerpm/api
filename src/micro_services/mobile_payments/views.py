@@ -137,6 +137,7 @@ class MobilePaymentViewSet(MicroServiceViewSet):
                     "scope": new_payment.scope,
                     "plan": new_payment.plan,
                     "payment_method": new_payment.payment_method,
+                    "duration": TRIAL_PERSONAL_DURATION_TEXT
                 }
             )
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
