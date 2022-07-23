@@ -166,6 +166,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 "scope": settings.SCOPE_PWD_MANAGER,
                 "plan": trial_plan_obj.get_alias(),
                 "payment_method": None,
+                "duration": TRIAL_PERSONAL_DURATION_TEXT
             }
         )
         return Response(status=200, data={"success": True})
