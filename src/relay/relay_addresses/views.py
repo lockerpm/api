@@ -19,6 +19,13 @@ class RelayAddressViewSet(RelayViewSet):
     def get_serializer_class(self):
         return super(RelayAddressViewSet, self).get_serializer_class()
 
+    @staticmethod
+    def get_relay_address_obj(email: str):
+        address = email.split("@")[0]
+        domain = email.split("@")[1]
+        relay_address = RelayAddress.objects.get(address=address, domain=domain)
+        return relay_address
+
     def get_queryset(self):
         user = self.request.user
         relay_addresses = user.relay_addresses.all().order_by('-created_time')
@@ -27,11 +34,9 @@ class RelayAddressViewSet(RelayViewSet):
     def get_object(self):
         try:
             relay_address = RelayAddress.objects.get(id=self.kwargs.get("pk"), user=self.request.user)
-
             self.check_object_permissions(request=self.request, obj=relay_address)
             return relay_address
         except RelayAddress.DoesNotExist:
-            print("Not found", self.kwargs.get("pk"))
             raise NotFound
 
     def list(self, request, *args, **kwargs):
