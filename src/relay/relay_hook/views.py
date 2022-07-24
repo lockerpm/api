@@ -3,7 +3,7 @@ import json
 from django.conf import settings
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.decorators import action
 
 from cystack_models.models.relay.relay_addresses import RelayAddress
@@ -14,7 +14,7 @@ from shared.services.rabbitmq.rabbitmq import RelayQueue
 
 class RelayHookViewSet(RelayViewSet):
     permission_classes = (AllowAny, )
-    http_method_names = ["head", "options", "get", "post", "delete"]
+    http_method_names = ["head", "options", "get", "post"]
     lookup_value_regex = r'[0-9]+'
 
     @staticmethod
@@ -40,7 +40,6 @@ class RelayHookViewSet(RelayViewSet):
     def sendgrid_hook(self, request, *args, **kwargs):
         token = self.request.query_params.get("token")
         if not token or token != settings.MAIL_WEBHOOK_TOKEN:
-            CyLog.error(**{"message": "[sendgrid_hook] Permission denied"})
             raise PermissionDenied
 
         mail_data = request.data
@@ -51,11 +50,9 @@ class RelayHookViewSet(RelayViewSet):
             return Response(status=400, data={"message": ["Invalid JSON data"]})
 
         receiver = self.get_receiver(mail_data=mail_data)
-        CyLog.error(**{"message": "[sendgrid_hook] RelayAddress {}".format(receiver)})
         try:
             relay_address = self.get_relay_address_obj(email=receiver)
         except RelayAddress.DoesNotExist:
-            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress {} does not exist".format(receiver)})
             return Response(status=200, data={
                 "success": False,
                 "error": "The email {} does not exist".format(receiver)
@@ -64,7 +61,6 @@ class RelayHookViewSet(RelayViewSet):
         user = relay_address.user
         email = user.get_from_cystack_id().get("email")
         if not email:
-            CyLog.error(**{"message": "[sendgrid_hook] RelayAddress not found email"})
             return Response(status=200, data={
                 "success": False,
                 "error": "The email of user {} does not exist".format(user.user_id)
@@ -72,7 +68,18 @@ class RelayHookViewSet(RelayViewSet):
 
         # Send to queue
         mail_data["destination"] = email
-        CyLog.error(**{"message": "[sendgrid_hook] Starting send data: {}".format(mail_data)})
         RelayQueue().send(data=mail_data)
 
         return Response(status=200, data={"success": True})
+
+    @action(methods=["get"], detail=False)
+    def destination(self, request, *args, **kwargs):
+        token = self.request.query_params.get("token")
+        if not token or token != settings.MAIL_WEBHOOK_TOKEN:
+            raise PermissionDenied
+        relay_address = self.request.query_params.get("relay_address")
+        try:
+            relay_address = self.get_relay_address_obj(email=relay_address)
+        except RelayAddress.DoesNotExist:
+            raise NotFound
+        return Response(status=200, data={"user_id": relay_address.user_id})
