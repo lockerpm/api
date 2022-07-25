@@ -16,7 +16,7 @@ urlpatterns = [
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z\-]+)/domains$', views.DomainPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
     url(r'^(?P<pk>[0-9a-z\-]+)/domains/(?P<domain_id>[0-9]+)$',
-        views.DomainPwdViewSet.as_view({'delete': 'destroy'})),
+        views.DomainPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
     url(r'^(?P<pk>[0-9a-z\-]+)/domains/(?P<domain_id>[0-9]+)/verification$',
         views.DomainPwdViewSet.as_view({'get': 'verification', 'post': 'verification'})),
 
