@@ -7,7 +7,7 @@ from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.enterprise.domain_permission import DomainPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import ListDomainSerializer, CreateDomainSerializer
+from .serializers import ListDomainSerializer, CreateDomainSerializer, UpdateDomainSerializer
 
 
 class DomainPwdViewSet(EnterpriseViewSet):
@@ -19,6 +19,8 @@ class DomainPwdViewSet(EnterpriseViewSet):
             self.serializer_class = ListDomainSerializer
         elif self.action == "create":
             self.serializer_class = CreateDomainSerializer
+        elif self.action == "update":
+            self.serializer_class = UpdateDomainSerializer
         return super(DomainPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -63,6 +65,18 @@ class DomainPwdViewSet(EnterpriseViewSet):
             enterprise=enterprise, domain=domain, root_domain=root_domain, verification=is_verified
         )
         return Response(status=201, data={"id": domain.id, "domain": domain.domain})
+
+    def update(self, request, *args, **kwargs):
+        domain = self.get_object()
+        if domain.verification is False:
+            raise ValidationError({"non_field_errors": [gen_error("3005")]})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        auto_approve = validated_data.get("auto_approve")
+        domain.auto_approve = auto_approve
+        domain.save()
+        return Response(status=200, data={"id": domain.id})
 
     def destroy(self, request, *args, **kwargs):
         domain = self.get_object()

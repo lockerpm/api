@@ -7,7 +7,7 @@ from shared.utils.network import is_valid_domain, extract_root_domain
 class ListDomainSerializer(serializers.ModelSerializer):
     class Meta:
         model = Domain
-        fields = ('id', 'created_time', 'updated_time', 'domain', 'verification')
+        fields = ('id', 'created_time', 'updated_time', 'domain', 'verification', 'auto_approve')
 
 
 class CreateDomainSerializer(serializers.Serializer):
@@ -22,3 +22,7 @@ class CreateDomainSerializer(serializers.Serializer):
         root_domain = extract_root_domain(domain=domain)
         data["root_domain"] = root_domain
         return data
+
+
+class UpdateDomainSerializer(serializers.Serializer):
+    auto_approve = serializers.BooleanField()

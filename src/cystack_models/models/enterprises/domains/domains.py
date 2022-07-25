@@ -12,6 +12,7 @@ class Domain(models.Model):
     domain = models.CharField(max_length=128)
     root_domain = models.CharField(max_length=128)
     verification = models.BooleanField(default=False)
+    auto_approve = models.BooleanField(default=False)
     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE, related_name="domains")
 
     class Meta:
