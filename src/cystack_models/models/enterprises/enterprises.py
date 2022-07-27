@@ -40,3 +40,7 @@ class Enterprise(models.Model):
         new_enterprise.enterprise_members.model.create_multiple(new_enterprise, *members)
 
         return new_enterprise
+
+    def lock_enterprise(self, lock: bool):
+        self.locked = lock
+        self.save()

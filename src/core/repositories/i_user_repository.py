@@ -31,6 +31,10 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def get_default_enterprise(self, user: User, enterprise_name: str = None, create_if_not_exist=False):
+        pass
+
+    @abstractmethod
     def get_by_email(self, email) -> User:
         pass
 

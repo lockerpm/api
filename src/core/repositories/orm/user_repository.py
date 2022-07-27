@@ -12,6 +12,7 @@ from core.utils.account_revision_date import bump_account_revision_date
 from shared.constants.account import ACCOUNT_TYPE_ENTERPRISE, ACCOUNT_TYPE_PERSONAL
 from shared.constants.ciphers import *
 from shared.constants.members import *
+from shared.constants.enterprise_members import *
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
@@ -19,6 +20,7 @@ from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from cystack_models.models.teams.teams import Team
+from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
@@ -123,6 +125,21 @@ class UserRepository(IUserRepository):
 
         return default_team
 
+    def get_default_enterprise(self, user: User, enterprise_name: str = None, create_if_not_exist=False):
+        try:
+            default_enterprise = user.enterprise_members.get(is_default=True).enterprise
+        except ObjectDoesNotExist:
+            if create_if_not_exist is False:
+                return None
+            default_enterprise = self._create_default_enterprise(user=user, enterprise_name=enterprise_name)
+        except MultipleObjectsReturned:
+            # If user has multiple default teams because of concurrent requests ="> Delete others
+            multiple_default_enterprises = user.enterprise_members.filter(is_default=True).order_by('-creation_date')
+            # Set first team as default
+            default_enterprise = multiple_default_enterprises.first().team
+            multiple_default_enterprises.exclude(enterprise_id=default_enterprise.id).delete()
+        return default_enterprise
+
     def _create_default_team(self, user: User):
         from cystack_models.models.teams.teams import Team
         from cystack_models.models.members.member_roles import MemberRole
@@ -138,6 +155,22 @@ class UserRepository(IUserRepository):
             "description": ""
         })
         return default_group
+
+    def _create_default_enterprise(self, user: User, enterprise_name):
+        from cystack_models.models.enterprises.enterprises import Enterprise
+        from cystack_models.models.enterprises.members.enterprise_member_roles import EnterpriseMemberRole
+        enterprise_name = enterprise_name or user.get_from_cystack_id().get("full_name", "My Enterprise")
+        default_enterprise = Enterprise.create(**{
+            "name": enterprise_name,
+            "description": "",
+            "members": [{
+                "user": user,
+                "role": EnterpriseMemberRole.objects.get(name=E_MEMBER_ROLE_PRIMARY_ADMIN),
+                "is_default": True,
+                "is_primary": True
+            }]
+        })
+        return default_enterprise
 
     def get_by_email(self, email) -> User:
         pass
@@ -263,10 +296,14 @@ class UserRepository(IUserRepository):
             pm_user_plan.start_period = None
             pm_user_plan.end_period = None
             pm_user_plan.cancel_mobile_subscription()
-            # Lock all primary teams
-            primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
-            for primary_owner in primary_owners:
-                primary_owner.team.lock_pm_team(lock=True)
+            # Lock all primary sharing
+            primary_sharing_owners = user.team_members.filter(is_primary=True, key__isnull=False)
+            for primary_sharing_owner in primary_sharing_owners:
+                primary_sharing_owner.team.lock_pm_team(lock=True)
+            # Lock all enterprises
+            primary_admin_enterprises = user.enterprise_members.filter(is_primary=True)
+            for primary_sharing_owner in primary_admin_enterprises:
+                primary_sharing_owner.enterprise.lock_enterprise(lock=True)
             # Downgrade all family members
             self.__cancel_family_members(pm_user_plan)
 
@@ -287,23 +324,31 @@ class UserRepository(IUserRepository):
                 )
 
         else:
-            # Unlock all their PM teams
-            primary_owners = user.team_members.filter(is_primary=True, key__isnull=False)
-            for primary_owner in primary_owners:
-                primary_owner.team.lock_pm_team(lock=False)
+            # Unlock all their sharing
+            primary_sharing_owners = user.team_members.filter(is_primary=True, key__isnull=False)
+            for primary_sharing_owner in primary_sharing_owners:
+                primary_sharing_owner.team.lock_pm_team(lock=False)
 
         pm_user_plan.save()
 
         # Update plan rule here
-        # If the plan is team plan => Create vault org
+        # If the plan is team plan => Create Enterprise
         pm_plan = pm_user_plan.get_plan_obj()
         if pm_plan.is_team_plan:
             # Leave other family plans if user is a member
             user.pm_plan_family.all().delete()
+            # Create enterprise here
+            enterprise_name = kwargs.get("enterprise_name")
+            self.__create_enterprise(user=user, enterprise_name=enterprise_name)
+            # Unlock enterprises
+            primary_admin_enterprises = user.enterprise_members.filter(is_primary=True)
+            for primary_sharing_owner in primary_admin_enterprises:
+                primary_sharing_owner.enterprise.lock_enterprise(lock=False)
+
             # Create Vault Org here
-            default_collection_name = kwargs.get("collection_name")
-            key = kwargs.get("key")
-            self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
+            # default_collection_name = kwargs.get("collection_name")
+            # key = kwargs.get("key")
+            # self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
 
         # If the plan is family plan => Upgrade plan for the user
         if pm_plan.is_family_plan:
@@ -402,6 +447,10 @@ class UserRepository(IUserRepository):
         primary_member.key = key
         primary_member.external_id = uuid.uuid4()
         primary_member.save()
+
+    def __create_enterprise(self, user, enterprise_name):
+        enterprise = self.get_default_enterprise(user=user, enterprise_name=enterprise_name, create_if_not_exist=True)
+        return enterprise
 
     def __create_family_members(self, pm_user_plan, family_members):
         plan_obj = pm_user_plan.get_plan_obj()
