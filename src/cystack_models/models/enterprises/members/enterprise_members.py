@@ -1,8 +1,11 @@
 import uuid
 from typing import Dict
 
+import jwt
+from django.conf import settings
 from django.db import models
 
+from shared.constants.token import TOKEN_EXPIRED_TIME_INVITE_MEMBER, TOKEN_TYPE_INVITE_MEMBER, TOKEN_PREFIX
 from shared.utils.app import now
 from shared.constants.members import *
 from cystack_models.models.users.users import User
@@ -51,3 +54,23 @@ class EnterpriseMember(models.Model):
             status=status
         )
         return new_member
+
+    def create_invitation_token(self):
+        if self.email:
+            created_time = now()
+            expired_time = created_time + TOKEN_EXPIRED_TIME_INVITE_MEMBER * 3600
+            payload = {
+                "scope": settings.SCOPE_PWD_MANAGER,
+                "member": self.email,
+                "enterprise": self.enterprise_id,
+                "created_time": created_time,
+                "expired_time": expired_time,
+                "token_type": TOKEN_TYPE_INVITE_MEMBER
+            }
+            token_value = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+            token_value = TOKEN_PREFIX + token_value.decode('utf-8')
+        else:
+            token_value = None
+        self.token_invitation = token_value
+        self.save()
+        return token_value

@@ -23,11 +23,12 @@ class UserPwdSerializer(serializers.Serializer):
     master_password_hint = serializers.CharField(allow_blank=True)
     score = serializers.FloatField(required=False, allow_null=True)
     trial_plan = serializers.ChoiceField(
-        choices=[PLAN_TYPE_PM_FREE, PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FAMILY], required=False, allow_null=True
+        choices=[PLAN_TYPE_PM_FREE, PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FAMILY, PLAN_TYPE_PM_ENTERPRISE], required=False, allow_null=True
     )
     is_trial_promotion = serializers.BooleanField(default=False)
-    team_key = serializers.CharField(required=False, allow_null=True)
-    collection_name = serializers.CharField(required=False, allow_null=True)
+    enterprise_name = serializers.CharField(required=False, allow_null=True)
+    # team_key = serializers.CharField(required=False, allow_null=True)
+    # collection_name = serializers.CharField(required=False, allow_null=True)
 
     def validate(self, data):
         kdf_type = data.get("kdf_type", 0)
