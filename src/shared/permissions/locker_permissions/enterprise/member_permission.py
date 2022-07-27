@@ -12,4 +12,4 @@ class MemberPwdPermission(EnterprisePwdPermission):
         member = self.get_team_member(user=request.user, obj=obj)
         role = member.role
         role_name = role.name
-        return role_name[E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_ROLE_ADMIN]
+        return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_ROLE_ADMIN]

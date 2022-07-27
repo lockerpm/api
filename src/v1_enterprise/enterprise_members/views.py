@@ -11,6 +11,7 @@ from shared.constants.enterprise_members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
+from .serializers import DetailMemberSerializer, UpdateMemberSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -19,6 +20,10 @@ class MemberPwdViewSet(EnterpriseViewSet):
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
     def get_serializer_class(self):
+        if self.action == "list":
+            self.serializer_class = DetailMemberSerializer
+        elif self.action == "update":
+            self.serializer_class = UpdateMemberSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -77,7 +82,6 @@ class MemberPwdViewSet(EnterpriseViewSet):
         return members_qs
 
     def list(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request)
         paging_param = self.request.query_params.get("paging", "1")
         page_size_param = self.check_int_param(self.request.query_params.get("size", 10))
         if paging_param == "0":
