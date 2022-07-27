@@ -12,21 +12,21 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         promo_type = PROMO_PERCENTAGE
-        expired_time = now() + 6 * 30 * 86400  # 6 months
-        code = "HELLOWORLD"
-        value = 15
+        expired_time = now() + 12 * 30 * 86400  # 12 months
+        code = "LKFAMILY50"
+        value = 50
         limit_value = None
         duration = 1
-        currency = "VND"
-        description_en = "Welcome to Web Security"
-        description_vi = "Chào mừng đến với Web Security"
+        currency = "USD"
+        description_en = "50% off on Family & Friends Plan"
+        description_vi = "Ưu đãi 50% gói Family & Friends"
 
         promo_type_obj = PromoCodeType.objects.get(name=promo_type)
 
         new_promo_code = PromoCode.objects.create(
             created_time=now(),
             expired_time=expired_time,
-            remaining_times=1000,
+            remaining_times=10000,
             valid=True,
             code=code,
             value=value,
@@ -48,3 +48,6 @@ class Command(BaseCommand):
         #     api_key=STRIPE_SECRET_KEY_TEST
         # )
         # print("Coupon: ", coupon)
+
+    def campaign(self):
+        pass
