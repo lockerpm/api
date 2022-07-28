@@ -184,7 +184,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validateD_data
+        validated_data = serializer.validated_data
         role = validated_data.get("role")
 
         # Not allow edit yourself and Not allow edit primary owner
