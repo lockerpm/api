@@ -93,8 +93,7 @@ class InvoiceWebhookSerializer(serializers.Serializer):
             if stripe_subscription_obj:
                 pm_user_plan = user_repository.get_current_plan(user=new_payment.user, scope=scope)
                 # if this user is in a trial plan => Set extra time
-                if pm_user_plan.end_period and pm_user_plan.pm_stripe_subscription is None and \
-                        pm_user_plan.pm_mobile_subscription is None:
+                if pm_user_plan.end_period and pm_user_plan.pm_stripe_subscription is None:
                     extra_time = max(pm_user_plan.end_period - now(), 0)
                     extra_plan = pm_user_plan.get_plan_obj().get_alias()
 
