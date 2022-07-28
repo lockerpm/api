@@ -119,7 +119,7 @@ class PMUserPlan(UserPlan):
         self.save()
 
     def cancel_mobile_subscription(self):
-        self.pm_mobile_subscription = None
+        # self.pm_mobile_subscription = None
         self.promo_code = None
         self.save()
 
