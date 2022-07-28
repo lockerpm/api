@@ -87,7 +87,7 @@ class CronTask:
             close_old_connections()
 
     def start(self):
-        schedule.every(180).minutes.do(self.subscription_by_wallet)
+        schedule.every(10).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
         schedule.every().day.at("10:00").do(self.feedback_tasks)
         schedule.every(20).minutes.do(self.emergency_access_approve)

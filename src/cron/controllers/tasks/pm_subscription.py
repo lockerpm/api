@@ -5,7 +5,7 @@ from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
 from shared.utils.app import now
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
-from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+# from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
 
 
@@ -35,28 +35,37 @@ def pm_subscription():
         if pm_user_plan.default_payment_method in [PAYMENT_METHOD_MOBILE]:
             continue
 
-        # Else, subtract wallet
-        coupon = pm_user_plan.promo_code
-        if coupon is not None and user.payments.filter(promo_code=coupon).count() >= coupon.duration:
-            coupon = None
-        amount = pm_user_plan.calc_current_payment_price(currency=CURRENCY_VND)
-        payment_method = PaymentMethodFactory.get_method(
-            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_WALLET
-        )
-        subtract_result = payment_method.recurring_subtract(
-            amount=amount, plan_type=current_plan_name, coupon=coupon, duration=pm_user_plan.duration,
-            **{"currency": CURRENCY_VND}
-        )
-        # If subtract is failed => Downgrade this current plan
-        if subtract_result.get("success") is False:
-            user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
-            # Notify for this user
-            LockerBackgroundFactory.get_background(
-                bg_name=BG_NOTIFY, background=False
-            ).run(func_name="downgrade_plan", **{
-                "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
-                "scope": settings.SCOPE_PWD_MANAGER
-            })
+        # Else, always cancel the subscription of the user and notify for this user
+        user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
+        LockerBackgroundFactory.get_background(
+            bg_name=BG_NOTIFY, background=False
+        ).run(func_name="downgrade_plan", **{
+            "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
+            "scope": settings.SCOPE_PWD_MANAGER
+        })
+
+        # # Else, subtract wallet
+        # coupon = pm_user_plan.promo_code
+        # if coupon is not None and user.payments.filter(promo_code=coupon).count() >= coupon.duration:
+        #     coupon = None
+        # amount = pm_user_plan.calc_current_payment_price(currency=CURRENCY_VND)
+        # payment_method = PaymentMethodFactory.get_method(
+        #     user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_WALLET
+        # )
+        # subtract_result = payment_method.recurring_subtract(
+        #     amount=amount, plan_type=current_plan_name, coupon=coupon, duration=pm_user_plan.duration,
+        #     **{"currency": CURRENCY_VND}
+        # )
+        # # If subtract is failed => Downgrade this current plan
+        # if subtract_result.get("success") is False:
+        #     user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
+        #     # Notify for this user
+        #     LockerBackgroundFactory.get_background(
+        #         bg_name=BG_NOTIFY, background=False
+        #     ).run(func_name="downgrade_plan", **{
+        #         "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
+        #         "scope": settings.SCOPE_PWD_MANAGER
+        #     })
 
 
 def pm_expiring_notify():
