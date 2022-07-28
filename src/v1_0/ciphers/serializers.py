@@ -88,7 +88,7 @@ class VaultItemSerializer(serializers.Serializer):
         child=serializers.CharField(max_length=128), required=False, allow_null=True, allow_empty=True
     )
     organizationId = serializers.CharField(required=False, allow_null=True, default=None)
-    folderId = serializers.CharField(required=False, allow_null=True, default=None)
+    folderId = serializers.CharField(required=False, allow_null=True, default=None, allow_blank=True)
     favorite = serializers.BooleanField(default=False)
     fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
     score = serializers.FloatField(default=0, min_value=0)
@@ -233,7 +233,7 @@ class VaultItemSerializer(serializers.Serializer):
             "created_by_id": self.context["request"].user.user_id,
             "organization_id": validated_data.get("organizationId"),
             "team_id": validated_data.get("organizationId"),
-            "folder_id": validated_data.get("folderId"),
+            "folder_id": validated_data.get("folderId") or None,
             "favorite": validated_data.get("favorite", False),
             "reprompt": validated_data.get("reprompt", 0),
             "attachments": None,
