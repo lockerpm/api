@@ -25,3 +25,19 @@ class DetailMemberSerializer(serializers.ModelSerializer):
 
 class UpdateMemberSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=[E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_MEMBER], default=E_MEMBER_ROLE_MEMBER)
+
+
+class UserInvitationSerializeR(serializers.Serializer):
+    class Meta:
+        model = EnterpriseMember
+        fields = ('id', 'access_time', 'role')
+        read_only_fields = ('id', 'access_time', 'role')
+
+    def to_representation(self, instance):
+        data = super(UserInvitationSerializeR, self).to_representation(instance)
+        data["status"] = instance.status
+        data["enterprise"]= {
+            "id": instance.enterprise_id,
+            "name": instance.enterprise.name
+        }
+        return data

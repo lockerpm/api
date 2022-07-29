@@ -11,7 +11,7 @@ from shared.constants.enterprise_members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import DetailMemberSerializer, UpdateMemberSerializer
+from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializeR
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -24,6 +24,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
             self.serializer_class = DetailMemberSerializer
         elif self.action == "update":
             self.serializer_class = UpdateMemberSerializer
+        elif self.action == "user_invitations":
+            self.serializer_class = UserInvitationSerializeR
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -113,6 +115,9 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
         # Loop list members data
         for member in members:
+            # If this member is in other enterprise
+            if EnterpriseMember.objects.filter(user_id=member["user_id"]).exists():
+                continue
             try:
                 enterprise.enterprise_members.get(user_id=member["user_id"])
             except EnterpriseMember.DoesNotExist:
@@ -156,6 +161,9 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
         # Loop list members data
         for member in members:
+            # If this member is in other enterprise
+            if EnterpriseMember.objects.filter(email=member["email"]).exists():
+                continue
             try:
                 enterprise.enterprise_members.get(email=member["email"])
             except EnterpriseMember.DoesNotExist:
@@ -217,6 +225,34 @@ class MemberPwdViewSet(EnterpriseViewSet):
             "enterprise_": enterprise.name,
             "member_user_id": deleted_member_user_id
         })
+
+    @action(methods=["get"], detail=False)
+    def user_invitations(self, request, *args, **kwargs):
+        user = self.request.user
+        member_invitations = user.enterprise_members.filter(
+            status__in=[E_MEMBER_STATUS_INVITED]
+        ).select_related('enterprise').order_by('access_time')
+        serializer = self.get_serializer(member_invitations, many=True)
+        return Response(status=200, data=serializer.data)
+
+    @action(methods=["get"], detail=False)
+    def user_invitation_update(self, request, *args, **kwargs):
+        user = self.request.user
+        status = request.data.get("status")
+        if status not in ["accept", "reject"]:
+            raise ValidationError(detail={"status": ["This status is not valid"]})
+        try:
+            member_invitation = user.enterprise_members.get(
+                id=kwargs.get("pk"), status=E_MEMBER_STATUS_INVITED, user__activated=True
+            )
+        except EnterpriseMember.DoesNotExist:
+            raise NotFound
+        if status == "accept":
+            member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+            member_invitation.save()
+        else:
+            member_invitation.delete()
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def invitation_confirmation(self, request, *args, **kwargs):
