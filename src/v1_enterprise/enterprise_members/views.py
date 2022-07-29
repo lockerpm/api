@@ -70,17 +70,28 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if email_param:
             members_qs = members_qs.filter(email__icontains=email_param)
 
-        # `whens` query to order list members (primary_admin => admin => member)
+        # Sorting the results
+        sort_param = self.request.query_params.get("sort", None)
         order_whens = [
             When(Q(role__name=E_MEMBER_ROLE_PRIMARY_ADMIN, user__isnull=False), then=Value(2)),
-            When(Q(role__name=E_MEMBER_ROLE_PRIMARY_ADMIN, user__isnull=False), then=Value(3)),
+            When(Q(role__name=E_MEMBER_ROLE_ADMIN, user__isnull=False), then=Value(3)),
             When(Q(role__name=E_MEMBER_ROLE_MEMBER, user__isnull=False), then=Value(4))
         ]
-        # Order by `order_whens`
-        members_qs = members_qs.annotate(
-            order_field=Case(*order_whens, output_field=IntegerField(), default=Value(4))
-        ).order_by("order_field")
-
+        if sort_param:
+            if sort_param == "access_time_desc":
+                members_qs = members_qs.order_by('-access_time')
+            elif sort_param == "access_time_asc":
+                members_qs = members_qs.order_by('access_time')
+            elif sort_param == "role_desc":
+                members_qs = members_qs.annotate(
+                    order_field=Case(*order_whens, output_field=IntegerField(), default=Value(4))
+                ).order_by("-order_field")
+            elif sort_param == "role_asc":
+                members_qs = members_qs.annotate(
+                    order_field=Case(*order_whens, output_field=IntegerField(), default=Value(4))
+                ).order_by("order_field")
+        else:
+            members_qs = members_qs.order_by('-access_time')
         return members_qs
 
     def list(self, request, *args, **kwargs):
