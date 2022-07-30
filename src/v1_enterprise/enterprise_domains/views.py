@@ -64,7 +64,9 @@ class DomainPwdViewSet(EnterpriseViewSet):
         domain = enterprise.domains.model.create(
             enterprise=enterprise, domain=domain, root_domain=root_domain, verification=is_verified
         )
-        return Response(status=201, data={"id": domain.id, "domain": domain.domain})
+        return Response(status=201, data={
+            "id": domain.id, "domain": domain.domain, "verification": domain.verification
+        })
 
     def update(self, request, *args, **kwargs):
         domain = self.get_object()

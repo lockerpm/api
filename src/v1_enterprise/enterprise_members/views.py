@@ -53,7 +53,16 @@ class MemberPwdViewSet(EnterpriseViewSet):
         email_param = self.request.query_params.get("email", None)
 
         # Get list role to filter
+        filter_primary_admin_param = self.request.query_params.get("primary_admin", "0")
+        filter_admin_param = self.request.query_params.get("admin", "0")
+        filter_member_param = self.request.query_params.get("member", "0")
         list_filter_roles = []
+        if filter_primary_admin_param == "1":
+            list_filter_roles.append(E_MEMBER_ROLE_PRIMARY_ADMIN)
+        if filter_admin_param == "1":
+            list_filter_roles.append(E_MEMBER_ROLE_ADMIN)
+        if filter_member_param == "1":
+            list_filter_roles.append(E_MEMBER_ROLE_MEMBER)
 
         # Get all members of the enterprise
         members_qs = enterprise.enterprise_members.filter()
