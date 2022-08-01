@@ -2062,3 +2062,9 @@ RELAY_BLOCKLISTED = [
     "submit",
     "from",
 ]
+
+
+RELAY_LOCKER_BLOCKED_CHARACTER = [
+    "cystack",
+    "locker"
+]

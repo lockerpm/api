@@ -7,7 +7,7 @@ from cystack_models.models.relay.relay_domains import RelayDomain
 from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from cystack_models.models.users.users import User
 from shared.constants.relay_address import DEFAULT_RELAY_DOMAIN
-from shared.constants.relay_blacklist import RELAY_BAD_WORDS, RELAY_BLOCKLISTED
+from shared.constants.relay_blacklist import RELAY_BAD_WORDS, RELAY_BLOCKLISTED, RELAY_LOCKER_BLOCKED_CHARACTER
 from shared.utils.app import random_n_digit, now
 
 
@@ -53,13 +53,14 @@ class RelayAddress(models.Model):
     @classmethod
     def valid_address(cls, address, domain) -> bool:
         address_pattern_valid = cls.valid_address_pattern(address)
-        address_contains_badword = cls.has_bad_words(address)
+        address_contains_bad_word = cls.has_bad_words(address)
         address_is_blocklisted = cls.is_blocklisted(address)
+        address_is_locker_blocked = cls.is_locker_blocked(address)
         address_already_deleted = DeletedRelayAddress.objects.filter(
             address_hash=cls.hash_address(address, domain)
         ).exists()
-        if address_already_deleted is True or address_contains_badword or address_is_blocklisted or \
-                not address_pattern_valid:
+        if address_already_deleted is True or address_contains_bad_word or address_is_blocklisted or \
+                not address_pattern_valid or address_is_locker_blocked:
             return False
         return True
 
@@ -82,6 +83,13 @@ class RelayAddress(models.Model):
     @classmethod
     def is_blocklisted(cls, value):
         return any(blocked_word == value for blocked_word in RELAY_BLOCKLISTED)
+
+    @classmethod
+    def is_locker_blocked(cls, value):
+        for blocked_word in RELAY_LOCKER_BLOCKED_CHARACTER:
+            if blocked_word in value:
+                return True
+        return False
 
     @classmethod
     def hash_address(cls, address, domain):
