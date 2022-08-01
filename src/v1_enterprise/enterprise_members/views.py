@@ -70,14 +70,18 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if list_filter_roles:
             members_qs = members_qs.filter(role__name__in=list_filter_roles)
         # filter by q_param: search members
-        if user_ids_param:
-            try:
-                user_ids_param = list(map(int, user_ids_param.split(",")))
-                members_qs = members_qs.filter(user_id__in=user_ids_param).distinct()
-            except AttributeError:
-                pass
-        if email_param:
-            members_qs = members_qs.filter(email__icontains=email_param)
+        if user_ids_param or email_param:
+            search_by_users = enterprise.enterprise_members.none()
+            search_by_email = enterprise.enterprise_members.none()
+            if user_ids_param:
+                try:
+                    user_ids_param = list(map(int, user_ids_param.split(",")))
+                    search_by_users = members_qs.filter(user_id__in=user_ids_param)
+                except AttributeError:
+                    pass
+            if email_param:
+                search_by_email = members_qs.filter(email__icontains=email_param)
+            members_qs = (search_by_users | search_by_email).distinct()
 
         # Sorting the results
         sort_param = self.request.query_params.get("sort", None)
