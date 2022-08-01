@@ -103,30 +103,25 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Upgrade trial plan
         if trial_plan_obj and trial_plan_obj.get_alias() != PLAN_TYPE_PM_FREE:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-            if current_plan.is_personal_trial_applied() is False:
-                number_members = 1
-                end_period = now() + TRIAL_PERSONAL_PLAN
-                trial_duration = TRIAL_PERSONAL_DURATION_TEXT
-                if is_trial_promotion is True and trial_plan_obj.get_alias() == PLAN_TYPE_PM_FAMILY:
-                    end_period = now() + TRIAL_PROMOTION
-                    trial_duration = TRIAL_PROMOTION_DURATION_TEXT
-                # if trial_plan_obj.is_team_plan:
-                #     end_period = now() + TRIAL_TEAM_PLAN
-                #     number_members = TRIAL_TEAM_MEMBERS
-                plan_metadata = {
-                    "start_period": now(),
-                    "end_period": end_period,
-                    "number_members": number_members,
-                    "enterprise_name": validated_data.get("enterprise_name")
-                }
-                self.user_repository.update_plan(
-                    user=user, plan_type_alias=trial_plan_obj.get_alias(),
-                    duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
-                )
-                current_plan.personal_trial_applied = True
-                current_plan.save()
-                # Send trial mail
-                if not trial_plan_obj.is_team_plan:
+
+            if trial_plan_obj.is_team_plan is False:
+                if current_plan.is_personal_trial_applied() is False:
+                    end_period = now() + TRIAL_PERSONAL_PLAN
+                    trial_duration = TRIAL_PERSONAL_DURATION_TEXT
+                    if is_trial_promotion is True and trial_plan_obj.get_alias() == PLAN_TYPE_PM_FAMILY:
+                        end_period = now() + TRIAL_PROMOTION
+                        trial_duration = TRIAL_PROMOTION_DURATION_TEXT
+                    plan_metadata = {
+                        "start_period": now(),
+                        "end_period": end_period
+                    }
+                    self.user_repository.update_plan(
+                        user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                        duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+                    )
+                    current_plan.personal_trial_applied = True
+                    current_plan.save()
+                    # Send trial mail
                     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
                         func_name="trial_successfully", **{
                             "user_id": user.user_id,
@@ -136,45 +131,22 @@ class UserPwdViewSet(PasswordManagerViewSet):
                             "duration": trial_duration,
                         }
                     )
-
-            # if trial_plan_obj.is_team_plan:
-            #     plan_metadata = {
-            #         "start_period": now(),
-            #         "end_period": now() + TRIAL_TEAM_PLAN,
-            #         "number_members": TRIAL_TEAM_MEMBERS,
-            #         "collection_name": validated_data.get("collection_name"),
-            #         "key": validated_data.get("team_key")
-            #     }
-            #     self.user_repository.update_plan(
-            #         user=user, plan_type_alias=trial_plan_obj.get_alias(),
-            #         duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
-            #     )
-            # elif current_plan.is_personal_trial_applied() is False:
-            #     end_period = now() + TRIAL_PERSONAL_PLAN
-            #     trial_duration = TRIAL_PERSONAL_DURATION_TEXT
-            #     if is_trial_promotion is True and trial_plan_obj.get_alias() == PLAN_TYPE_PM_FAMILY:
-            #         end_period = now() + TRIAL_PROMOTION
-            #         trial_duration = TRIAL_PROMOTION_DURATION_TEXT
-            #     plan_metadata = {
-            #         "start_period": now(),
-            #         "end_period": end_period
-            #     }
-            #     self.user_repository.update_plan(
-            #         user=user, plan_type_alias=trial_plan_obj.get_alias(),
-            #         duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
-            #     )
-            #     current_plan.personal_trial_applied = True
-            #     current_plan.save()
-            #     # Send trial mail
-            #     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-            #         func_name="trial_successfully", **{
-            #             "user_id": user.user_id,
-            #             "scope": settings.SCOPE_PWD_MANAGER,
-            #             "plan": trial_plan_obj.get_alias(),
-            #             "payment_method": None,
-            #             "duration": trial_duration,
-            #         }
-            #     )
+            # Enterprise plan
+            else:
+                if user.enterprise_members.exists() is False and current_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
+                    end_period = now() + TRIAL_TEAM_PLAN
+                    number_members = TRIAL_TEAM_MEMBERS
+                    plan_metadata = {
+                        "start_period": now(),
+                        "end_period": end_period,
+                        "number_members": number_members,
+                        "enterprise_name": validated_data.get("enterprise_name")
+                    }
+                    self.user_repository.update_plan(
+                        user=user, plan_type_alias=trial_plan_obj.get_alias(),
+                        duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+                    )
+                    # TODO: Send trial enterprise mail here
 
         # Upgrade plan if the user is a family member
         self.user_repository.upgrade_member_family_plan(user=user)
