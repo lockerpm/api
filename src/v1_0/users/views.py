@@ -110,9 +110,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 if is_trial_promotion is True and trial_plan_obj.get_alias() == PLAN_TYPE_PM_FAMILY:
                     end_period = now() + TRIAL_PROMOTION
                     trial_duration = TRIAL_PROMOTION_DURATION_TEXT
-                if trial_plan_obj.is_team_plan:
-                    end_period = now() + TRIAL_TEAM_PLAN
-                    number_members = TRIAL_TEAM_MEMBERS
+                # if trial_plan_obj.is_team_plan:
+                #     end_period = now() + TRIAL_TEAM_PLAN
+                #     number_members = TRIAL_TEAM_MEMBERS
                 plan_metadata = {
                     "start_period": now(),
                     "end_period": end_period,

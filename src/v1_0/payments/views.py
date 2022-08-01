@@ -14,6 +14,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.users.users import User
+from cystack_models.models.user_plans.pm_plans import PMPlan
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
@@ -159,6 +160,40 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         pm_current_plan.personal_trial_applied = True
         pm_current_plan.save()
+        # Send trial mail
+        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+            func_name="trial_successfully", **{
+                "user_id": user.user_id,
+                "scope": settings.SCOPE_PWD_MANAGER,
+                "plan": trial_plan_obj.get_alias(),
+                "payment_method": None,
+                "duration": TRIAL_PERSONAL_DURATION_TEXT
+            }
+        )
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def upgrade_trial_enterprise(self, request, *args, **kwargs):
+        user = self.request.user
+
+        # If this user has an enterprise => The trial plan is applied
+        if user.enterprise_members.exists() is True:
+            raise ValidationError({"non_field_errors": [gen_error("7013")]})
+        # If this user is in other plan => Don't allow
+        pm_current_plan = self.user_repository.get_current_plan(user=user)
+        if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
+            raise ValidationError({"non_field_errors": [gen_error("7014")]})
+
+        trial_plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
+        plan_metadata = {
+            "start_period": now(),
+            "end_period": now() + TRIAL_TEAM_PLAN,
+            "number_members": TRIAL_TEAM_MEMBERS
+        }
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=trial_plan_obj.get_alias(),
+            duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
         # Send trial mail
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
             func_name="trial_successfully", **{
