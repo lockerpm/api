@@ -1,4 +1,5 @@
 import json
+import jwt
 from datetime import datetime
 
 from django.conf import settings
@@ -9,6 +10,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
+from shared.constants.token import TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE, TOKEN_TYPE_TRIAL_ENTERPRISE
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
@@ -59,6 +61,19 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             return user
         except User.DoesNotExist:
             return None
+
+    def allow_upgrade_enterprise_trial(self, user):
+        # If this user does not created master pass
+        if user.activated is False:
+            raise ValidationError({"non_field_errors": [gen_error("1003")]})
+        # If this user has an enterprise => The trial plan is applied
+        if user.enterprise_members.exists() is True:
+            raise ValidationError({"non_field_errors": [gen_error("7013")]})
+        # If this user is in other plan => Don't allow
+        pm_current_plan = self.user_repository.get_current_plan(user=user)
+        if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
+            raise ValidationError({"non_field_errors": [gen_error("7014")]})
+        return pm_current_plan
 
     def get_queryset(self):
         all_pm_invoices = Payment.objects.filter().order_by('-created_time')
@@ -173,16 +188,23 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
-    def upgrade_trial_enterprise(self, request, *args, **kwargs):
-        user = self.request.user
+    def upgrade_trial_enterprise_by_code(self, request, *args, **kwargs):
+        token = request.data.get("token")
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidAlgorithmError):
+            raise ValidationError(detail={"token": ["The upgrade token is not valid"]})
+        user_id = payload.get("user_id")
+        expired_time = payload.get("expired_time")
+        token_type = payload.get("token_type")
+        if token_type != TOKEN_TYPE_TRIAL_ENTERPRISE or (expired_time and expired_time < now()):
+            raise ValidationError(detail={"token": ["The upgrade token is not valid"]})
+        try:
+            user = self.user_repository.get_by_id(user_id=user_id)
+        except ObjectDoesNotExist:
+            raise ValidationError(detail={"token": ["The upgrade token is not valid"]})
 
-        # If this user has an enterprise => The trial plan is applied
-        if user.enterprise_members.exists() is True:
-            raise ValidationError({"non_field_errors": [gen_error("7013")]})
-        # If this user is in other plan => Don't allow
-        pm_current_plan = self.user_repository.get_current_plan(user=user)
-        if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
-            raise ValidationError({"non_field_errors": [gen_error("7014")]})
+        self.allow_upgrade_enterprise_trial(user=user)
 
         trial_plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
         plan_metadata = {
@@ -205,6 +227,19 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             }
         )
         return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def generate_trial_enterprise_code(self, request, *args, **kwargs):
+        user = self.request.user
+        self.allow_upgrade_enterprise_trial(user=user)
+        payload = {
+            "user_id": user.user_id,
+            "plan": PLAN_TYPE_PM_ENTERPRISE,
+            "token_type": TOKEN_TYPE_TRIAL_ENTERPRISE,
+            "expired_time": now() + TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256').decode('utf-8')
+        return Response(status=200, data={"token": token})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):
