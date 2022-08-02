@@ -10,6 +10,7 @@ from shared.utils.app import now
 from shared.constants.members import *
 from cystack_models.models.users.users import User
 from cystack_models.models.enterprises.enterprises import Enterprise
+from cystack_models.models.enterprises.domains.domains import Domain
 from cystack_models.models.enterprises.members.enterprise_member_roles import EnterpriseMemberRole
 
 
@@ -25,6 +26,9 @@ class EnterpriseMember(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enterprise_members", null=True)
     enterprise = models.ForeignKey(Enterprise, on_delete=models.CASCADE, related_name="enterprise_members")
     role = models.ForeignKey(EnterpriseMemberRole, on_delete=models.CASCADE, related_name="enterprise_members")
+    domain = models.ForeignKey(
+        Domain, on_delete=models.SET_NULL, related_name="enterprise_members", null=True, default=None
+    )
 
     class Meta:
         db_table = 'e_members'

@@ -17,4 +17,5 @@ urlpatterns = [
 urlpatterns += [
     url(r'^hook$', views.RelayHookViewSet.as_view({'post': 'sendgrid_hook'})),
     url(r'^destination$', views.RelayHookViewSet.as_view({'get': 'destination'})),
+    url(r'^reply$', views.RelayHookViewSet.as_view({'get': 'reply', 'post': 'reply'})),
 ]
