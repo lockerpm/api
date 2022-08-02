@@ -7,7 +7,9 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.decorators import action
 
 from cystack_models.models.relay.relay_addresses import RelayAddress
+from cystack_models.models.relay.reply import Reply
 from relay.apps import RelayViewSet
+from relay.relay_hook.serializer import ReplySerializer
 from shared.log.cylog import CyLog
 from shared.services.rabbitmq.rabbitmq import RelayQueue
 
@@ -16,6 +18,11 @@ class RelayHookViewSet(RelayViewSet):
     permission_classes = (AllowAny, )
     http_method_names = ["head", "options", "get", "post"]
     lookup_value_regex = r'[0-9]+'
+    
+    def get_serializer_class(self):
+        if self.action == "reply":
+            self.serializer_class = ReplySerializer
+        return super(RelayHookViewSet, self).get_serializer_class()
 
     @staticmethod
     def get_relay_address_obj(email: str):
@@ -83,3 +90,33 @@ class RelayHookViewSet(RelayViewSet):
         except RelayAddress.DoesNotExist:
             raise NotFound
         return Response(status=200, data={"user_id": relay_address.user_id})
+
+    @action(methods=["post"], detail=False)
+    def reply(self, request, *args, **kwargs):
+        token = self.request.query_params.get("token")
+        if not token or token != settings.MAIL_WEBHOOK_TOKEN:
+            raise PermissionDenied
+
+        if request.method == "GET":
+            lookup_param = self.request.query_params.get("lookup")
+            if not lookup_param:
+                raise NotFound
+            try:
+                reply = Reply.objects.get(lookup=lookup_param)
+            except Reply.DoesNotExist:
+                raise NotFound
+            return Response(status=200, data={
+                "id": reply.id,
+                "lookup": reply.lookup,
+                "encrypted_metadata": reply.encrypted_metadata
+            })
+
+        elif request.method == "POST":
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            lookup = validated_data.get("lookup")
+            encrypted_metadata = validated_data.get("encrypted_metadata")
+            new_reply = Reply.create(lookup=lookup, encrypted_metadata=encrypted_metadata)
+            return Response(status=200, data={"id": new_reply.id})
+
