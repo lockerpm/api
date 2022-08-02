@@ -86,6 +86,17 @@ class NotifyBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
+    def trial_enterprise_successfully(self, user_id: int, scope: str):
+        url = API_NOTIFY_PAYMENT + "/notify_trial_enterprise"
+        try:
+            notification_data = {"user_id": user_id, "scope": scope}
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
+        except Exception:
+            self.log_error(func_name="trial_enterprise_successfully")
+        finally:
+            if self.background:
+                connection.close()
+
     def pay_successfully(self, payment):
         """
         Notify when a payment invoice was paid

@@ -218,12 +218,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         # Send trial mail
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-            func_name="trial_successfully", **{
+            func_name="trial_enterprise_successfully", **{
                 "user_id": user.user_id,
                 "scope": settings.SCOPE_PWD_MANAGER,
-                "plan": trial_plan_obj.get_alias(),
-                "payment_method": None,
-                "duration": TRIAL_PERSONAL_DURATION_TEXT
             }
         )
         return Response(status=200, data={"success": True})
