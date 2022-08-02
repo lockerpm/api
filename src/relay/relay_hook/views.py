@@ -24,11 +24,25 @@ class RelayHookViewSet(RelayViewSet):
             self.serializer_class = ReplySerializer
         return super(RelayHookViewSet, self).get_serializer_class()
 
+    def check_auth_token(self):
+        auth_header = self.request.META.get("HTTP_AUTHORIZATION")
+        if not auth_header:
+            token = self.request.query_params.get("token")
+            if token == settings.MAIL_WEBHOOK_TOKEN:
+                return True
+            raise PermissionDenied
+        try:
+            token = auth_header.split()[1]
+            if token != settings.MAIL_WEBHOOK_TOKEN:
+                raise PermissionDenied
+            return True
+        except IndexError:
+            raise PermissionDenied
+
     @staticmethod
     def get_relay_address_obj(email: str):
         address = email.split("@")[0]
         domain = email.split("@")[1]
-        print(address, domain)
         relay_address = RelayAddress.objects.get(address=address, domain=domain)
         return relay_address
 
@@ -81,9 +95,7 @@ class RelayHookViewSet(RelayViewSet):
 
     @action(methods=["get"], detail=False)
     def destination(self, request, *args, **kwargs):
-        token = self.request.query_params.get("token")
-        if not token or token != settings.MAIL_WEBHOOK_TOKEN:
-            raise PermissionDenied
+        self.check_auth_token()
         relay_address = self.request.query_params.get("relay_address")
         try:
             relay_address = self.get_relay_address_obj(email=relay_address)
@@ -93,10 +105,7 @@ class RelayHookViewSet(RelayViewSet):
 
     @action(methods=["post"], detail=False)
     def reply(self, request, *args, **kwargs):
-        token = self.request.query_params.get("token")
-        if not token or token != settings.MAIL_WEBHOOK_TOKEN:
-            raise PermissionDenied
-
+        self.check_auth_token()
         if request.method == "GET":
             lookup_param = self.request.query_params.get("lookup")
             if not lookup_param:
