@@ -15,6 +15,8 @@ class AppGeneralViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     This class is general view for all apps Django
     """
 
+    # throttle_classes = ()
+
     def initial(self, request, *args, **kwargs):
         super(AppGeneralViewSet, self).initial(request, *args, **kwargs)
 

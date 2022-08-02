@@ -18,3 +18,8 @@ class RelayAddressSerializer(serializers.ModelSerializer):
         data["domain"] = instance.domain_id
         data["full_address"] = instance.full_address
         return data
+
+
+class UpdateRelayAddressSerializer(serializers.Serializer):
+    address = serializers.CharField(max_length=64, min_length=6)
+    description = serializers.CharField(allow_blank=True, required=False)

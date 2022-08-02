@@ -201,6 +201,11 @@ APP_CODE += [
         "code": "7013",
         "message": "The trial plan is applied",
         "vi_message": "Gói dùng thử đã được áp dụng"
+    },
+    {
+        "code": "7014",
+        "message": "You need to cancel the current plan to upgrade new plan",
+        "vi_message": "Bạn cần hủy gói hiện tại để nâng lên gói mới"
     }
 ]
 

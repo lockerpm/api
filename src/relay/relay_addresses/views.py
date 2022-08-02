@@ -1,22 +1,25 @@
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 from cystack_models.models.relay.relay_addresses import RelayAddress
 from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from relay.apps import RelayViewSet
-from relay.relay_addresses.serializers import RelayAddressSerializer
+from relay.relay_addresses.serializers import RelayAddressSerializer, UpdateRelayAddressSerializer
 from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
+from shared.utils.app import now
 
 
 class RelayAddressViewSet(RelayViewSet):
     permission_classes = (RelayAddressPermission, )
-    http_method_names = ["head", "options", "get", "post", "delete"]
+    http_method_names = ["head", "options", "get", "post", "put", "delete"]
     lookup_value_regex = r'[0-9]+'
     serializer_class = RelayAddressSerializer
 
     def get_serializer_class(self):
+        if self.action == "update":
+            self.serializer_class = UpdateRelayAddressSerializer
         return super(RelayAddressViewSet, self).get_serializer_class()
 
     @staticmethod
@@ -28,7 +31,7 @@ class RelayAddressViewSet(RelayViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        relay_addresses = user.relay_addresses.all().order_by('-created_time')
+        relay_addresses = user.relay_addresses.all().order_by('created_time')
         return relay_addresses
 
     def get_object(self):
@@ -57,14 +60,30 @@ class RelayAddressViewSet(RelayViewSet):
         return Response(status=201, data=self.get_serializer(new_relay_address).data)
 
     def update(self, request, *args, **kwargs):
+        user = self.request.user
         relay_address = self.get_object()
+        # Only allow update the first address
+        oldest_relay_address = user.relay_addresses.all().order_by('created_time').first()
+        if not oldest_relay_address or oldest_relay_address.id != relay_address.id:
+            raise PermissionDenied
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
+        address = validated_data.get("address") or relay_address.address
         description = validated_data.get("description", relay_address.description)
+
+        if address != relay_address.address:
+            if RelayAddress.objects.filter(address=address).exists() is True:
+                raise ValidationError(detail={"address": ["This relay address exists"]})
+            if RelayAddress.valid_address(address=address, domain=relay_address.domain_id) is False:
+                raise ValidationError(detail={"address": [
+                    "This relay address is not valid (has black words, blocked words, etc...)"
+                ]})
+            relay_address.address = address
         relay_address.description = description
+        relay_address.updated_time = now()
         relay_address.save()
-        return Response(status=200, data=self.get_serializer(relay_address).data)
+        return Response(status=200, data={"id": relay_address.id})
 
     def destroy(self, request, *args, **kwargs):
         relay_address = self.get_object()
