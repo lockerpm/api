@@ -3,7 +3,7 @@ import json
 from django.conf import settings
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 from rest_framework.decorators import action
 
 from cystack_models.models.relay.relay_addresses import RelayAddress
@@ -126,6 +126,8 @@ class RelayHookViewSet(RelayViewSet):
             validated_data = serializer.validated_data
             lookup = validated_data.get("lookup")
             encrypted_metadata = validated_data.get("encrypted_metadata")
+            if Reply.objects.filter(lookup=lookup).exists():
+                raise ValidationError(detail={"lookup": ["This lookup existed"]})
             new_reply = Reply.create(lookup=lookup, encrypted_metadata=encrypted_metadata)
             return Response(status=200, data={"id": new_reply.id})
 
