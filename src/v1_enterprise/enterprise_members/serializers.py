@@ -24,7 +24,17 @@ class DetailMemberSerializer(serializers.ModelSerializer):
 
 
 class UpdateMemberSerializer(serializers.Serializer):
-    role = serializers.ChoiceField(choices=[E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_MEMBER], default=E_MEMBER_ROLE_MEMBER)
+    role = serializers.ChoiceField(
+        choices=[E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_MEMBER], default=E_MEMBER_ROLE_MEMBER, required=False
+    )
+    status = serializers.ChoiceField(choices=[E_MEMBER_STATUS_CONFIRMED], required=False)
+
+    def validate(self, data):
+        role = data.get("role")
+        status = data.get("status")
+        if status is None and role is None:
+            raise serializers.ValidationError(detail={"role": ["The role or status is required"]})
+        return data
 
 
 class UserInvitationSerializeR(serializers.Serializer):
@@ -36,8 +46,17 @@ class UserInvitationSerializeR(serializers.Serializer):
     def to_representation(self, instance):
         data = super(UserInvitationSerializeR, self).to_representation(instance)
         data["status"] = instance.status
-        data["enterprise"]= {
+        data["enterprise"] = {
             "id": instance.enterprise_id,
             "name": instance.enterprise.name
         }
+        data["role"] = instance.role_id
+        if instance.domain is not None:
+            data["domain"] = {
+                "id": instance.domain.id,
+                "domain": instance.domain.domain,
+                "auto_approve": instance.domain.auto_approve
+            }
+        else:
+            data["domain"] = None
         return data

@@ -218,13 +218,17 @@ class MemberPwdViewSet(EnterpriseViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         role = validated_data.get("role")
+        status = validated_data.get("status")
 
-        # Not allow edit yourself and Not allow edit primary owner
-        if member_obj.user == user or member_obj.is_primary is True:
-            return Response(status=403)
-
-        member_obj.role_id = role
-        member_obj.save()
+        if role:
+            # Not allow edit yourself and Not allow edit primary owner
+            if member_obj.user == user or member_obj.is_primary is True:
+                return Response(status=403)
+            member_obj.role_id = role
+            member_obj.save()
+        if status:
+            member_obj.status = status
+            member_obj.save()
 
         # TODO: Log activity update role of the member HERE
 
@@ -254,7 +258,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
     def user_invitations(self, request, *args, **kwargs):
         user = self.request.user
         member_invitations = user.enterprise_members.filter(
-            status__in=[E_MEMBER_STATUS_INVITED]
+            status__in=[E_MEMBER_STATUS_INVITED, E_MEMBER_STATUS_REQUESTED]
         ).select_related('enterprise').order_by('access_time')
         serializer = self.get_serializer(member_invitations, many=True)
         return Response(status=200, data=serializer.data)
@@ -271,11 +275,21 @@ class MemberPwdViewSet(EnterpriseViewSet):
             )
         except EnterpriseMember.DoesNotExist:
             raise NotFound
-        if status == "accept":
-            member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+        # If the member has a domain => Not allow reject
+        if member_invitation.domain:
+            if status == "reject":
+                raise ValidationError(detail={"status": ["You cannot reject this enterprise"]})
+            if member_invitation.domain.auto_approve is True:
+                member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+            else:
+                member_invitation.status = E_MEMBER_STATUS_REQUESTED
             member_invitation.save()
         else:
-            member_invitation.delete()
+            if status == "accept":
+                member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+                member_invitation.save()
+            else:
+                member_invitation.delete()
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)

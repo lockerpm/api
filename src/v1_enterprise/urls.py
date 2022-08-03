@@ -31,6 +31,6 @@ urlpatterns += [
         views.MemberPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
 
     url(r'^members/invitation/confirmation$', views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
-    url(r'^users/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
-    url(r'^users/invitations/(?P<pk>[a-z0-9\-]+)$', views.MemberPwdViewSet.as_view({'put': 'user_invitation_update'})),
+    url(r'^members/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
+    url(r'^members/invitations/(?P<pk>[a-z0-9\-]+)$', views.MemberPwdViewSet.as_view({'put': 'user_invitation_update'})),
 ]

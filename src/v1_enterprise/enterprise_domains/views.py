@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
+from cystack_models.models.enterprises.domains.domains import Domain
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.enterprise.domain_permission import DomainPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
@@ -60,6 +61,12 @@ class DomainPwdViewSet(EnterpriseViewSet):
 
         if enterprise.domains.filter(domain=domain).exists():
             raise ValidationError(detail={"domain": ["The domain is existed"]})
+        if Domain.objects.exclude(enterprise_id=enterprise.id).filter(
+            root_domain=root_domain, verification=True
+        ).exists():
+            raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
+
+        # Create new domain
         is_verified = enterprise.domains.filter(root_domain=root_domain, verification=True).exists()
         domain = enterprise.domains.model.create(
             enterprise=enterprise, domain=domain, root_domain=root_domain, verification=is_verified
@@ -98,6 +105,10 @@ class DomainPwdViewSet(EnterpriseViewSet):
                     "success": True,
                     "domain": domain.domain,
                 })
+            if Domain.objects.exclude(enterprise_id=domain.enterprise_id).filter(
+                root_domain=domain.root_domain, verification=True
+            ).exists():
+                raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
             is_verify = domain.check_verification()
             if is_verify is True:
                 return Response(status=200, data={
