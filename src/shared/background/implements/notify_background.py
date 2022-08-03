@@ -1,5 +1,3 @@
-import requests
-
 from django.conf import settings
 from django.db import connection
 
@@ -9,7 +7,6 @@ from shared.constants.transactions import PAYMENT_STATUS_PAID
 from shared.external_request.requester import requester
 
 API_NOTIFY_PAYMENT = "{}/micro_services/cystack_platform/payments".format(settings.GATEWAY_API)
-API_NOTIFY_DOMAIN = "{}/micro_services/cystack_platform/pm/domains".format(settings.GATEWAY_API)
 HEADERS = {
     'User-agent': 'Locker Password Manager API',
     "Authorization": settings.MICRO_SERVICE_USER_AUTH
@@ -144,21 +141,6 @@ class NotifyBackground(ILockerBackground):
 
         except Exception:
             self.log_error(func_name="notify_pay_successfully")
-        finally:
-            if self.background:
-                connection.close()
-
-    def domain_verified(self, owner_user_id: int, domain: str, organization_name: str):
-        try:
-            url = API_NOTIFY_DOMAIN + "/notify_verified"
-            notification_data = {
-                "owner": owner_user_id,
-                "domain": domain,
-                "organization_name": organization_name,
-            }
-            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
-        except Exception as e:
-            self.log_error(func_name="domain_verified")
         finally:
             if self.background:
                 connection.close()
