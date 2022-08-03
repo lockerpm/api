@@ -11,7 +11,7 @@ from shared.constants.enterprise_members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializeR
+from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -25,7 +25,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
         elif self.action == "update":
             self.serializer_class = UpdateMemberSerializer
         elif self.action == "user_invitations":
-            self.serializer_class = UserInvitationSerializeR
+            self.serializer_class = UserInvitationSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -263,11 +263,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
         serializer = self.get_serializer(member_invitations, many=True)
         return Response(status=200, data=serializer.data)
 
-    @action(methods=["get"], detail=False)
+    @action(methods=["put"], detail=False)
     def user_invitation_update(self, request, *args, **kwargs):
         user = self.request.user
         status = request.data.get("status")
-        if status not in ["accept", "reject"]:
+        if status not in ["confirmed", "reject"]:
             raise ValidationError(detail={"status": ["This status is not valid"]})
         try:
             member_invitation = user.enterprise_members.get(
@@ -285,7 +285,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 member_invitation.status = E_MEMBER_STATUS_REQUESTED
             member_invitation.save()
         else:
-            if status == "accept":
+            if status == "confirmed":
                 member_invitation.status = E_MEMBER_STATUS_CONFIRMED
                 member_invitation.save()
             else:

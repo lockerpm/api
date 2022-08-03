@@ -37,20 +37,18 @@ class UpdateMemberSerializer(serializers.Serializer):
         return data
 
 
-class UserInvitationSerializeR(serializers.Serializer):
+class UserInvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnterpriseMember
-        fields = ('id', 'access_time', 'role')
-        read_only_fields = ('id', 'access_time', 'role')
+        fields = ('id', 'access_time', 'role', 'status')
+        read_only_fields = ('id', 'access_time', 'role', 'status')
 
     def to_representation(self, instance):
-        data = super(UserInvitationSerializeR, self).to_representation(instance)
-        data["status"] = instance.status
+        data = super(UserInvitationSerializer, self).to_representation(instance)
         data["enterprise"] = {
             "id": instance.enterprise_id,
             "name": instance.enterprise.name
         }
-        data["role"] = instance.role_id
         if instance.domain is not None:
             data["domain"] = {
                 "id": instance.domain.id,

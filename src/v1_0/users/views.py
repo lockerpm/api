@@ -151,8 +151,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Upgrade plan if the user is a family member
         self.user_repository.upgrade_member_family_plan(user=user)
 
-        # Update member confirmation
-        self.user_repository.invitations_confirm(user=user)
+        # Update sharing confirmation
+        self.user_repository.sharing_invitations_confirm(user=user)
+        # Update enterprise invitations
+        self.user_repository.enterprise_invitations_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 

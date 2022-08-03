@@ -114,6 +114,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
                 return Response(status=200, data={
                     "success": True,
                     "domain": domain.domain,
+                    "enterprise_name": domain.enterprise.name,
                     "organization_name": domain.enterprise.name
                 })
             return Response(status=200, data=refer_error(gen_error("3005")))
