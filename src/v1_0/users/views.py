@@ -241,7 +241,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 #     "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
                 #     "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
                 # })
-                login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
+                policy = self.team_repository.get_multiple_policy_by_user(user=user).filter(
                     policy_type=POLICY_TYPE_BLOCK_FAILED_LOGIN, enabled=True
                 ).annotate(
                     rate_limit=ExpressionWrapper(
@@ -249,10 +249,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         F('policy_failed_login__failed_login_duration'), output_field=FloatField()
                     )
                 ).order_by('rate_limit').first()
-                if login_policy_limit:
-                    failed_login_attempts = login_policy_limit.policy_failed_login.failed_login_attempts
-                    failed_login_duration = login_policy_limit.policy_failed_login.failed_login_duration
-                    failed_login_block_time = login_policy_limit.policy_failed_login.failed_login_block_time
+                if policy:
+                    failed_login_attempts = policy.policy_failed_login.failed_login_attempts
+                    failed_login_duration = policy.policy_failed_login.failed_login_duration
+                    failed_login_block_time = policy.policy_failed_login.failed_login_block_time
                     latest_request_login = user.last_request_login
 
                     user.login_failed_attempts = user.login_failed_attempts + 1
@@ -264,9 +264,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         # Lock login of this member
                         user.login_block_until = now() + failed_login_block_time
                         user.save()
-                        owner = login_policy_limit.enterprise.enterprise_members.get(is_primary=True).user_id
+                        owner = policy.enterprise.enterprise_members.get(is_primary=True).user_id
                         raise ValidationError(detail={
                             "password": ["Password is not correct"],
+                            "failed_login_owner_email": policy.policy_failed_login.failed_login_owner_email,
                             "owner": owner,
                             "lock_time": "{} (UTC+00)".format(
                                 datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
