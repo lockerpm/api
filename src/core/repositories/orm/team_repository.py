@@ -1,11 +1,13 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from core.repositories import ITeamRepository
+from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 
 from shared.constants.members import *
 from shared.utils.network import get_ip_by_request, detect_device
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.policy.policy import Policy
+from cystack_models.models.enterprises.policy.policy import EnterprisePolicy
 
 
 class TeamRepository(ITeamRepository):
@@ -68,10 +70,15 @@ class TeamRepository(ITeamRepository):
             return Policy.create(team=team)
 
     def get_multiple_policy_by_user(self, user):
-        managed_teams = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
-            # team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user
-        ).values_list('team_id', flat=True)
-        policies = Policy.objects.filter(team_id__in=managed_teams)
+        # managed_teams = user.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED).filter(
+        #     # team__team_members__role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN], team__team_members__user=user
+        # ).values_list('team_id', flat=True)
+        # policies = Policy.objects.filter(team_id__in=managed_teams)
+        enterprises = user.enterprise_members.filter(
+            status=E_MEMBER_STATUS_CONFIRMED
+        ).values_list('enterprise_id', flat=True)
+        policies = EnterprisePolicy.objects.filter(enterprise_id__in=enterprises)
+
         return policies
 
     def check_team_policy(self, request, team: Team) -> bool:

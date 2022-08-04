@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from core.utils.data_helpers import camel_snake_data
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
-    SyncCollectionSerializer, SyncPolicySerializer, SyncOrgDetailSerializer
+    SyncCollectionSerializer, SyncPolicySerializer, SyncOrgDetailSerializer, SyncEnterprisePolicySerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -47,13 +47,13 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         # else:
         #     self.pagination_class.page_size = page_size_param if page_size_param else 50
 
-        policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('team')
+        policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('enterprise')
         # Check team policies
         block_team_ids = []
-        for policy in policies:
-            check_policy = self.team_repository.check_team_policy(request=request, team=policy.team)
-            if check_policy is False:
-                block_team_ids.append(policy.team_id)
+        # for policy in policies:
+        #     check_policy = self.team_repository.check_team_policy(request=request, team=policy.team)
+        #     if check_policy is False:
+        #         block_team_ids.append(policy.team_id)
 
         ciphers = self.cipher_repository.get_multiple_by_user(
             user=user, exclude_team_ids=block_team_ids
@@ -86,7 +86,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             "collections": SyncCollectionSerializer(collections, many=True, context={"user": user}).data,
             "folders": SyncFolderSerializer(folders, many=True).data,
             "domains": None,
-            "policies": SyncPolicySerializer(policies, many=True).data,
+            "policies": SyncEnterprisePolicySerializer(policies, many=True).data,
             "sends": []
         }
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)

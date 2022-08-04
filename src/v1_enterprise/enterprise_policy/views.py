@@ -1,10 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 
 from cystack_models.models.enterprises.enterprises import Enterprise
-from cystack_models.models.enterprises.policy.policy import EnterprisePolicy
 from shared.constants.policy import *
 from shared.permissions.locker_permissions.enterprise.policy_permission import PolicyPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
@@ -69,5 +67,5 @@ class PolicyPwdViewSet(EnterpriseViewSet):
         config_obj = policy.get_config_obj()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        config_obj = serializer.save(**{"config_obj": config_obj})
+        serializer.save(**{"config_obj": config_obj})
         return Response(status=200, data={"success": True})
