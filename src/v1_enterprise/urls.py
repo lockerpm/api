@@ -34,3 +34,11 @@ urlpatterns += [
     url(r'^members/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
     url(r'^members/invitations/(?P<pk>[a-z0-9\-]+)$', views.MemberPwdViewSet.as_view({'put': 'user_invitation_update'})),
 ]
+
+
+# ----------------------------------- Policy ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/policy$', views.PolicyPwdViewSet.as_view({'get': 'list'})),
+    url(r'^(?P<pk>[0-9a-z]+)/policy/(?P<policy_type>[a-z_]+)$',
+        views.PolicyPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+]
