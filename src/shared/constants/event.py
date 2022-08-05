@@ -2,6 +2,7 @@ EVENT_USER_LOGIN = 1000
 EVENT_USER_CHANGE_PASSWORD = 1001
 EVENT_USER_LOGIN_FAILED = 1005
 EVENT_USER_EXPORT_VAULT = 1007
+EVENT_USER_BLOCK_LOGIN = 1008
 
 EVENT_CIPHER_CREATED = 1100
 EVENT_CIPHER_UPDATED = 1101
@@ -70,6 +71,10 @@ LOG_TYPES = {
     EVENT_USER_EXPORT_VAULT: {
         "vi": "Xuất kho dữ liệu",
         "en": "Exported Vault"
+    },
+    EVENT_USER_BLOCK_LOGIN: {
+        "vi": "is blocked login by the enterprise policy",
+        "en": "đã bị khóa đăng nhập bởi chính sách của doanh nghiệp"
     },
 
     # Item Events
