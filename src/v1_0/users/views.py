@@ -236,11 +236,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Login failed
         if user.check_master_password(raw_password=password) is False:
             if user_enterprises:
-                # TODO: Create failed login event here
-                # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-                #     "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-                #     "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
-                # })
+                # Create failed login event here
+                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                    "enterprise_ids": user_enterprises, "user_id": user.user_id, "acting_user_id": user.user_id,
+                    "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
+                })
                 policy = self.team_repository.get_multiple_policy_by_user(user=user).filter(
                     policy_type=POLICY_TYPE_BLOCK_FAILED_LOGIN, enabled=True
                 ).annotate(
@@ -264,6 +264,14 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         # Lock login of this member
                         user.login_block_until = now() + failed_login_block_time
                         user.save()
+                        # Create block failed login event
+                        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(
+                            func_name="create_by_enterprise_ids", **{
+                                "enterprise_ids": user_enterprises, "user_id": user.user_id,
+                                "acting_user_id": user.user_id,
+                                "type": EVENT_USER_BLOCK_LOGIN, "ip_address": ip
+                            }
+                        )
                         owner = policy.enterprise.enterprise_members.get(is_primary=True).user_id
                         raise ValidationError(detail={
                             "password": ["Password is not correct"],
@@ -342,12 +350,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "kdf_iterations": user.kdf_iterations,
             "not_sync": not_sync_sso_token_ids
         }
-        # TODO: Create event login successfully
-        # if user_teams:
-        #     LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-        #         "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #         "type": EVENT_USER_LOGIN, "ip_address": ip
-        #     })
+        # Create event login successfully
+        if user_enterprises:
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": user_enterprises, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_USER_LOGIN, "ip_address": ip
+            })
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)

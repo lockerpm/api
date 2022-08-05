@@ -28,6 +28,18 @@ class EventBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
+    def create_by_enterprise_ids(self, enterprise_ids, **data):
+        try:
+            if enterprise_ids:
+                self.event_repository.save_new_event_by_multiple_teams(enterprise_ids, **data)
+            else:
+                self.create(**data)
+        except Exception as e:
+            self.log_error(func_name="create_by_enterprise_ids")
+        finally:
+            if self.background:
+                connection.close()
+
     def create_by_ciphers(self, ciphers, **data):
         try:
             if ciphers:
