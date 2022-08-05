@@ -26,7 +26,7 @@ class UserPwdSerializer(serializers.Serializer):
         choices=[PLAN_TYPE_PM_FREE, PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FAMILY, PLAN_TYPE_PM_ENTERPRISE],
         required=False, allow_null=True
     )
-    is_trial_promotion = serializers.BooleanField(default=False)
+    is_trial_promotion = serializers.BooleanField(default=False, allow_null=True, required=False)
     enterprise_name = serializers.CharField(required=False, allow_null=True)
     # team_key = serializers.CharField(required=False, allow_null=True)
     # collection_name = serializers.CharField(required=False, allow_null=True)

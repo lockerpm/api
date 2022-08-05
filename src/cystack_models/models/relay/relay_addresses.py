@@ -36,7 +36,7 @@ class RelayAddress(models.Model):
         domain_id = data.get("domain_id") or DEFAULT_RELAY_DOMAIN
         description = data.get("description", "")
         while True:
-            address = random_n_digit(n=9)
+            address = random_n_digit(n=6)
             if cls.objects.filter(address=address).exists() is True:
                 continue
             if cls.valid_address(address=address, domain=domain_id) is False:

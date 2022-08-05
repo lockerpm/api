@@ -4,6 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
+from cystack_models.models.enterprises.domains.domains import Domain
+from shared.background import LockerBackgroundFactory, BG_DOMAIN
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.enterprise.domain_permission import DomainPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
@@ -60,6 +62,12 @@ class DomainPwdViewSet(EnterpriseViewSet):
 
         if enterprise.domains.filter(domain=domain).exists():
             raise ValidationError(detail={"domain": ["The domain is existed"]})
+        if Domain.objects.exclude(enterprise_id=enterprise.id).filter(
+            root_domain=root_domain, verification=True
+        ).exists():
+            raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
+
+        # Create new domain
         is_verified = enterprise.domains.filter(root_domain=root_domain, verification=True).exists()
         domain = enterprise.domains.model.create(
             enterprise=enterprise, domain=domain, root_domain=root_domain, verification=is_verified
@@ -87,6 +95,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
 
     @action(methods=["get", "post"], detail=False)
     def verification(self, request, *args, **kwargs):
+        user = request.user
         domain = self.get_object()
         if request.method == "GET":
             ownerships = domain.get_verifications()
@@ -98,11 +107,22 @@ class DomainPwdViewSet(EnterpriseViewSet):
                     "success": True,
                     "domain": domain.domain,
                 })
+            if Domain.objects.exclude(enterprise_id=domain.enterprise_id).filter(
+                root_domain=domain.root_domain, verification=True
+            ).exists():
+                raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
             is_verify = domain.check_verification()
             if is_verify is True:
+                LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=True).run(
+                    func_name="domain_verified", **{
+                        "owner_user_id": user.user_id,
+                        "domain": domain
+                    }
+                )
                 return Response(status=200, data={
                     "success": True,
                     "domain": domain.domain,
+                    "enterprise_name": domain.enterprise.name,
                     "organization_name": domain.enterprise.name
                 })
             return Response(status=200, data=refer_error(gen_error("3005")))

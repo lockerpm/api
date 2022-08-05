@@ -10,6 +10,7 @@ from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.collections import Collection
 from cystack_models.models.policy.policy import Policy
+from cystack_models.models.enterprises.policy.policy import EnterprisePolicy
 
 
 class SyncOrgDetailSerializer(serializers.ModelSerializer):
@@ -219,5 +220,21 @@ class SyncPolicySerializer(serializers.ModelSerializer):
             "failed_login_duration": instance.failed_login_duration,
             "failed_login_block_time": instance.failed_login_block_time,
             "failed_login_owner_email": instance.failed_login_owner_email,
+        }
+        return data
+
+
+class SyncEnterprisePolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnterprisePolicy
+        field = '__all__'
+
+    def to_representation(self, instance):
+        data = {
+            "object": "policyDetails",
+            "enterprise_id": instance.enterprise_id,
+            "enabled": instance.enabled,
+            "policy_type": instance.policy_type,
+            "config": instance.get_config_json()
         }
         return data

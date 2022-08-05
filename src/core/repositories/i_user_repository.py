@@ -23,6 +23,14 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    def sharing_invitations_confirm(self, user):
+        pass
+
+    @abstractmethod
+    def enterprise_invitations_confirm(self, user):
+        pass
+
+    @abstractmethod
     def get_by_id(self, user_id) -> User:
         pass
 

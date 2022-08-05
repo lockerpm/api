@@ -31,6 +31,14 @@ urlpatterns += [
         views.MemberPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
 
     url(r'^members/invitation/confirmation$', views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
-    url(r'^users/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
-    url(r'^users/invitations/(?P<pk>[a-z0-9\-]+)$', views.MemberPwdViewSet.as_view({'put': 'user_invitation_update'})),
+    url(r'^members/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
+    url(r'^members/invitations/(?P<pk>[a-z0-9\-]+)$', views.MemberPwdViewSet.as_view({'put': 'user_invitation_update'})),
+]
+
+
+# ----------------------------------- Policy ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/policy$', views.PolicyPwdViewSet.as_view({'get': 'list'})),
+    url(r'^(?P<pk>[0-9a-z]+)/policy/(?P<policy_type>[a-z_]+)$',
+        views.PolicyPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
 ]

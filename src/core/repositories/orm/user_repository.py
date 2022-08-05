@@ -20,8 +20,8 @@ from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.ciphers import Cipher
 from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from cystack_models.models.teams.teams import Team
-from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 
 
@@ -104,6 +104,24 @@ class UserRepository(IUserRepository):
                 invitation.token_invitation = None
                 invitation.user = user
                 invitation.save()
+        return user
+
+    def sharing_invitations_confirm(self, user):
+        email = user.get_from_cystack_id().get("email")
+        if not email:
+            return user
+        sharing_invitations = TeamMember.objects.filter(
+            email=email, team__key__isnull=False, status=PM_MEMBER_STATUS_INVITED, team__personal_share=True
+        )
+        sharing_invitations.update(email=None, token_invitation=None, user=user)
+        return user
+
+    def enterprise_invitations_confirm(self, user):
+        email = user.get_from_cystack_id().get("email")
+        if not email:
+            return user
+        enterprise_invitations = EnterpriseMember.objects.filter(email=email, status=PM_MEMBER_STATUS_INVITED)
+        enterprise_invitations.update(email=None, token_invitation=None, user=user)
         return user
 
     def get_by_id(self, user_id) -> User:

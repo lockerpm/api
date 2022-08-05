@@ -12,4 +12,6 @@ class LockerBackgroundFactory:
             return EventBackground(background)
         elif bg_name == BG_CIPHER:
             return CipherBackground(background)
+        elif bg_name == BG_DOMAIN:
+            return DomainBackground(background)
         raise Exception('Background name {} is not supported'.format(bg_name))

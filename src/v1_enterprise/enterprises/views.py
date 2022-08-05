@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Value, When, Q, Case, IntegerField
+from django.db.models import Value, When, Q, Case, IntegerField, Count
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
@@ -65,6 +66,32 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
 
     @action(methods=["get"], detail=True)
     def dashboard(self, request, *args, **kwargs):
-        # ----------- [COMING SOON] ------- #
-        raise NotFound
+        enterprise = self.get_object()
+
+        # Member statistic
+        members = enterprise.enterprise_members.all()
+        members_status_count = members.values('status').annotate(count=Count('status'))
+        members_status_statistic = {
+            E_MEMBER_STATUS_CONFIRMED: 0,
+            E_MEMBER_STATUS_REQUESTED: 0,
+            E_MEMBER_STATUS_INVITED: 0,
+        }
+        for mem in members_status_count:
+            members_status_statistic.update({mem["status"]: mem["count"]})
+
+        # Master Password statistic
+        weak_master_password_count = members.filter(user__master_password_score__lte=1).count()
+
+        return Response(status=200, data={
+            "members": {
+                "total": members.count(),
+                "status": members_status_statistic
+            },
+            "password_security": {
+                "weak_master_password": weak_master_password_count,
+                "weak_password": 0,
+                "leaked_account": 0
+            },
+            "block_failed_login": []
+        })
 

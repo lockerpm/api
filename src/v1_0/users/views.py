@@ -12,9 +12,12 @@ from rest_framework.decorators import action
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
 from cystack_models.models.notifications.notification_settings import NotificationSetting
+from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
+from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
+from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN
 from shared.constants.transactions import *
 from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
@@ -151,8 +154,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Upgrade plan if the user is a family member
         self.user_repository.upgrade_member_family_plan(user=user)
 
-        # Update member confirmation
-        self.user_repository.invitations_confirm(user=user)
+        # Update sharing confirmation
+        self.user_repository.sharing_invitations_confirm(user=user)
+        # Update enterprise invitations
+        self.user_repository.enterprise_invitations_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 
@@ -210,9 +215,14 @@ class UserPwdViewSet(PasswordManagerViewSet):
             error_detail["wait"] = wait
             return Response(status=400, data=error_detail)
 
-        user_teams = list(self.team_repository.get_multiple_team_by_user(
-            user=user, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
+        # user_teams = list(self.team_repository.get_multiple_team_by_user(
+        #     user=user, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
+        # ).values_list('id', flat=True))
+
+        user_enterprises = list(Enterprise.objects.filter(
+            enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
         ).values_list('id', flat=True))
+
         ip = request.data.get("ip")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -225,24 +235,24 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Login failed
         if user.check_master_password(raw_password=password) is False:
-            # Create event here
-            if user_teams:
-                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-                    "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-                    "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
-                })
-                # Check policy
-                login_policy_limit = self.team_repository.get_multiple_policy_by_user(user=user).filter(
-                    failed_login_attempts__isnull=False
+            if user_enterprises:
+                # TODO: Create failed login event here
+                # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+                #     "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+                #     "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
+                # })
+                policy = self.team_repository.get_multiple_policy_by_user(user=user).filter(
+                    policy_type=POLICY_TYPE_BLOCK_FAILED_LOGIN, enabled=True
                 ).annotate(
                     rate_limit=ExpressionWrapper(
-                        F('failed_login_attempts') * 1.0 / F('failed_login_duration'), output_field=FloatField()
+                        F('policy_failed_login__failed_login_attempts') * 1.0 /
+                        F('policy_failed_login__failed_login_duration'), output_field=FloatField()
                     )
                 ).order_by('rate_limit').first()
-                if login_policy_limit:
-                    failed_login_attempts = login_policy_limit.failed_login_attempts
-                    failed_login_duration = login_policy_limit.failed_login_duration
-                    failed_login_block_time = login_policy_limit.failed_login_block_time
+                if policy:
+                    failed_login_attempts = policy.policy_failed_login.failed_login_attempts
+                    failed_login_duration = policy.policy_failed_login.failed_login_duration
+                    failed_login_block_time = policy.policy_failed_login.failed_login_block_time
                     latest_request_login = user.last_request_login
 
                     user.login_failed_attempts = user.login_failed_attempts + 1
@@ -254,9 +264,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         # Lock login of this member
                         user.login_block_until = now() + failed_login_block_time
                         user.save()
-                        owner = self.team_repository.get_primary_member(team=login_policy_limit.team).user_id
+                        owner = policy.enterprise.enterprise_members.get(is_primary=True).user_id
                         raise ValidationError(detail={
                             "password": ["Password is not correct"],
+                            "failed_login_owner_email": policy.policy_failed_login.failed_login_owner_email,
                             "owner": owner,
                             "lock_time": "{} (UTC+00)".format(
                                 datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
@@ -331,12 +342,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "kdf_iterations": user.kdf_iterations,
             "not_sync": not_sync_sso_token_ids
         }
-        # Create event login successfully
-        if user_teams:
-            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-                "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-                "type": EVENT_USER_LOGIN, "ip_address": ip
-            })
+        # TODO: Create event login successfully
+        # if user_teams:
+        #     LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+        #         "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #         "type": EVENT_USER_LOGIN, "ip_address": ip
+        #     })
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)
