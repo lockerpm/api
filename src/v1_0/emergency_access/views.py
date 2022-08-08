@@ -67,8 +67,23 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def destroy(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
+        status = emergency_access.status
+        grantor_user_id = emergency_access.grantor.user_id
+        grantee_user_id = emergency_access.grantee.user_id if emergency_access.grantee else None
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantor_user_id, grantee_user_id]
+        )
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantor_user_id, grantee_user_id]
+        )
         self.emergency_repository.delete_emergency_access(emergency_access)
-        return Response(status=204)
+        return Response(status=200, data={
+            "grantor_user_id": grantor_user_id,
+            "grantee_user_id": grantee_user_id,
+            "status": status,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids
+        })
 
     @action(methods=["post"], detail=False)
     def invite(self, request, *args, **kwargs):
