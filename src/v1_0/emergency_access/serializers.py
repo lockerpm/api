@@ -54,7 +54,7 @@ class InviteEmergencyAccessSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={'email': ["Either email or grantee_id is required"]})
         if grantee_id:
             try:
-                grantee = User.objects.get(user_id=grantee_id)
+                grantee = User.objects.get(user_id=grantee_id, activated=True)
                 if emergency_repository.check_emergency_existed(
                     grantor=user, emergency_type=emergency_type, grantee=grantee
                 ) is True:
