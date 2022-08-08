@@ -49,6 +49,7 @@ class UserInvitationSerializer(serializers.ModelSerializer):
             "id": instance.enterprise_id,
             "name": instance.enterprise.name
         }
+        data["owner"] = instance.enterprise.enterprise_members.get(is_primary=True).user_id
         if instance.domain is not None:
             data["domain"] = {
                 "id": instance.domain.id,
