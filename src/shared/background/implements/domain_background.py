@@ -21,7 +21,9 @@ class DomainBackground(ILockerBackground):
         try:
             url = API_NOTIFY_DOMAIN + "/verified"
             enterprise = domain.enterprise
-            existed_user_ids = enterprise.enterprise_members.values_list('user_id', flat=True)
+            existed_user_ids = enterprise.enterprise_members.exclude(
+                user_id__isnull=True
+            ).values_list('user_id', flat=True)
             notification_data = {
                 "owner": owner_user_id,
                 "domain": domain.domain,

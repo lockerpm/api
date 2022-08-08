@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -7,7 +6,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.domains.domains import Domain
 from shared.background import LockerBackgroundFactory, BG_DOMAIN
-from shared.error_responses.error import gen_error, refer_error
+from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.domain_permission import DomainPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import ListDomainSerializer, CreateDomainSerializer, UpdateDomainSerializer
@@ -112,7 +111,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
                 root_domain=domain.root_domain, verification=True
             ).exists():
                 raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
-            is_verify = domain.check_verification() or domain.domain in settings.TEST_DOMAINS
+            is_verify = domain.check_verification()
             if is_verify is True:
                 LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=True).run(
                     func_name="domain_verified", **{
@@ -126,4 +125,4 @@ class DomainPwdViewSet(EnterpriseViewSet):
                     "enterprise_name": domain.enterprise.name,
                     "organization_name": domain.enterprise.name
                 })
-            return Response(status=200, data=refer_error(gen_error("3005")))
+            raise ValidationError({"non_field_errors": [gen_error("3005")]})

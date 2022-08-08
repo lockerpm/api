@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from cystack_models.models.enterprises.enterprises import Enterprise
@@ -52,7 +53,8 @@ class Domain(models.Model):
         domain_ownerships = self.domain_ownership.all().select_related('ownership')
         for domain_ownership in domain_ownerships:
             if domain_ownership.ownership_id == TYPE_DNS_TXT:
-                if domain_ownership.verify_dns("TXT") or domain_ownership.verify_dns("CNAME"):
+                if domain_ownership.verify_dns("TXT") or domain_ownership.verify_dns("CNAME") or \
+                        self.domain in settings.TEST_DOMAINS:
                     domain_ownership.set_verified()
                     self.set_verified()
                     return True
