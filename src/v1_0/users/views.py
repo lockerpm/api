@@ -537,13 +537,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
         data = serializer.data
 
         if statistic_param == "1":
-            policies = self.team_repository.get_multiple_policy_by_user(user=instance).select_related('team')
+            # policies = self.team_repository.get_multiple_policy_by_user(user=instance).select_related('enterprise')
             # Check team policies
             block_team_ids = []
-            for policy in policies:
-                check_policy = self.team_repository.check_team_policy(request=request, team=policy.team)
-                if check_policy is False:
-                    block_team_ids.append(policy.team_id)
+            # for policy in policies:
+            #     check_policy = self.team_repository.check_team_policy(request=request, team=policy.team)
+            #     if check_policy is False:
+            #         block_team_ids.append(policy.team_id)
 
             ciphers = self.cipher_repository.get_multiple_by_user(
                 user=instance, exclude_team_ids=block_team_ids
