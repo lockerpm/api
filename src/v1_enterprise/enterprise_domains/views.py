@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -111,7 +112,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
                 root_domain=domain.root_domain, verification=True
             ).exists():
                 raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
-            is_verify = domain.check_verification()
+            is_verify = domain.check_verification() or domain.domain in settings.TEST_DOMAINS
             if is_verify is True:
                 LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=True).run(
                     func_name="domain_verified", **{
