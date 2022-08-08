@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.domains.domains import Domain
 from shared.background import LockerBackgroundFactory, BG_DOMAIN
-from shared.error_responses.error import gen_error, refer_error
+from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.domain_permission import DomainPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import ListDomainSerializer, CreateDomainSerializer, UpdateDomainSerializer
@@ -125,4 +125,4 @@ class DomainPwdViewSet(EnterpriseViewSet):
                     "enterprise_name": domain.enterprise.name,
                     "organization_name": domain.enterprise.name
                 })
-            return Response(status=200, data=refer_error(gen_error("3005")))
+            raise ValidationError({"non_field_errors": [gen_error("3005")]})
