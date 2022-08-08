@@ -6,8 +6,7 @@ from shared.constants.enterprise_members import E_MEMBER_ROLE_MEMBER, E_MEMBER_S
 from shared.external_request.requester import requester
 from cystack_models.models.users.users import User
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
-from shared.utils.app import diff_list
-
+from shared.utils.app import diff_list, now
 
 API_NOTIFY_DOMAIN = "{}/micro_services/cystack_platform/pm/domains".format(settings.GATEWAY_API)
 HEADERS = {
@@ -49,7 +48,8 @@ class DomainBackground(ILockerBackground):
                     members.append(
                         EnterpriseMember(
                             enterprise=enterprise, user=user, role_id=E_MEMBER_ROLE_MEMBER, domain=domain,
-                            status=E_MEMBER_STATUS_INVITED, is_default=False, is_primary=False
+                            status=E_MEMBER_STATUS_INVITED, is_default=False, is_primary=False,
+                            access_time=now()
                         )
                     )
                 EnterpriseMember.objects.bulk_create(members, ignore_conflicts=True, batch_size=50)
