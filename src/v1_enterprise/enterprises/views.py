@@ -91,7 +91,9 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
             members_status_statistic.update({mem["status"]: mem["count"]})
 
         # Master Password statistic
-        weak_master_password_count = members.filter(user__master_password_score__lte=1).count()
+        weak_master_password_count = members.filter(
+            status=E_MEMBER_STATUS_CONFIRMED, user__master_password_score__lte=1
+        ).count()
 
         # Cipher Password statistic
         confirmed_user_ids = members.filter(status=E_MEMBER_STATUS_CONFIRMED).values_list('user_id', flat=True)
