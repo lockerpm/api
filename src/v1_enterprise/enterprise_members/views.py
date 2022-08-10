@@ -254,6 +254,20 @@ class MemberPwdViewSet(EnterpriseViewSet):
             "member_user_id": deleted_member_user_id
         })
 
+    @action(methods=["post"], detail=False)
+    def reinvite(self, request, *args, **kwargs):
+        enterprise = self.get_object()
+        enterprise_member = self.get_enterprise_member(enterprise=enterprise, member_id=kwargs.get("member_id"))
+        if enterprise_member.status != E_MEMBER_STATUS_INVITED:
+            raise NotFound
+        return Response(status=200, data={
+            "user_id": enterprise_member.user_id,
+            "email": enterprise_member.email,
+            "token_invitation": enterprise_member.token_invitation,
+            "enterprise_id": enterprise.id,
+            "enterprise_name": enterprise.name
+        })
+
     @action(methods=["get"], detail=False)
     def user_invitations(self, request, *args, **kwargs):
         user = self.request.user

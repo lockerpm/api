@@ -20,6 +20,10 @@ class DetailMemberSerializer(serializers.ModelSerializer):
         data = super(DetailMemberSerializer, self).to_representation(instance)
         data["role"] = instance.role.name
         data["pwd_user_id"] = instance.user.internal_id if instance.user else None
+        data["domain"] = {
+            "id": instance.domain_id,
+            "domain": instance.domain.domain
+        } if instance.domain else None
         return data
 
 
