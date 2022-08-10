@@ -263,7 +263,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
     def reinvite(self, request, *args, **kwargs):
         enterprise = self.get_object()
         enterprise_member = self.get_enterprise_member(enterprise=enterprise, member_id=kwargs.get("member_id"))
-        if enterprise_member.status != E_MEMBER_STATUS_INVITED:
+        if enterprise_member.status != E_MEMBER_STATUS_INVITED or enterprise_member.domain:
             raise NotFound
         return Response(status=200, data={
             "user_id": enterprise_member.user_id,
