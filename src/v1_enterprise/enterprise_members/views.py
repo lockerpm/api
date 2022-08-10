@@ -83,6 +83,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 search_by_email = members_qs.filter(email__icontains=email_param)
             members_qs = (search_by_users | search_by_email).distinct()
 
+        # Filter by status
+        status_param = self.request.query_params.get("status")
+        if status_param:
+            members_qs = members_qs.filter(status=status_param)
+
         # Sorting the results
         sort_param = self.request.query_params.get("sort", None)
         order_whens = [
