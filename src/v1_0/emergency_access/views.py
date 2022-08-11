@@ -339,4 +339,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[grantor.user_id]
         )
 
-        return Response(status=200, data={"notification": True if grantor.user_id in mail_user_ids else False})
+        return Response(status=200, data={
+            "mail_user_ids": mail_user_ids,
+            "grantor_user_id": grantor.user_id,
+        })
