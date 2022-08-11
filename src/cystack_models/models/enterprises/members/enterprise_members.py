@@ -19,6 +19,7 @@ class EnterpriseMember(models.Model):
     access_time = models.IntegerField()
     is_default = models.BooleanField(default=False)
     is_primary = models.BooleanField(default=False)
+    is_activated = models.BooleanField(default=True)
 
     status = models.CharField(max_length=128, default=PM_MEMBER_STATUS_CONFIRMED)
     email = models.CharField(max_length=128, null=True)

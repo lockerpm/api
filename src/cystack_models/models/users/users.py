@@ -31,6 +31,7 @@ class User(models.Model):
     api_key = models.CharField(max_length=32, null=True)
     timeout = models.IntegerField(default=15)
     timeout_action = models.CharField(default="lock", max_length=16)
+    is_leaked = models.BooleanField(default=False)
 
     # Login policy
     last_request_login = models.FloatField(null=True, default=None)

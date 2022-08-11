@@ -89,6 +89,7 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         }
         for mem in members_status_count:
             members_status_statistic.update({mem["status"]: mem["count"]})
+        members_activated_count = members.filter(is_activated=True).count()
 
         # Master Password statistic
         weak_master_password_count = members.filter(
@@ -102,6 +103,7 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
                 Case(When(Q(ciphers__score__lte=1, ciphers__type=CIPHER_TYPE_LOGIN), then=Value(1)), output_field=IntegerField())
             )
         ).values('user_id', 'weak_ciphers').filter(weak_ciphers__gte=10).count()
+        leaked_account_count = User.objects.filter(is_leaked=True).count()
 
         # Failed login
         failed_login_events = Event.objects.filter(
@@ -111,7 +113,8 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         return Response(status=200, data={
             "members": {
                 "total": members.count(),
-                "status": members_status_statistic
+                "status": members_status_statistic,
+                "billing_members": members_activated_count,
             },
             "login_statistic": self._statistic_login_by_time(
                 enterprise_id=enterprise.id, user_ids=confirmed_user_ids, from_param=from_param, to_param=to_param
@@ -119,7 +122,7 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
             "password_security": {
                 "weak_master_password": weak_master_password_count,
                 "weak_password": weak_cipher_password_count,
-                "leaked_account": 0
+                "leaked_account": leaked_account_count
             },
             "block_failed_login": list(failed_login_events)
         })

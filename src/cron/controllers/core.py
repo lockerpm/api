@@ -19,6 +19,7 @@ from cron.controllers.tasks.emergency_access_auto_approve import emergency_acces
 from cron.controllers.tasks.feedback import upgrade_survey_emails, log_new_users
 from cron.controllers.tasks.delete_trash_ciphers import delete_trash_ciphers
 from cron.controllers.tasks.domain_verification import domain_verification
+from cron.controllers.tasks.enterprise_breach_scan import enterprise_breach_scan
 
 
 class CronTask:
@@ -86,12 +87,23 @@ class CronTask:
         finally:
             close_old_connections()
 
+    def enterprise_breach_scan(self):
+        try:
+            enterprise_breach_scan()
+            self.logger.info("[+] enterprise_breach_scan Done")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.logger.error("[!] enterprise_breach_scan error: {}".format(tb))
+        finally:
+            close_old_connections()
+
     def start(self):
         schedule.every(10).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
         schedule.every().day.at("10:00").do(self.feedback_tasks)
         schedule.every(20).minutes.do(self.emergency_access_approve)
         # schedule.every(120).minutes.do(self.domain_verification)
+        # schedule.every().day.at("19:00").do(self.enterprise_breach_scan)
 
         # schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
         self.logger.info("[+] Starting Locker cron task")
