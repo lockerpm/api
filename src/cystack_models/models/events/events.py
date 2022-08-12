@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from django.db import models
@@ -22,6 +23,7 @@ class Event(models.Model):
     provider_id = models.CharField(max_length=128, null=True)
     team_provider_id = models.CharField(max_length=128, null=True)
     user_provider_id = models.CharField(max_length=128, null=True)
+    metadata = models.TextField(max_length=512, null=True, blank=True, default=None)
 
     class Meta:
         db_table = 'cs_events'
@@ -67,7 +69,8 @@ class Event(models.Model):
                 policy_id=data.get("policy_id"),
                 provider_id=data.get("provider_id"),
                 team_provider_id=data.get("team_provider_id"),
-                user_provider_id=data.get("user_provider_id")
+                user_provider_id=data.get("user_provider_id"),
+                metadata=data.get("metadata")
             ))
         cls.objects.bulk_create(events, ignore_conflicts=True)
 
@@ -93,3 +96,8 @@ class Event(models.Model):
                 user_provider_id=data.get("user_provider_id")
             ))
         cls.objects.bulk_create(events, ignore_conflicts=True)
+
+    def get_metadata(self):
+        if not self.metadata:
+            return {}
+        return json.loads(json.dumps(self.metadata))
