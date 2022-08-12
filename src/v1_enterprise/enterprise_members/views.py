@@ -7,7 +7,9 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
+from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.enterprise_members import *
+from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDATED_ROLE, EVENT_E_MEMBER_REMOVED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
@@ -231,15 +233,26 @@ class MemberPwdViewSet(EnterpriseViewSet):
             # Not allow edit yourself and Not allow edit primary owner
             if member_obj.user == user or member_obj.is_primary is True:
                 return Response(status=403)
+            old_role = member_obj.role_id
             member_obj.role_id = role
             member_obj.save()
             change_role = True
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
+                "user_id": member_obj.user_id, "team_member_id": member_obj.id,
+                "type": EVENT_E_MEMBER_UPDATED_ROLE, "ip_address": ip,
+                "metadata": {"old_role": old_role, "new_role": role}
+            })
+
         if status and member_obj.status == E_MEMBER_STATUS_REQUESTED:
             member_obj.status = status
             member_obj.save()
             change_status = True
-
-        # TODO: Log activity update role of the member HERE
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
+                "user_id": user.user_id, "team_member_id": member_obj.id,
+                "type": EVENT_E_MEMBER_CONFIRMED, "ip_address": ip
+            })
 
         return Response(status=200, data={
             "success": True,
@@ -262,10 +275,14 @@ class MemberPwdViewSet(EnterpriseViewSet):
         # Not allow delete themselves
         if member_obj.user == user or member_obj.role.name == E_MEMBER_ROLE_PRIMARY_ADMIN:
             return Response(status=403)
+        # Log activity delete member here
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+            "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
+            "user_id": member_obj.user_id, "team_member_id": member_obj.id,
+            "type": EVENT_E_MEMBER_REMOVED, "ip_address": ip,
+        })
+        # Delete member obj
         member_obj.delete()
-
-        # TODO: Log activity delete member here
-
         return Response(status=200, data={
             "enterprise_id": enterprise.id,
             "enterprise_name": enterprise.name,
@@ -299,6 +316,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
     @action(methods=["put"], detail=False)
     def user_invitation_update(self, request, *args, **kwargs):
         user = self.request.user
+        ip = request.data.get("ip")
         status = request.data.get("status")
         if status not in ["confirmed", "reject"]:
             raise ValidationError(detail={"status": ["This status is not valid"]})
@@ -328,12 +346,23 @@ class MemberPwdViewSet(EnterpriseViewSet):
             primary_owner = enterprise.enterprise_members.get(is_primary=True).user_id
         except EnterpriseMember.DoesNotExist:
             primary_owner = None
+
         admin_user_ids = list(enterprise.enterprise_members.filter(
             role_id=E_MEMBER_ROLE_ADMIN, status=E_MEMBER_STATUS_CONFIRMED
         ).values_list('user_id', flat=True))
+
+        member_status = member_invitation.status if status != "reject" else None
+        if member_status == E_MEMBER_STATUS_CONFIRMED:
+            # Log event
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
+                "user_id": user.user_id, "team_member_id": member_invitation.id,
+                "type": EVENT_E_MEMBER_CONFIRMED, "ip_address": ip
+            })
+
         return Response(status=200, data={
             "success": True,
-            "member_status": member_invitation.status if status != "reject" else None,
+            "member_status": member_status,
             "primary_owner": primary_owner,
             "admin": admin_user_ids,
             "enterprise_name": enterprise.name,

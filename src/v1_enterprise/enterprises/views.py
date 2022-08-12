@@ -11,9 +11,11 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.users.users import User
 from cystack_models.models.events.events import Event
+from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.ciphers import CIPHER_TYPE_LOGIN
 from shared.constants.enterprise_members import *
-from shared.constants.event import EVENT_USER_LOGIN_FAILED, EVENT_USER_LOGIN, EVENT_USER_BLOCK_LOGIN
+from shared.constants.event import EVENT_USER_LOGIN_FAILED, EVENT_USER_LOGIN, EVENT_USER_BLOCK_LOGIN, \
+    EVENT_ENTERPRISE_UPDATED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.enterprise_permission import EnterprisePwdPermission
 from shared.utils.app import now
@@ -69,8 +71,11 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         user = self.request.user
         ip = request.data.get("ip")
         enterprise = self.get_object()
-        # TODO: Log update activity here
-
+        # Log update activity here
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+            "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id, "user_id": user.user_id,
+            "type": EVENT_ENTERPRISE_UPDATED, "ip_address": ip
+        })
         return super(EnterprisePwdViewSet, self).update(request, *args, **kwargs)
 
     @action(methods=["get"], detail=True)
