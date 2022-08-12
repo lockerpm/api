@@ -224,6 +224,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
         validated_data = serializer.validated_data
         role = validated_data.get("role")
         status = validated_data.get("status")
+        change_status = False
+        change_role = False
 
         if role:
             # Not allow edit yourself and Not allow edit primary owner
@@ -231,21 +233,32 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 return Response(status=403)
             member_obj.role_id = role
             member_obj.save()
-        if status:
+            change_role = True
+        if status and member_obj.status == E_MEMBER_STATUS_REQUESTED:
             member_obj.status = status
             member_obj.save()
+            change_status = True
 
         # TODO: Log activity update role of the member HERE
 
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={
+            "success": True,
+            "change_status": change_status,
+            "change_role": change_role,
+            "member_id": member_obj.id,
+            "member_user_id": member_obj.user_id,
+            "enterprise_name": member_obj.enterprise.name,
+            "status": member_obj.status,
+            "role": member_obj.role
+        })
 
     def destroy(self, request, *args, **kwargs):
         ip = request.data.get("ip")
         user = self.request.user
         enterprise = self.get_object()
         member_obj = self.get_enterprise_member(enterprise=enterprise, member_id=kwargs.get("member_id"))
-        member_user = member_obj.user
         deleted_member_user_id = member_obj.user_id
+        deleted_member_status = member_obj.status
         # Not allow delete themselves
         if member_obj.user == user or member_obj.role.name == E_MEMBER_ROLE_PRIMARY_ADMIN:
             return Response(status=403)
@@ -255,8 +268,9 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
         return Response(status=200, data={
             "enterprise_id": enterprise.id,
-            "enterprise_": enterprise.name,
-            "member_user_id": deleted_member_user_id
+            "enterprise_name": enterprise.name,
+            "member_user_id": deleted_member_user_id,
+            "member_status": deleted_member_status,
         })
 
     @action(methods=["post"], detail=False)
@@ -294,6 +308,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
             )
         except EnterpriseMember.DoesNotExist:
             raise NotFound
+        enterprise = member_invitation.enterprise
         # If the member has a domain => Not allow reject
         if member_invitation.domain:
             if status == "reject":
@@ -309,7 +324,20 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 member_invitation.save()
             else:
                 member_invitation.delete()
-        return Response(status=200, data={"success": True})
+        try:
+            primary_owner = enterprise.enterprise_members.get(is_primary=True).user_id
+        except EnterpriseMember.DoesNotExist:
+            primary_owner = None
+        admin_user_ids = list(enterprise.enterprise_members.filter(
+            role_id=E_MEMBER_ROLE_ADMIN, status=E_MEMBER_STATUS_CONFIRMED
+        ).values_list('user_id', flat=True))
+        return Response(status=200, data={
+            "success": True,
+            "member_status": member_invitation.status if status != "reject" else None,
+            "primary_owner": primary_owner,
+            "admin": admin_user_ids,
+            "enterprise_name": enterprise.name,
+        })
 
     @action(methods=["get"], detail=False)
     def invitation_confirmation(self, request, *args, **kwargs):
