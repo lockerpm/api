@@ -44,3 +44,9 @@ urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/policy/(?P<policy_type>[a-z_]+)$',
         views.PolicyPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
 ]
+
+
+# ----------------------------------- Activity Log ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/activity$', views.ActivityLogPwdViewSet.as_view({'get': 'list'})),
+]

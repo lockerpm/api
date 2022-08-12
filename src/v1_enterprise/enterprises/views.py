@@ -11,9 +11,11 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.users.users import User
 from cystack_models.models.events.events import Event
+from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.ciphers import CIPHER_TYPE_LOGIN
 from shared.constants.enterprise_members import *
-from shared.constants.event import EVENT_USER_LOGIN_FAILED, EVENT_USER_LOGIN, EVENT_USER_BLOCK_LOGIN
+from shared.constants.event import EVENT_USER_LOGIN_FAILED, EVENT_USER_LOGIN, EVENT_USER_BLOCK_LOGIN, \
+    EVENT_ENTERPRISE_UPDATED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.enterprise_permission import EnterprisePwdPermission
 from shared.utils.app import now
@@ -69,8 +71,11 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         user = self.request.user
         ip = request.data.get("ip")
         enterprise = self.get_object()
-        # TODO: Log update activity here
-
+        # Log update activity here
+        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+            "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id, "user_id": user.user_id,
+            "type": EVENT_ENTERPRISE_UPDATED, "ip_address": ip
+        })
         return super(EnterprisePwdViewSet, self).update(request, *args, **kwargs)
 
     @action(methods=["get"], detail=True)
@@ -89,7 +94,7 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         }
         for mem in members_status_count:
             members_status_statistic.update({mem["status"]: mem["count"]})
-        members_activated_count = members.filter(is_activated=True).count()
+        members_activated_count = members.filter(status=E_MEMBER_STATUS_CONFIRMED, is_activated=True).count()
 
         # Master Password statistic
         weak_master_password_count = members.filter(
@@ -100,15 +105,25 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         confirmed_user_ids = members.filter(status=E_MEMBER_STATUS_CONFIRMED).values_list('user_id', flat=True)
         weak_cipher_password_count = User.objects.filter(user_id__in=list(confirmed_user_ids)).annotate(
             weak_ciphers=Count(
-                Case(When(Q(ciphers__score__lte=1, ciphers__type=CIPHER_TYPE_LOGIN), then=Value(1)), output_field=IntegerField())
+                Case(
+                    When(Q(ciphers__score__lte=1, ciphers__type=CIPHER_TYPE_LOGIN), then=Value(1)),
+                    output_field=IntegerField()
+                )
             )
         ).values('user_id', 'weak_ciphers').filter(weak_ciphers__gte=10).count()
-        leaked_account_count = User.objects.filter(is_leaked=True).count()
+        leaked_account_count = User.objects.filter(is_leaked=True, user_id__in=list(confirmed_user_ids)).count()
 
         # Failed login
         failed_login_events = Event.objects.filter(
             type=EVENT_USER_BLOCK_LOGIN, team_id=enterprise.id, user_id__in=confirmed_user_ids
         ).values('user_id').annotate(blocked_time=Max('creation_date')).order_by('-blocked_time')[:5]
+
+        blocking_login = User.objects.filter(user_id__in=list(confirmed_user_ids)).exclude(
+            login_block_until__isnull=True
+        ).filter(login_block_until__gt=now()).count()
+
+        # Un-verified domain
+        unverified_domain_count = enterprise.domains.filter(verification=False).count()
 
         return Response(status=200, data={
             "members": {
@@ -124,7 +139,9 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
                 "weak_password": weak_cipher_password_count,
                 "leaked_account": leaked_account_count
             },
-            "block_failed_login": list(failed_login_events)
+            "block_failed_login": list(failed_login_events),
+            "blocking_login": blocking_login,
+            "unverified_domain": unverified_domain_count
         })
 
     def _statistic_login_by_time(self, enterprise_id, user_ids, from_param, to_param):
