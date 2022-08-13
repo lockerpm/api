@@ -46,6 +46,14 @@ urlpatterns += [
 ]
 
 
+# ----------------------------------- Groups ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/groups$', views.GroupPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^(?P<pk>[0-9a-z]+)/groups/(?P<group_id>[a-zA-Z0-9\-]+)$',
+        views.GroupPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+]
+
+
 # ----------------------------------- Activity Log ------------------------- #
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/activity$', views.ActivityLogPwdViewSet.as_view({'get': 'list'})),

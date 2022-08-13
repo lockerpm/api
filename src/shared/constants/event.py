@@ -50,6 +50,10 @@ EVENT_E_MEMBER_UPDATED_GROUP = 1904
 EVENT_E_MEMBER_ENABLED = 1905
 EVENT_E_MEMBER_DISABLED = 1906
 
+EVENT_E_GROUP_CREATED = 2000
+EVENT_E_GROUP_UPDATED = 2001
+EVENT_E_GROUP_DELETED = 2002
+
 
 LOG_TYPES = {
     # User Events
@@ -232,5 +236,19 @@ LOG_TYPES = {
     EVENT_E_MEMBER_DISABLED: {
         "vi": "User đã bị vô hiệu hóa",
         "en": "A user has been disabled"
-    }
+    },
+
+    # Enterprise group envets
+    EVENT_E_GROUP_CREATED: {
+        "vi": "Nhóm {group_name} đã được tạo",
+        "en": "A group {group_name} has been created"
+    },
+    EVENT_E_GROUP_UPDATED: {
+        "vi": "Tên nhóm đã được chuyển từ {old_name} sang {new_name}",
+        "en": "The group's name has been changed from {old_name} to {new_name}"
+    },
+    EVENT_E_GROUP_DELETED: {
+        "vi": "Nhóm {group_name} đã bị xóa",
+        "en": "The group {group_name} is deleted"
+    },
 }
