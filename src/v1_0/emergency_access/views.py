@@ -224,6 +224,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         )
         return Response(status=200, data={
             "type": emergency_access.type,
+            "status": emergency_access.status,
+            "approve_after": emergency_access.wait_time_days,
             "grantor_user_id": emergency_access.grantor.user_id,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids
