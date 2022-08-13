@@ -41,7 +41,6 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
 
     def get_queryset(self):
         enterprise = self.get_enterprise()
-        enterprise = Enterprise.objects.get()
         to_param = self.check_int_param(self.request.query_params.get("to")) or now()
         from_param = self.check_int_param(self.request.query_params.get("from")) or now() - 30 * 86400
         admin_only_param = self.request.query_params.get("admin_only", "0")
@@ -88,9 +87,9 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
 
     def list(self, request, *args, **kwargs):
         paging_param = self.request.query_params.get("paging", "1")
-        page_size_param = self.check_int_param(self.request.query_params.get("size", 50))
+        page_size_param = self.check_int_param(self.request.query_params.get("size", 10))
         if paging_param == "0":
             self.pagination_class = None
         else:
-            self.pagination_class.page_size = page_size_param if page_size_param else 50
+            self.pagination_class.page_size = page_size_param if page_size_param else 10
         return super(ActivityLogPwdViewSet, self).list(request, *args, **kwargs)
