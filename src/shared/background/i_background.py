@@ -29,7 +29,7 @@ class ILockerBackground:
         if self.background:
             BackgroundThread(task=func, **kwargs)
         else:
-            func(**kwargs)
+            return func(**kwargs)
 
     @staticmethod
     def log_error(func_name: str = "", meta="", tb=None):

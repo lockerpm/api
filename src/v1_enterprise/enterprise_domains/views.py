@@ -113,7 +113,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
                 raise ValidationError(detail={"domain": ["This domain is verified by other enterprise"]})
             is_verify = domain.check_verification()
             if is_verify is True:
-                LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=True).run(
+                invited_number = LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
                     func_name="domain_verified", **{
                         "owner_user_id": user.user_id,
                         "domain": domain
@@ -123,6 +123,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
                     "success": True,
                     "domain": domain.domain,
                     "enterprise_name": domain.enterprise.name,
-                    "organization_name": domain.enterprise.name
+                    "organization_name": domain.enterprise.name,
+                    "invited_number": invited_number
                 })
             raise ValidationError({"non_field_errors": [gen_error("3005")]})

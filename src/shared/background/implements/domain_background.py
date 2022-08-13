@@ -52,7 +52,8 @@ class DomainBackground(ILockerBackground):
                             access_time=now()
                         )
                     )
-                EnterpriseMember.objects.bulk_create(members, ignore_conflicts=True, batch_size=50)
+                new_members_obj = EnterpriseMember.objects.bulk_create(members, ignore_conflicts=True, batch_size=50)
+                return len(new_members_obj)
 
         except Exception as e:
             self.log_error(func_name="domain_verified")
