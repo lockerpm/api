@@ -250,7 +250,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
             change_status = True
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
                 "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
-                "user_id": user.user_id, "team_member_id": member_obj.id,
+                "user_id": member_obj.user_id, "team_member_id": member_obj.id,
                 "type": EVENT_E_MEMBER_CONFIRMED, "ip_address": ip
             })
 
