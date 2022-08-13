@@ -52,7 +52,8 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             description["en"] = description["en"].format(log.team_member_id)
 
         elif log_type >= 1800:
-            description["vi"] = description["vi"].format(log.get_metadata())
-            description["en"] = description["en"].format(log.get_metadata())
+            normalizer_metadata = log.get_normalizer_metadata()
+            description["vi"] = description["vi"].format(**normalizer_metadata)
+            description["en"] = description["en"].format(**normalizer_metadata)
 
         return description

@@ -214,8 +214,8 @@ LOG_TYPES = {
         "en": "A user has joined your enterprise"
     },
     EVENT_E_MEMBER_UPDATED_ROLE: {
-        "vi": "Quyền của user vừa chuyển từ {} sang {}",
-        "en": "A user's role has been changed from {} to {}"
+        "vi": "Quyền của user vừa chuyển từ {old_role} sang {new_role}",
+        "en": "A user's role has been changed from {old_role} to {new_role}"
     },
     EVENT_E_MEMBER_REMOVED: {
         "vi": "User đã rời khỏi doanh nghiệp",

@@ -1,3 +1,4 @@
+import ast
 import json
 import uuid
 
@@ -100,4 +101,11 @@ class Event(models.Model):
     def get_metadata(self):
         if not self.metadata:
             return {}
-        return json.loads(json.dumps(self.metadata))
+        return ast.literal_eval(str(self.metadata))
+
+    def get_normalizer_metadata(self):
+        metadata = self.get_metadata()
+        normalizer_metadata = {}
+        for k, v in metadata.items():
+            normalizer_metadata[k] = v.replace("_", " ").title() if isinstance(v, str) else v
+        return normalizer_metadata
