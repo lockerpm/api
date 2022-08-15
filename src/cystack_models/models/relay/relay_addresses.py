@@ -4,6 +4,7 @@ from hashlib import sha256
 from django.db import models
 
 from cystack_models.models.relay.relay_domains import RelayDomain
+from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from cystack_models.models.users.users import User
 from shared.constants.relay_address import DEFAULT_RELAY_DOMAIN
@@ -14,6 +15,9 @@ from shared.utils.app import random_n_digit, now
 class RelayAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="relay_addresses")
     address = models.CharField(max_length=64, unique=True)
+    subdomain = models.ForeignKey(
+        RelaySubdomain, on_delete=models.CASCADE, related_name="relay_addresses", null=True, default=None
+    )
     domain = models.ForeignKey(RelayDomain, on_delete=models.CASCADE, related_name="relay_addresses")
     enabled = models.BooleanField(default=True)
     description = models.CharField(max_length=64, blank=True)
@@ -29,7 +33,9 @@ class RelayAddress(models.Model):
 
     @property
     def full_address(self):
-        return "{}@{}".format(self.address, self.domain_id)
+        if self.subdomain:
+            return f"{self.address}@{self.subdomain.subdomain}.{self.domain_id}"
+        return f"{self.address}@{self.domain_id}"
 
     @classmethod
     def create(cls, user: User, **data):
@@ -94,3 +100,19 @@ class RelayAddress(models.Model):
     @classmethod
     def hash_address(cls, address, domain):
         return sha256(f"{address}@{domain}".encode("utf-8")).hexdigest()
+
+    def delete_permanently(self):
+        if self.subdomain:
+            full_domain = f"{self.subdomain.subdomain}.{self.domain_id}"
+        else:
+            full_domain = self.domain_id
+        deleted_address = DeletedRelayAddress.objects.create(
+            address_hash=RelayAddress.hash_address(self.address, full_domain),
+            num_forwarded=self.num_forwarded,
+            num_blocked=self.num_blocked,
+            num_replied=self.num_replied,
+            num_spam=self.num_spam,
+        )
+        deleted_address.save()
+        # Remove relay address
+        self.delete()

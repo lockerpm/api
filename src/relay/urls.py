@@ -6,6 +6,7 @@ from relay import views
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'addresses', views.RelayAddressViewSet, 'addresses')
+router.register(r'subdomains', views.RelaySubdomainViewSet, 'subdomains')
 
 
 urlpatterns = [
