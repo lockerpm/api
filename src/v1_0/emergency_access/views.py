@@ -9,6 +9,9 @@ from shared.constants.emergency_access import *
 from shared.constants.user_notification import NOTIFY_EMERGENCY_ACCESS, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.emergency_access_pwd_permission import EmergencyAccessPermission
+from shared.services.fcm.constants import FCM_TYPE_EMERGENCY_INVITE
+from shared.services.fcm.fcm_request_entity import FCMRequestEntity
+from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
@@ -112,6 +115,24 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             notification_user_ids = NotificationSetting.get_user_notification(
                 category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[new_emergency_access.grantee_id]
             )
+
+            # Send mobile notification
+            if notification_user_ids:
+                fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
+                fcm_message = FCMRequestEntity(
+                    fcm_ids=list(fcm_ids), priority="high",
+                    data={
+                        "event": FCM_TYPE_EMERGENCY_INVITE,
+                        "data": {
+                            # "id": sharing_invitation.team_id,
+                            # "share_type": shared_type_name,
+                            # "pwd_user_ids": [primary_owner.user_id],
+                            # "name": request.data.get("user_fullname"),
+                            # "recipient_name": request.data.get("user_fullname"),
+                        }
+                    }
+                )
+                FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
 
         return Response(status=200, data={
             "id": new_emergency_access.id,

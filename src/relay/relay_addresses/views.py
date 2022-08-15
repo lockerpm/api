@@ -88,14 +88,5 @@ class RelayAddressViewSet(RelayViewSet):
     def destroy(self, request, *args, **kwargs):
         relay_address = self.get_object()
         # Create deleted address
-        deleted_address = DeletedRelayAddress.objects.create(
-            address_hash=RelayAddress.hash_address(relay_address.address, relay_address.domain_id),
-            num_forwarded=relay_address.num_forwarded,
-            num_blocked=relay_address.num_blocked,
-            num_replied=relay_address.num_replied,
-            num_spam=relay_address.num_spam,
-        )
-        deleted_address.save()
-        # Remove relay address
-        relay_address.delete()
+        relay_address.delete_permanently()
         return Response(status=204)

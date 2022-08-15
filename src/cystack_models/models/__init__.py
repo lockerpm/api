@@ -79,5 +79,6 @@ from cystack_models.models.enterprises.policy.policy_passwordless import PolicyP
 # -------------------------- RELAY ADDRESS -------------------------- #
 from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from cystack_models.models.relay.relay_domains import RelayDomain
+from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 from cystack_models.models.relay.relay_addresses import RelayAddress
 from cystack_models.models.relay.reply import Reply

@@ -3,6 +3,7 @@ import uuid
 from django.db import models
 
 from cystack_models.models.enterprises.enterprises import Enterprise
+from shared.utils.app import now
 
 
 class EnterpriseGroup(models.Model):
@@ -14,3 +15,9 @@ class EnterpriseGroup(models.Model):
 
     class Meta:
         db_table = 'e_enterprise_groups'
+
+    @classmethod
+    def create(cls, enterprise: Enterprise, name: str):
+        new_group = cls(name=name, enterprise=enterprise, creation_date=now(), revision_date=now())
+        new_group.save()
+        return new_group

@@ -262,7 +262,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
             "member_user_id": member_obj.user_id,
             "enterprise_name": member_obj.enterprise.name,
             "status": member_obj.status,
-            "role": member_obj.role
+            "role": member_obj.role_id
         })
 
     def destroy(self, request, *args, **kwargs):

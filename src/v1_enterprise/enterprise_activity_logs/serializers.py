@@ -18,9 +18,9 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             "acting_user": {
                 "id": instance.acting_user_id,
             },
-            # "user": {
-            #     "id": instance.user_id,
-            # },
+            "user": {
+                "id": instance.user_id,
+            },
             "ip_address": instance.ip_address,
             "cipher_id": instance.cipher_id,
             "collection_id": instance.collection_id,
@@ -50,5 +50,10 @@ class ActivityLogSerializer(serializers.ModelSerializer):
         elif 1500 <= log_type <= 1504:
             description["vi"] = description["vi"].format(log.team_member_id)
             description["en"] = description["en"].format(log.team_member_id)
+
+        elif log_type >= 1800:
+            normalizer_metadata = log.get_normalizer_metadata()
+            description["vi"] = description["vi"].format(**normalizer_metadata)
+            description["en"] = description["en"].format(**normalizer_metadata)
 
         return description

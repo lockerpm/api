@@ -33,6 +33,7 @@ class PMPlan(models.Model):
     tools_data_breach = models.BooleanField(default=False)
     emergency_access = models.BooleanField(default=False)
     personal_share = models.BooleanField(default=False)
+    relay_premium = models.BooleanField(default=False)
     is_family_plan = models.BooleanField(default=False)
     is_team_plan = models.BooleanField(default=False)
     max_number = models.IntegerField(null=True, default=None)
@@ -135,3 +136,7 @@ class PMPlan(models.Model):
 
     def allow_personal_share(self):
         return self.personal_share
+
+    def allow_relay_premium(self):
+        return self.relay_premium
+

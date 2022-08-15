@@ -217,6 +217,11 @@ APP_CODE += [
         "message": "The number of relay addresses is reached",
         "vi_message": "Số lượng địa chỉ relay đã đạt tối đa"
     },
+    {
+        "code": "8001",
+        "message": "The number of relay subdomain is reached",
+        "vi_message": "Số lượng tên miền phụ đã đạt tối đa"
+    },
 ]
 
 
