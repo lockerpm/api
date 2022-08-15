@@ -1,16 +1,11 @@
 from django.conf import settings
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.exceptions import ValidationError, NotFound
 
-from cystack_models.models.relay.relay_addresses import RelayAddress
-from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 from relay.apps import RelayViewSet
-from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
-from shared.utils.app import now
 from .serializers import SubdomainSerializer, UpdateSubdomainSerializer
 
 
@@ -28,7 +23,7 @@ class RelaySubdomainViewSet(RelayViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        relay_subdomains = user.relay_subdomains.all().order_by('created_time')
+        relay_subdomains = user.relay_subdomains.filter(is_deleted=False).order_by('created_time')
         return relay_subdomains
 
     def get_object(self):
@@ -61,7 +56,7 @@ class RelaySubdomainViewSet(RelayViewSet):
         validated_data = serializer.validated_data
         subdomain = validated_data.get("subdomain")
 
-        if user.relay_subdomains.exists() is True:
+        if user.relay_subdomains.filter(is_deleted=False).exists() is True:
             raise ValidationError({"non_field_errors": [gen_error("8001")]})
         if RelaySubdomain.objects.filter(subdomain=subdomain).exists():
             raise ValidationError(detail={"subdomain": ["This subdomain is used. Try another subdomain"]})
@@ -81,20 +76,21 @@ class RelaySubdomainViewSet(RelayViewSet):
         validated_data = serializer.validated_data
         subdomain = validated_data.get("subdomain")
 
-        if RelaySubdomain.objects.exclude(user=user).filter(subdomain=subdomain).exists():
+        if RelaySubdomain.objects.exclude(user=user, is_deleted=False).filter(subdomain=subdomain).exists():
             raise ValidationError(detail={"subdomain": ["This subdomain is used. Try another subdomain"]})
 
-        if subdomain != subdomain_obj.subdomain:
+        old_subdomain = subdomain_obj.subdomain
+        if subdomain != old_subdomain:
             # Delete all relay addresses of this subdomain
             relay_addresses = subdomain_obj.relay_addresses.all()
             for relay_address in relay_addresses:
                 relay_address.delete_permanently()
 
             # TODO: Create deletion SQS job
-
             subdomain_obj.subdomain = subdomain
             subdomain_obj.save()
-
+            # Save subdomain object as deleted
+            user.relay_subdomains.model.create(user=user, subdomain=old_subdomain, is_deleted=True)
             # TODO: Send creation job to SQS
 
         return Response(status=200, data={"id": subdomain_obj.id})

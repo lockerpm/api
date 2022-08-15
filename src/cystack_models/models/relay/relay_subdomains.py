@@ -21,8 +21,10 @@ class RelaySubdomain(models.Model):
         unique_together = ('subdomain', 'domain')
 
     @classmethod
-    def create(cls, user, subdomain: str, domain_id: str = DEFAULT_RELAY_DOMAIN):
-        new_relay_subdomain = cls(user=user, subdomain=subdomain, domain_id=domain_id, created_time=now)
+    def create(cls, user, subdomain: str, domain_id: str = DEFAULT_RELAY_DOMAIN, is_deleted=False):
+        new_relay_subdomain = cls(
+            user=user, subdomain=subdomain, domain_id=domain_id, created_time=now(), is_deleted=is_deleted
+        )
         new_relay_subdomain.save()
         return new_relay_subdomain
 
