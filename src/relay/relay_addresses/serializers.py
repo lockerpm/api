@@ -16,6 +16,7 @@ class RelayAddressSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super(RelayAddressSerializer, self).to_representation(instance)
         data["domain"] = instance.domain_id
+        data["subdomain"] = instance.subdomain_string
         data["full_address"] = instance.full_address
         return data
 

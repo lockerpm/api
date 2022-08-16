@@ -1,12 +1,13 @@
 from django.conf import settings
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, NotFound
 
 from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 from relay.apps import RelayViewSet
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
-from .serializers import SubdomainSerializer, UpdateSubdomainSerializer
+from .serializers import SubdomainSerializer, UpdateSubdomainSerializer, UseRelaySubdomainSerializer
 
 
 class RelaySubdomainViewSet(RelayViewSet):
@@ -19,6 +20,8 @@ class RelaySubdomainViewSet(RelayViewSet):
             self.serializer_class = SubdomainSerializer
         elif self.action in ["create", "update"]:
             self.serializer_class = UpdateSubdomainSerializer
+        elif self.action == "use_subdomain":
+            self.serializer_class = UseRelaySubdomainSerializer
         return super(RelaySubdomainViewSet, self).get_serializer_class()
 
     def get_queryset(self):
@@ -108,3 +111,20 @@ class RelaySubdomainViewSet(RelayViewSet):
 
         subdomain_obj.soft_delete()
         return Response(status=204)
+
+    @action(methods=["get", "put"], detail=False)
+    def use_subdomain(self, request, *args, **kwargs):
+        user = self.request.user
+
+        if request.method == "GET":
+            return Response(status=200, data={"use_relay_subdomain": user.use_relay_subdomain})
+
+        elif request.method == "PUT":
+            self.allow_relay_premium()
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            use_relay_subdomain = validated_data.get("use_relay_subdomain")
+            user.use_relay_subdomain = use_relay_subdomain
+            user.save()
+            return Response(status=200, data={"use_relay_subdomain": user.use_relay_subdomain})
