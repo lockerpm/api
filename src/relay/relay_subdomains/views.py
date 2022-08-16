@@ -1,3 +1,5 @@
+import json
+
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -7,6 +9,7 @@ from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 from relay.apps import RelayViewSet
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
+from shared.services.sqs.sqs import sqs_service
 from .serializers import SubdomainSerializer, UpdateSubdomainSerializer, UseRelaySubdomainSerializer
 
 
@@ -65,8 +68,10 @@ class RelaySubdomainViewSet(RelayViewSet):
             raise ValidationError(detail={"subdomain": ["This subdomain is used. Try another subdomain"]})
 
         new_relay_subdomain = user.relay_subdomains.model.create(user=user, subdomain=subdomain)
-
-        # TODO: Send job to AWS SQS
+        # Send job to AWS SQS to create new subdomain
+        action_msg = {'action': 'create', 'domain': f"{new_relay_subdomain.subdomain}.{new_relay_subdomain.domain_id}"}
+        create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_msg)}
+        sqs_service.send_message(message_body=json.dumps(create_msg))
 
         return Response(status=200, data={"id": new_relay_subdomain.id, "subdomain": new_relay_subdomain.subdomain})
 
@@ -89,12 +94,19 @@ class RelaySubdomainViewSet(RelayViewSet):
             for relay_address in relay_addresses:
                 relay_address.delete_permanently()
 
-            # TODO: Create deletion SQS job
+            # Create deletion SQS job
+            action_delete_msg = {'action': 'delete', 'domain': f"{old_subdomain}.{subdomain_obj.domain_id}"}
+            delete_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_delete_msg)}
+            sqs_service.send_message(message_body=json.dumps(delete_msg))
+            # Update object in the database
             subdomain_obj.subdomain = subdomain
             subdomain_obj.save()
             # Save subdomain object as deleted
             user.relay_subdomains.model.create(user=user, subdomain=old_subdomain, is_deleted=True)
-            # TODO: Send creation job to SQS
+            # Send creation job to SQS
+            action_create_msg = {'action': 'create', 'domain': f"{subdomain}.{subdomain_obj.domain_id}"}
+            create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_create_msg)}
+            sqs_service.send_message(message_body=json.dumps(create_msg))
 
         return Response(status=200, data={"id": subdomain_obj.id})
 
@@ -107,7 +119,10 @@ class RelaySubdomainViewSet(RelayViewSet):
         for relay_address in relay_addresses:
             relay_address.delete_permanently()
 
-        # TODO: Create deletion SQS job
+        # Create deletion SQS job
+        action_delete_msg = {'action': 'delete', 'domain': f"{subdomain_obj.subdomain}.{subdomain_obj.domain_id}"}
+        delete_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_delete_msg)}
+        sqs_service.send_message(message_body=json.dumps(delete_msg))
 
         subdomain_obj.soft_delete()
         return Response(status=204)

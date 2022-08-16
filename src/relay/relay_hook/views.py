@@ -7,6 +7,7 @@ from rest_framework.exceptions import PermissionDenied, NotFound, ValidationErro
 from rest_framework.decorators import action
 
 from cystack_models.models.relay.relay_addresses import RelayAddress
+from cystack_models.models.relay.relay_domains import RelayDomain
 from cystack_models.models.relay.reply import Reply
 from relay.apps import RelayViewSet
 from relay.relay_hook.serializer import ReplySerializer
@@ -42,8 +43,18 @@ class RelayHookViewSet(RelayViewSet):
     @staticmethod
     def get_relay_address_obj(email: str):
         address = email.split("@")[0]
-        domain = email.split("@")[1]
-        relay_address = RelayAddress.objects.get(address=address, domain=domain)
+        full_domain = email.split("@")[1]
+
+        if full_domain.count(".") == 1:
+            relay_address = RelayAddress.objects.get(
+                address=address, domain_id=full_domain, subdomain=None
+            )
+        else:
+            subdomain = full_domain.split(".")[0]
+            domain_id = full_domain.replace(subdomain, "")
+            relay_address = RelayAddress.objects.get(
+                address=address, domain_id=domain_id, subdomain__subdomain=subdomain, subdomain__is_deleted=False
+            )
         return relay_address
 
     @staticmethod
@@ -100,6 +111,7 @@ class RelayHookViewSet(RelayViewSet):
         try:
             relay_address = self.get_relay_address_obj(email=relay_address)
         except RelayAddress.DoesNotExist:
+            CyLog.debug(**{"message": "Can not get relay address destination: {}".format(relay_address)})
             raise NotFound
         return Response(status=200, data={"user_id": relay_address.user_id})
 
