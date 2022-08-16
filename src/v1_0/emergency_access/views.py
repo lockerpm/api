@@ -9,7 +9,7 @@ from shared.constants.emergency_access import *
 from shared.constants.user_notification import NOTIFY_EMERGENCY_ACCESS, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.emergency_access_pwd_permission import EmergencyAccessPermission
-from shared.services.fcm.constants import FCM_TYPE_EMERGENCY_INVITE
+from shared.services.fcm.constants import *
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS
@@ -51,6 +51,16 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             raise ValidationError({"non_field_errors": [gen_error("7002")]})
         return user
 
+    def send_mobile_notification(self, notification_user_ids, event, data):
+        if not notification_user_ids:
+            return
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
+        fcm_message = FCMRequestEntity(
+            fcm_ids=list(fcm_ids), priority="high",
+            data={"event": event, "data": data}
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
+
     @action(methods=["get"], detail=False)
     def trusted(self, request, *args, **kwargs):
         user = self.request.user
@@ -68,6 +78,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=serializer.data)
 
     def destroy(self, request, *args, **kwargs):
+        user = request.user
         self.check_pwd_session_auth(request=request)
         emergency_access = self.get_object()
         status = emergency_access.status
@@ -79,6 +90,18 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         notification_user_ids = NotificationSetting.get_user_notification(
             category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantor_user_id, grantee_user_id]
         )
+        # # Send mobile notification
+        if status == EMERGENCY_ACCESS_STATUS_INVITED and user.user_id == grantee_user_id \
+                and grantor_user_id in notification_user_ids:
+            self.send_mobile_notification(
+                notification_user_ids=[grantor_user_id], event=FCM_TYPE_EMERGENCY_REJECT_INVITATION,
+                data={
+                    "id": emergency_access.id,
+                    "type": emergency_access.type,
+                    "grantee_name": request.data.get("user_fullname"),
+                    "is_grantor": True,
+                }
+            )
         self.emergency_repository.delete_emergency_access(emergency_access)
         return Response(status=200, data={
             "grantor_user_id": grantor_user_id,
@@ -117,22 +140,15 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             )
 
             # Send mobile notification
-            if notification_user_ids:
-                fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
-                fcm_message = FCMRequestEntity(
-                    fcm_ids=list(fcm_ids), priority="high",
-                    data={
-                        "event": FCM_TYPE_EMERGENCY_INVITE,
-                        "data": {
-                            # "id": sharing_invitation.team_id,
-                            # "share_type": shared_type_name,
-                            # "pwd_user_ids": [primary_owner.user_id],
-                            # "name": request.data.get("user_fullname"),
-                            # "recipient_name": request.data.get("user_fullname"),
-                        }
-                    }
-                )
-                FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
+            self.send_mobile_notification(
+                notification_user_ids=notification_user_ids, event=FCM_TYPE_EMERGENCY_INVITE,
+                data={
+                    "id": new_emergency_access.id,
+                    "type": new_emergency_access.type,
+                    "grantor_name":  request.data.get("grantor_fullname"),
+                    "is_grantee": True
+                }
+            )
 
         return Response(status=200, data={
             "id": new_emergency_access.id,
@@ -186,6 +202,18 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         notification_user_ids = NotificationSetting.get_user_notification(
             category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantor_user_id, grantee_user_id]
         )
+
+        if emergency_access.status == EMERGENCY_ACCESS_STATUS_CONFIRMED and grantor_user_id in notification_user_ids:
+            # Send mobile notification
+            self.send_mobile_notification(
+                notification_user_ids=[grantor_user_id], event=FCM_TYPE_EMERGENCY_ACCEPT_INVITATION,
+                data={
+                    "id": emergency_access.id,
+                    "type": emergency_access.type,
+                    "grantee_name": request.data.get("grantee_fullname"),
+                    "is_grantor": True,
+                }
+            )
 
         return Response(status=200, data={
             "success": True,
@@ -243,6 +271,16 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         notification_user_ids = NotificationSetting.get_user_notification(
             category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[emergency_access.grantor.user_id]
         )
+        # Send mobile notification
+        self.send_mobile_notification(
+            notification_user_ids=notification_user_ids, event=FCM_TYPE_EMERGENCY_INITIATE,
+            data={
+                "id": emergency_access.id,
+                "type": emergency_access.type,
+                "grantee_name": request.data.get("grantee_fullname"),
+                "is_grantor": True,
+            }
+        )
         return Response(status=200, data={
             "type": emergency_access.type,
             "status": emergency_access.status,
@@ -268,6 +306,16 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         notification_user_ids = NotificationSetting.get_user_notification(
             category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
         )
+        # Send mobile notification
+        self.send_mobile_notification(
+            notification_user_ids=notification_user_ids, event=FCM_TYPE_EMERGENCY_REJECT_REQUEST,
+            data={
+                "id": emergency_access.id,
+                "type": emergency_access.type,
+                "grantor_name": request.data.get("grantor_fullname"),
+                "is_grantee": True,
+            }
+        )
 
         return Response(status=200, data={
             "grantee_user_id": grantee_user_id,
@@ -290,6 +338,16 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         )
         notification_user_ids = NotificationSetting.get_user_notification(
             category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
+        )
+        # Send mobile notification
+        self.send_mobile_notification(
+            notification_user_ids=notification_user_ids, event=FCM_TYPE_EMERGENCY_APPROVE_REQUEST,
+            data={
+                "id": emergency_access.id,
+                "type": emergency_access.type,
+                "grantor_name": request.data.get("grantor_fullname"),
+                "is_grantee": True,
+            }
         )
         return Response(status=200, data={
             "grantee_user_id": grantee_user_id,
