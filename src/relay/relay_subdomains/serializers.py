@@ -24,3 +24,6 @@ class UpdateSubdomainSerializer(serializers.Serializer):
 
         return data
 
+
+class UseRelaySubdomainSerializer(serializers.Serializer):
+    use_relay_subdomain = serializers.BooleanField()

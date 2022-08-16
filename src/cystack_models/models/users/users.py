@@ -32,6 +32,7 @@ class User(models.Model):
     timeout = models.IntegerField(default=15)
     timeout_action = models.CharField(default="lock", max_length=16)
     is_leaked = models.BooleanField(default=False)
+    use_relay_subdomain = models.BooleanField(default=False)
 
     # Login policy
     last_request_login = models.FloatField(null=True, default=None)

@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
@@ -5,7 +6,7 @@ from cystack_models.models.relay.relay_addresses import RelayAddress
 from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from relay.apps import RelayViewSet
 from relay.relay_addresses.serializers import RelayAddressSerializer, UpdateRelayAddressSerializer
-from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN
+from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN, DEFAULT_RELAY_DOMAIN
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
 from shared.utils.app import now
@@ -42,6 +43,17 @@ class RelayAddressViewSet(RelayViewSet):
         except RelayAddress.DoesNotExist:
             raise NotFound
 
+    def get_subdomain(self):
+        user = self.request.user
+        subdomain = user.relay_subdomains.filter(is_deleted=False, domain_id=DEFAULT_RELAY_DOMAIN).first()
+        return subdomain
+
+    def allow_relay_premium(self) -> bool:
+        user = self.request.user
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        return plan_obj.allow_relay_premium()
+
     def list(self, request, *args, **kwargs):
         paging_param = self.request.query_params.get("paging", "1")
         if paging_param == "0":
@@ -56,6 +68,10 @@ class RelayAddressViewSet(RelayViewSet):
         # Check the limit of addresses
         if user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
             raise ValidationError({"non_field_errors": [gen_error("8000")]})
+        # Check the user uses subdomain or not
+        if user.use_relay_subdomain is True and self.allow_relay_premium() is True:
+            subdomain = self.get_subdomain()
+            validated_data.update({"subdomain": subdomain})
         new_relay_address = RelayAddress.create(user=user, **validated_data)
         return Response(status=201, data=self.get_serializer(new_relay_address).data)
 

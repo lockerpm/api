@@ -37,10 +37,17 @@ class RelayAddress(models.Model):
             return f"{self.address}@{self.subdomain.subdomain}.{self.domain_id}"
         return f"{self.address}@{self.domain_id}"
 
+    @property
+    def subdomain_string(self):
+        if self.subdomain:
+            return self.subdomain.subdomain
+        return None
+
     @classmethod
     def create(cls, user: User, **data):
         domain_id = data.get("domain_id") or DEFAULT_RELAY_DOMAIN
         description = data.get("description", "")
+        subdomain_obj = data.get("subdomain")
         while True:
             address = random_n_digit(n=6)
             if cls.objects.filter(address=address).exists() is True:
@@ -49,7 +56,7 @@ class RelayAddress(models.Model):
                 continue
             break
         new_relay_address = cls(
-            user=user, address=address, domain_id=domain_id,
+            user=user, address=address, domain_id=domain_id, subdomain=subdomain_obj,
             created_time=now(), description=description,
         )
         new_relay_address.save()
