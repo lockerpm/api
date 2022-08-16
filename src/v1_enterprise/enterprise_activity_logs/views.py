@@ -83,6 +83,8 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
                 events = events.filter(type__in=[EVENT_E_MEMBER_UPDATED_ROLE])
             elif action_param == "policy_violations":
                 events = events.filter(type__in=[EVENT_USER_BLOCK_LOGIN])
+            elif action_param == "user_login":
+                events = events.filter(type__in=[EVENT_USER_LOGIN, EVENT_USER_LOGIN_FAILED])
         return events
 
     def list(self, request, *args, **kwargs):
