@@ -51,7 +51,7 @@ class RelayHookViewSet(RelayViewSet):
             )
         else:
             subdomain = full_domain.split(".")[0]
-            domain_id = full_domain.replace(subdomain, "")
+            domain_id = full_domain.replace(f"{subdomain}.", "")
             relay_address = RelayAddress.objects.get(
                 address=address, domain_id=domain_id, subdomain__subdomain=subdomain, subdomain__is_deleted=False
             )
