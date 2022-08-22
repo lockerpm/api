@@ -27,6 +27,18 @@ class DetailMemberSerializer(serializers.ModelSerializer):
         return data
 
 
+class ShortDetailMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnterpriseMember
+        fields = ('id', 'user_id', 'email', 'status')
+        read_only_fields = ('id', 'user_id', 'email', 'status')
+
+    def to_representation(self, instance):
+        data = super(ShortDetailMemberSerializer, self).to_representation(instance)
+        data["role"] = instance.role.name
+        return data
+
+
 class UpdateMemberSerializer(serializers.Serializer):
     role = serializers.ChoiceField(
         choices=[E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_MEMBER], default=E_MEMBER_ROLE_MEMBER, required=False

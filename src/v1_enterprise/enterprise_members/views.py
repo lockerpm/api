@@ -14,7 +14,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer, \
-    EnabledMemberSerializer
+    EnabledMemberSerializer, ShortDetailMemberSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -24,7 +24,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
     def get_serializer_class(self):
         if self.action == "list":
-            self.serializer_class = DetailMemberSerializer
+            shortly_param = self.request.query_params.get("shortly", "0")
+            if shortly_param == "1":
+                self.serializer_class = ShortDetailMemberSerializer
+            else:
+                self.serializer_class = DetailMemberSerializer
         elif self.action == "update":
             self.serializer_class = UpdateMemberSerializer
         elif self.action == "user_invitations":
@@ -115,6 +119,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 ).order_by("order_field")
         else:
             members_qs = members_qs.order_by('-access_time')
+        members_qs = members_qs.select_related('user').select_related('role')
         return members_qs
 
     def list(self, request, *args, **kwargs):
