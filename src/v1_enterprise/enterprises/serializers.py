@@ -21,11 +21,18 @@ class ListEnterpriseSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super(ListEnterpriseSerializer, self).to_representation(instance)
+        view_action = self.context["view"].action
         role_notify = self.get_role_notify(instance=instance)
         data["locked"] = instance.locked
         data["organization_id"] = instance.id
         data["is_default"] = role_notify.get("is_default")
         data["role"] = role_notify.get("role")
+
+        if view_action == "retrieve":
+            data["enterprise_name"] = instance.enterprise_name
+            data["enterprise_address"] = instance.enterprise_address
+            data["enterprise_phone"] = instance.enterprise_phone
+            data["primary_admin"] = instance.enterprise_members.get(is_primary=True).user_id
         return data
 
 
