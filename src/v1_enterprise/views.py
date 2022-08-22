@@ -4,4 +4,4 @@ from v1_enterprise.enterprise_members.views import MemberPwdViewSet
 from v1_enterprise.enterprise_policy.views import PolicyPwdViewSet
 from v1_enterprise.enterprise_groups.views import GroupPwdViewSet
 from v1_enterprise.enterprise_activity_logs.views import ActivityLogPwdViewSet
-
+from v1_enterprise.enterprise_payments.views import PaymentPwdViewSet

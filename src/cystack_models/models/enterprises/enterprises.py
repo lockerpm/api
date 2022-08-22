@@ -13,10 +13,7 @@ class Enterprise(models.Model):
     enterprise_name = models.CharField(max_length=128, blank=True, default="")
     enterprise_address = models.CharField(max_length=128, blank=True, default="")
     enterprise_phone = models.CharField(max_length=128, blank=True, default="")
-    # key = models.CharField(max_length=512, null=True)
-    # default_collection_name = models.CharField(max_length=512, null=True)
-    # public_key = models.TextField(null=True)
-    # private_key = models.TextField(null=True)
+    # is_trial_applied = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'e_enterprises'

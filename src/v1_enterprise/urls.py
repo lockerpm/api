@@ -62,3 +62,9 @@ urlpatterns += [
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/activity$', views.ActivityLogPwdViewSet.as_view({'get': 'list'})),
 ]
+
+
+# ----------------------------------- Payments ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/plan$', views.PaymentPwdViewSet.as_view({'get': 'current_plan'})),
+]

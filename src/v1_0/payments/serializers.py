@@ -43,7 +43,7 @@ class FamilyMemberSerializer(serializers.Serializer):
 
 
 class UpgradePlanSerializer(serializers.Serializer):
-    plan_alias = serializers.CharField()
+    plan_alias = serializers.ChoiceField(choices=[PLAN_TYPE_PM_FREE, PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FAMILY])
     promo_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     duration = serializers.ChoiceField(choices=LIST_DURATION, default=DURATION_MONTHLY, required=False)
     number_members = serializers.IntegerField(min_value=1, default=1)
@@ -52,8 +52,8 @@ class UpgradePlanSerializer(serializers.Serializer):
     # Metadata for family plan
     family_members = FamilyMemberSerializer(many=True, required=False)
     # Metadata for team plans
-    key = serializers.CharField(required=False, allow_null=True)
-    collection_name = serializers.CharField(required=False, allow_null=True)
+    # key = serializers.CharField(required=False, allow_null=True)
+    # collection_name = serializers.CharField(required=False, allow_null=True)
 
     def validate(self, data):
         current_user = self.context["request"].user
@@ -67,28 +67,29 @@ class UpgradePlanSerializer(serializers.Serializer):
             data["plan"] = plan
         except PMPlan.DoesNotExist:
             raise serializers.ValidationError(detail={'plan_alias': ["This plan does not exist"]})
+        data["number_members"] = 1
 
-        # Check number members of the plan
-        if plan.is_team_plan:
-            number_members = data.get("number_members")
-            if not number_members:
-                raise serializers.ValidationError(detail={"number_members": ["This field is required"]})
-            max_allow_member = current_plan.get_max_allow_members()
-            if max_allow_member and number_members < max_allow_member:
-                raise serializers.ValidationError(detail={
-                    "number_members": ["The minimum number of members is {}".format(max_allow_member)]
-                })
-        else:
-            data["number_members"] = 1
-
-        # Validate key and collection name of the team plan
-        key = data.get("key")
-        collection_name = data.get("collection_name")
-        if plan.is_team_plan:
-            if not key:
-                raise serializers.ValidationError(detail={"key": ["This field is required"]})
-            if not collection_name:
-                raise serializers.ValidationError(detail={"collection_name": ["This field is required"]})
+        # # Check number members of the plan
+        # if plan.is_team_plan:
+        #     number_members = data.get("number_members")
+        #     if not number_members:
+        #         raise serializers.ValidationError(detail={"number_members": ["This field is required"]})
+        #     max_allow_member = current_plan.get_max_allow_members()
+        #     if max_allow_member and number_members < max_allow_member:
+        #         raise serializers.ValidationError(detail={
+        #             "number_members": ["The minimum number of members is {}".format(max_allow_member)]
+        #         })
+        # else:
+        #     data["number_members"] = 1
+        #
+        # # Validate key and collection name of the team plan
+        # key = data.get("key")
+        # collection_name = data.get("collection_name")
+        # if plan.is_team_plan:
+        #     if not key:
+        #         raise serializers.ValidationError(detail={"key": ["This field is required"]})
+        #     if not collection_name:
+        #         raise serializers.ValidationError(detail={"collection_name": ["This field is required"]})
 
         # Check promo code
         promo_code = data.get("promo_code")

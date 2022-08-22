@@ -191,6 +191,8 @@ urlpatterns += [
     url(r'^payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'invoices'})),
     url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)$',
         views.PaymentPwdViewSet.as_view({'get': 'retrieve_invoice', 'post': 'retry_invoice'})),
+
+    # -------------- [DEPRECATED] --------------------- #
     url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/processing$',
         views.PaymentPwdViewSet.as_view({'post': 'invoice_processing'})),
     url(r'^payments/invoices/(?P<pk>[A-Z0-9]+)/cancel$',

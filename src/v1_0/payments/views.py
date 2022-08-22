@@ -279,8 +279,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "card": card,
             "number_members": number_members,
             "family_members": list(family_members),
-            "key": validated_data.get("key"),
-            "collection_name": validated_data.get("collection_name"),
+            # "key": validated_data.get("key"),
+            # "collection_name": validated_data.get("collection_name"),
         }
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         if current_plan.is_personal_trial_applied() is False:
@@ -423,20 +423,24 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def invoice_processing(self, request, *args, **kwargs):
-        invoice = self.get_invoice()
-        if invoice.status != PAYMENT_STATUS_PENDING or invoice.payment_method != PAYMENT_METHOD_BANKING:
-            raise NotFound
-        self.payment_repository.set_processing(payment=invoice)
-        return Response(status=200, data={"success": True})
+        # ==== (DEPRECATED) ---- #
+        raise NotFound
+        # invoice = self.get_invoice()
+        # if invoice.status != PAYMENT_STATUS_PENDING or invoice.payment_method != PAYMENT_METHOD_BANKING:
+        #     raise NotFound
+        # self.payment_repository.set_processing(payment=invoice)
+        # return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def invoice_cancel(self, request, *args, **kwargs):
-        invoice = self.get_invoice()
-        if invoice.status != PAYMENT_STATUS_PENDING:
-            raise NotFound
-        # Delete this invoice
-        self.payment_repository.pending_cancel(payment=invoice)
-        return Response(status=200, data={"success": True})
+        # ==== (DEPRECATED) ---- #
+        raise NotFound
+        # invoice = self.get_invoice()
+        # if invoice.status != PAYMENT_STATUS_PENDING:
+        #     raise NotFound
+        # # Delete this invoice
+        # self.payment_repository.pending_cancel(payment=invoice)
+        # return Response(status=200, data={"success": True})
 
     def _calc_payment(self, plan, duration=DURATION_MONTHLY, currency=CURRENCY_USD, number_members=1, promo_code=None):
         """
