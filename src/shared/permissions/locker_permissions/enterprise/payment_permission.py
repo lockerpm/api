@@ -12,4 +12,7 @@ class PaymentPwdPermission(EnterprisePwdPermission):
         member = self.get_team_member(user=request.user, obj=obj)
         role = member.role
         role_name = role.name
+        if view.action in ["cards"]:
+            if request.method == "POST":
+                return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN]
         return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_ROLE_ADMIN]

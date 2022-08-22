@@ -66,7 +66,6 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             "is_trailing": current_plan.is_trailing(),
             "cancel_at_period_end": current_plan.is_cancel_at_period_end(),
             "payment_method": current_plan.get_default_payment_method(),
-            # "number_members": current_plan.get_current_number_members(),
             "enterprise": {
                 "current_members": enterprise.enterprise_members.filter(
                     status=E_MEMBER_STATUS_CONFIRMED, is_activated=True
@@ -75,8 +74,9 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         })
         return Response(status=200, data=result)
 
-    @action(methods=["get"], detail=False)
+    @action(methods=["get", "post"], detail=False)
     def cards(self, request, *args, **kwargs):
-        pass
-
+        enterprise = self.get_enterprise()
+        primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        return Response(status=200, data={"primary_admin": primary_admin.user_id})
 
