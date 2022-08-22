@@ -2,18 +2,19 @@ from django.conf import settings
 from django.db.models import Value, When, Q, Case, IntegerField
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
-
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.enterprise_members import *
-from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDATED_ROLE, EVENT_E_MEMBER_REMOVED
+from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDATED_ROLE, EVENT_E_MEMBER_REMOVED, \
+    EVENT_E_MEMBER_DISABLED, EVENT_E_MEMBER_ENABLED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer
+from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer, \
+    EnabledMemberSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -28,6 +29,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
             self.serializer_class = UpdateMemberSerializer
         elif self.action == "user_invitations":
             self.serializer_class = UserInvitationSerializer
+        elif self.action == "activated":
+            self.serializer_class = EnabledMemberSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -303,6 +306,34 @@ class MemberPwdViewSet(EnterpriseViewSet):
             "enterprise_id": enterprise.id,
             "enterprise_name": enterprise.name
         })
+
+    @action(methods=["put"], detail=False)
+    def activated(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
+        enterprise = self.get_object()
+        enterprise_member = self.get_enterprise_member(enterprise=enterprise, member_id=kwargs.get("member_id"))
+        if enterprise_member.status != E_MEMBER_STATUS_CONFIRMED:
+            raise NotFound
+        if enterprise_member.user_id == user.user_id:
+            raise PermissionDenied
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        activated = validated_data.get("activated")
+        if enterprise_member.is_activated != activated:
+            enterprise_member.is_activated = activated
+            enterprise_member.save()
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
+                "user_id": enterprise_member.user_id, "team_member_id": enterprise_member.id,
+                "type": EVENT_E_MEMBER_ENABLED if activated is True else EVENT_E_MEMBER_DISABLED, "ip_address": ip
+            })
+            if activated is True:
+                # TODO: Update billing here - Check the user is a new activated user in billing period
+                pass
+
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def user_invitations(self, request, *args, **kwargs):

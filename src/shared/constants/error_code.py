@@ -72,6 +72,11 @@ APP_CODE += [
         "code": "1008",
         "message": "Login locked due to the team's policy",
         "description": "Bạn đéo thể đăng nhập vì đăng nhập quá số lần quy định của team policy"
+    },
+    {
+        "code": "1009",
+        "message": "The account is locked by the enterprise. Please contact your enterprise admin to unblock account",
+        "description": "Tài khoản đã bị khóa bởi doanh nghiệp. Vui lòng liên hệ quản trị viên của bạn để mở khóa tài khoản"
     }
 ]
 

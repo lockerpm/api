@@ -41,6 +41,10 @@ class UpdateMemberSerializer(serializers.Serializer):
         return data
 
 
+class EnabledMemberSerializer(serializers.Serializer):
+    activated = serializers.BooleanField()
+
+
 class UserInvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnterpriseMember
