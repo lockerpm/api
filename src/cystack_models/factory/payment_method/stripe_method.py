@@ -212,6 +212,23 @@ class StripePaymentMethod(IPaymentMethod):
         :return:
         """
 
+    def update_quantity_subscription(self, new_quantity: int):
+        current_plan = self.get_current_plan()
+        stripe_subscription = current_plan.get_stripe_subscription()
+        if not stripe_subscription:
+            return
+        plans = self.__reformatting_stripe_plans(
+            plan_type=current_plan.get_plan_obj().get_alias(), duration=current_plan.duration,
+            **{"number_members": new_quantity}
+        )
+        try:
+            stripe.Subscription.modify(stripe_subscription.id, items=plans, proration_behavior='none')
+        except stripe.error.StripeError:
+            tb = traceback.format_exc()
+            CyLog.error(**{"message": "[update_quantity_subscription] Stripe error: {} {}\n{}".format(
+                current_plan, new_quantity, tb
+            )})
+
     def calc_update_total_amount(self, new_plan, new_duration, new_quantity, **kwargs):
         """
         Calc total amount when user update plan (via upgrade current plan or ...)
