@@ -39,6 +39,7 @@ class Payment(models.Model):
     promo_code = models.ForeignKey(
         PromoCode, on_delete=models.SET_NULL, related_name="payments", null=True, default=None
     )
+    enterprise_id = models.CharField(max_length=128, null=True, default=None)
 
     class Meta:
         db_table = 'cs_payments'
@@ -57,14 +58,16 @@ class Payment(models.Model):
         currency = data.get('currency')
         total_price = data.get("total_price")
         metadata = data.get("metadata", "")
+        enterprise_id = data.get("enterprise_id")
         if metadata and isinstance(metadata, dict):
+            enterprise_id = metadata.get("enterprise_id") or enterprise_id
             metadata.pop("promo_code", None)
             metadata = str(metadata)
         new_payment = cls(
             user=user, scope=scope, description=description, duration=duration, created_time=now(), plan=plan,
             payment_method=payment_method, stripe_invoice_id=stripe_invoice_id, mobile_invoice_id=mobile_invoice_id,
             status=status,
-            currency=currency, metadata=metadata
+            currency=currency, metadata=metadata, enterprise_id=enterprise_id
         )
         new_payment.save()
         new_payment.payment_id = "{}{}".format(BANKING_ID_PWD_MANAGER, 10000 + new_payment.id)

@@ -283,6 +283,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             # "collection_name": validated_data.get("collection_name"),
         }
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # Not allow upgrade the personal plan if the user is in Enterprise plan
+        if user.enterprise_members.exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
         if current_plan.is_personal_trial_applied() is False:
             metadata.update({
                 "trial_end": now() + TRIAL_PERSONAL_PLAN

@@ -15,4 +15,6 @@ class PaymentPwdPermission(EnterprisePwdPermission):
         if view.action in ["cards"]:
             if request.method == "POST":
                 return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN]
+        elif view.action in ["upgrade_plan", "calc"]:
+            return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN]
         return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_ROLE_ADMIN]

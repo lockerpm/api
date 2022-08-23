@@ -58,8 +58,7 @@ class StripePaymentMethod(IPaymentMethod):
                     "user_id": self.user.user_id,
                     "scope": self.scope,
                     "family_members": str(kwargs.get("family_members", [])),
-                    # "key": kwargs.get("key"),
-                    # "collection_name": kwargs.get("collection_name")
+                    "enterprise_id": kwargs.get("enterprise_id")
                 },
                 coupon=coupon,
                 trial_end=kwargs.get("trial_end")

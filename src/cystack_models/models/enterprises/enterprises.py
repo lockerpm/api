@@ -1,5 +1,6 @@
 from django.db import models
 
+from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.utils.app import now, random_n_digit
 
 
@@ -44,3 +45,8 @@ class Enterprise(models.Model):
     def lock_enterprise(self, lock: bool):
         self.locked = lock
         self.save()
+
+    def get_activated_members_count(self):
+        return self.enterprise_members.filter(
+            status=E_MEMBER_STATUS_CONFIRMED, is_activated=True
+        ).count()

@@ -51,9 +51,6 @@ class UpgradePlanSerializer(serializers.Serializer):
     bank_id = serializers.IntegerField(required=False)
     # Metadata for family plan
     family_members = FamilyMemberSerializer(many=True, required=False)
-    # Metadata for team plans
-    # key = serializers.CharField(required=False, allow_null=True)
-    # collection_name = serializers.CharField(required=False, allow_null=True)
 
     def validate(self, data):
         current_user = self.context["request"].user

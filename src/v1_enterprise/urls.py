@@ -66,6 +66,8 @@ urlpatterns += [
 
 # ----------------------------------- Payments ------------------------- #
 urlpatterns += [
-    url(r'^(?P<pk>[0-9a-z]+)/payments/plan$', views.PaymentPwdViewSet.as_view({'get': 'current_plan'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/plan$',
+        views.PaymentPwdViewSet.as_view({'get': 'current_plan', 'post': 'upgrade_plan'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
     url(r'^(?P<pk>[0-9a-z]+)/payments/cards$', views.PaymentPwdViewSet.as_view({'get': 'cards', 'post': 'cards'})),
 ]
