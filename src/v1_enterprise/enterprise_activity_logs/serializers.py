@@ -29,6 +29,8 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             "enterprise_id": instance.team_id,
             "enterprise_member_id": instance.team_member_id,
             "description": self.__get_description(instance),
+            "normalizer_metadata": instance.get_normalizer_metadata(),
+            "metadata": instance.get_metadata()
         }
         return data
 
