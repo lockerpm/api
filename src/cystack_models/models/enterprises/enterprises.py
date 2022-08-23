@@ -12,8 +12,11 @@ class Enterprise(models.Model):
     revision_date = models.FloatField(null=True)
     locked = models.BooleanField(default=False)
     enterprise_name = models.CharField(max_length=128, blank=True, default="")
-    enterprise_address = models.CharField(max_length=128, blank=True, default="")
+    enterprise_address1 = models.CharField(max_length=255, blank=True, default="")
+    enterprise_address2 = models.CharField(max_length=255, blank=True, default="")
     enterprise_phone = models.CharField(max_length=128, blank=True, default="")
+    enterprise_country = models.CharField(max_length=128, blank=True, default="")
+    enterprise_postal_code = models.CharField(max_length=16, blank=True, default="")
     # is_trial_applied = models.BooleanField(default=False)
 
     class Meta:
