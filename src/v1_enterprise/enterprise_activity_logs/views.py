@@ -85,6 +85,10 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
                 events = events.filter(type__in=[EVENT_USER_BLOCK_LOGIN])
             elif action_param == "user_login":
                 events = events.filter(type__in=[EVENT_USER_LOGIN, EVENT_USER_LOGIN_FAILED])
+            elif action_param == "member_billing_changes":
+                events = events.filter(type__in=[
+                    EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_REMOVED, EVENT_E_MEMBER_ENABLED, EVENT_E_MEMBER_DISABLED
+                ])
         return events
 
     def list(self, request, *args, **kwargs):
