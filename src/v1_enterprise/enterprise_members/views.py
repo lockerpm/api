@@ -102,7 +102,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
             members_qs = members_qs.filter(status=status_param)
 
         # Filter by multiple statuses
-        statuses_param = self.request.query_param.get("statuses")
+        statuses_param = self.request.query_params.get("statuses")
         if statuses_param:
             members_qs = members_qs.filter(status__in=statuses_param.split(","))
 
