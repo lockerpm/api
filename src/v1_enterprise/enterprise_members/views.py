@@ -101,6 +101,14 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if status_param:
             members_qs = members_qs.filter(status=status_param)
 
+        # Filter by activated or not
+        is_activated_param = self.request.query_params.get("is_activated")
+        if is_activated_param:
+            if is_activated_param == "0":
+                members_qs = members_qs.filter(is_activated=False)
+            elif is_activated_param == "1":
+                members_qs = members_qs.filter(is_activated=True)
+
         # Sorting the results
         sort_param = self.request.query_params.get("sort", None)
         order_whens = [
