@@ -74,7 +74,7 @@ class BillingAddressSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         enterprise_country = data.get("enterprise_country")
-        if enterprise_country and Country.objects.filter(country_name=enterprise_country).exists() is False:
+        if enterprise_country and Country.objects.filter(country_code=enterprise_country).exists() is False:
             raise serializers.ValidationError(detail={"enterprise_country": ["The country does not exist"]})
 
         return data
