@@ -101,6 +101,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if status_param:
             members_qs = members_qs.filter(status=status_param)
 
+        # Filter by multiple statuses
+        statuses_param = self.request.query_param.get("statuses")
+        if statuses_param:
+            members_qs = members_qs.filter(status__in=statuses_param.split(","))
+
         # Filter by activated or not
         is_activated_param = self.request.query_params.get("is_activated")
         if is_activated_param:
