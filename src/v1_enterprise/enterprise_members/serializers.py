@@ -7,8 +7,8 @@ from cystack_models.models.enterprises.members.enterprise_members import Enterpr
 class DetailMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnterpriseMember
-        fields = ('id', 'access_time', 'is_default', 'is_primary', 'user_id', 'role', 'email', 'status')
-        read_only_fields = ('id', 'access_time', 'is_primary', 'status')
+        fields = ('id', 'access_time', 'is_default', 'is_primary', 'user_id', 'role', 'email', 'status', 'is_activated')
+        read_only_fields = ('id', 'access_time', 'is_primary', 'status', 'is_activated')
 
     def validate(self, data):
         role = data.get("role")

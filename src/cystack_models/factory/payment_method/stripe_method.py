@@ -212,15 +212,31 @@ class StripePaymentMethod(IPaymentMethod):
         :return:
         """
 
-    def update_quantity_subscription(self, new_quantity: int):
+    def update_quantity_subscription(self, new_quantity: int = None, amount: int = None):
         current_plan = self.get_current_plan()
         stripe_subscription = current_plan.get_stripe_subscription()
-        if not stripe_subscription:
+        if not stripe_subscription or (new_quantity is None and amount is None):
             return
-        plans = self.__reformatting_stripe_plans(
-            plan_type=current_plan.get_plan_obj().get_alias(), duration=current_plan.duration,
-            **{"number_members": new_quantity}
-        )
+        plan_alias = current_plan.get_plan_obj().get_alias()
+        duration = current_plan.duration
+        if new_quantity:
+            plans = self.__reformatting_stripe_plans(
+                plan_type=plan_alias, duration=duration,**{"number_members": new_quantity}
+            )
+        else:
+            old_quantity = stripe_subscription.get("quantity")
+            if not old_quantity:
+                items = stripe_subscription.items.data
+                stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type=plan_alias, duration=duration)
+                for item in items:
+                    if item.get("plan").get("id") == stripe_plan_id:
+                        old_quantity = item.get("quantity")
+                        break
+            if not old_quantity:
+                return
+            plans = self.__reformatting_stripe_plans(
+                plan_type=plan_alias, duration=duration, **{"number_members": old_quantity + amount}
+            )
         try:
             stripe.Subscription.modify(stripe_subscription.id, items=plans, proration_behavior='none')
         except stripe.error.StripeError:

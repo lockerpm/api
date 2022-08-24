@@ -45,10 +45,10 @@ class UpgradePlanSerializer(serializers.Serializer):
             data["promo_code_obj"] = promo_code_obj
 
         # Check plan duration
-        duration = data.get("duration")
-        current_plan_alias = current_plan.get_plan_type_alias()
-        if current_plan_alias == plan.get_alias() and current_plan.duration == duration:
-            raise serializers.ValidationError(detail={"plan": ["Plan is not changed"]})
+        # duration = data.get("duration")
+        # current_plan_alias = current_plan.get_plan_type_alias()
+        # if current_plan_alias == plan.get_alias() and current_plan.duration == duration:
+        #     raise serializers.ValidationError(detail={"plan": ["Plan is not changed"]})
 
         data["currency"] = CURRENCY_USD
 

@@ -77,7 +77,7 @@ class IPaymentMethod:
         :return:
         """
 
-    def update_quantity_subscription(self, new_quantity: int):
+    def update_quantity_subscription(self, new_quantity: int = None, amount: int = None):
         """
         Update the quantity of the subscribed plan
         :param new_quantity:

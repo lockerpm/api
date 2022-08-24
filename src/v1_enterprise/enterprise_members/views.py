@@ -1,15 +1,19 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Value, When, Q, Case, IntegerField
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
+from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory, \
+    PaymentMethodNotSupportException
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.enterprise_members import *
 from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDATED_ROLE, EVENT_E_MEMBER_REMOVED, \
     EVENT_E_MEMBER_DISABLED, EVENT_E_MEMBER_ENABLED
+from shared.constants.transactions import PAYMENT_METHOD_CARD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
@@ -256,6 +260,16 @@ class MemberPwdViewSet(EnterpriseViewSet):
             member_obj.status = status
             member_obj.save()
             change_status = True
+            # Update subscription quantity here
+            if enterprise.is_billing_members_added(member_user_id=member_obj.user_id) is True:
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=1)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
+
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
                 "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
                 "user_id": member_obj.user_id, "team_member_id": member_obj.id,
@@ -329,14 +343,20 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if enterprise_member.is_activated != activated:
             enterprise_member.is_activated = activated
             enterprise_member.save()
+            #  Update billing here - Check the user is a new activated user in billing period
+            if activated is True and enterprise.is_billing_members_added(member_user_id=enterprise_member.user_id):
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=1)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
                 "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
                 "user_id": enterprise_member.user_id, "team_member_id": enterprise_member.id,
                 "type": EVENT_E_MEMBER_ENABLED if activated is True else EVENT_E_MEMBER_DISABLED, "ip_address": ip
             })
-            if activated is True:
-                # TODO: Update billing here - Check the user is a new activated user in billing period
-                pass
 
         return Response(status=200, data={"success": True})
 
@@ -379,9 +399,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
             else:
                 member_invitation.delete()
         try:
-            primary_owner = enterprise.enterprise_members.get(is_primary=True).user_id
+            primary_admin_user = enterprise.get_primary_admin_user()
+            primary_admin_user_id = primary_admin_user.user_id
         except EnterpriseMember.DoesNotExist:
-            primary_owner = None
+            primary_admin_user = None
+            primary_admin_user_id = None
 
         admin_user_ids = list(enterprise.enterprise_members.filter(
             role_id=E_MEMBER_ROLE_ADMIN, status=E_MEMBER_STATUS_CONFIRMED
@@ -395,11 +417,19 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 "user_id": user.user_id, "team_member_id": member_invitation.id,
                 "type": EVENT_E_MEMBER_CONFIRMED, "ip_address": ip
             })
+            # Update subscription quantity here
+            if enterprise.is_billing_members_added(member_user_id=user.user_id) is True and primary_admin_user:
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=primary_admin_user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=1)
+                except PaymentMethodNotSupportException:
+                    pass
 
         return Response(status=200, data={
             "success": True,
             "member_status": member_status,
-            "primary_owner": primary_owner,
+            "primary_owner": primary_admin_user_id,
             "admin": admin_user_ids,
             "enterprise_name": enterprise.name,
         })
