@@ -124,10 +124,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                     collections=member_collections
                 )
                 PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=[member_obj.user_id]).send()
-                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-                    "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-                    "type": EVENT_MEMBER_INVITED, "team_member_id": member_obj.id, "ip_address": ip
-                })
+                # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+                #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+                #     "type": EVENT_MEMBER_INVITED, "team_member_id": member_obj.id, "ip_address": ip
+                # })
                 added_members.append(member_obj.user_id)
 
         result = {
@@ -165,10 +165,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         self.team_member_repository.update_member(member=member_obj, role_id=role, collections=member_collections)
         # Sync data for updated member
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[member_obj.user_id]).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_MEMBER_UPDATED, "team_member_id": member_obj.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_MEMBER_UPDATED, "team_member_id": member_obj.id, "ip_address": ip
+        # })
         return Response(status=200, data={"success": True})
 
     def destroy(self, request, *args, **kwargs):
@@ -191,10 +191,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         # Sync data of member
         bump_account_revision_date(user=member_user)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member_user_id]).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_MEMBER_REMOVED, "team_member_id": member_id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_MEMBER_REMOVED, "team_member_id": member_id, "ip_address": ip
+        # })
         # Return response data to API Gateway to send mail
         return Response(status=200, data={
             "team_id": team.id,
@@ -246,10 +246,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
                     "token": token,
                     "email": member_obj.email
                 })
-                LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-                    "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-                    "type": EVENT_MEMBER_INVITED, "team_member_id": member_obj.id, "ip_address": ip
-                })
+                # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+                #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+                #     "type": EVENT_MEMBER_INVITED, "team_member_id": member_obj.id, "ip_address": ip
+                # })
         return Response(status=200, data=added_members)
 
     @action(methods=["post"], detail=False)
@@ -296,10 +296,10 @@ class MemberPwdViewSet(PasswordManagerViewSet):
         member.save()
         bump_account_revision_date(user=member.user)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
+        # })
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
@@ -356,8 +356,8 @@ class MemberPwdViewSet(PasswordManagerViewSet):
             self.team_member_repository.update_list_groups(member, valid_group_ids)
             # Sync data for this user
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
-            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-                "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-                "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
-            })
+            # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+            #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+            #     "type": EVENT_MEMBER_CONFIRMED, "team_member_id": member.id, "ip_address": ip
+            # })
             return Response(status=200, data={"success": True})
