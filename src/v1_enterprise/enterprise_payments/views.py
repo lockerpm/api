@@ -15,12 +15,12 @@ from shared.permissions.locker_permissions.enterprise.payment_permission import 
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import InvoiceSerializer, CalcSerializer, UpgradePlanSerializer
+from .serializers import InvoiceSerializer, CalcSerializer, UpgradePlanSerializer, BillingAddressSerializer
 
 
 class PaymentPwdViewSet(EnterpriseViewSet):
     permission_classes = (PaymentPwdPermission, )
-    http_method_names = ["head", "options", "get", "post"]
+    http_method_names = ["head", "options", "get", "post", "put"]
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -29,6 +29,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             self.serializer_class = CalcSerializer
         elif self.action == "upgrade_plan":
             self.serializer_class = UpgradePlanSerializer
+        elif self.action == "billing_address":
+            self.serializer_class = BillingAddressSerializer
         return super(PaymentPwdViewSet, self).get_serializer_class()
 
     def get_enterprise(self):
@@ -166,6 +168,23 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         except ObjectDoesNotExist:
             pass
         return Response(status=200, data={"success": True})
+
+    @action(methods=["get", "put"], detail=False)
+    def billing_address(self, request, *args, **kwargs):
+        enterprise = self.get_enterprise()
+        if request.method == "GET":
+            return Response(status=200, data=self.get_serializer(enterprise).data)
+
+        elif request.method == "PUT":
+            partial = kwargs.pop('partial', False)
+            serializer = self.get_serializer(enterprise, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            if getattr(enterprise, '_prefetched_objects_cache', None):
+                # If 'prefetch_related' has been applied to a queryset, we need to
+                # forcibly invalidate the prefetch cache on the instance.
+                enterprise._prefetched_objects_cache = {}
+            return Response(status=200, data=serializer.data)
 
     def _calc_payment(self, enterprise: Enterprise, duration=DURATION_MONTHLY, currency=CURRENCY_USD, promo_code=None):
         current_plan = self.user_repository.get_current_plan(user=self.request.user, scope=settings.SCOPE_PWD_MANAGER)

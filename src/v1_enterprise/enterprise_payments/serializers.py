@@ -4,7 +4,10 @@ from core.settings import CORE_CONFIG
 from cystack_models.models.payments.promo_codes import PromoCode
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from cystack_models.models.payments.country import Country
+from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.constants.transactions import *
+from shared.utils.app import now
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
@@ -53,3 +56,37 @@ class UpgradePlanSerializer(serializers.Serializer):
         data["currency"] = CURRENCY_USD
 
         return data
+
+
+class BillingAddressSerializer(serializers.ModelSerializer):
+    enterprise_name = serializers.CharField(max_length=128, required=False, allow_blank=True)
+    enterprise_address1 = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    enterprise_address2 = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    enterprise_phone = serializers.CharField(max_length=128, required=False, allow_blank=True)
+    enterprise_country = serializers.CharField(max_length=128, required=False, allow_blank=True)
+    enterprise_postal_code = serializers.CharField(max_length=16, required=False, allow_blank=True)
+
+    class Meta:
+        model = Enterprise
+        fields = ('id', 'enterprise_name', 'enterprise_address1', 'enterprise_address2', 'enterprise_phone',
+                  'enterprise_country', 'enterprise_postal_code')
+        read_only_fields = ('id', )
+
+    def validate(self, data):
+        enterprise_country = data.get("enterprise_country")
+        if enterprise_country and Country.objects.filter(country_name=enterprise_country).exists() is False:
+            raise serializers.ValidationError(detail={"enterprise_country": ["The country does not exist"]})
+
+        return data
+
+    def update(self, instance, validated_data):
+        instance.enterprise_name = validated_data.get("enterprise_name", instance.enterprise_name)
+        instance.enterprise_address1 = validated_data.get("enterprise_address1", instance.enterprise_address1)
+        instance.enterprise_address2 = validated_data.get("enterprise_address2", instance.enterprise_address2)
+        instance.enterprise_phone = validated_data.get("enterprise_phone", instance.enterprise_phone)
+        instance.enterprise_country = validated_data.get("enterprise_country", instance.enterprise_country)
+        instance.enterprise_postal_code = validated_data.get("enterprise_postal_code", instance.enterprise_postal_code)
+        instance.revision_date = now()
+        instance.save()
+        return instance
+
