@@ -161,6 +161,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         trial_applied = pm_current_plan.is_personal_trial_applied()
         if trial_applied is True:
             raise ValidationError({"non_field_errors": [gen_error("7013")]})
+        if user.enterprise_members.filter(enterprise__locked=False).exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -284,7 +286,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         }
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         # Not allow upgrade the personal plan if the user is in Enterprise plan
-        if user.enterprise_members.exists():
+        if user.enterprise_members.filter(enterprise__locked=False).exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
         if current_plan.is_personal_trial_applied() is False:
             metadata.update({
