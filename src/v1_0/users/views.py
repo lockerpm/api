@@ -269,7 +269,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(
                             func_name="create_by_enterprise_ids", **{
                                 "enterprise_ids": user_enterprise_ids, "user_id": user.user_id,
-                                "acting_user_id": user.user_id,
                                 "type": EVENT_USER_BLOCK_LOGIN, "ip_address": ip
                             }
                         )
