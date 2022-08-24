@@ -72,4 +72,7 @@ urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/payments/cards$', views.PaymentPwdViewSet.as_view({'get': 'cards', 'post': 'cards'})),
     url(r'^(?P<pk>[0-9a-z]+)/payments/billing_address$',
         views.PaymentPwdViewSet.as_view({'get': 'billing_address', 'put': 'billing_address'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/invoices/(?P<payment_id>[0-9A-Z]+)$',
+        views.PaymentPwdViewSet.as_view({'get': 'retrieve'})),
 ]

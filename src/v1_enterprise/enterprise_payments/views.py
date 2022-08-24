@@ -43,8 +43,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
 
     def get_queryset(self):
         enterprise = self.get_enterprise()
-        payment_ids = PaymentItem.objects.filter(team_id=enterprise.id).values_list('payment_id', flat=True)
-        invoices = Payment.objects.filter(id__in=payment_ids).order_by('-created_time')
+        invoices = Payment.objects.filter(enterprise_id=enterprise.id).order_by('-created_time')
         status_param = self.request.query_params.get("status")
         payment_method_param = self.request.query_params.get("payment_method")
         from_param = self.check_int_param(self.request.query_params.get("from"))
@@ -59,12 +58,25 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             invoices = invoices.filter(payment_method=payment_method_param)
         return invoices
 
+    def get_object(self):
+        enterprise = self.get_enterprise()
+        try:
+            invoice = Payment.objects.get(enterprise_id=enterprise.id, payment_id=self.kwargs.get("payment_id"))
+            return invoice
+        except Payment.DoesNotExist:
+            raise NotFound
+
     def list(self, request, *args, **kwargs):
+        paging_param = self.request.query_params.get("paging", "1")
+        page_size_param = self.check_int_param(self.request.query_params.get("size", 10))
+        if paging_param == "0":
+            self.pagination_class = None
+        else:
+            self.pagination_class.page_size = page_size_param if page_size_param else 10
         return super(PaymentPwdViewSet, self).list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
-        # TODO: Retrieve Enterprise's payment
-        raise NotFound
+        return super(PaymentPwdViewSet, self).retrieve(request, *args, **kwargs)
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):
