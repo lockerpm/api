@@ -83,3 +83,6 @@ class IPaymentMethod:
         :param new_quantity:
         :return:
         """
+
+    def update_default_payment(self, new_source):
+        pass

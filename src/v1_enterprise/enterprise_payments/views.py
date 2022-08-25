@@ -102,7 +102,28 @@ class PaymentPwdViewSet(EnterpriseViewSet):
     def cards(self, request, *args, **kwargs):
         enterprise = self.get_enterprise()
         primary_admin = enterprise.enterprise_members.get(is_primary=True).user
-        return Response(status=200, data={"primary_admin": primary_admin.user_id})
+        primary_admin_plan = self.user_repository.get_current_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER)
+        stripe_subscription = primary_admin_plan.get_stripe_subscription()
+        stripe_default_payment_method = stripe_subscription.default_payment_method if stripe_subscription else None
+        return Response(status=200, data={
+            "primary_admin": primary_admin.user_id,
+            "stripe_default_payment_method": stripe_default_payment_method
+        })
+
+    @action(methods=["put"], detail=False)
+    def card_set_default(self, request, *args, **kwargs):
+        card_id = kwargs.get("card_id")
+        enterprise = self.get_enterprise()
+        primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        primary_admin_plan = self.user_repository.get_current_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER)
+        stripe_subscription = primary_admin_plan.get_stripe_subscription()
+        if not stripe_subscription:
+            return Response(status=200, data={"stripe_payment_method": None})
+        payment = PaymentMethodFactory.get_method(
+            user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+        )
+        new_source = payment.update_default_payment(new_source=card_id)
+        return Response(status=200, data={"stripe_payment_method": new_source})
 
     @action(methods=["post"], detail=False)
     def calc(self, request, *args, **kwargs):

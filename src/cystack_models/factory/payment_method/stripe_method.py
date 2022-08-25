@@ -246,6 +246,20 @@ class StripePaymentMethod(IPaymentMethod):
                 current_plan, new_quantity, tb
             )})
 
+    def update_default_payment(self, new_source):
+        current_plan = self.get_current_plan()
+        stripe_subscription = current_plan.get_stripe_subscription()
+        if not stripe_subscription or not new_source:
+            return
+        try:
+            stripe.Subscription.modify(stripe_subscription.id, default_payment_method=new_source)
+            return new_source
+        except stripe.error.StripeError:
+            tb = traceback.format_exc()
+            CyLog.error(**{"message": "[update_default_payment] Stripe error: {} {}\n{}".format(
+                current_plan, new_source, tb
+            )})
+
     def calc_update_total_amount(self, new_plan, new_duration, new_quantity, **kwargs):
         """
         Calc total amount when user update plan (via upgrade current plan or ...)
