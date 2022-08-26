@@ -107,7 +107,7 @@ class TeamPwdViewSet(PasswordManagerViewSet):
         collections = validated_data.get("collections", [])
         collection_relationships = validated_data.get("collectionRelationships", [])
 
-        allow_cipher_type = self.user_repository.get_max_allow_cipher_type(user=user, personal_share=False)
+        allow_cipher_type = self.user_repository.get_max_allow_cipher_type(user=user)
         self.cipher_repository.import_multiple_cipher_team(
             team, ciphers, collections, collection_relationships, allow_cipher_type=allow_cipher_type
         )
