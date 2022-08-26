@@ -47,7 +47,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
     def allow_emergency_access(self, user):
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         plan_obj = current_plan.get_plan_obj()
-        if plan_obj.allow_emergency_access() is False:
+        if user.is_active_enterprise_member() is False and plan_obj.allow_emergency_access() is False:
             raise ValidationError({"non_field_errors": [gen_error("7002")]})
         return user
 
