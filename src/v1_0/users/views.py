@@ -309,7 +309,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Get current user plan, the sync device limit
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        limit_sync_device = current_plan.get_plan_obj().get_sync_device()
+        limit_sync_device = None if user_enterprise_ids else current_plan.get_plan_obj().get_sync_device()
         # The list stores sso token id which will not be synchronized
         not_sync_sso_token_ids = []
 

@@ -220,23 +220,23 @@ class UserRepository(IUserRepository):
             from cystack_models.models.users.user_score import UserScore
             return UserScore.create(user=user)
 
-    def get_personal_team_plans(self, user: User, personal_share=False):
-        user_team_ids = user.team_members.filter(
-            team__key__isnull=False, status=PM_MEMBER_STATUS_CONFIRMED,
-            team__personal_share=personal_share
-        ).values_list('team_id', flat=True)
-        primary_owners = TeamMember.objects.filter(team_id__in=list(user_team_ids)).filter(
-            role_id=MEMBER_ROLE_OWNER
+    def get_personal_team_plans(self, user: User):
+        user_enterprise_ids = user.enterprise_members.filter(
+            status=E_MEMBER_STATUS_CONFIRMED, is_activated=True,
+            enterprise__locked=False
+        ).values_list('enterprise_id', flat=True)
+        primary_admins = EnterpriseMember.objects.filter(enterprise_id__in=list(user_enterprise_ids)).filter(
+            role_id=E_MEMBER_ROLE_PRIMARY_ADMIN
         ).values_list('user_id', flat=True)
         from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
-        personal_team_plans = PMUserPlan.objects.filter(
-            user_id__in=list(primary_owners) + [user.user_id]
+        personal_plans = PMUserPlan.objects.filter(
+            user_id__in=list(primary_admins) + [user.user_id]
         ).select_related('pm_plan')
-        return personal_team_plans
+        return personal_plans
 
-    def get_max_allow_cipher_type(self, user: User, personal_share=False):
-        personal_team_plans = self.get_personal_team_plans(user=user, personal_share=personal_share)
-        cipher_limits = PMPlan.objects.filter(id__in=personal_team_plans.values_list('pm_plan_id')).values(
+    def get_max_allow_cipher_type(self, user: User):
+        personal_plans = self.get_personal_team_plans(user=user)
+        cipher_limits = PMPlan.objects.filter(id__in=personal_plans.values_list('pm_plan_id')).values(
             'limit_password', 'limit_secure_note', 'limit_identity', 'limit_payment_card', 'limit_crypto_asset'
         )
         limit_password = [cipher_limit.get("limit_password") for cipher_limit in cipher_limits]
