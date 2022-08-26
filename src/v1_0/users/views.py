@@ -172,11 +172,17 @@ class UserPwdViewSet(PasswordManagerViewSet):
     def me(self, request, *args, **kwargs):
         user = self.request.user
         if request.method == "GET":
+            utm_source = self.request.query_params.get("utm_source")
+            block_by_source = False
+            if utm_source in ["plans-family-promotion"]:
+                if user.payments.filter(status=PAYMENT_STATUS_PAID).exists() is False:
+                    block_by_source = True
             user_type = self.user_repository.get_user_type(user_id=user.user_id)
             return Response(status=200, data={
                 "timeout": user.timeout,
                 "timeout_action": user.timeout_action,
                 "is_pwd_manager": user.activated,
+                "block_by_source": block_by_source,
                 "pwd_user_id": str(user.user_id),
                 "pwd_user_type": user_type
             })
