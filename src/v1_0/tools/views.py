@@ -27,7 +27,7 @@ class ToolPwdViewSet(PasswordManagerViewSet):
         plan_obj = current_plan.get_plan_obj()
 
         if self.action == "breach":
-            if plan_obj.allow_tools_data_breach() is False:
+            if user.is_active_enterprise_member() is False and plan_obj.allow_tools_data_breach() is False:
                 raise ValidationError({"non_field_errors": [gen_error("7002")]})
 
         return user

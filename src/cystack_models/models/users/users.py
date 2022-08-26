@@ -7,6 +7,7 @@ from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password, is_password_usable, make_password
 
 from shared.constants.account import DEFAULT_KDF_ITERATIONS
+from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.external_request.requester import requester
 
 
@@ -79,3 +80,8 @@ class User(models.Model):
         if res.status_code == 200:
             return res.json()
         return {}
+
+    def is_active_enterprise_member(self):
+        return self.enterprise_members.filter(
+            status=E_MEMBER_STATUS_CONFIRMED, is_activated=True, enterprise__locked=False
+        ).exists()
