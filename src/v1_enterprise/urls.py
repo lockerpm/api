@@ -31,6 +31,8 @@ urlpatterns += [
         views.MemberPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
     url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/reinvite$',
         views.MemberPwdViewSet.as_view({'post': 'reinvite'})),
+    url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/activated$',
+        views.MemberPwdViewSet.as_view({'put': 'activated'})),
 
     url(r'^members/invitation/confirmation$', views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
     url(r'^members/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
@@ -59,4 +61,20 @@ urlpatterns += [
 # ----------------------------------- Activity Log ------------------------- #
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/activity$', views.ActivityLogPwdViewSet.as_view({'get': 'list'})),
+]
+
+
+# ----------------------------------- Payments ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/payments/plan$',
+        views.PaymentPwdViewSet.as_view({'get': 'current_plan', 'post': 'upgrade_plan'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/cards$', views.PaymentPwdViewSet.as_view({'get': 'cards', 'post': 'cards'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/cards/(?P<card_id>[0-9a-zA-Z_]+)$',
+        views.PaymentPwdViewSet.as_view({'put': 'card_set_default'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/billing_address$',
+        views.PaymentPwdViewSet.as_view({'get': 'billing_address', 'put': 'billing_address'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/invoices$', views.PaymentPwdViewSet.as_view({'get': 'list'})),
+    url(r'^(?P<pk>[0-9a-z]+)/payments/invoices/(?P<payment_id>[0-9A-Z]+)$',
+        views.PaymentPwdViewSet.as_view({'get': 'retrieve'})),
 ]

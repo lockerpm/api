@@ -7,8 +7,8 @@ from cystack_models.models.enterprises.members.enterprise_members import Enterpr
 class DetailMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnterpriseMember
-        fields = ('id', 'access_time', 'is_default', 'is_primary', 'user_id', 'role', 'email', 'status')
-        read_only_fields = ('id', 'access_time', 'is_primary', 'status')
+        fields = ('id', 'access_time', 'is_default', 'is_primary', 'user_id', 'role', 'email', 'status', 'is_activated')
+        read_only_fields = ('id', 'access_time', 'is_primary', 'status', 'is_activated')
 
     def validate(self, data):
         role = data.get("role")
@@ -27,6 +27,18 @@ class DetailMemberSerializer(serializers.ModelSerializer):
         return data
 
 
+class ShortDetailMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnterpriseMember
+        fields = ('id', 'user_id', 'email', 'status')
+        read_only_fields = ('id', 'user_id', 'email', 'status')
+
+    def to_representation(self, instance):
+        data = super(ShortDetailMemberSerializer, self).to_representation(instance)
+        data["role"] = instance.role.name
+        return data
+
+
 class UpdateMemberSerializer(serializers.Serializer):
     role = serializers.ChoiceField(
         choices=[E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_MEMBER], default=E_MEMBER_ROLE_MEMBER, required=False
@@ -39,6 +51,10 @@ class UpdateMemberSerializer(serializers.Serializer):
         if status is None and role is None:
             raise serializers.ValidationError(detail={"role": ["The role or status is required"]})
         return data
+
+
+class EnabledMemberSerializer(serializers.Serializer):
+    activated = serializers.BooleanField()
 
 
 class UserInvitationSerializer(serializers.ModelSerializer):

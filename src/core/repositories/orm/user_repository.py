@@ -363,11 +363,6 @@ class UserRepository(IUserRepository):
             for primary_sharing_owner in primary_admin_enterprises:
                 primary_sharing_owner.enterprise.lock_enterprise(lock=False)
 
-            # Create Vault Org here
-            # default_collection_name = kwargs.get("collection_name")
-            # key = kwargs.get("key")
-            # self.__create_vault_team(user=user, key=key, collection_name=default_collection_name)
-
         # If the plan is family plan => Upgrade plan for the user
         if pm_plan.is_family_plan:
             # Leave other family plans if user is a member

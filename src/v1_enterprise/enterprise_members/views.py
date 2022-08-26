@@ -1,19 +1,24 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Value, When, Q, Case, IntegerField
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
-
+from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory, \
+    PaymentMethodNotSupportException
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.enterprise_members import *
-from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDATED_ROLE, EVENT_E_MEMBER_REMOVED
+from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDATED_ROLE, EVENT_E_MEMBER_REMOVED, \
+    EVENT_E_MEMBER_DISABLED, EVENT_E_MEMBER_ENABLED
+from shared.constants.transactions import PAYMENT_METHOD_CARD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer
+from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer, \
+    EnabledMemberSerializer, ShortDetailMemberSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -23,11 +28,17 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
     def get_serializer_class(self):
         if self.action == "list":
-            self.serializer_class = DetailMemberSerializer
+            shortly_param = self.request.query_params.get("shortly", "0")
+            if shortly_param == "1":
+                self.serializer_class = ShortDetailMemberSerializer
+            else:
+                self.serializer_class = DetailMemberSerializer
         elif self.action == "update":
             self.serializer_class = UpdateMemberSerializer
         elif self.action == "user_invitations":
             self.serializer_class = UserInvitationSerializer
+        elif self.action == "activated":
+            self.serializer_class = EnabledMemberSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -90,6 +101,19 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if status_param:
             members_qs = members_qs.filter(status=status_param)
 
+        # Filter by multiple statuses
+        statuses_param = self.request.query_params.get("statuses")
+        if statuses_param:
+            members_qs = members_qs.filter(status__in=statuses_param.split(","))
+
+        # Filter by activated or not
+        is_activated_param = self.request.query_params.get("is_activated")
+        if is_activated_param:
+            if is_activated_param == "0":
+                members_qs = members_qs.filter(is_activated=False)
+            elif is_activated_param == "1":
+                members_qs = members_qs.filter(is_activated=True)
+
         # Sorting the results
         sort_param = self.request.query_params.get("sort", None)
         order_whens = [
@@ -112,6 +136,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 ).order_by("order_field")
         else:
             members_qs = members_qs.order_by('-access_time')
+        members_qs = members_qs.select_related('user').select_related('role')
         return members_qs
 
     def list(self, request, *args, **kwargs):
@@ -248,6 +273,16 @@ class MemberPwdViewSet(EnterpriseViewSet):
             member_obj.status = status
             member_obj.save()
             change_status = True
+            # Update subscription quantity here
+            if enterprise.is_billing_members_added(member_user_id=member_obj.user_id) is True:
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=1)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
+
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
                 "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
                 "user_id": member_obj.user_id, "team_member_id": member_obj.id,
@@ -304,6 +339,40 @@ class MemberPwdViewSet(EnterpriseViewSet):
             "enterprise_name": enterprise.name
         })
 
+    @action(methods=["put"], detail=False)
+    def activated(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
+        enterprise = self.get_object()
+        enterprise_member = self.get_enterprise_member(enterprise=enterprise, member_id=kwargs.get("member_id"))
+        if enterprise_member.status != E_MEMBER_STATUS_CONFIRMED:
+            raise NotFound
+        if enterprise_member.user_id == user.user_id:
+            raise PermissionDenied
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        activated = validated_data.get("activated")
+        if enterprise_member.is_activated != activated:
+            enterprise_member.is_activated = activated
+            enterprise_member.save()
+            #  Update billing here - Check the user is a new activated user in billing period
+            if activated is True and enterprise.is_billing_members_added(member_user_id=enterprise_member.user_id):
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=1)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
+                "user_id": enterprise_member.user_id, "team_member_id": enterprise_member.id,
+                "type": EVENT_E_MEMBER_ENABLED if activated is True else EVENT_E_MEMBER_DISABLED, "ip_address": ip
+            })
+
+        return Response(status=200, data={"success": True})
+
     @action(methods=["get"], detail=False)
     def user_invitations(self, request, *args, **kwargs):
         user = self.request.user
@@ -343,9 +412,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
             else:
                 member_invitation.delete()
         try:
-            primary_owner = enterprise.enterprise_members.get(is_primary=True).user_id
+            primary_admin_user = enterprise.get_primary_admin_user()
+            primary_admin_user_id = primary_admin_user.user_id
         except EnterpriseMember.DoesNotExist:
-            primary_owner = None
+            primary_admin_user = None
+            primary_admin_user_id = None
 
         admin_user_ids = list(enterprise.enterprise_members.filter(
             role_id=E_MEMBER_ROLE_ADMIN, status=E_MEMBER_STATUS_CONFIRMED
@@ -359,11 +430,19 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 "user_id": user.user_id, "team_member_id": member_invitation.id,
                 "type": EVENT_E_MEMBER_CONFIRMED, "ip_address": ip
             })
+            # Update subscription quantity here
+            if enterprise.is_billing_members_added(member_user_id=user.user_id) is True and primary_admin_user:
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=primary_admin_user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=1)
+                except PaymentMethodNotSupportException:
+                    pass
 
         return Response(status=200, data={
             "success": True,
             "member_status": member_status,
-            "primary_owner": primary_owner,
+            "primary_owner": primary_admin_user_id,
             "admin": admin_user_ids,
             "enterprise_name": enterprise.name,
         })

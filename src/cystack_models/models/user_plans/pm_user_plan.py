@@ -268,10 +268,17 @@ class PMUserPlan(UserPlan):
             },
             "error_promo": error_promo
         }
-        if self.is_personal_trial_applied() is False:
-            result["next_billing_time"] = now() + TRIAL_PERSONAL_PLAN
-            result["next_billing_payment"] = immediate_amount
-            result["immediate_payment"] = 0
+
+        if new_plan.is_team_plan is False:
+            if self.is_personal_trial_applied() is False:
+                result["next_billing_time"] = now() + TRIAL_PERSONAL_PLAN
+                result["next_billing_payment"] = immediate_amount
+                result["immediate_payment"] = 0
+        else:
+            if self.end_period and self.end_period > now():
+                result["next_billing_time"] = self.end_period
+                result["next_billing_payment"] = immediate_amount
+                result["immediate_payment"] = 0
         return result
 
     def calc_current_payment_price(self, currency):

@@ -172,11 +172,17 @@ class UserPwdViewSet(PasswordManagerViewSet):
     def me(self, request, *args, **kwargs):
         user = self.request.user
         if request.method == "GET":
+            utm_source = self.request.query_params.get("utm_source")
+            block_by_source = False
+            if utm_source in ["plans-family-promotion"]:
+                if user.payments.filter(status=PAYMENT_STATUS_PAID).exists() is False:
+                    block_by_source = True
             user_type = self.user_repository.get_user_type(user_id=user.user_id)
             return Response(status=200, data={
                 "timeout": user.timeout,
                 "timeout_action": user.timeout_action,
                 "is_pwd_manager": user.activated,
+                "block_by_source": block_by_source,
                 "pwd_user_id": str(user.user_id),
                 "pwd_user_type": user_type
             })
@@ -219,9 +225,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
         #     user=user, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
         # ).values_list('id', flat=True))
 
-        user_enterprises = list(Enterprise.objects.filter(
+        user_enterprises = Enterprise.objects.filter(
             enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
-        ).values_list('id', flat=True))
+        )
+        user_enterprise_ids = list(user_enterprises.values_list('id', flat=True))
 
         ip = request.data.get("ip")
         serializer = self.get_serializer(data=request.data)
@@ -235,10 +242,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Login failed
         if user.check_master_password(raw_password=password) is False:
-            if user_enterprises:
+            if user_enterprise_ids:
                 # Create failed login event here
                 LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
-                    "enterprise_ids": user_enterprises, "user_id": user.user_id, "acting_user_id": user.user_id,
+                    "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
                     "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
                 })
                 policy = self.team_repository.get_multiple_policy_by_user(user=user).filter(
@@ -267,8 +274,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         # Create block failed login event
                         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(
                             func_name="create_by_enterprise_ids", **{
-                                "enterprise_ids": user_enterprises, "user_id": user.user_id,
-                                "acting_user_id": user.user_id,
+                                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id,
                                 "type": EVENT_USER_BLOCK_LOGIN, "ip_address": ip
                             }
                         )
@@ -287,6 +293,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         })
 
             raise ValidationError(detail={"password": ["Password is not correct"]})
+
+        if user_enterprises.filter(enterprise_members__user=user, enterprise_members__is_activated=False).exists():
+            raise ValidationError({"non_field_errors": [gen_error("1009")]})
 
         # Unblock login
         user.last_request_login = now()
@@ -351,9 +360,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "not_sync": not_sync_sso_token_ids
         }
         # Create event login successfully
-        if user_enterprises:
+        if user_enterprise_ids:
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
-                "enterprise_ids": user_enterprises, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
                 "type": EVENT_USER_LOGIN, "ip_address": ip
             })
         return Response(status=200, data=result)

@@ -49,9 +49,9 @@ class PolicyPwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(policy, data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_TEAM_POLICY_UPDATED, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_TEAM_POLICY_UPDATED, "ip_address": ip
+        # })
         return Response(status=200, data=serializer.data)
 

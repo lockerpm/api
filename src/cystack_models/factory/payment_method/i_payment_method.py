@@ -76,3 +76,13 @@ class IPaymentMethod:
         :param kwargs: (dict) Metadata: card, bank_id
         :return:
         """
+
+    def update_quantity_subscription(self, new_quantity: int = None, amount: int = None):
+        """
+        Update the quantity of the subscribed plan
+        :param new_quantity:
+        :return:
+        """
+
+    def update_default_payment(self, new_source):
+        pass

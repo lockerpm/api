@@ -72,6 +72,11 @@ APP_CODE += [
         "code": "1008",
         "message": "Login locked due to the team's policy",
         "description": "Bạn đéo thể đăng nhập vì đăng nhập quá số lần quy định của team policy"
+    },
+    {
+        "code": "1009",
+        "message": "The account is locked by the enterprise. Please contact your enterprise admin to unblock account",
+        "description": "Tài khoản đã bị khóa bởi doanh nghiệp. Vui lòng liên hệ quản trị viên của bạn để mở khóa tài khoản"
     }
 ]
 
@@ -206,6 +211,11 @@ APP_CODE += [
         "code": "7014",
         "message": "You need to cancel the current plan to upgrade new plan",
         "vi_message": "Bạn cần hủy gói hiện tại để nâng lên gói mới"
+    },
+    {
+        "code": "7015",
+        "message": "You are in an Enterprise. Please leave the enterprise to execute this operator",
+        "vi_message": "Bạn hiện tại đang ở trong một doanh nghiệp. Vui lòng rời doanh nghiệp để thục hiện hành động này."
     }
 ]
 

@@ -73,10 +73,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             data={"id": str(new_cipher.id)}
         )
         # Create event
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": new_cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_CIPHER_CREATED, "cipher_id": new_cipher.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": new_cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_CIPHER_CREATED, "cipher_id": new_cipher.id, "ip_address": ip
+        # })
         return Response(status=200, data={"id": new_cipher.id})
 
     @action(methods=["put"], detail=False)
@@ -209,10 +209,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=team,
             add_all=True
         ).send(data={"id": cipher.id})
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_CIPHER_UPDATED, "cipher_id": cipher.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_CIPHER_UPDATED, "cipher_id": cipher.id, "ip_address": ip
+        # })
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
@@ -280,10 +280,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=team,
             add_all=True
         ).send(data={"id": cipher.id})
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_CIPHER_SHARED, "cipher_id": cipher.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_CIPHER_SHARED, "cipher_id": cipher.id, "ip_address": ip
+        # })
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["get"], detail=False)

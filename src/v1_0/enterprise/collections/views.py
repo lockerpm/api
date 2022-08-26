@@ -80,10 +80,10 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
             data={"id": new_collection.id}
         )
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_COLLECTION_CREATED, "collection_id": new_collection.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_COLLECTION_CREATED, "collection_id": new_collection.id, "ip_address": ip
+        # })
         return Response(status=200, data={"id": new_collection.id})
 
     def update(self, request, *args, **kwargs):
@@ -104,10 +104,10 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
             data={"id": collection.id}
         )
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_COLLECTION_UPDATED, "collection_id": collection.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_COLLECTION_UPDATED, "collection_id": collection.id, "ip_address": ip
+        # })
         return Response(status=200, data={"id": collection.id, "name": collection.name})
 
     def destroy(self, request, *args, **kwargs):
@@ -118,10 +118,10 @@ class TeamCollectionPwdViewSet(PasswordManagerViewSet):
         collection = self.get_collection(team=team)
         self.collection_repository.destroy_collection(collection=collection)
         PwdSync(event=SYNC_EVENT_COLLECTION_DELETE, user_ids=[request.user.user_id], team=team, add_all=True).send()
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-            "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_COLLECTION_DELETED, "collection_id": collection.id, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
+        #     "team_id": team.id, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_COLLECTION_DELETED, "collection_id": collection.id, "ip_address": ip
+        # })
         return Response(status=204)
 
     @action(methods=["get", "put"], detail=False)
