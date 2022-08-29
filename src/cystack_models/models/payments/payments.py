@@ -162,7 +162,7 @@ class Payment(models.Model):
         from cystack_models.models.user_plans.pm_plans import PMPlan
 
         # Get total price without discount
-        number = self.get_metadata().get("number_members", 1)
+        number = int(self.get_metadata().get("number_members", 1))
         plan_price = PMPlan.objects.get(alias=self.plan).get_price(duration=self.duration, currency=self.currency)
         self.total_price = plan_price * number
 
