@@ -20,6 +20,7 @@ class RelayAddress(models.Model):
     )
     domain = models.ForeignKey(RelayDomain, on_delete=models.CASCADE, related_name="relay_addresses")
     enabled = models.BooleanField(default=True)
+    block_spam = models.BooleanField(default=False)
     description = models.CharField(max_length=64, blank=True)
     created_time = models.FloatField()
     updated_time = models.FloatField(null=True)
