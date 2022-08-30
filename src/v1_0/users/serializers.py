@@ -98,6 +98,7 @@ class UserChangePasswordSerializer(serializers.Serializer):
     key = serializers.CharField()
     master_password_hash = serializers.CharField()
     new_master_password_hash = serializers.CharField()
+    score = serializers.FloatField(required=False, allow_null=True)
 
     def validate(self, data):
         user = self.context["request"].user
