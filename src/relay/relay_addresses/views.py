@@ -1,4 +1,5 @@
 from django.conf import settings
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
@@ -23,12 +24,12 @@ class RelayAddressViewSet(RelayViewSet):
             self.serializer_class = UpdateRelayAddressSerializer
         return super(RelayAddressViewSet, self).get_serializer_class()
 
-    @staticmethod
-    def get_relay_address_obj(email: str):
-        address = email.split("@")[0]
-        domain = email.split("@")[1]
-        relay_address = RelayAddress.objects.get(address=address, domain=domain)
-        return relay_address
+    # @staticmethod
+    # def get_relay_address_obj(email: str):
+    #     address = email.split("@")[0]
+    #     domain = email.split("@")[1]
+    #     relay_address = RelayAddress.objects.get(address=address, domain=domain)
+    #     return relay_address
 
     def get_queryset(self):
         user = self.request.user
@@ -65,11 +66,12 @@ class RelayAddressViewSet(RelayViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data or {}
+        allow_relay_premium = self.allow_relay_premium()
         # Check the limit of addresses
-        if user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
+        if allow_relay_premium is False and user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
             raise ValidationError({"non_field_errors": [gen_error("8000")]})
         # Check the user uses subdomain or not
-        if user.use_relay_subdomain is True and self.allow_relay_premium() is True:
+        if user.use_relay_subdomain is True and allow_relay_premium is True:
             subdomain = self.get_subdomain()
             validated_data.update({"subdomain": subdomain})
         new_relay_address = RelayAddress.create(user=user, **validated_data)
@@ -106,3 +108,19 @@ class RelayAddressViewSet(RelayViewSet):
         # Create deleted address
         relay_address.delete_permanently()
         return Response(status=204)
+
+    @action(methods=["put"], detail=True)
+    def block_spam(self, request, *args, **kwargs):
+        relay_address = self.get_object()
+        allow_relay_premium = self.allow_relay_premium()
+        if allow_relay_premium is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        relay_address.block_spam = not relay_address.block_spam
+        relay_address.save()
+        return Response(status=200, data={"id": relay_address.id, "block_spam": relay_address.block_spam})
+
+    @action(methods=["put"], detail=True)
+    def enabled(self, request, *args, **kwargs):
+        relay_address = self.get_object()
+        relay_address.enabled = not relay_address.enabled
+        return Response(status=200, data={"id": relay_address.id, "enabled": relay_address.enabled})

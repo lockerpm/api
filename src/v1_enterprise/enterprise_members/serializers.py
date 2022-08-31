@@ -25,7 +25,7 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             "domain": instance.domain.domain
         } if instance.domain else None
         data["groups"] = list(instance.groups_members.values_list('group__name', flat=True))
-        data["security_score"] = instance.user.master_password_score
+        data["security_score"] = instance.user.master_password_score if instance.user else None
         return data
 
 

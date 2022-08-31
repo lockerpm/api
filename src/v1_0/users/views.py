@@ -381,9 +381,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def password(self, request, *args, **kwargs):
         user = self.request.user
-        user_teams = list(self.team_repository.get_multiple_team_by_user(
-            user=user, status=PM_MEMBER_STATUS_CONFIRMED
-        ).values_list('id', flat=True))
+        # user_teams = list(self.team_repository.get_multiple_team_by_user(
+        #     user=user, status=PM_MEMBER_STATUS_CONFIRMED
+        # ).values_list('id', flat=True))
         ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
@@ -392,14 +392,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         new_master_password_hash = validated_data.get("new_master_password_hash")
         key = validated_data.get("key")
+        score = validated_data.get("score", user.master_password_score)
         self.user_repository.change_master_password_hash(
-            user=user, new_master_password_hash=new_master_password_hash, key=key
+            user=user, new_master_password_hash=new_master_password_hash, key=key, score=score
         )
         self.user_repository.revoke_all_sessions(user=user)
-        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-            "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-            "type": EVENT_USER_CHANGE_PASSWORD, "ip_address": ip
-        })
+        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
+        #     "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
+        #     "type": EVENT_USER_CHANGE_PASSWORD, "ip_address": ip
+        # })
         mail_user_ids = NotificationSetting.get_user_mail(
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[user.user_id]
         )
