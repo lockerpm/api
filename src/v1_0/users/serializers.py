@@ -20,7 +20,7 @@ class UserPwdSerializer(serializers.Serializer):
     key = serializers.CharField()
     keys = EncryptedPairKey(many=False)
     master_password_hash = serializers.CharField(allow_blank=False)
-    master_password_hint = serializers.CharField(allow_blank=True)
+    master_password_hint = serializers.CharField(allow_blank=True, max_length=128)
     score = serializers.FloatField(required=False, allow_null=True)
     trial_plan = serializers.ChoiceField(
         choices=[PLAN_TYPE_PM_FREE, PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FAMILY, PLAN_TYPE_PM_ENTERPRISE],
