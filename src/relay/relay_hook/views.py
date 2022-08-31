@@ -161,7 +161,7 @@ class RelayHookViewSet(RelayViewSet):
             is_premium = self.allow_relay_premium(user=relay_address.user)
             return Response(status=200, data={
                 "is_premium": is_premium,
-                "block_spam": relay_address.block_spam,
+                "block_spam": relay_address.block_spam if is_premium is True else False,
                 "enabled": relay_address.enabled
             })
         except RelayAddress.DoesNotExist:
