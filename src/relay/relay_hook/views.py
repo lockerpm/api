@@ -1,6 +1,7 @@
 import json
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -155,17 +156,30 @@ class RelayHookViewSet(RelayViewSet):
     @action(methods=["get"], detail=False)
     def plan(self, request, *args, **kwargs):
         self.check_auth_token()
-        relay_address = self.request.query_params.get("relay_address")
-        try:
-            relay_address = self.get_relay_address_obj(email=relay_address)
-            is_premium = self.allow_relay_premium(user=relay_address.user)
+        relay_address_param = self.request.query_params.get("relay_address")
+        user_id_param = self.request.query_params.get("user_id")
+
+        if user_id_param:
+            try:
+                user = self.user_repository.get_by_id(user_id=user_id_param)
+            except ObjectDoesNotExist:
+                CyLog.debug(**{"message": "Can not get plan of user: {}".format(user_id_param)})
+                raise NotFound
+            is_premium = self.allow_relay_premium(user=user)
             return Response(status=200, data={
                 "is_premium": is_premium,
-                "block_spam": relay_address.block_spam if is_premium is True else False,
-                "enabled": relay_address.enabled
+            })
+
+        try:
+            relay_address_obj = self.get_relay_address_obj(email=relay_address_param)
+            is_premium = self.allow_relay_premium(user=relay_address_obj.user)
+            return Response(status=200, data={
+                "is_premium": is_premium,
+                "block_spam": relay_address_obj.block_spam if is_premium is True else False,
+                "enabled": relay_address_obj.enabled
             })
         except RelayAddress.DoesNotExist:
-            CyLog.debug(**{"message": "Can not get relay address destination: {}".format(relay_address)})
+            CyLog.debug(**{"message": "Can not get plan of address destination: {}".format(relay_address_param)})
             raise NotFound
 
     @action(methods=["post"], detail=False)
