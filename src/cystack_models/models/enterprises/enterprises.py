@@ -2,7 +2,8 @@ from django.db import models
 
 from cystack_models.models.events.events import Event
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
-from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_ENABLED
+from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_ENABLED, EVENT_E_MEMBER_REMOVED, \
+    EVENT_E_MEMBER_DISABLED
 from shared.utils.app import now, random_n_digit
 
 
@@ -73,4 +74,14 @@ class Enterprise(models.Model):
             return True
         return False
 
-
+    def is_billing_members_removed(self, member_user_id):
+        primary_admin_user = self.get_primary_admin_user()
+        user_plan = primary_admin_user.pm_user_plan
+        from_param = user_plan.start_period if user_plan.start_period else self.creation_date
+        to_param = user_plan.end_period if user_plan.end_period else now()
+        if Event.objects.filter(
+            team_id=self.id, type__in=[EVENT_E_MEMBER_DISABLED, EVENT_E_MEMBER_REMOVED],
+            user_id=member_user_id, creation_date__range=(from_param, to_param)
+        ).exists() is False:
+            return True
+        return False

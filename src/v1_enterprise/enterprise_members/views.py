@@ -310,6 +310,15 @@ class MemberPwdViewSet(EnterpriseViewSet):
         # Not allow delete themselves
         if member_obj.user == user or member_obj.role.name == E_MEMBER_ROLE_PRIMARY_ADMIN:
             return Response(status=403)
+
+        try:
+            PaymentMethodFactory.get_method(
+                user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                payment_method=PAYMENT_METHOD_CARD
+            ).update_quantity_subscription(amount=-1)
+        except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+            pass
+
         # Log activity delete member here
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
             "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id,
@@ -363,6 +372,14 @@ class MemberPwdViewSet(EnterpriseViewSet):
                         user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
                         payment_method=PAYMENT_METHOD_CARD
                     ).update_quantity_subscription(amount=1)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
+            if activated is False and enterprise.is_billing_members_removed(member_user_id=enterprise_member.user_id):
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=-1)
                 except (PaymentMethodNotSupportException, ObjectDoesNotExist):
                     pass
             LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
