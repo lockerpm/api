@@ -25,6 +25,7 @@ class PMUserPlan(UserPlan):
 
     extra_time = models.IntegerField(default=0)
     extra_plan = models.CharField(max_length=128, null=True, default=None)
+    member_billing_updated_time = models.FloatField(null=True, default=None)
 
     pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
     promo_code = models.ForeignKey(

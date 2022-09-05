@@ -239,7 +239,11 @@ class StripePaymentMethod(IPaymentMethod):
                 plan_type=plan_alias, duration=duration, **{"number_members": old_quantity + amount}
             )
         try:
-            stripe.Subscription.modify(stripe_subscription.id, items=plans, proration_behavior='none')
+            stripe.Subscription.modify(
+                stripe_subscription.id,
+                items=plans,
+                proration_behavior='none'
+            )
         except stripe.error.StripeError:
             tb = traceback.format_exc()
             CyLog.error(**{"message": "[update_quantity_subscription] Stripe error: {} {}\n{}".format(
