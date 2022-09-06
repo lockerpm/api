@@ -271,8 +271,8 @@ class PMUserPlan(UserPlan):
         }
 
         if new_plan.is_team_plan is False:
-            utm_source = self.user.get_from_cystack_id().get("utm_source")
             if self.is_personal_trial_applied() is False:
+                utm_source = self.user.get_from_cystack_id().get("utm_source")
                 if utm_source in LIST_UTM_SOURCE_PROMOTIONS:
                     result["next_billing_time"] = next_billing_time + TRIAL_PERSONAL_PLAN
                 else:

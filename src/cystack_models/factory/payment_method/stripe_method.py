@@ -50,7 +50,7 @@ class StripePaymentMethod(IPaymentMethod):
         plans = self.__reformatting_stripe_plans(plan_type=plan_type, duration=duration, **kwargs)
         # Create immediate subscription
         try:
-            stripe.Subscription.create(
+            stripe_sub = stripe.Subscription.create(
                 customer=card.get("stripe_customer_id"),
                 default_payment_method=card.get("id_card"),
                 items=plans,
@@ -64,6 +64,12 @@ class StripePaymentMethod(IPaymentMethod):
                 coupon=coupon,
                 trial_end=kwargs.get("trial_end")
             )
+            if kwargs.get("billing_cycle_anchor"):
+                stripe.Subscription.modify(
+                    stripe_sub.id,
+                    trial_end=kwargs.get("billing_cycle_anchor"),
+                    proration_behavior='none'
+                )
         except stripe.error.CardError as e:
             return {
                 "success": False,

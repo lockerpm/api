@@ -288,10 +288,12 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # Not allow upgrade the personal plan if the user is in Enterprise plan
         if user.enterprise_members.filter(enterprise__locked=False).exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
-        if current_plan.is_personal_trial_applied() is False:
-            metadata.update({
-                "trial_end": now() + TRIAL_PERSONAL_PLAN
-            })
+        if payment_method == PAYMENT_METHOD_CARD:
+            if not card:
+                raise ValidationError({"non_field_errors": [gen_error("7007")]})
+            if not card.get("id_card"):
+                raise ValidationError({"non_field_errors": [gen_error("7007")]})
+
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
         calc_payment = self._calc_payment(
@@ -299,11 +301,16 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         immediate_payment = calc_payment.get("immediate_payment")
 
-        if payment_method == PAYMENT_METHOD_CARD:
-            if not card:
-                raise ValidationError({"non_field_errors": [gen_error("7007")]})
-            if not card.get("id_card"):
-                raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        if current_plan.is_personal_trial_applied() is False:
+            utm_source = user.get_from_cystack_id().get("utm_source")
+            if utm_source in LIST_UTM_SOURCE_PROMOTIONS:
+                metadata.update({
+                    "billing_cycle_anchor": calc_payment.get("next_billing_time")
+                })
+            else:
+                metadata.update({
+                    "trial_end": now() + TRIAL_PERSONAL_PLAN
+                })
 
         payment = PaymentMethodFactory.get_method(
             user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
