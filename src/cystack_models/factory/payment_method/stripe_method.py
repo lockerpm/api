@@ -1,5 +1,5 @@
+import os
 import traceback
-
 import stripe
 import stripe.error
 
@@ -200,7 +200,7 @@ class StripePaymentMethod(IPaymentMethod):
         try:
             stripe.Subscription.delete(stripe_subscription.id)
             return True
-        except Exception as e:
+        except stripe.error.StripeError:
             tb = traceback.format_exc()
             CyLog.error(**{"message": "cancel_immediately_recurring_subscription error: {}".format(tb)})
             return False
@@ -228,7 +228,7 @@ class StripePaymentMethod(IPaymentMethod):
         duration = current_plan.duration
         if new_quantity:
             plans = self.__reformatting_stripe_plans(
-                plan_type=plan_alias, duration=duration,**{"number_members": new_quantity}
+                plan_type=plan_alias, duration=duration, **{"number_members": new_quantity}
             )
         else:
             old_quantity = stripe_subscription.get("quantity")
@@ -325,6 +325,25 @@ class StripePaymentMethod(IPaymentMethod):
             print("DIFF AMOUNT DIFF DURATION ", total_amount)
         return round(total_amount, 2), next_billing_time
 
+    def __reformatting_stripe_plans(self, plan_type: str, duration: str, **kwargs):
+        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
+        return [{"plan": stripe_plan_id, "quantity": self.__get_new_quantity(**kwargs)}]
+
+    @staticmethod
+    def __reformatting_stripe_plan_id(plan_type: str, duration: str):
+        stripe_plan_id = "{}_{}".format(plan_type, duration).lower()
+        # Re-mapping stripe plan
+        real_stripe_plans = {}
+        if os.getenv("PROD_ENV") == "staging":
+            real_stripe_plans["pm_enterprise_monthly"] = "locker_pm_enterprise_monthly"
+
+        return real_stripe_plans.get(stripe_plan_id, stripe_plan_id)
+
+    @staticmethod
+    def __get_new_quantity(**kwargs):
+        # If scope is password manager
+        return kwargs.get("number_members", 1)
+
     @staticmethod
     def __get_duration_next_billing_month(duration):
         if duration == DURATION_YEARLY:
@@ -333,17 +352,5 @@ class StripePaymentMethod(IPaymentMethod):
             return 6
         return 1
 
-    def __reformatting_stripe_plans(self, plan_type: str, duration: str, **kwargs):
-        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
-        return [{"plan": stripe_plan_id, "quantity": self.__get_new_quantity(**kwargs)}]
-
-    def __reformatting_stripe_plan_id(self, plan_type: str, duration: str):
-        stripe_plan_id = "{}_{}".format(plan_type, duration).lower()
-        return stripe_plan_id.lower()
-
-    def __get_new_quantity(self, **kwargs):
-        # If scope is password manager
-        return kwargs.get("number_members", 1)
-
-    def __get_current_quantity(self, user_plan):
-        return user_plan.number_members
+    # def __get_current_quantity(self, user_plan):
+    #     return user_plan.number_members
