@@ -6,10 +6,10 @@ from cystack_models.models.relay.relay_addresses import RelayAddress
 class RelayAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelayAddress
-        fields = ('id', 'address', 'enabled', 'description', 'created_time', 'updated_time',
+        fields = ('id', 'address', 'enabled', 'block_spam', 'description', 'created_time', 'updated_time',
                   'num_forwarded', 'num_blocked', 'num_replied', 'num_spam')
         read_only_fields = (
-            'id', 'address', 'enabled', 'created_time', 'updated_time',
+            'id', 'address', 'enabled', 'block_spam', 'created_time', 'updated_time',
             'num_forwarded', 'num_blocked', 'num_replied', 'num_spam'
         )
 

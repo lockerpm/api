@@ -123,4 +123,5 @@ class RelayAddressViewSet(RelayViewSet):
     def enabled(self, request, *args, **kwargs):
         relay_address = self.get_object()
         relay_address.enabled = not relay_address.enabled
+        relay_address.save()
         return Response(status=200, data={"id": relay_address.id, "enabled": relay_address.enabled})
