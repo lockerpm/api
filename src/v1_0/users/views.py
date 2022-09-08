@@ -174,7 +174,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         if request.method == "GET":
             utm_source = self.request.query_params.get("utm_source")
             block_by_source = False
-            if utm_source in ["plans-promotion"]:
+            if utm_source in LIST_UTM_SOURCE_PROMOTIONS:
                 if user.payments.filter(status=PAYMENT_STATUS_PAID).exists() is False:
                     block_by_source = True
             user_type = self.user_repository.get_user_type(user_id=user.user_id)

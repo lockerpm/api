@@ -272,9 +272,13 @@ class PMUserPlan(UserPlan):
 
         if new_plan.is_team_plan is False:
             if self.is_personal_trial_applied() is False:
-                result["next_billing_time"] = now() + TRIAL_PERSONAL_PLAN
-                result["next_billing_payment"] = immediate_amount
-                result["immediate_payment"] = 0
+                utm_source = self.user.get_from_cystack_id().get("utm_source")
+                if utm_source in LIST_UTM_SOURCE_PROMOTIONS:
+                    result["next_billing_time"] = next_billing_time + TRIAL_PERSONAL_PLAN
+                else:
+                    result["next_billing_time"] = now() + TRIAL_PERSONAL_PLAN
+                    result["next_billing_payment"] = immediate_amount
+                    result["immediate_payment"] = 0
         else:
             if self.end_period and self.end_period > now():
                 result["next_billing_time"] = self.end_period

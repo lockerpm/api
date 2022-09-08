@@ -161,13 +161,13 @@ class MemberPwdViewSet(EnterpriseViewSet):
         added_members = []
 
         # TODO: Check the maximum number of members
-        current_total_members = enterprise.enterprise_members.all().count()
-        primary_admin = enterprise.enterprise_members.get(is_primary=True).user
-        max_allow_members = self.user_repository.get_current_plan(
-            user=primary_admin, scope=settings.SCOPE_PWD_MANAGER
-        ).get_max_allow_members()
-        if max_allow_members and current_total_members + len(members) > max_allow_members:
-            raise ValidationError({"non_field_errors": [gen_error("3002")]})
+        # current_total_members = enterprise.enterprise_members.all().count()
+        # primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        # max_allow_members = self.user_repository.get_current_plan(
+        #     user=primary_admin, scope=settings.SCOPE_PWD_MANAGER
+        # ).get_max_allow_members()
+        # if max_allow_members and current_total_members + len(members) > max_allow_members:
+        #     raise ValidationError({"non_field_errors": [gen_error("3002")]})
 
         # Loop list members data
         for member in members:
@@ -206,14 +206,14 @@ class MemberPwdViewSet(EnterpriseViewSet):
         enterprise = self.get_object()
         added_members = []
 
-        # TODO: Check the maximum number of members
-        current_total_members = enterprise.enterprise_members.all().count()
-        primary_admin = enterprise.enterprise_members.get(is_primary=True).user
-        max_allow_members = self.user_repository.get_current_plan(
-            user=primary_admin, scope=settings.SCOPE_PWD_MANAGER
-        ).get_max_allow_members()
-        if max_allow_members and current_total_members + len(members) > max_allow_members:
-            raise ValidationError({"non_field_errors": [gen_error("3002")]})
+        # # TODO: Check the maximum number of members
+        # current_total_members = enterprise.enterprise_members.all().count()
+        # primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        # max_allow_members = self.user_repository.get_current_plan(
+        #     user=primary_admin, scope=settings.SCOPE_PWD_MANAGER
+        # ).get_max_allow_members()
+        # if max_allow_members and current_total_members + len(members) > max_allow_members:
+        #     raise ValidationError({"non_field_errors": [gen_error("3002")]})
 
         # Loop list members data
         for member in members:

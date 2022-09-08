@@ -11,6 +11,11 @@ REFERRAL_EXTRA_TIME = 86400 * 30        # 30 days
 REFERRAL_LIMIT = 3
 
 
+# -------------------- UTM Source Promotion ------------------------ #
+UTM_SOURCE_PROMOTIONS = "plans-promotion"
+LIST_UTM_SOURCE_PROMOTIONS = [UTM_SOURCE_PROMOTIONS]
+
+
 # ------------------- Currency ------------------------------------- #
 CURRENCY_VND = "VND"
 CURRENCY_USD = "USD"
