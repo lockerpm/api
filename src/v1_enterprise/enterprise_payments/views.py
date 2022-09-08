@@ -168,7 +168,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             raise ValidationError(detail={"non_field_errors": [gen_error("7014")]})
         if current_plan.end_period and current_plan.end_period > now():
             metadata.update({
-                "trial_end": int(current_plan.end_period - now())
+                "trial_end": int(current_plan.end_period)
             })
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
