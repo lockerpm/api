@@ -4,7 +4,8 @@ from django.db import connection
 from core.settings import CORE_CONFIG
 from shared.background.i_background import ILockerBackground
 from shared.constants.transactions import PAYMENT_STATUS_PAID
-from shared.external_request.requester import requester
+from shared.external_request.requester import requester, RequesterError
+
 
 API_NOTIFY_PAYMENT = "{}/micro_services/cystack_platform/payments".format(settings.GATEWAY_API)
 HEADERS = {
@@ -25,7 +26,7 @@ class NotifyBackground(ILockerBackground):
                 "scope": scope
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
-        except Exception as e:
+        except RequesterError:
             self.log_error(func_name="downgrade_plan")
         finally:
             if self.background:
@@ -41,7 +42,7 @@ class NotifyBackground(ILockerBackground):
                 "scope": scope
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
-        except Exception as e:
+        except RequesterError:
             self.log_error(func_name="cancel_plan")
         finally:
             if self.background:
@@ -60,7 +61,7 @@ class NotifyBackground(ILockerBackground):
                 "demo": False
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
-        except Exception as e:
+        except RequesterError:
             self.log_error(func_name="banking_expiring")
         finally:
             if self.background:
@@ -77,7 +78,7 @@ class NotifyBackground(ILockerBackground):
                 "duration": duration
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
-        except Exception:
+        except RequesterError:
             self.log_error(func_name="trial_successfully")
         finally:
             if self.background:
@@ -88,7 +89,7 @@ class NotifyBackground(ILockerBackground):
         try:
             notification_data = {"user_id": user_id, "scope": scope}
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
-        except Exception:
+        except RequesterError:
             self.log_error(func_name="trial_enterprise_successfully")
         finally:
             if self.background:
@@ -105,22 +106,22 @@ class NotifyBackground(ILockerBackground):
         try:
             scope = payment.scope
             metadata = payment.get_metadata()
-            number_members = metadata.get("number_members")
+            number_members = metadata.get("number_members") or 1
             user = payment.user
             current_plan = user_repository.get_current_plan(user=user, scope=scope)
-            primary_team = user_repository.get_default_team(user=user)
+            enterprise = user_repository.get_default_enterprise(user=user)
             payment_data = {
-                "team_id": primary_team.id if primary_team else None,
-                "team_name": primary_team.name if primary_team else None,
+                "enterprise_id": enterprise.id if enterprise else None,
+                "enterprise_name": enterprise.name if enterprise else None,
+                "stripe_invoice_id": payment.stripe_invoice_id,
                 "plan_name": current_plan.get_plan_type_name(),
                 "plan_price": current_plan.pm_plan.get_price(currency=payment.currency, duration=payment.duration),
-                "number_members": number_members,
+                "number_members": int(number_members),
                 "start_period": current_plan.start_period,
                 "end_period": current_plan.end_period
             }
             subtotal = payment.total_price + payment.discount
             notification_data = {
-                "success": True,
                 "user_id": payment.user.user_id,
                 "status": payment.status,
                 "paid": True if payment.status == PAYMENT_STATUS_PAID else False,
