@@ -12,7 +12,7 @@ class SubdomainSerializer(serializers.Serializer):
 
 
 class UpdateSubdomainSerializer(serializers.Serializer):
-    subdomain = serializers.CharField(max_length=128, min_length=3)
+    subdomain = serializers.CharField(max_length=64, min_length=3)
 
     def validate(self, data):
         subdomain = data.get("subdomain")
