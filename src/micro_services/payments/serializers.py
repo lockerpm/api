@@ -102,28 +102,28 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                 if stripe_subscription_obj.status == "trialing":
                     pm_user_plan.personal_trial_applied = True
                 pm_user_plan.save()
-                stripe_metadata = stripe_subscription_obj.get("metadata", {})
-                start_period = None if not stripe_subscription_obj else stripe_subscription_obj.current_period_start
-                end_period = None if not stripe_subscription_obj else stripe_subscription_obj.current_period_end
+
+                start_period = stripe_subscription_obj.current_period_start
+                end_period = stripe_subscription_obj.current_period_end
+
+                # Upgrade the plan of this user
                 subscription_metadata = {
                     "start_period": start_period,
                     "end_period": end_period,
                     "promo_code": new_payment.promo_code,
-                    "family_members": stripe_metadata.get("family_members", []),
-                    "key": stripe_metadata.get("key"),
-                    "collection_name": stripe_metadata.get("collection_name"),
+                    "family_members": stripe_subscription_obj.get("metadata", {}).get("family_members", []),
                     "extra_time": extra_time,
                     "extra_plan": extra_plan
                 }
-
                 updated_user_plan = user_repository.update_plan(
                     new_payment.user, plan_type_alias=new_payment.plan, duration=new_payment.duration, scope=scope,
                     **subscription_metadata
                 )
-                primary_team = user_repository.get_default_team(user=new_payment.user)
+                enterprise = user_repository.get_default_enterprise(user=new_payment.user)
                 result["payment_data"] = {
-                    "team_id": primary_team.id if primary_team else None,
-                    "team_name": primary_team.name if primary_team else None,
+                    "enterprise_id": enterprise.id if enterprise else None,
+                    "enterprise_name": enterprise.name if enterprise else None,
+                    "stripe_invoice_id": new_payment.stripe_invoice_id,
                     "plan_name": updated_user_plan.get_plan_type_name(),
                     "plan_price": updated_user_plan.pm_plan.get_price(
                         currency=new_payment.currency, duration=new_payment.duration
