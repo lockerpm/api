@@ -227,8 +227,6 @@ class StripePaymentMethod(IPaymentMethod):
         plan_alias = current_plan.get_plan_obj().get_alias()
         duration = current_plan.duration
 
-
-
         si = None
         old_quantity = stripe_subscription.get("quantity")
         items = stripe_subscription.get("items").get("data")

@@ -1,7 +1,11 @@
 import stripe
+import stripe.error
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
+from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory, \
+    PaymentMethodNotSupportException
 from cystack_models.models.events.events import Event
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.payments.payments import Payment
@@ -81,8 +85,23 @@ def enterprise_member_change_billing():
                     "stripe_subscription_id": user_plan.pm_stripe_subscription
                 }
             )
-            paid_invoice = stripe.Invoice.pay(new_change_member_invoice.get("id"))
-            print(paid_invoice)
+            try:
+                paid_invoice = stripe.Invoice.pay(new_change_member_invoice.get("id"))
+                print(paid_invoice)
+            except stripe.error.CardError:
+                print("Card Error. So disable added members")
+                # Payment failed => Disable members
+                disabled_members = enterprise.enterprise_members.filter(
+                    user_id__in=added_user_ids
+                ).update(is_activated=False)
+                print("DISABLED MEMBERS, ", disabled_members)
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=-disabled_members)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
         else:
             pass
 
