@@ -75,11 +75,12 @@ def enterprise_member_change_billing():
                     "scope": settings.SCOPE_PWD_MANAGER,
                     "user_id": primary_admin_user.user_id,
                     "category": "member_changes",
-                    "added_user_ids": added_user_ids_str
+                    "added_user_ids": added_user_ids_str,
+                    "stripe_subscription_id": user_plan.pm_stripe_subscription
                 }
             )
             paid_invoice = stripe.Invoice.pay(new_change_member_invoice.get("id"))
-
+            print(paid_invoice)
         else:
             pass
 
