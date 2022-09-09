@@ -1,5 +1,4 @@
 import stripe
-from datetime import datetime
 
 from django.conf import settings
 
@@ -69,6 +68,7 @@ def enterprise_member_change_billing():
             # Create new invoice and pay immediately
             new_change_member_invoice = stripe.Invoice.create(
                 customer=stripe_subscription.customer,
+                # Auto collect all-pending invoice item
                 collection_method="charge_automatically",
                 pending_invoice_items_behavior="include",
                 metadata={
@@ -76,6 +76,8 @@ def enterprise_member_change_billing():
                     "user_id": primary_admin_user.user_id,
                     "category": "member_changes",
                     "added_user_ids": added_user_ids_str,
+                    # The invoice is one-time invoice and the `subscription` property of the invoice object is null
+                    # So that we need to set `stripe_subscription_id` in the metadata
                     "stripe_subscription_id": user_plan.pm_stripe_subscription
                 }
             )
