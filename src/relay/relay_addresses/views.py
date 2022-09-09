@@ -80,17 +80,20 @@ class RelayAddressViewSet(RelayViewSet):
     def update(self, request, *args, **kwargs):
         user = self.request.user
         relay_address = self.get_object()
-        # Only allow update the first address
-        oldest_relay_address = user.relay_addresses.all().order_by('created_time').first()
-        if not oldest_relay_address or oldest_relay_address.id != relay_address.id:
-            raise PermissionDenied
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         address = validated_data.get("address") or relay_address.address
         description = validated_data.get("description", relay_address.description)
+        enabled = validated_data.get("enabled", relay_address.enabled)
+        block_spam = validated_data.get("block_spam", relay_address.block_spam)
 
         if address != relay_address.address:
+            # Only allow update the first address
+            oldest_relay_address = user.relay_addresses.all().order_by('created_time').first()
+            if not oldest_relay_address or oldest_relay_address.id != relay_address.id:
+                raise PermissionDenied
             if RelayAddress.objects.filter(address=address).exists() is True:
                 raise ValidationError(detail={"address": ["This relay address exists"]})
             if RelayAddress.valid_address(address=address, domain=relay_address.domain_id) is False:
@@ -98,6 +101,10 @@ class RelayAddressViewSet(RelayViewSet):
                     "This relay address is not valid (has black words, blocked words, etc...)"
                 ]})
             relay_address.address = address
+        if enabled != relay_address.enabled or block_spam != relay_address.block_spam:
+            if self.allow_relay_premium():
+                relay_address.enabled = enabled
+                relay_address.block_spam = block_spam
         relay_address.description = description
         relay_address.updated_time = now()
         relay_address.save()
