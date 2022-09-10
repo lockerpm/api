@@ -546,6 +546,14 @@ class UserRepository(IUserRepository):
                             if source.get("id") == id_card:
                                 data_customer_stripe = source
                                 break
+                        # Retrieve from Payment Methods:
+                        if not data_customer_stripe:
+                            payment_methods = stripe.PaymentMethod.list(
+                                customer=stripe_customer_id, type="card"
+                            ).get("data", [])
+                            for payment_method in payment_methods:
+                                if payment_method.get("id") == id_card:
+                                    data_customer_stripe = self._get_data_customer_stripe_from_pm(payment_method)
                     else:
                         data_customer_stripe = customer_stripe.sources.data[0]
                 except:
@@ -589,6 +597,23 @@ class UserRepository(IUserRepository):
                 "brand": card.get("brand", "")
             }
         return customer_data
+
+    @staticmethod
+    def _get_data_customer_stripe_from_pm(payment_method):
+        data_customer_stripe = {
+            "name": payment_method.get("billing_details", {}).get("name"),
+            "address_line1": payment_method.get("billing_details", {}).get("address", {}).get("line1") or "",
+            "country": payment_method.get("billing_details", {}).get("address", {}).get("country") or "",
+            "address_city": payment_method.get("billing_details", {}).get("address", {}).get("city") or "",
+            "address_state": payment_method.get("billing_details", {}).get("address", {}).get("state") or "",
+            "address_zip": payment_method.get("billing_details", {}).get("address", {}).get("postal_code") or "",
+            "brand": payment_method.get("card", {}).get("brand"),
+            "last4": payment_method.get("card", {}).get("last4"),
+            "organization": payment_method.get("metadata").get("company", ""),
+        }
+
+        return data_customer_stripe
+
 
     def get_list_invitations(self, user: User, personal_share=False):
         member_invitations = user.team_members.filter(
