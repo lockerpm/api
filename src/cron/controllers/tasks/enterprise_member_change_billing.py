@@ -1,8 +1,11 @@
 import stripe
-from datetime import datetime
+import stripe.error
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
+from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory, \
+    PaymentMethodNotSupportException
 from cystack_models.models.events.events import Event
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.payments.payments import Payment
@@ -39,26 +42,28 @@ def enterprise_member_change_billing():
         if quantity == 0:
             continue
         added_user_ids = list(added_events.values_list('user_id', flat=True).distinct())
+        added_user_ids_str = ",".join(str(v) for v in added_user_ids)
 
         # Calc prorations
         diff_days = round((user_plan.end_period - current_time) / 86400, 0)
         unit_amount = pm_plan_price * (
-                diff_days / Payment.get_duration_month_number(duration=user_plan.duration) * 30 * 86400
+            diff_days / (Payment.get_duration_month_number(duration=user_plan.duration) * 30)
         )
 
         # Adding invoice items for future invoice
         # https://stripe.com/docs/billing/invoices/subscription#adding-upcoming-invoice-items
         new_added_invoice_item = stripe.InvoiceItem.create(
             customer=stripe_subscription.customer,
-            description=f"{unit_amount} member(s) added into Locker Enterprise",
-            unit_amount=unit_amount,
+            description=f"{quantity} member(s) added into Locker Enterprise",
+            unit_amount=int(unit_amount * 100),
             currency="USD",
             quantity=quantity,
             subscription=stripe_subscription.id,
             metadata={
                 "scope": settings.SCOPE_PWD_MANAGER,
                 "user_id": primary_admin_user.user_id,
-                "added_user_ids": ",".join(added_user_ids)
+                "category": "member_changes",
+                "added_user_ids": added_user_ids_str
             }
         )
         print(new_added_invoice_item)
@@ -67,16 +72,36 @@ def enterprise_member_change_billing():
             # Create new invoice and pay immediately
             new_change_member_invoice = stripe.Invoice.create(
                 customer=stripe_subscription.customer,
+                # Auto collect all-pending invoice item
                 collection_method="charge_automatically",
                 pending_invoice_items_behavior="include",
                 metadata={
                     "scope": settings.SCOPE_PWD_MANAGER,
                     "user_id": primary_admin_user.user_id,
-                    "added_user_ids": ",".join(added_user_ids)
+                    "category": "member_changes",
+                    "added_user_ids": added_user_ids_str,
+                    # The invoice is one-time invoice and the `subscription` property of the invoice object is null
+                    # So that we need to set `stripe_subscription_id` in the metadata
+                    "stripe_subscription_id": user_plan.pm_stripe_subscription
                 }
             )
-            paid_invoice = stripe.Invoice.pay(new_change_member_invoice.get("id"))
-
+            try:
+                paid_invoice = stripe.Invoice.pay(new_change_member_invoice.get("id"))
+                print(paid_invoice)
+            except stripe.error.CardError:
+                print("Card Error. So disable added members")
+                # Payment failed => Disable members
+                disabled_members = enterprise.enterprise_members.filter(
+                    user_id__in=added_user_ids
+                ).update(is_activated=False)
+                print("DISABLED MEMBERS, ", disabled_members)
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=-disabled_members)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
         else:
             pass
 

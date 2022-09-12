@@ -226,24 +226,24 @@ class StripePaymentMethod(IPaymentMethod):
             return
         plan_alias = current_plan.get_plan_obj().get_alias()
         duration = current_plan.duration
+
+        si = None
+        old_quantity = stripe_subscription.get("quantity")
+        items = stripe_subscription.get("items").get("data")
+        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type=plan_alias, duration=duration)
+        for item in items:
+            if item.get("plan").get("id") == stripe_plan_id:
+                old_quantity = item.get("quantity")
+                si = item.get("id")
+                break
+        if not si:
+            return
         if new_quantity:
-            plans = self.__reformatting_stripe_plans(
-                plan_type=plan_alias, duration=duration, **{"number_members": new_quantity}
-            )
+            plans = [{"id": si, "quantity": new_quantity}]
         else:
-            old_quantity = stripe_subscription.get("quantity")
-            if not old_quantity:
-                items = stripe_subscription.items.data
-                stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type=plan_alias, duration=duration)
-                for item in items:
-                    if item.get("plan").get("id") == stripe_plan_id:
-                        old_quantity = item.get("quantity")
-                        break
             if not old_quantity:
                 return
-            plans = self.__reformatting_stripe_plans(
-                plan_type=plan_alias, duration=duration, **{"number_members": old_quantity + amount}
-            )
+            plans = [{"id": si, "quantity": old_quantity + amount}]
         try:
             stripe.Subscription.modify(
                 stripe_subscription.id,
@@ -253,7 +253,7 @@ class StripePaymentMethod(IPaymentMethod):
         except stripe.error.StripeError:
             tb = traceback.format_exc()
             CyLog.error(**{"message": "[update_quantity_subscription] Stripe error: {} {}\n{}".format(
-                current_plan, new_quantity, tb
+                current_plan, plans, tb
             )})
 
     def update_default_payment(self, new_source):

@@ -64,3 +64,7 @@ def requester(method, url, headers=None, data_send=None, retry=False, max_retrie
                 res.status_code = 400
                 res._content = json.dumps(refer_error(gen_error("0009"))).encode('utf-8')
                 return res
+
+
+class RequesterError(requests.ConnectionError):
+    pass

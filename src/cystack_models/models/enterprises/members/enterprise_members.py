@@ -79,3 +79,30 @@ class EnterpriseMember(models.Model):
         self.token_invitation = token_value
         self.save()
         return token_value
+
+    # def active_or_deactivate(self, activated: bool):
+    #     if self.is_activated == activated:
+    #         return
+    #     self.is_activated = activated
+    #     self.save()
+    #
+    #     # Update billing
+    #     from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodNotSupportException, \
+    #         PaymentMethodFactory
+    #     if activated is True and self.enterprise.is_billing_members_added(member_user_id=self.user_id):
+    #         try:
+    #             PaymentMethodFactory.get_method(
+    #                 user=self.enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+    #                 payment_method=PAYMENT_METHOD_CARD
+    #             ).update_quantity_subscription(amount=1)
+    #         except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+    #             pass
+    #
+    #     if activated is False and self.enterprise.is_billing_members_removed(member_user_id=self.user_id):
+    #         try:
+    #             PaymentMethodFactory.get_method(
+    #                 user=self.enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+    #                 payment_method=PAYMENT_METHOD_CARD
+    #             ).update_quantity_subscription(amount=-1)
+    #         except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+    #             pass
