@@ -100,7 +100,7 @@ class CronTask:
 
     def enterprise_member_change_billing(self):
         try:
-            # enterprise_member_change_billing()
+            enterprise_member_change_billing()
             self.logger.info("[+] enterprise_member_change_billing Done")
         except Exception as e:
             tb = traceback.format_exc()
