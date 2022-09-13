@@ -58,6 +58,14 @@ urlpatterns += [
 ]
 
 
+# ----------------------------------- Billing Contacts ------------------------- #
+urlpatterns += [
+    url(r'^(?P<pk>[0-9a-z]+)/billing_contacts$', views.BillingContactViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^(?P<pk>[0-9a-z]+)/billing_contacts/(?P<contact_id>[0-9]+)$',
+        views.BillingContactViewSet.as_view({'delete': 'destroy'}))
+]
+
+
 # ----------------------------------- Activity Log ------------------------- #
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/activity$', views.ActivityLogPwdViewSet.as_view({'get': 'list'})),

@@ -62,6 +62,7 @@ from cystack_models.models.form_submissions.affiliate_submissions import Affilia
 
 # ------------------------- Enterprise Models -------------------------- #
 from cystack_models.models.enterprises.enterprises import Enterprise
+from cystack_models.models.enterprises.payments.billing_contacts import EnterpriseBillingContact
 from cystack_models.models.enterprises.members.enterprise_member_roles import EnterpriseMemberRole
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from cystack_models.models.enterprises.groups.groups import EnterpriseGroup
