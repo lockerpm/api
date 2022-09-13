@@ -12,6 +12,7 @@ from shared.permissions.micro_service_permissions.payment_permissions import Pay
 from shared.utils.app import now
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.users.users import User
+from cystack_models.models.enterprises.payments.billing_contacts import EnterpriseBillingContact
 from v1_0.payments.serializers import DetailInvoiceSerializer
 from micro_services.payments.serializers import InvoiceWebhookSerializer, PaymentStatusWebhookSerializer, \
     BankingCallbackSerializer
@@ -42,6 +43,12 @@ class PaymentViewSet(MicroServiceViewSet):
         new_payment = result.get("new_payment")
         payment_data = result.get("payment_data", {})
         subtotal = new_payment.total_price + new_payment.discount
+        if payment_data.get("enterprise_id") and new_payment.plan == PLAN_TYPE_PM_ENTERPRISE:
+            enterprise_billing_contacts = list(EnterpriseBillingContact.objects.filter(
+                enterprise_id=payment_data.get("enterprise_id")
+            ).values_list('email', flat=True))
+        else:
+            enterprise_billing_contacts = []
         return Response(status=200, data={
             "success": True,
             "user_id": new_payment.user.user_id,
@@ -58,7 +65,8 @@ class PaymentViewSet(MicroServiceViewSet):
             "plan": new_payment.plan,
             "customer": new_payment.get_customer_dict(),
             "payment_method": new_payment.payment_method,
-            "payment_data": payment_data
+            "payment_data": payment_data,
+            "cc": enterprise_billing_contacts
         })
 
     @action(methods=["post"], detail=False)
