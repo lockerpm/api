@@ -112,7 +112,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         fields = cipher_detail.get("fields")
         cipher_detail.pop("fields", None)
 
-        login = cipher_detail if instance.type == CIPHER_TYPE_LOGIN else None
+        login = cipher_detail if instance.type in [CIPHER_TYPE_LOGIN, CIPHER_TYPE_MASTER_PASSWORD] else None
         secure_note = cipher_detail if instance.type in [CIPHER_TYPE_NOTE, CIPHER_TYPE_TOTP] else None
         card = cipher_detail if instance.type == CIPHER_TYPE_CARD else None
         identity = cipher_detail if instance.type == CIPHER_TYPE_IDENTITY else None
