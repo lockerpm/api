@@ -12,6 +12,7 @@ class EnterpriseGroupSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super(EnterpriseGroupSerializer, self).to_representation(instance)
         data["number_members"] = instance.groups_members.count()
+        data["created_by"] = instance.created_by_id
         return data
 
 

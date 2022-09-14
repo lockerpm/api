@@ -72,7 +72,7 @@ class GroupPwdViewSet(EnterpriseViewSet):
         validated_data = serializer.validated_data
         name = validated_data.get("name")
 
-        new_group = EnterpriseGroup.create(enterprise, name)
+        new_group = EnterpriseGroup.create(enterprise, name, created_by=user)
 
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
             "enterprise_ids": [enterprise.id], "acting_user_id": user.user_id, "user_id": user.user_id,
