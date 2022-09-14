@@ -79,6 +79,8 @@ def get_cipher_detail_data(cipher):
         data = dict(cipher.get("cryptoAccount") or {})
     elif cipher_type == CIPHER_TYPE_CRYPTO_WALLET:
         data = dict(cipher.get("cryptoWallet") or {})
+    elif cipher_type == CIPHER_TYPE_MASTER_PASSWORD:
+        data = dict(cipher.get("login") or {})
     else:
         data = dict()
     data.update({
