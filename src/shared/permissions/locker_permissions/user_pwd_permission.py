@@ -10,3 +10,8 @@ class UserPwdPermission(LockerPermission):
         elif view.action in ["retrieve", "dashboard", "list_user_ids"]:
             return self.is_admin(request)
         return self.is_auth(request) and request.user.activated
+
+    def has_object_permission(self, request, view, obj):
+        if view.action in ["password"]:
+            return self.can_edit_cipher(request, obj)
+        return super(UserPwdPermission, self).has_object_permission(request, view, obj)
