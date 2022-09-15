@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 from typing import Dict, Union, Any
 
@@ -11,9 +12,11 @@ from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
+from cystack_models.models import Cipher
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
+from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
@@ -22,9 +25,11 @@ from shared.constants.transactions import *
 from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
-from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE
+from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE, \
+    SYNC_EVENT_CIPHER_UPDATE
 from shared.utils.app import now
 from shared.utils.network import detect_device
+from v1_0.ciphers.serializers import UpdateVaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
     ListUserSerializer
@@ -70,6 +75,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "activated": self.request.query_params.get("activated")
         })
         return users
+
+    def get_master_pwd_cipher(self, cipher_id, user_id):
+        try:
+            cipher = Cipher.objects.get(id=cipher_id, created_by=user_id, type=CIPHER_TYPE_MASTER_PASSWORD)
+            if cipher.team:
+                self.check_object_permissions(request=self.request, obj=cipher)
+            return cipher
+        except Cipher.DoesNotExist:
+            raise ValidationError(detail={"master_password_cipher": {"id": ["The cipher does not exist"]}})
 
     @action(methods=["post"], detail=False)
     def register(self, request, *args, **kwargs):
@@ -389,10 +403,32 @@ class UserPwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
-
         new_master_password_hash = validated_data.get("new_master_password_hash")
         key = validated_data.get("key")
         score = validated_data.get("score", user.master_password_score)
+
+        # Update the master password cipher
+        master_password_cipher = request.data.get("master_password_cipher")
+        if master_password_cipher:
+            # Check permission
+            master_password_cipher_id = master_password_cipher.get("id")
+            master_password_cipher_obj = self.get_master_pwd_cipher(
+                cipher_id=master_password_cipher_id, user_id=user.user_id
+            )
+            self.serializer_class = UpdateVaultItemSerializer
+            serializer = self.get_serializer(data=master_password_cipher)
+            serializer.is_valid(raise_exception=True)
+            team = serializer.validated_data.get("team")
+            cipher_detail = serializer.save(**{"cipher": master_password_cipher_obj})
+            cipher_detail.pop("team", None)
+            cipher_detail = json.loads(json.dumps(cipher_detail))
+            master_password_cipher_obj = self.cipher_repository.save_update_cipher(
+                cipher=master_password_cipher_obj, cipher_data=cipher_detail
+            )
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+                data={"id": master_password_cipher_obj.id}
+            )
+        
         self.user_repository.change_master_password_hash(
             user=user, new_master_password_hash=new_master_password_hash, key=key, score=score
         )
