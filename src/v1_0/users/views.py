@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, FloatField, ExpressionWrapper, Count, CharField, IntegerField
 from django.db.models.expressions import RawSQL, Case, When
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
@@ -38,7 +38,7 @@ from v1_0.apps import PasswordManagerViewSet
 
 class UserPwdViewSet(PasswordManagerViewSet):
     permission_classes = (UserPwdPermission, )
-    http_method_names = ["head", "options", "get", "post", "put"]
+    http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
     def get_serializer_class(self):
         if self.action == "register":
@@ -469,26 +469,26 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        self._delete_locker_user(user=user)
+        return Response(status=200, data={"success": True})
+
+    def _delete_locker_user(self, user):
+        # Check if user is the owner of the enterprise
+        default_enterprise = self.user_repository.get_default_enterprise(user=user)
+        # Clear data of the default team
+        if default_enterprise:
+            default_enterprise.enterprise_members.all().order_by('id').delete()
+            default_enterprise.groups.order_by('id').delete()
+            default_enterprise.policies.order_by('id').delete()
+            default_enterprise.domains.all().order_by('id').delete()
+            default_enterprise.delete()
+
         # Check if user is the only owner of any teams (except default team)
         default_team = self.user_repository.get_default_team(user=user)
         default_team_id = default_team.id if default_team else None
-
         owner_teams = user.team_members.all().filter(
             role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False,
         ).exclude(team_id=default_team_id)
-        business_teams = owner_teams.filter(team__personal_share=False)
-
-        if business_teams.count() > 0:
-            raise ValidationError({"non_field_errors": [gen_error("1007")]})
-
-        # Clear data of default team
-        if default_team:
-            default_team.team_members.all().order_by('id').delete()
-            default_team.groups.order_by('id').delete()
-            default_team.collections.all().order_by('id').delete()
-            default_team.ciphers.all().order_by('id').delete()
-            default_team.delete()
-
         # Remove all share teams
         # My share:
         personal_share_teams = owner_teams.filter(team__personal_share=True)
@@ -502,7 +502,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Deactivated this account
         self.user_repository.delete_account(user)
-        return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
     def purge_me(self, request, *args, **kwargs):
@@ -602,6 +601,14 @@ class UserPwdViewSet(PasswordManagerViewSet):
         ).get_plan_type_alias()
 
         return Response(status=200, data=data)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.request.user
+        instance = self.get_object()
+        if user.user_id == instance.user_id:
+            raise PermissionDenied
+        self._delete_locker_user(user=instance)
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def list_user_ids(self, request, *args, **kwargs):
