@@ -3,11 +3,11 @@ import json
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
 from core.utils.data_helpers import camel_snake_data
-from shared.background import BG_EVENT, LockerBackgroundFactory, BG_CIPHER
-from shared.constants.event import *
+from shared.background import LockerBackgroundFactory, BG_CIPHER
+from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD, IMMUTABLE_CIPHER_TYPES
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
@@ -63,6 +63,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_detail = serializer.save(**{"check_plan": True})
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
+
+        if cipher_detail.get("type") in CIPHER_TYPE_MASTER_PASSWORD and \
+                user.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).exists():
+            raise ValidationError(detail={"type": ["This type is not valid"]})
 
         # We create new cipher object from cipher detail data.
         # Then, we update revision date of user (personal or members of the organization)
@@ -196,6 +200,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         cipher = self.get_object()
+        if cipher.type in IMMUTABLE_CIPHER_TYPES:
+            raise PermissionDenied
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         team = serializer.validated_data.get("team")

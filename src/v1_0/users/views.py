@@ -29,7 +29,7 @@ from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EV
     SYNC_EVENT_CIPHER_UPDATE
 from shared.utils.app import now
 from shared.utils.network import detect_device
-from v1_0.ciphers.serializers import UpdateVaultItemSerializer
+from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
     ListUserSerializer
@@ -409,9 +409,23 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Update the master password cipher
         master_password_cipher = request.data.get("master_password_cipher")
-        if master_password_cipher:
+        master_password_cipher_id = master_password_cipher.get("id") if master_password_cipher else None
+        if not master_password_cipher_id and user.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).exists() is False:
+            # Create master password item
+            self.serializer_class = VaultItemSerializer
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            team = serializer.validated_data.get("team")
+            cipher_detail = serializer.save(**{"check_plan": False})
+            cipher_detail.pop("team", None)
+            cipher_detail = json.loads(json.dumps(cipher_detail))
+            new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
+            # Send sync message
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+                data={"id": str(new_cipher.id)}
+            )
+        if master_password_cipher_id:
             # Check permission
-            master_password_cipher_id = master_password_cipher.get("id")
             master_password_cipher_obj = self.get_master_pwd_cipher(
                 cipher_id=master_password_cipher_id, user_id=user.user_id
             )
@@ -433,10 +447,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
             user=user, new_master_password_hash=new_master_password_hash, key=key, score=score
         )
         self.user_repository.revoke_all_sessions(user=user)
-        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-        #     "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #     "type": EVENT_USER_CHANGE_PASSWORD, "ip_address": ip
-        # })
         mail_user_ids = NotificationSetting.get_user_mail(
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[user.user_id]
         )

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from v1_0.ciphers.serializers import VaultItemSerializer
 from v1_0.folders.serializers import FolderSerializer
 
@@ -21,4 +22,6 @@ class ImportCipherSerializer(serializers.Serializer):
         ciphers = data.get("ciphers", [])
         if len(ciphers) > 1000:
             raise serializers.ValidationError(detail={"ciphers": ["You can only import up to 1000 ciphers at a time"]})
+        imported_ciphers = [cipher for cipher in ciphers if cipher.get("type") != CIPHER_TYPE_MASTER_PASSWORD]
+        data["ciphers"] = imported_ciphers
         return data
