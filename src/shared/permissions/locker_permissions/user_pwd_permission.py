@@ -12,6 +12,4 @@ class UserPwdPermission(LockerPermission):
         return self.is_auth(request) and request.user.activated
 
     def has_object_permission(self, request, view, obj):
-        if view.action in ["password"]:
-            return self.can_edit_cipher(request, obj)
         return super(UserPwdPermission, self).has_object_permission(request, view, obj)
