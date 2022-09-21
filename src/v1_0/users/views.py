@@ -29,7 +29,7 @@ from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EV
     SYNC_EVENT_CIPHER_UPDATE
 from shared.utils.app import now
 from shared.utils.network import detect_device
-from v1_0.ciphers.serializers import UpdateVaultItemSerializer
+from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
     ListUserSerializer
@@ -75,15 +75,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "activated": self.request.query_params.get("activated")
         })
         return users
-
-    def get_master_pwd_cipher(self, cipher_id, user_id):
-        try:
-            cipher = Cipher.objects.get(id=cipher_id, created_by=user_id, type=CIPHER_TYPE_MASTER_PASSWORD)
-            if cipher.team:
-                self.check_object_permissions(request=self.request, obj=cipher)
-            return cipher
-        except Cipher.DoesNotExist:
-            raise ValidationError(detail={"master_password_cipher": {"id": ["The cipher does not exist"]}})
 
     @action(methods=["post"], detail=False)
     def register(self, request, *args, **kwargs):
@@ -371,7 +362,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "key": user.key,
             "kdf": user.kdf,
             "kdf_iterations": user.kdf_iterations,
-            "not_sync": not_sync_sso_token_ids
+            "not_sync": not_sync_sso_token_ids,
+            "has_no_master_pw_item": not user.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).exists() is False
         }
         # Create event login successfully
         if user_enterprise_ids:
@@ -409,34 +401,48 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         # Update the master password cipher
         master_password_cipher = request.data.get("master_password_cipher")
+        master_pwd_item_obj = user.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).first()
+
         if master_password_cipher:
-            # Check permission
-            master_password_cipher_id = master_password_cipher.get("id")
-            master_password_cipher_obj = self.get_master_pwd_cipher(
-                cipher_id=master_password_cipher_id, user_id=user.user_id
-            )
-            self.serializer_class = UpdateVaultItemSerializer
-            serializer = self.get_serializer(data=master_password_cipher)
-            serializer.is_valid(raise_exception=True)
-            team = serializer.validated_data.get("team")
-            cipher_detail = serializer.save(**{"cipher": master_password_cipher_obj})
-            cipher_detail.pop("team", None)
-            cipher_detail = json.loads(json.dumps(cipher_detail))
-            master_password_cipher_obj = self.cipher_repository.save_update_cipher(
-                cipher=master_password_cipher_obj, cipher_data=cipher_detail
-            )
-            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
-                data={"id": master_password_cipher_obj.id}
-            )
-        
+            if not master_pwd_item_obj:
+                # Create master password item
+                self.serializer_class = VaultItemSerializer
+                serializer = VaultItemSerializer(
+                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                )
+                serializer.is_valid(raise_exception=True)
+                team = serializer.validated_data.get("team")
+                cipher_detail = serializer.save(**{"check_plan": False})
+                cipher_detail.pop("team", None)
+                cipher_detail = json.loads(json.dumps(cipher_detail))
+                new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
+                # Send sync message
+                PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+                    data={"id": str(new_cipher.id)}
+                )
+            else:
+                # Check permission
+                self.serializer_class = UpdateVaultItemSerializer
+                serializer = UpdateVaultItemSerializer(
+                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                )
+                # serializer = self.get_serializer(data=master_password_cipher)
+                serializer.is_valid(raise_exception=True)
+                team = serializer.validated_data.get("team")
+                cipher_detail = serializer.save(**{"cipher": master_pwd_item_obj})
+                cipher_detail.pop("team", None)
+                cipher_detail = json.loads(json.dumps(cipher_detail))
+                master_password_cipher_obj = self.cipher_repository.save_update_cipher(
+                    cipher=master_pwd_item_obj, cipher_data=cipher_detail
+                )
+                PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+                    data={"id": master_password_cipher_obj.id}
+                )
+
         self.user_repository.change_master_password_hash(
             user=user, new_master_password_hash=new_master_password_hash, key=key, score=score
         )
         self.user_repository.revoke_all_sessions(user=user)
-        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_team_ids", **{
-        #     "team_ids": user_teams, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #     "type": EVENT_USER_CHANGE_PASSWORD, "ip_address": ip
-        # })
         mail_user_ids = NotificationSetting.get_user_mail(
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[user.user_id]
         )

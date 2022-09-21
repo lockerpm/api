@@ -38,7 +38,7 @@ class CipherShareSerializer(serializers.Serializer):
     # Detail Ciphers
     name = serializers.CharField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
-    type = serializers.ChoiceField(choices=LIST_CIPHER_TYPE)
+    type = serializers.ChoiceField(choices=list(set(LIST_CIPHER_TYPE) - set(IMMUTABLE_CIPHER_TYPES)))
     # view_password = serializers.BooleanField(default=True)
     fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
     login = LoginVaultSerializer(required=False, many=False, allow_null=True)

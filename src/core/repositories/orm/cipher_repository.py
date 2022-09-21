@@ -277,7 +277,7 @@ class CipherRepository(ICipherRepository):
         # Update deleted_date of the ciphers
         ciphers = self.get_multiple_by_user(user=user_deleted, only_deleted=True).filter(
             id__in=cipher_ids, deleted_date__isnull=True
-        )
+        ).exclude(type__in=IMMUTABLE_CIPHER_TYPES)
         deleted_cipher_ids = list(ciphers.values_list('id', flat=True))
         for cipher in ciphers:
             cipher.revision_date = current_time
@@ -299,7 +299,9 @@ class CipherRepository(ICipherRepository):
         :param user_deleted: (obj) User deleted
         :return:
         """
-        ciphers = self.get_multiple_by_user(user=user_deleted, only_deleted=True).filter(id__in=cipher_ids)
+        ciphers = self.get_multiple_by_user(user=user_deleted, only_deleted=True).filter(
+            id__in=cipher_ids
+        ).exclude(type__in=IMMUTABLE_CIPHER_TYPES)
         team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
         # Delete ciphers objects
         ciphers.delete()
@@ -349,7 +351,9 @@ class CipherRepository(ICipherRepository):
 
     def move_multiple_cipher(self, cipher_ids, user_moved, folder_id):
         # Filter list ciphers of users
-        ciphers = self.get_multiple_by_user(user=user_moved).filter(id__in=cipher_ids, deleted_date__isnull=True)
+        ciphers = self.get_multiple_by_user(user=user_moved).filter(
+            id__in=cipher_ids, deleted_date__isnull=True
+        ).exclude(type__in=IMMUTABLE_CIPHER_TYPES)
         # Move all cipher to new folder
         for cipher in ciphers:
             cipher.set_folder(user_id=user_moved.user_id, folder_id=folder_id)
@@ -511,7 +515,9 @@ class CipherRepository(ICipherRepository):
 
         # Create multiple ciphers
         sync_create_ciphers = []
-        sync_create_ciphers_data = [cipher_data for cipher_data in ciphers if not cipher_data.get("id")]
+        sync_create_ciphers_data = [
+            cipher_data for cipher_data in ciphers if not cipher_data.get("id") and cipher_data.get("type") != CIPHER_TYPE_MASTER_PASSWORD
+        ]
         for cipher_data in sync_create_ciphers_data:
             # Only allow sync personal ciphers
             if cipher_data.get("organizationId") or cipher_data.get("team"):
@@ -542,7 +548,9 @@ class CipherRepository(ICipherRepository):
 
         # Sync update existed ciphers
         sync_update_ciphers = []
-        sync_update_ciphers_data = [cipher_data for cipher_data in ciphers if cipher_data.get("id")]
+        sync_update_ciphers_data = [
+            cipher_data for cipher_data in ciphers if cipher_data.get("id") and cipher_data.get("type") != CIPHER_TYPE_MASTER_PASSWORD
+        ]
         sync_update_cipher_ids = [cipher_data.get("id") for cipher_data in sync_update_ciphers_data]
         user_update_ciphers = user.ciphers.filter(id__in=sync_update_cipher_ids)
         user_update_ciphers_dict = {}
