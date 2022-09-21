@@ -64,7 +64,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
 
-        if cipher_detail.get("type") in CIPHER_TYPE_MASTER_PASSWORD and \
+        if cipher_detail.get("type") in [CIPHER_TYPE_MASTER_PASSWORD] and \
                 user.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).exists():
             raise ValidationError(detail={"type": ["This type is not valid"]})
 
