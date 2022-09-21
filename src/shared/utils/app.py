@@ -3,9 +3,9 @@ import random
 import string
 import time
 import urllib.parse
-
 import pytz
-from datetime import datetime
+from datetime import datetime, timezone
+from dateutil import relativedelta
 
 from shared.constants.ciphers import *
 
@@ -61,6 +61,13 @@ def url_decode(url):
     url = url.replace("+", "%20")
     url = urllib.parse.unquote(url)
     return url
+
+
+def start_end_month_current():
+    current_time = datetime.now(timezone.utc)
+    start_ts = current_time.replace(day=1, hour=0, minute=0, second=0, microsecond=0).timestamp()
+    end_ts = (current_time + relativedelta.relativedelta(months=1)).timestamp()
+    return start_ts, end_ts
 
 
 def get_cipher_detail_data(cipher):
