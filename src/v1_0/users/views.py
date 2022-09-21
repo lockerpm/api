@@ -362,7 +362,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "key": user.key,
             "kdf": user.kdf,
             "kdf_iterations": user.kdf_iterations,
-            "not_sync": not_sync_sso_token_ids
+            "not_sync": not_sync_sso_token_ids,
+            "has_no_master_pw_item": not user.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).exists() is False
         }
         # Create event login successfully
         if user_enterprise_ids:
