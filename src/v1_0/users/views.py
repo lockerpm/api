@@ -406,7 +406,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             if not master_pwd_item_obj:
                 # Create master password item
                 self.serializer_class = VaultItemSerializer
-                serializer = self.get_serializer(data=request.data)
+                serializer = VaultItemSerializer(
+                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                )
                 serializer.is_valid(raise_exception=True)
                 team = serializer.validated_data.get("team")
                 cipher_detail = serializer.save(**{"check_plan": False})
@@ -420,7 +422,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
             else:
                 # Check permission
                 self.serializer_class = UpdateVaultItemSerializer
-                serializer = self.get_serializer(data=master_password_cipher)
+                serializer = UpdateVaultItemSerializer(
+                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                )
+                # serializer = self.get_serializer(data=master_password_cipher)
                 serializer.is_valid(raise_exception=True)
                 team = serializer.validated_data.get("team")
                 cipher_detail = serializer.save(**{"cipher": master_pwd_item_obj})
