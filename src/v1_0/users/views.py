@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
-from cystack_models.models import Cipher
+from cystack_models.models import Event
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
@@ -27,7 +27,7 @@ from shared.error_responses.error import gen_error, refer_error
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE, \
     SYNC_EVENT_CIPHER_UPDATE
-from shared.utils.app import now
+from shared.utils.app import now, start_end_month_current
 from shared.utils.network import detect_device
 from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
@@ -210,6 +210,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 user_score.save()
             user.save()
             return Response(status=200, data={"success": True})
+
+    @action(methods=["get"], detail=False)
+    def policy_me(self, request, *args, **kwargs):
+        user = self.request.user
+        start_ts, end_ts = start_end_month_current()
+        failed_login = Event.objects.filter(
+            type=EVENT_USER_BLOCK_LOGIN, user_id=user.user_id,
+            creation_date__gte=start_ts, creation_date__lte=end_ts
+        ).count()
+        return Response(status=200, data={"failed_login": failed_login})
 
     @action(methods=["get"], detail=False)
     def revision_date(self, request, *args, **kwargs):

@@ -32,3 +32,27 @@ class UserViewSet(MicroServiceViewSet):
             user.save()
         return Response(status=200, data={"success": True})
 
+    @action(methods=["post"], detail=False)
+    def search_by_device(self, request, *args, **kwargs):
+        device_identifier = request.data.get("device_identifier")
+        from cystack_models.models import Device
+        devices = Device.objects.filter(device_identifier=device_identifier).select_related('user')
+        users = [{
+            "id": device.user.user_id,
+            "activated": device.user.activated
+        } for device in devices]
+        return Response(status=200, data=users)
+
+    @action(methods=["post"], detail=False)
+    def search_by_user(self, request, *args, **kwargs):
+        from cystack_models.models import User
+        try:
+            user = User.objects.get(user_id=request.data.get("user_id"))
+            return Response(status=200, data={
+                "id": user.user_id,
+                "activated": user.activated,
+                "use_mobile": user.user_devices.filter(client_id="mobile").exists(),
+                "last_login": user.last_request_login
+            })
+        except User.DoesNotExist:
+            raise NotFound
