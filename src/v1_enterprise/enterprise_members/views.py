@@ -365,6 +365,9 @@ class MemberPwdViewSet(EnterpriseViewSet):
         if enterprise_member.is_activated != activated:
             enterprise_member.is_activated = activated
             enterprise_member.save()
+            # Remove this member from all groups
+            if activated is False:
+                enterprise_member.groups_members.all().delete()
             #  Update billing here - Check the user is a new activated user in billing period
             if activated is True and enterprise.is_billing_members_added(member_user_id=enterprise_member.user_id):
                 try:
