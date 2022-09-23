@@ -464,3 +464,20 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             "mail_user_ids": mail_user_ids,
             "grantor_user_id": grantor.user_id,
         })
+
+    @action(methods=["post"], detail=True)
+    def id_password(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        emergency_access = self.get_object()
+        if emergency_access.type != EMERGENCY_ACCESS_TYPE_TAKEOVER or \
+                emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+            raise NotFound
+        grantor = emergency_access.grantor
+        self.user_repository.revoke_all_sessions(user=grantor)
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[grantor.user_id]
+        )
+        return Response(status=200, data={
+            "mail_user_ids": mail_user_ids,
+            "grantor_user_id": grantor.user_id,
+        })
