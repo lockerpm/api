@@ -1,3 +1,4 @@
+from django.forms import model_to_dict
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
@@ -14,12 +15,26 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = ('id', 'payment_id', 'created_time', 'total_price', 'discount', 'status', 'payment_method',
-                  'duration', 'currency')
+                  'duration', 'currency', 'plan', )
         read_only_field = ('id', 'created_time', 'total_price', 'discount', 'status', 'payment_method',
-                           'duration', 'currency', )
+                           'duration', 'currency', 'plan', )
 
     def to_representation(self, instance):
         return super(InvoiceSerializer, self).to_representation(instance)
+
+
+class DetailInvoiceSerializer(InvoiceSerializer):
+    def to_representation(self, instance):
+        data = super(DetailInvoiceSerializer, self).to_representation(instance)
+        customer = instance.customer
+        promo_code = instance.promo_code
+        data["customer"] = model_to_dict(
+            customer,
+            fields=[field.name for field in customer._meta.fields if field.name != 'id']
+        ) if customer is not None else None
+        data["promo_code"] = promo_code.code if promo_code is not None else None
+
+        return data
 
 
 class CalcSerializer(serializers.Serializer):

@@ -15,7 +15,8 @@ from shared.permissions.locker_permissions.enterprise.payment_permission import 
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import InvoiceSerializer, CalcSerializer, UpgradePlanSerializer, BillingAddressSerializer
+from .serializers import InvoiceSerializer, CalcSerializer, UpgradePlanSerializer, BillingAddressSerializer, \
+    DetailInvoiceSerializer
 
 
 class PaymentPwdViewSet(EnterpriseViewSet):
@@ -23,8 +24,10 @@ class PaymentPwdViewSet(EnterpriseViewSet):
     http_method_names = ["head", "options", "get", "post", "put"]
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action == "list":
             self.serializer_class = InvoiceSerializer
+        elif self.action == "retrieve":
+            self.serializer_class = DetailInvoiceSerializer
         elif self.action == "calc":
             self.serializer_class = CalcSerializer
         elif self.action == "upgrade_plan":
