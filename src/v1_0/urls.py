@@ -176,6 +176,8 @@ urlpatterns += [
         views.EmergencyAccessPwdViewSet.as_view({'post': 'takeover'})),
     url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/password$',
         views.EmergencyAccessPwdViewSet.as_view({'post': 'password'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/id_password$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'id_password'})),
 ]
 
 
