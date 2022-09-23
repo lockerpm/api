@@ -50,11 +50,7 @@ class InvoiceWebhookSerializer(serializers.Serializer):
 
         # If we dont have a payment with stripe_invoice_id => Create new one
         if stripe_invoice_exist is False:
-            try:
-                user = User.objects.get(user_id=validated_data["user_id"])
-            except User.DoesNotExist:
-                raise serializers.ValidationError(detail={"user_id": ["User does not exist"]})
-
+            user = user_repository.retrieve_or_create_by_id(user_id=validated_data["user_id"])
             validated_data["user"] = user
             validated_data["customer"] = user_repository.get_customer_data(user=user, id_card=stripe_card_id)
             validated_data["duration"] = validated_data.get("duration", DURATION_MONTHLY)
