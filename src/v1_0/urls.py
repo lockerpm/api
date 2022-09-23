@@ -50,7 +50,7 @@ urlpatterns += [
 urlpatterns += [
     url(r'^users/me$', views.UserPwdViewSet.as_view({'get': 'me', 'put': 'me'})),
     url(r'^users/me/revision_date$', views.UserPwdViewSet.as_view({'get': 'revision_date'})),
-    url(r'^users/me/policy$', views.UserPwdViewSet.as_view({'get': 'policy_me'})),
+    url(r'^users/me/violation$', views.UserPwdViewSet.as_view({'get': 'violation_me'})),
     url(r'^users/me/family', views.UserPwdViewSet.as_view({'get': 'family'})),
     url(r'^users/me/delete$', views.UserPwdViewSet.as_view({'post': 'delete_me'})),
     url(r'^users/me/purge$', views.UserPwdViewSet.as_view({'post': 'purge_me'})),
@@ -176,6 +176,8 @@ urlpatterns += [
         views.EmergencyAccessPwdViewSet.as_view({'post': 'takeover'})),
     url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/password$',
         views.EmergencyAccessPwdViewSet.as_view({'post': 'password'})),
+    url(r'^emergency_access/(?P<pk>[0-9a-z\-]+)/id_password$',
+        views.EmergencyAccessPwdViewSet.as_view({'post': 'id_password'})),
 ]
 
 

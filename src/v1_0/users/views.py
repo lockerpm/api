@@ -212,7 +212,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
             return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
-    def policy_me(self, request, *args, **kwargs):
+    def violation_me(self, request, *args, **kwargs):
         user = self.request.user
         start_ts, end_ts = start_end_month_current()
         failed_login = Event.objects.filter(

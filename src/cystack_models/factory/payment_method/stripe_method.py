@@ -97,7 +97,6 @@ class StripePaymentMethod(IPaymentMethod):
 
         # First, get current user plan
         current_plan = self.get_current_plan(**kwargs)
-
         stripe_subscription = current_plan.get_stripe_subscription()
         # Create stripe subscription if does not exist
         if not stripe_subscription:
@@ -110,68 +109,68 @@ class StripePaymentMethod(IPaymentMethod):
         if stripe_subscription.discount is not None:
             stripe.Subscription.delete_discount(stripe_subscription.id)
 
-        # Cancel the current plan immediately
-        is_cancel_successfully = self.cancel_immediately_recurring_subscription()
-        # Then, create new subscription
-        if is_cancel_successfully is True:
-            return self.create_recurring_subscription(amount, plan_type, coupon, duration, **kwargs)
-        else:
-            CyLog.error(**{
-                "message": "Upgrade existed plan Error: Cannot cancel the current subscription: {} - kwarg {}".format(
-                    self.user, kwargs
-                )
-            })
+        # # Cancel the current plan immediately
+        # is_cancel_successfully = self.cancel_immediately_recurring_subscription()
+        # # Then, create new subscription
+        # if is_cancel_successfully is True:
+        #     return self.create_recurring_subscription(amount, plan_type, coupon, duration, **kwargs)
+        # else:
+        #     CyLog.error(**{
+        #         "message": "Upgrade existed plan Error: Cannot cancel the current subscription: {} - kwarg {}".format(
+        #             self.user, kwargs
+        #         )
+        #     })
+        #     return {"success": False, "stripe_error": False, "error_details": None}
+
+        # Re-formatting Stripe coupon and Stripe plans
+        coupon = None if coupon is None else "{}_{}".format(coupon.id, duration)
+        stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
+        try:
+            """
+            Here, we update the Stripe subscription.
+            - Use payment_behavior='pending_if_incomplete' to update subscription using `pending_updates`.
+            The subscription object will return `pending_update` dict in event webhook
+            - Use proration_behavior='always_invoice' to invoice immediately for proration.
+            """
+            # First, update payment method and metadata
+            new_stripe_subscription = stripe.Subscription.modify(
+                stripe_subscription.id,
+                default_payment_method=card.get("id_card"),
+                metadata={
+                    "user_id": self.user.user_id,
+                    "scope": self.scope,
+                    "family_members": str(kwargs.get("family_members", [])),
+                    "key": kwargs.get("key"),
+                    "collection_name": kwargs.get("collection_name")
+                },
+                coupon=coupon
+            )
+            # Update item plan
+            new_stripe_subscription = stripe.Subscription.modify(
+                stripe_subscription.id,
+                payment_behavior='pending_if_incomplete',
+                proration_behavior='none',
+                items=[{
+                    'id': stripe_subscription['items']['data'][0].id,
+                    'plan': stripe_plan_id,
+                    'quantity': self.__get_new_quantity(**kwargs)
+                }]
+            )
+        except stripe.error.CardError as e:
+            CyLog.debug(**{"message": "Upgrade CardError {}".format(self.handle_error(e))})
+            return {
+                "success": False,
+                "stripe_error": True,
+                "error_details": self.handle_error(e)
+            }
+        except Exception as e:
+            tb = traceback.format_exc()
+            CyLog.debug(**{"message": "Upgrade failed {}".format(tb)})
             return {"success": False, "stripe_error": False, "error_details": None}
 
-        # # Re-formatting Stripe coupon and Stripe plans
-        # coupon = None if coupon is None else "{}_{}".format(coupon.id, duration)
-        # stripe_plan_id = self.__reformatting_stripe_plan_id(plan_type, duration)
-        # try:
-        #     """
-        #     Here, we update the Stripe subscription.
-        #     - Use payment_behavior='pending_if_incomplete' to update subscription using `pending_updates`.
-        #     The subscription object will return `pending_update` dict in event webhook
-        #     - Use proration_behavior='always_invoice' to invoice immediately for proration.
-        #     """
-        #     # First, update payment method and metadata
-        #     new_stripe_subscription = stripe.Subscription.modify(
-        #         stripe_subscription.id,
-        #         default_payment_method=card.get("id_card"),
-        #         metadata={
-        #             "user_id": self.user.user_id,
-        #             "scope": self.scope,
-        #             "family_members": str(kwargs.get("family_members", [])),
-        #             "key": kwargs.get("key"),
-        #             "collection_name": kwargs.get("collection_name")
-        #         },
-        #         coupon=coupon
-        #     )
-        #     # Update item plan
-        #     new_stripe_subscription = stripe.Subscription.modify(
-        #         stripe_subscription.id,
-        #         payment_behavior='pending_if_incomplete',
-        #         proration_behavior='always_invoice',
-        #         items=[{
-        #             'id': stripe_subscription['items']['data'][0].id,
-        #             'plan': stripe_plan_id,
-        #             'quantity': self.__get_new_quantity(**kwargs)
-        #         }]
-        #     )
-        # except stripe.error.CardError as e:
-        #     CyLog.debug(**{"message": "Upgrade CardError {}".format(self.handle_error(e))})
-        #     return {
-        #         "success": False,
-        #         "stripe_error": True,
-        #         "error_details": self.handle_error(e)
-        #     }
-        # except Exception as e:
-        #     tb = traceback.format_exc()
-        #     CyLog.debug(**{"message": "Upgrade failed {}".format(tb)})
-        #     return {"success": False, "stripe_error": False, "error_details": None}
-        #
-        # # Upgrade successfully => Upgrade user plan
-        # CyLog.info(**{"message": "[Stripe] Start upgrade new plan: {} {} ".format(plan_type, duration)})
-        # return {"success": True, "stripe_error": False, "error_details": None}
+        # Upgrade successfully => Upgrade user plan
+        CyLog.info(**{"message": "[Stripe] Start upgrade new plan: {} {} ".format(plan_type, duration)})
+        return {"success": True, "stripe_error": False, "error_details": None}
 
     def cancel_recurring_subscription(self, **kwargs):
         """

@@ -1,9 +1,12 @@
+import json
+
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.notifications.notification_settings import NotificationSetting
+from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.members import *
 from shared.constants.emergency_access import *
 from shared.constants.user_notification import NOTIFY_EMERGENCY_ACCESS, NOTIFY_CHANGE_MASTER_PASSWORD
@@ -12,8 +15,9 @@ from shared.permissions.locker_permissions.emergency_access_pwd_permission impor
 from shared.services.fcm.constants import *
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
-from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS
+from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS, SYNC_EVENT_CIPHER_UPDATE
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
+from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
     InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
 from v1_0.sync.serializers import SyncCipherSerializer
@@ -416,10 +420,63 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             if member.role.name != MEMBER_ROLE_OWNER:
                 member.delete()
 
+        # Update the master password cipher
+        master_password_cipher = request.data.get("master_password_cipher")
+        master_pwd_item_obj = grantor.created_ciphers.filter(type=CIPHER_TYPE_MASTER_PASSWORD).first()
+        if master_password_cipher:
+            if not master_pwd_item_obj:
+                # Create master password item
+                self.serializer_class = VaultItemSerializer
+                serializer = VaultItemSerializer(
+                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                )
+                serializer.is_valid(raise_exception=True)
+                cipher_detail = serializer.save(**{"check_plan": False})
+                cipher_detail.pop("team", None)
+                cipher_detail = json.loads(json.dumps(cipher_detail))
+                new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
+                # Send sync message
+                PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[grantor.user_id]).send(
+                    data={"id": str(new_cipher.id)}
+                )
+            else:
+                # Check permission
+                self.serializer_class = UpdateVaultItemSerializer
+                serializer = UpdateVaultItemSerializer(
+                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                )
+                serializer.is_valid(raise_exception=True)
+                cipher_detail = serializer.save(**{"cipher": master_pwd_item_obj})
+                cipher_detail.pop("team", None)
+                cipher_detail = json.loads(json.dumps(cipher_detail))
+                master_password_cipher_obj = self.cipher_repository.save_update_cipher(
+                    cipher=master_pwd_item_obj, cipher_data=cipher_detail
+                )
+                PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[grantor.user_id]).send(
+                    data={"id": master_password_cipher_obj.id}
+                )
+
         mail_user_ids = NotificationSetting.get_user_mail(
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[grantor.user_id]
         )
 
+        return Response(status=200, data={
+            "mail_user_ids": mail_user_ids,
+            "grantor_user_id": grantor.user_id,
+        })
+
+    @action(methods=["post"], detail=True)
+    def id_password(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        emergency_access = self.get_object()
+        if emergency_access.type != EMERGENCY_ACCESS_TYPE_TAKEOVER or \
+                emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
+            raise NotFound
+        grantor = emergency_access.grantor
+        self.user_repository.revoke_all_sessions(user=grantor)
+        mail_user_ids = NotificationSetting.get_user_mail(
+            category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[grantor.user_id]
+        )
         return Response(status=200, data={
             "mail_user_ids": mail_user_ids,
             "grantor_user_id": grantor.user_id,
