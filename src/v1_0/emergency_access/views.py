@@ -426,9 +426,12 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if master_password_cipher:
             if not master_pwd_item_obj:
                 # Create master password item
-                self.serializer_class = VaultItemSerializer
+                request_context = self.request
+                request_context.user = grantor
                 serializer = VaultItemSerializer(
-                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                    data=master_password_cipher, **{
+                        "context": {'request': request_context, 'format': self.format_kwarg, 'view': self}
+                    }
                 )
                 serializer.is_valid(raise_exception=True)
                 cipher_detail = serializer.save(**{"check_plan": False})
@@ -440,10 +443,12 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
                     data={"id": str(new_cipher.id)}
                 )
             else:
-                # Check permission
-                self.serializer_class = UpdateVaultItemSerializer
+                request_context = self.request
+                request_context.user = grantor
                 serializer = UpdateVaultItemSerializer(
-                    data=master_password_cipher, **{"context": self.get_serializer_context()}
+                    data=master_password_cipher, **{
+                        "context": {'request': request_context, 'format': self.format_kwarg, 'view': self}
+                    }
                 )
                 serializer.is_valid(raise_exception=True)
                 cipher_detail = serializer.save(**{"cipher": master_pwd_item_obj})

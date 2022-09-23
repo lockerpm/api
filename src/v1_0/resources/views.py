@@ -11,7 +11,7 @@ class ResourcePwdViewSet(PasswordManagerViewSet):
     http_method_names = ["head", "options", "get"]
 
     def get_serializer_class(self):
-        if self.action == "plans":
+        if self.action in ["plans", "enterprise_plans"]:
             self.serializer_class = PMPlanSerializer
         return super(ResourcePwdViewSet, self).get_serializer_class()
 
@@ -21,3 +21,8 @@ class ResourcePwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(all_plans, many=True)
         return Response(status=200, data=serializer.data)
 
+    @action(methods=["get"], detail=False)
+    def enterprise_plans(self, request, *args, **kwargs):
+        all_plans = PMPlan.objects.all().filter(is_team_plan=True).order_by('id')
+        serializer = self.get_serializer(all_plans, many=True)
+        return Response(status=200, data=serializer.data)
