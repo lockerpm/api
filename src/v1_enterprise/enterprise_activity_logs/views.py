@@ -47,6 +47,7 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
         member_only_param = self.request.query_params.get("member_only", "0")
         group_param = self.request.query_params.get("group")
         member_ids_param = self.request.query_params.get("member_ids")
+        acting_member_ids_param = self.request.query_params.get("acting_member_ids")
         action_param = self.request.query_params.get("action")
 
         events = Event.objects.filter(team_id=enterprise.id).order_by('-creation_date').filter(
@@ -68,6 +69,11 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
                 id__in=member_ids_param.split(",")
             ).values_list('user_id', flat=True))
             events = events.filter(Q(acting_user_id__in=member_user_ids) | Q(user_id__in=member_user_ids)).distinct()
+        if acting_member_ids_param:
+            member_user_ids = list(enterprise.enterprise_members.filter(
+                id__in=acting_member_ids_param.split(",")
+            ).values_list('user_id', flat=True))
+            events = events.filter(Qacting_user_id__in=member_user_ids).distinct()
         if group_param:
             member_user_ids = list(
                 enterprise.groups.filter(id=group_param).values_list('groups_members__member__user_id', flat=True)
