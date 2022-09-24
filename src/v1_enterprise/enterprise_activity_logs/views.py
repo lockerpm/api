@@ -73,7 +73,7 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
             member_user_ids = list(enterprise.enterprise_members.filter(
                 id__in=acting_member_ids_param.split(",")
             ).values_list('user_id', flat=True))
-            events = events.filter(Qacting_user_id__in=member_user_ids).distinct()
+            events = events.filter(acting_user_id__in=member_user_ids).distinct()
         if group_param:
             member_user_ids = list(
                 enterprise.groups.filter(id=group_param).values_list('groups_members__member__user_id', flat=True)
