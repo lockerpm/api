@@ -51,6 +51,7 @@ urlpatterns += [
 urlpatterns += [
     url(r'^users/me$', views.UserPwdViewSet.as_view({'get': 'me', 'put': 'me'})),
     url(r'^users/me/revision_date$', views.UserPwdViewSet.as_view({'get': 'revision_date'})),
+    url(r'^users/me/login_method$', views.UserPwdViewSet.as_view({'get': 'login_method_me'})),
     url(r'^users/me/violation$', views.UserPwdViewSet.as_view({'get': 'violation_me'})),
     url(r'^users/me/family', views.UserPwdViewSet.as_view({'get': 'family'})),
     url(r'^users/me/delete$', views.UserPwdViewSet.as_view({'post': 'delete_me'})),
