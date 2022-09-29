@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, NotFound
 
-from cystack_models.models.relay.relay_subdomains import RelaySubdomain
+from cystack_models.models.relay.relay_subdomains import RelaySubdomain, MaxRelaySubdomainReachedException
 from relay.apps import RelayViewSet
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
@@ -67,7 +67,10 @@ class RelaySubdomainViewSet(RelayViewSet):
         if RelaySubdomain.objects.filter(subdomain=subdomain).exists():
             raise ValidationError(detail={"subdomain": ["This subdomain is used. Try another subdomain"]})
 
-        new_relay_subdomain = user.relay_subdomains.model.create(user=user, subdomain=subdomain)
+        try:
+            new_relay_subdomain = user.relay_subdomains.model.create_atomic(user_id=user.user_id, subdomain=subdomain)
+        except MaxRelaySubdomainReachedException:
+            raise ValidationError({"non_field_errors": [gen_error("8001")]})
         # Send job to AWS SQS to create new subdomain
         action_msg = {'action': 'create', 'domain': f"{new_relay_subdomain.subdomain}.{new_relay_subdomain.domain_id}"}
         create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_msg)}
