@@ -69,6 +69,13 @@ urlpatterns += [
 ]
 
 
+# ----------------------------------- Passwordless ----------------------------- #
+urlpatterns += [
+    url(r'^passwordless/credential$',
+        views.PasswordlessPwdViewSet.as_view({'get': 'credential', 'post': 'credential'})),
+
+]
+
 # -------------------------------- Notification Settings ------------------ #
 urlpatterns += [
     url(r'^notifcation/settings$', views.NotificationSettingPwdViewSet.as_view({'get': 'list'})),

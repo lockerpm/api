@@ -1,15 +1,21 @@
 import re
 from hashlib import sha256
 
-from django.db import models
+from django.db import models, transaction
 
 from cystack_models.models.relay.relay_domains import RelayDomain
 from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
 from cystack_models.models.users.users import User
-from shared.constants.relay_address import DEFAULT_RELAY_DOMAIN
+from shared.constants.relay_address import DEFAULT_RELAY_DOMAIN, MAX_FREE_RElAY_DOMAIN
 from shared.constants.relay_blacklist import RELAY_BAD_WORDS, RELAY_BLOCKLISTED, RELAY_LOCKER_BLOCKED_CHARACTER
 from shared.utils.app import random_n_digit, now
+
+
+class MaxRelayAddressReachedException(BaseException):
+    """
+    The max relay address is reached
+    """
 
 
 class RelayAddress(models.Model):
@@ -43,6 +49,17 @@ class RelayAddress(models.Model):
         if self.subdomain:
             return self.subdomain.subdomain
         return None
+
+    @classmethod
+    def create_atomic(cls, user_id, **data):
+        with transaction.atomic():
+            try:
+                user = User.objects.filter(user_id=user_id).select_for_update().get()
+            except User.DoesNotExist:
+                raise
+            if user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
+                raise MaxRelayAddressReachedException
+            return cls.create(user, **data)
 
     @classmethod
     def create(cls, user: User, **data):

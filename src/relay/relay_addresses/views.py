@@ -3,8 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
-from cystack_models.models.relay.relay_addresses import RelayAddress
-from cystack_models.models.relay.deleted_relay_addresses import DeletedRelayAddress
+from cystack_models.models.relay.relay_addresses import RelayAddress, MaxRelayAddressReachedException
 from relay.apps import RelayViewSet
 from relay.relay_addresses.serializers import RelayAddressSerializer, UpdateRelayAddressSerializer
 from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN, DEFAULT_RELAY_DOMAIN
@@ -14,7 +13,7 @@ from shared.utils.app import now
 
 
 class RelayAddressViewSet(RelayViewSet):
-    permission_classes = (RelayAddressPermission, )
+    permission_classes = (RelayAddressPermission,)
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
     lookup_value_regex = r'[0-9]+'
     serializer_class = RelayAddressSerializer
@@ -23,13 +22,6 @@ class RelayAddressViewSet(RelayViewSet):
         if self.action == "update":
             self.serializer_class = UpdateRelayAddressSerializer
         return super(RelayAddressViewSet, self).get_serializer_class()
-
-    # @staticmethod
-    # def get_relay_address_obj(email: str):
-    #     address = email.split("@")[0]
-    #     domain = email.split("@")[1]
-    #     relay_address = RelayAddress.objects.get(address=address, domain=domain)
-    #     return relay_address
 
     def get_queryset(self):
         user = self.request.user
@@ -74,7 +66,10 @@ class RelayAddressViewSet(RelayViewSet):
         if user.use_relay_subdomain is True and allow_relay_premium is True:
             subdomain = self.get_subdomain()
             validated_data.update({"subdomain": subdomain})
-        new_relay_address = RelayAddress.create(user=user, **validated_data)
+        try:
+            new_relay_address = RelayAddress.create_atomic(user_id=user.user_id, **validated_data)
+        except MaxRelayAddressReachedException:
+            raise ValidationError({"non_field_errors": [gen_error("8000")]})
         return Response(status=201, data=self.get_serializer(new_relay_address).data)
 
     def update(self, request, *args, **kwargs):
