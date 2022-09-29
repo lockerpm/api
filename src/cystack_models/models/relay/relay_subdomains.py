@@ -1,12 +1,19 @@
 import re
 
-from django.db import models
+from django.db import models, transaction
 
 from cystack_models.models.users.users import User
 from cystack_models.models.relay.relay_domains import RelayDomain
 from shared.constants.relay_address import DEFAULT_RELAY_DOMAIN
 from shared.constants.relay_blacklist import RELAY_BAD_WORDS, RELAY_BLOCKLISTED, RELAY_LOCKER_BLOCKED_CHARACTER
 from shared.utils.app import now
+
+
+class MaxRelaySubdomainReachedException(BaseException):
+    """
+    The max relay subdomain is reached
+    """
+
 
 
 class RelaySubdomain(models.Model):
@@ -19,6 +26,17 @@ class RelaySubdomain(models.Model):
     class Meta:
         db_table = 'cs_relay_subdomains'
         unique_together = ('subdomain', 'domain')
+
+    @classmethod
+    def create_atomic(cls, user_id, subdomain: str, domain_id: str = DEFAULT_RELAY_DOMAIN, is_deleted=False):
+        with transaction.atomic():
+            try:
+                user = User.objects.filter(user_id=user_id).select_for_update().get()
+            except User.DoesNotExist:
+                raise
+            if user.relay_subdomains.filter(is_deleted=False).exists():
+                raise MaxRelaySubdomainReachedException
+            return cls.create(user, subdomain=subdomain, domain_id=domain_id, is_deleted=is_deleted)
 
     @classmethod
     def create(cls, user, subdomain: str, domain_id: str = DEFAULT_RELAY_DOMAIN, is_deleted=False):
