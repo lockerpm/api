@@ -45,7 +45,7 @@ class RelayAddressViewSet(RelayViewSet):
         user = self.request.user
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         plan_obj = current_plan.get_plan_obj()
-        return plan_obj.allow_relay_premium()
+        return plan_obj.allow_relay_premium() or user.is_active_enterprise_member()
 
     def list(self, request, *args, **kwargs):
         paging_param = self.request.query_params.get("paging", "1")
