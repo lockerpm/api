@@ -111,9 +111,11 @@ class PMPlan(models.Model):
             return self.get_limit_crypto_asset()
 
     def allow_tools_password_reuse(self):
+        # ------- (DEPRECATED) ------------- #
         return self.tools_password_reuse
 
     def allow_tools_master_password_check(self):
+        # ------- (DEPRECATED) ------------- #
         return self.tools_master_password_check
 
     def allow_tools_data_breach(self):

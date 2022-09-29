@@ -10,6 +10,7 @@ urlpatterns = [
     url(r'^', include(router.urls))
 ]
 
+
 # ------------------------------- Management Command ----------------------------- #
 urlpatterns += [
     url(r'^managements/commands/(?P<pk>[a-z_]+)$', views.ManagementCommandPwdViewSet.as_view({'post': 'commands'})),
@@ -77,6 +78,7 @@ urlpatterns += [
 
 ]
 
+
 # -------------------------------- Notification Settings ------------------ #
 urlpatterns += [
     url(r'^notifcation/settings$', views.NotificationSettingPwdViewSet.as_view({'get': 'list'})),
@@ -86,6 +88,7 @@ urlpatterns += [
     url(r'^notification/settings/(?P<category_id>[a-z_]+)$',
         views.NotificationSettingPwdViewSet.as_view({'put': 'update'})),
 ]
+
 
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
@@ -225,7 +228,7 @@ urlpatterns += [
 ]
 
 
-# -------------------------------- ENTERPRISE ------------------------------ #
+# -------------------------------- ENTERPRISE (DEPRECATED) ------------------------------ #
 """ Teams Management """
 urlpatterns += [
     url(r'^teams$', views.TeamPwdViewSet.as_view({'get': 'list'})),
@@ -295,12 +298,6 @@ urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/logs$', views.ActivityLogViewSet.as_view({'get': 'list'})),
 ]
 
-
-# # -------------------------------- Members ----------------------------------- #
-# urlpatterns += [
-#     url(r'^members/share$', views.MemberPwdViewSet.as_view({'post': 'create_member_share'})),
-#     url(r'^invitations/share$', views.MemberPwdViewSet.as_view({'post': 'create_invitation_share'})),
-# ]
 
 # --------------------------------- Form submission ---------------------------- #
 urlpatterns += [
