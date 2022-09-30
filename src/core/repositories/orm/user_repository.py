@@ -206,11 +206,13 @@ class UserRepository(IUserRepository):
         return user.activated
 
     def get_user_type(self, user_id: int) -> str:
-        if TeamMember.objects.filter(
-            user_id=user_id, status=PM_MEMBER_STATUS_CONFIRMED,
-            team__key__isnull=False, team__personal_share=False
-        ).exists():
+        if EnterpriseMember.objects.filter(user_id=user_id, status=E_MEMBER_STATUS_CONFIRMED).exists():
             return ACCOUNT_TYPE_ENTERPRISE
+        # if TeamMember.objects.filter(
+        #     user_id=user_id, status=PM_MEMBER_STATUS_CONFIRMED,
+        #     team__key__isnull=False, team__personal_share=False
+        # ).exists():
+        #     return ACCOUNT_TYPE_ENTERPRISE
         return ACCOUNT_TYPE_PERSONAL
 
     def retrieve_or_create_user_score(self, user: User):

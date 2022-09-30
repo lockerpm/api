@@ -2,7 +2,7 @@ from datetime import timedelta, datetime
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Value, When, Q, Case, IntegerField, Count, CharField, Max
-from django.db.models.expressions import RawSQL
+from django.db.models.expressions import RawSQL, F
 from django.db.models.functions import Concat
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -114,13 +114,17 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         leaked_account_count = User.objects.filter(is_leaked=True, user_id__in=list(confirmed_user_ids)).count()
 
         # Failed login
-        failed_login_events = Event.objects.filter(
-            type=EVENT_USER_BLOCK_LOGIN, team_id=enterprise.id, user_id__in=confirmed_user_ids
-        ).values('user_id').annotate(blocked_time=Max('creation_date')).order_by('-blocked_time')[:5]
+        being_blocked_login = members.filter(
+            status=E_MEMBER_STATUS_CONFIRMED, user__login_block_until__gte=now()
+        ).annotate(blocked_time=F('user__last_request_login')).values('user_id', 'blocked_time')
 
-        blocking_login = User.objects.filter(user_id__in=list(confirmed_user_ids)).exclude(
-            login_block_until__isnull=True
-        ).filter(login_block_until__gt=now()).count()
+        # failed_login_events = Event.objects.filter(
+        #     type=EVENT_USER_BLOCK_LOGIN, team_id=enterprise.id, user_id__in=confirmed_user_ids
+        # ).values('user_id').annotate(blocked_time=Max('creation_date')).order_by('-blocked_time')[:5]
+
+        # blocking_login = User.objects.filter(user_id__in=list(confirmed_user_ids)).exclude(
+        #     login_block_until__isnull=True
+        # ).filter(login_block_until__gt=now()).count()
 
         # Un-verified domain
         unverified_domain_count = enterprise.domains.filter(verification=False).count()
@@ -139,8 +143,8 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
                 "weak_password": weak_cipher_password_count,
                 "leaked_account": leaked_account_count
             },
-            "block_failed_login": list(failed_login_events),
-            "blocking_login": blocking_login,
+            "block_failed_login": list(being_blocked_login),
+            # "blocking_login": blocking_login,
             "unverified_domain": unverified_domain_count
         })
 
