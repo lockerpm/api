@@ -52,6 +52,13 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = AddItemShareFolderSerializer
         return super(SharingPwdViewSet, self).get_serializer_class()
 
+    def allow_personal_sharing(self, user):
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        plan_obj = current_plan.get_plan_obj()
+        if user.is_active_enterprise_member() is False and plan_obj.allow_personal_share() is False:
+            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        return user
+
     def get_personal_share(self, sharing_id):
         try:
             team = self.team_repository.get_by_id(team_id=sharing_id)
@@ -172,12 +179,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
     def share(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request)
-
-        # Check plan of the user
-        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        plan_obj = current_plan.get_plan_obj()
-        if plan_obj.allow_personal_share() is False:
-            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        self.allow_personal_sharing(user=user)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -245,12 +247,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
     def multiple_share(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request)
-
-        # Check plan of the user
-        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        plan_obj = current_plan.get_plan_obj()
-        if plan_obj.allow_personal_share() is False:
-            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        self.allow_personal_sharing(user=user)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -495,10 +492,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         shared_team = member.team
 
         # Check plan of the user
-        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        plan_obj = current_plan.get_plan_obj()
-        if plan_obj.allow_personal_share() is False:
-            raise ValidationError({"non_field_errors": [gen_error("7002")]})
+        self.allow_personal_sharing(user=user)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

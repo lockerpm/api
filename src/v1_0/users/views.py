@@ -212,6 +212,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
             return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
+    def login_method_me(self, request, *args, **kwargs):
+        user = self.request.user
+        login_method = user.login_method
+        require_passwordless = user.require_passwordless
+        return Response(status=200, data={
+            "login_method": login_method,
+            "require_passwordless": require_passwordless
+        })
+
+    @action(methods=["get"], detail=False)
     def violation_me(self, request, *args, **kwargs):
         user = self.request.user
         start_ts, end_ts = start_end_month_current()

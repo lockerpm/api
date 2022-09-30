@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password, is_password_usable, make_password
 
-from shared.constants.account import DEFAULT_KDF_ITERATIONS
+from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.external_request.requester import requester
 
@@ -39,6 +39,11 @@ class User(models.Model):
     last_request_login = models.FloatField(null=True, default=None)
     login_failed_attempts = models.IntegerField(default=0)
     login_block_until = models.FloatField(null=True, default=None)
+
+    # Passwordless config
+    login_method = models.CharField(max_length=32, default=LOGIN_METHOD_PASSWORD)
+    fd_credential_id = models.CharField(max_length=255, null=True)
+    fd_random = models.CharField(max_length=128, null=True)
 
     # Stores the raw password if set_password() is called so that it can
     # be passed to password_changed() after the model is saved.
@@ -85,3 +90,8 @@ class User(models.Model):
         return self.enterprise_members.filter(
             status=E_MEMBER_STATUS_CONFIRMED, is_activated=True, enterprise__locked=False
         ).exists()
+
+    @property
+    def require_passwordless(self):
+        # TODO: Check user enabled passwordless or not
+        return self.login_method == LOGIN_METHOD_PASSWORDLESS

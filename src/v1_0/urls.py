@@ -10,6 +10,7 @@ urlpatterns = [
     url(r'^', include(router.urls))
 ]
 
+
 # ------------------------------- Management Command ----------------------------- #
 urlpatterns += [
     url(r'^managements/commands/(?P<pk>[a-z_]+)$', views.ManagementCommandPwdViewSet.as_view({'post': 'commands'})),
@@ -51,6 +52,7 @@ urlpatterns += [
 urlpatterns += [
     url(r'^users/me$', views.UserPwdViewSet.as_view({'get': 'me', 'put': 'me'})),
     url(r'^users/me/revision_date$', views.UserPwdViewSet.as_view({'get': 'revision_date'})),
+    url(r'^users/me/login_method$', views.UserPwdViewSet.as_view({'get': 'login_method_me'})),
     url(r'^users/me/violation$', views.UserPwdViewSet.as_view({'get': 'violation_me'})),
     url(r'^users/me/family', views.UserPwdViewSet.as_view({'get': 'family'})),
     url(r'^users/me/delete$', views.UserPwdViewSet.as_view({'post': 'delete_me'})),
@@ -76,6 +78,7 @@ urlpatterns += [
 
 ]
 
+
 # -------------------------------- Notification Settings ------------------ #
 urlpatterns += [
     url(r'^notifcation/settings$', views.NotificationSettingPwdViewSet.as_view({'get': 'list'})),
@@ -85,6 +88,7 @@ urlpatterns += [
     url(r'^notification/settings/(?P<category_id>[a-z_]+)$',
         views.NotificationSettingPwdViewSet.as_view({'put': 'update'})),
 ]
+
 
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
@@ -224,7 +228,7 @@ urlpatterns += [
 ]
 
 
-# -------------------------------- ENTERPRISE ------------------------------ #
+# -------------------------------- ENTERPRISE (DEPRECATED) ------------------------------ #
 """ Teams Management """
 urlpatterns += [
     url(r'^teams$', views.TeamPwdViewSet.as_view({'get': 'list'})),
@@ -294,12 +298,6 @@ urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/logs$', views.ActivityLogViewSet.as_view({'get': 'list'})),
 ]
 
-
-# # -------------------------------- Members ----------------------------------- #
-# urlpatterns += [
-#     url(r'^members/share$', views.MemberPwdViewSet.as_view({'post': 'create_member_share'})),
-#     url(r'^invitations/share$', views.MemberPwdViewSet.as_view({'post': 'create_invitation_share'})),
-# ]
 
 # --------------------------------- Form submission ---------------------------- #
 urlpatterns += [
