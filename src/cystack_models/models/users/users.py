@@ -8,6 +8,7 @@ from django.contrib.auth.hashers import check_password, is_password_usable, make
 
 from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
+from shared.constants.policy import POLICY_TYPE_PASSWORDLESS
 from shared.external_request.requester import requester
 
 
@@ -94,4 +95,11 @@ class User(models.Model):
     @property
     def require_passwordless(self):
         # TODO: Check user enabled passwordless or not
-        return self.login_method == LOGIN_METHOD_PASSWORDLESS
+        e_member = self.enterprise_members.filter(status=E_MEMBER_STATUS_CONFIRMED, enterprise__locked=False).first()
+        e_passwordless_policy = False
+        if e_member:
+            enterprise = e_member.enterprise
+            policy = enterprise.policies.filter(policy_type=POLICY_TYPE_PASSWORDLESS, enabled=True).first()
+            e_passwordless_policy = policy.policy_passwordless.only_allow_passwordless if policy else \
+                e_passwordless_policy
+        return self.login_method == LOGIN_METHOD_PASSWORDLESS or e_passwordless_policy
