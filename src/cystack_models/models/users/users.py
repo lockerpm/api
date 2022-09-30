@@ -94,7 +94,6 @@ class User(models.Model):
 
     @property
     def require_passwordless(self):
-        # TODO: Check user enabled passwordless or not
         e_member = self.enterprise_members.filter(status=E_MEMBER_STATUS_CONFIRMED, enterprise__locked=False).first()
         e_passwordless_policy = False
         if e_member:
