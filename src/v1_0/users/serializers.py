@@ -155,7 +155,7 @@ class ListUserSerializer(serializers.Serializer):
             "timeout": instance.timeout,
             "timeout_action": instance.timeout_action
         }
-        action = self.context["request"].action
+        action = self.context["view"].action
         if action == "list_users":
             user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
             data["current_plan"] = user_repository.get_current_plan(
