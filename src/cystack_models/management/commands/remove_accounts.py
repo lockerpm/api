@@ -9,19 +9,49 @@ from django.core.management import BaseCommand
 from core.settings import CORE_CONFIG
 from cystack_models.models import *
 from shared.constants.transactions import PLAN_TYPE_PM_FREE
+from shared.external_request.requester import requester
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        users = User.objects.filter(user_id__in=[6960])
-        for user in users:
-            primary_team = user_repository.get_default_team(user=user)
-            if primary_team:
-                primary_team.delete()
-        Cipher.objects.filter(user__in=users).delete()
-        users.delete()
+        # user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        # users = User.objects.filter(user_id__in=[6960])
+        # for user in users:
+        #     primary_team = user_repository.get_default_team(user=user)
+        #     if primary_team:
+        #         primary_team.delete()
+        # Cipher.objects.filter(user__in=users).delete()
+        # users.delete()
+        print("Start")
+        users = User.objects.all().order_by('-user_id')
+        print("Users: ", users.count())
+        user_ids = users.values_list('user_id', flat=True)
+        error_request_user_ids = []
+        for user_id in user_ids:
+            url = "{}/micro_services/users/{}".format(settings.GATEWAY_API, user_id)
+            headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
+            try:
+                res = requester(method="GET", url=url, headers=headers)
+            except:
+                error_request_user_ids.append(user_id)
+                print("Exception: ", user_id)
+                continue
+            if res.status_code == 404:
+                user = User.objects.get(user_id=user_id)
+                print("Delete user_id: ", user_id)
+                # print(res.status_code, res.text)
+                self.delete_user(user=user)
+            else:
+                print("OK: ", user_id)
+        print("Requests errors: ", error_request_user_ids)
 
+    def delete_user(self, user):
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        primary_team = user_repository.get_default_team(user=user)
+        if primary_team:
+            primary_team.delete()
+        Cipher.objects.filter(user_id__in=[user.user_id]).delete()
+        user.delete()
 
     def remove_plan(self):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()

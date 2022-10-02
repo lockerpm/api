@@ -680,12 +680,22 @@ class UserPwdViewSet(PasswordManagerViewSet):
             mobile_device_count=Count(
                 Case(When(user_devices__client_id='mobile', then=1), output_field=IntegerField())
             ),
+            ios_device_count=Count(
+                Case(When(user_devices__device_type=1, then=1), output_field=IntegerField())
+            ),
+            android_device_count=Count(
+                Case(When(user_devices__device_type=0, then=1), output_field=IntegerField())
+            ),
             extension_device_count=Count(
                 Case(When(user_devices__client_id='browser', then=1), output_field=IntegerField())
             ),
         )
         if device_type_param == "mobile":
             device_users = device_users.filter(mobile_device_count__gt=0)
+        if device_type_param == "android":
+            device_users = device_users.filter(android_device_count__gt=0)
+        if device_type_param == "ios":
+            device_users = device_users.filter(ios_device_count__gt=0)
         if device_type_param == "web":
             device_users = device_users.filter(web_device_count__gt=0)
         if device_type_param == "browser":
