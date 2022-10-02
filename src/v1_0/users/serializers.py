@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
+from core.settings import CORE_CONFIG
 from shared.constants.ciphers import KDF_TYPE
 from shared.constants.transactions import *
 from shared.constants.device_type import LIST_CLIENT_ID, LIST_DEVICE_TYPE
@@ -153,4 +155,10 @@ class ListUserSerializer(serializers.Serializer):
             "timeout": instance.timeout,
             "timeout_action": instance.timeout_action
         }
+        action = self.context["request"].action
+        if action == "list_users":
+            user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+            data["current_plan"] = user_repository.get_current_plan(
+                user=instance, scope=settings.SCOPE_PWD_MANAGER
+            ).get_plan_type_alias()
         return data

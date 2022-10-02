@@ -55,7 +55,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = DeviceFcmSerializer
         elif self.action == "devices":
             self.serializer_class = UserDeviceSerializer
-        elif self.action in ["retrieve", "list"]:
+        elif self.action in ["retrieve", "list", "list_users"]:
             self.serializer_class = ListUserSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
@@ -71,6 +71,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "register_from": self.check_int_param(self.request.query_params.get("register_from")),
             "register_to": self.check_int_param(self.request.query_params.get("register_to")),
             "plan": self.request.query_params.get("plan"),
+            "user_ids": self.request.query_params.get("user_ids"),
+            "utm_source": self.request.query_params.get("utm_source"),
             "q": self.request.query_params.get("q"),
             "activated": self.request.query_params.get("activated")
         })
@@ -641,6 +643,22 @@ class UserPwdViewSet(PasswordManagerViewSet):
         users = self.get_queryset()
         user_ids = users.values_list('user_id', flat=True)
         return Response(status=200, data={"user_ids": list(user_ids)})
+
+    @action(methods=["get"], detail=False)
+    def list_users(self, request, *args, **kwargs):
+        paging_param = self.request.query_params.get("paging", "1")
+        page_size_param = self.check_int_param(self.request.query_params.get("size", 20))
+        if paging_param == "0":
+            self.pagination_class = None
+        else:
+            self.pagination_class.page_size = page_size_param if page_size_param else 20
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(methods=["get"], detail=False)
     def dashboard(self, request, *args, **kwargs):

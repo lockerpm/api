@@ -3,7 +3,7 @@ from shared.permissions.micro_service_permissions.app import MicroServicePermiss
 
 class UserPermission(MicroServicePermission):
     def has_permission(self, request, view):
-        if view.action in ["first_login", "search_by_device", "search_by_user"]:
+        if view.action in ["retrieve", "first_login", "search_by_device", "search_by_user"]:
             return True
         return super(UserPermission, self).has_permission(request, view)
 
