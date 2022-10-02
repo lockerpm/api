@@ -33,8 +33,13 @@ class UserRepository(IUserRepository):
         register_to_param = filter_params.get("register_to")
         plan_param = filter_params.get("plan")
         activated_param = filter_params.get("activated")
-        if q_param:
-            users = users.filter(user_id__in=q_param.split(","))
+        user_ids_param = filter_params.get("user_ids")
+        utm_source_param = filter_params.get("utm_source")
+        if q_param or utm_source_param:
+            user_ids = User.search_from_cystack_id(**{"q": q_param, "utm_source": utm_source_param}).get("ids", [])
+            users = users.filter(user_id__in=user_ids)
+        if user_ids_param:
+            users = users.filter(user_id__in=user_ids_param.split(","))
         if register_from_param:
             users = users.filter(creation_date__gte=register_from_param)
         if register_to_param:
@@ -206,11 +211,13 @@ class UserRepository(IUserRepository):
         return user.activated
 
     def get_user_type(self, user_id: int) -> str:
-        if TeamMember.objects.filter(
-            user_id=user_id, status=PM_MEMBER_STATUS_CONFIRMED,
-            team__key__isnull=False, team__personal_share=False
-        ).exists():
+        if EnterpriseMember.objects.filter(user_id=user_id, status=E_MEMBER_STATUS_CONFIRMED).exists():
             return ACCOUNT_TYPE_ENTERPRISE
+        # if TeamMember.objects.filter(
+        #     user_id=user_id, status=PM_MEMBER_STATUS_CONFIRMED,
+        #     team__key__isnull=False, team__personal_share=False
+        # ).exists():
+        #     return ACCOUNT_TYPE_ENTERPRISE
         return ACCOUNT_TYPE_PERSONAL
 
     def retrieve_or_create_user_score(self, user: User):

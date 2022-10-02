@@ -17,4 +17,7 @@ class PaymentPwdPermission(EnterprisePwdPermission):
                 return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN]
         elif view.action in ["upgrade_plan", "calc", "card_set_default"]:
             return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN]
+        elif view.action in ["billing_address"]:
+            if request.method == "PUT":
+                return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN]
         return role_name in [E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_ROLE_ADMIN]

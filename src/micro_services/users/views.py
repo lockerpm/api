@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 
+from cystack_models.models import User
 from micro_services.apps import MicroServiceViewSet
 from shared.permissions.micro_service_permissions.user_permissions import UserPermission
 from shared.utils.app import now
@@ -10,7 +11,7 @@ from shared.utils.app import now
 class UserViewSet(MicroServiceViewSet):
     permission_classes = (UserPermission, )
     lookup_value_regex = r'[0-9]+'
-    http_method_names = ["head", "options", "post", "put"]
+    http_method_names = ["head", "options", "get", "post", "put"]
 
     def get_serializer_class(self):
         return super(UserViewSet, self).get_serializer_class()
@@ -21,6 +22,14 @@ class UserViewSet(MicroServiceViewSet):
             user = self.user_repository.retrieve_or_create_by_id(user_id=user_id)
             return user
         except ValueError:
+            raise NotFound
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            user_id = int(self.kwargs.get("pk"))
+            user = self.user_repository.get_by_id(user_id=user_id)
+            return Response(status=200, data={"id": user.user_id})
+        except (ValueError, User.DoesNotExist):
             raise NotFound
 
     @action(methods=["post"], detail=True)
@@ -45,7 +54,6 @@ class UserViewSet(MicroServiceViewSet):
 
     @action(methods=["post"], detail=False)
     def search_by_user(self, request, *args, **kwargs):
-        from cystack_models.models import User
         try:
             user = User.objects.get(user_id=request.data.get("user_id"))
             return Response(status=200, data={

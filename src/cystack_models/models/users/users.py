@@ -9,7 +9,7 @@ from django.contrib.auth.hashers import check_password, is_password_usable, make
 from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.policy import POLICY_TYPE_PASSWORDLESS
-from shared.external_request.requester import requester
+from shared.external_request.requester import requester, RequesterError
 
 
 class User(models.Model):
@@ -75,6 +75,24 @@ class User(models.Model):
             self.save(update_fields=["password"])
         return check_password(raw_password, self.master_password, setter)
 
+    @classmethod
+    def search_from_cystack_id(cls, **filter_params):
+        q_param = filter_params.get("q")
+        utm_source_param = filter_params.get("utm_source")
+        headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
+        url = "{}/micro_services/users?".format(settings.GATEWAY_API)
+        if q_param:
+            url += "&q={}".format(q_param)
+        if utm_source_param:
+            url += "&utm_source={}".format(utm_source_param)
+        try:
+            res = requester(method="GET", url=url, headers=headers)
+        except RequesterError:
+            return {}
+        if res.status_code == 200:
+            return res.json()
+        return {}
+
     def get_from_cystack_id(self):
         """
         Request to API Gateway to get user information
@@ -94,7 +112,6 @@ class User(models.Model):
 
     @property
     def require_passwordless(self):
-        # TODO: Check user enabled passwordless or not
         e_member = self.enterprise_members.filter(status=E_MEMBER_STATUS_CONFIRMED, enterprise__locked=False).first()
         e_passwordless_policy = False
         if e_member:

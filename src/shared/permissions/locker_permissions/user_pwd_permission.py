@@ -7,7 +7,7 @@ class UserPwdPermission(LockerPermission):
             return True
         if view.action in ["register", "prelogin", "me", "session"]:
             return self.is_auth(request)
-        elif view.action in ["retrieve", "dashboard", "list_user_ids", "destroy"]:
+        elif view.action in ["retrieve", "dashboard", "list_users", "list_user_ids", "destroy"]:
             return self.is_admin(request)
         return self.is_auth(request) and request.user.activated
 
