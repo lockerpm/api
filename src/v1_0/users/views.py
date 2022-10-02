@@ -663,22 +663,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["get"], detail=False)
     def dashboard(self, request, *args, **kwargs):
         current_time = now()
-        register_from_param = self.check_int_param(
-            self.request.query_params.get("register_from")
-        ) or current_time - 3 * 30 * 86400
-        register_to_param = self.check_int_param(self.request.query_params.get("")) or current_time
-        duration_param = self.request.query_params.get("duration") or "weekly"
-        device_type_param = self.request.query_params.get("device_type") or "mobile"
+        register_from_param = self.check_int_param(self.request.query_params.get("register_from")) or current_time - 90 * 86400
+        register_to_param = self.check_int_param(self.request.query_params.get("register_to")) or current_time
+        duration_param = self.request.query_params.get("duration") or "monthly"
+        device_type_param = self.request.query_params.get("device_type") or ""
 
         users = self.user_repository.list_users()
-        total_all_time = users.count()
         if register_from_param:
             users = users.filter(creation_date__gte=register_from_param)
         if register_to_param:
-            users = users.filter(creation_date__lte=register_to_param)
-
-        statistic_time = self._statistic_users_by_time(users, register_from_param, register_to_param, duration_param)
-
+            users = users.filter(creation_date__lt=register_to_param)
         device_users = users.annotate(
             web_device_count=Count(
                 Case(When(user_devices__client_id='web', then=1), output_field=IntegerField())
@@ -696,26 +690,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
             device_users = device_users.filter(web_device_count__gt=0)
         if device_type_param == "browser":
             device_users = device_users.filter(extension_device_count__gt=0)
+        device_users = users.filter(user_id__in=device_users.values_list('user_id', flat=True))
         statistic_device = self._statistic_users_by_time(
             device_users, register_from_param, register_to_param, duration_param
         )
 
         dashboard_result = {
-            "total": total_all_time,
-            "total_duration": users.count(),
             "total_device": device_users.count(),
-            "time": statistic_time,
             "device": statistic_device
         }
         return Response(status=200, data=dashboard_result)
-
-    @staticmethod
-    def _total_duration(dt, duration="monthly"):
-        if duration == "monthly":
-            return dt.month + 12 * dt.year
-        elif duration == "weekly":
-            return
-        return
 
     @staticmethod
     def _generate_duration_init_data(start, end, duration="monthly"):
