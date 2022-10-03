@@ -88,6 +88,10 @@ def get_cipher_detail_data(cipher):
         data = dict(cipher.get("cryptoWallet") or {})
     elif cipher_type == CIPHER_TYPE_MASTER_PASSWORD:
         data = dict(cipher.get("login") or {})
+    elif cipher_type in [CIPHER_TYPE_DRIVER_LICENSE, CIPHER_TYPE_CITIZEN_ID, CIPHER_TYPE_PASSPORT,
+                         CIPHER_TYPE_SOCIAL_SECURITY_NUMBER, CIPHER_TYPE_WIRELESS_ROUTER, CIPHER_TYPE_SERVER,
+                         CIPHER_TYPE_API, CIPHER_TYPE_DATABASE]:
+        data = dict(cipher.get("secureNote") or {})
     else:
         data = dict()
     data.update({
