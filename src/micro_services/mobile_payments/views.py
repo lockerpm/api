@@ -232,21 +232,21 @@ class MobilePaymentViewSet(MicroServiceViewSet):
             self.payment_repository.set_past_due(payment=new_payment, failure_reason=failure_reason)
         else:
             self.payment_repository.set_failed(payment=new_payment, failure_reason=failure_reason)
-            if platform == "ios":
-                # Only Downgrade - Not set mobile_original_id is Null
-                current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-                old_plan = current_plan.get_plan_type_name()
-                if not current_plan.user.pm_plan_family.exists():
-                    self.user_repository.update_plan(
-                        user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
-                    )
-                    # Notify downgrade here
-                    LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=True).run(
-                        func_name="downgrade_plan", **{
-                            "user_id": user.user_id, "old_plan": old_plan, "downgrade_time": now(),
-                            "scope": settings.SCOPE_PWD_MANAGER, **{"payment_data": {}}
-                        }
-                    )
+            # if platform == "ios":
+            # Only Downgrade - Not set mobile_original_id is Null
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            old_plan = current_plan.get_plan_type_name()
+            if not current_plan.user.pm_plan_family.exists():
+                self.user_repository.update_plan(
+                    user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER
+                )
+                # Notify downgrade here
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=True).run(
+                    func_name="downgrade_plan", **{
+                        "user_id": user.user_id, "old_plan": old_plan, "downgrade_time": now(),
+                        "scope": settings.SCOPE_PWD_MANAGER, **{"payment_data": {}}
+                    }
+                )
 
         return Response(status=200, data={
             "success": True,
