@@ -34,7 +34,7 @@ class PasswordlessPwdViewSet(PasswordManagerViewSet):
             serializer.is_valid(raise_exception=True)
             validated_data = serializer.validated_data
             credential_id = validated_data.get("credential_id")
-            credential_random = random.randbytes(32).hex()
+            credential_random = random.randbytes(16).hex()
             if not user.fd_credential_id:
                 user.fd_credential_id = credential_id
                 user.fd_random = credential_random
