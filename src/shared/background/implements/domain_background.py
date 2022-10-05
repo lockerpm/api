@@ -2,7 +2,8 @@ from django.conf import settings
 from django.db import connection
 
 from shared.background.i_background import ILockerBackground
-from shared.constants.enterprise_members import E_MEMBER_ROLE_MEMBER, E_MEMBER_STATUS_INVITED
+from shared.constants.enterprise_members import E_MEMBER_ROLE_MEMBER, E_MEMBER_STATUS_INVITED, E_MEMBER_ROLE_ADMIN, \
+    E_MEMBER_STATUS_CONFIRMED
 from shared.external_request.requester import requester
 from cystack_models.models.users.users import User
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
@@ -57,6 +58,37 @@ class DomainBackground(ILockerBackground):
 
         except Exception as e:
             self.log_error(func_name="domain_verified")
+        finally:
+            if self.background:
+                connection.close()
+
+    def domain_unverified(self, owner_user_id: int, domain):
+        try:
+            url = API_NOTIFY_DOMAIN + "/unverified"
+            enterprise = domain.enterprise
+            existed_user_ids = enterprise.enterprise_members.exclude(
+                user_id__isnull=True
+            ).values_list('user_id', flat=True)
+            admins = list(enterprise.enterprise.enterprise_members.filter(
+                role_id=E_MEMBER_ROLE_ADMIN, status=E_MEMBER_STATUS_CONFIRMED, is_activated=True
+            ).values_list('user_id', flat=True))
+
+            notification_data = {
+                "owner": owner_user_id,
+                "domain": domain.domain,
+                "existed_user_ids": list(existed_user_ids),
+                "enterprise_name": enterprise.name,
+                "cc": admins
+            }
+            res = requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
+            if res.status_code != 200:
+                self.log_error(
+                    func_name="domain_unverified",
+                    tb=f"Cannot send notify domain verification failed: {domain.domain}\n"
+                       f"{url} {res.status_code} {res.status_code}"
+                )
+        except Exception as e:
+            self.log_error(func_name="domain_unverified")
         finally:
             if self.background:
                 connection.close()
