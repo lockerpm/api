@@ -22,7 +22,6 @@ class PasswordlessPwdViewSet(PasswordManagerViewSet):
     @action(methods=["get", "post"], detail=False)
     def credential(self, request, *args, **kwargs):
         user = self.request.user
-        CyLog.debug(**{"message": "Passwordless cred: {}".format(request.data)})
         if request.method == "GET":
             return Response(status=200, data={
                 "credential_id": user.fd_credential_id,
