@@ -185,13 +185,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 if user.payments.filter(status=PAYMENT_STATUS_PAID).exists() is False:
                     block_by_source = True
             user_type = self.user_repository.get_user_type(user_id=user.user_id)
+            pm_current_plan = self.user_repository.get_current_plan(user=user).get_plan_type_alias()
             return Response(status=200, data={
                 "timeout": user.timeout,
                 "timeout_action": user.timeout_action,
                 "is_pwd_manager": user.activated,
                 "block_by_source": block_by_source,
                 "pwd_user_id": str(user.user_id),
-                "pwd_user_type": user_type
+                "pwd_user_type": user_type,
+                "pwd_plan": pm_current_plan
             })
 
         elif request.method == "PUT":
