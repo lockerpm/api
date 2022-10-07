@@ -44,7 +44,7 @@ class RelaySubdomainViewSet(RelayViewSet):
         user = self.request.user
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         plan_obj = current_plan.get_plan_obj()
-        if plan_obj.allow_relay_premium() is False:
+        if plan_obj.allow_relay_premium() is False and user.is_active_enterprise_member() is False:
             raise ValidationError({"non_field_errors": [gen_error("7002")]})
         return current_plan
 

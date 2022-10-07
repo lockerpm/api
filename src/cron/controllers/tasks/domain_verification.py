@@ -1,8 +1,11 @@
 from shared.background import LockerBackgroundFactory, BG_DOMAIN
 from cystack_models.models.enterprises.domains.domains import Domain
+from shared.constants.enterprise_members import E_MEMBER_ROLE_ADMIN
+from shared.utils.app import now
 
 
 def domain_verification():
+    current_time = now()
     # Find the domains aren't verified
     unverified_domains = Domain.objects.filter(verification=False)
     for unverified_domain in unverified_domains:
@@ -13,6 +16,21 @@ def domain_verification():
             LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
                 func_name="domain_verified", **{
                     "owner_user_id": owner_user_id,
-                    "domain": unverified_domain
+                    "domain": unverified_domain,
+                    "verification": True
                 }
             )
+        else:
+            # Check the domain is added more than one day?
+            if unverified_domain.created_time + 86400 <= current_time and unverified_domain.is_notify_failed is False:
+                owner_user_id = unverified_domain.enterprise.enterprise_members.get(is_primary=True).user_id
+
+                LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
+                    func_name="domain_unverified", **{
+                        "owner_user_id": owner_user_id,
+                        "domain": unverified_domain,
+                        "verification": False
+                    }
+                )
+                unverified_domain.is_notify_failed = True
+                unverified_domain.save()
