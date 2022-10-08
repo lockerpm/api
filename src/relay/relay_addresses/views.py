@@ -60,8 +60,7 @@ class RelayAddressViewSet(RelayViewSet):
         validated_data = serializer.validated_data or {}
         allow_relay_premium = self.allow_relay_premium()
         # Check the limit of addresses
-        if allow_relay_premium is False and user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
-            raise ValidationError({"non_field_errors": [gen_error("8000")]})
+        validated_data.update({"allow_relay_premium": allow_relay_premium})
         # Check the user uses subdomain or not
         if user.use_relay_subdomain is True and allow_relay_premium is True:
             subdomain = self.get_subdomain()
