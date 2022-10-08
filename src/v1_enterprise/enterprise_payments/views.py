@@ -88,6 +88,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         current_plan = self.user_repository.get_current_plan(user=primary_admin)
         result = PMPlanSerializer(current_plan.get_plan_obj(), many=False).data
         result.update({
+            "start_period": current_plan.start_period,
             "next_billing_time": current_plan.get_next_billing_time(),
             "duration": current_plan.duration,
             "is_trailing": current_plan.is_trailing(),
