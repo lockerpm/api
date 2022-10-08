@@ -57,7 +57,8 @@ class RelayAddress(models.Model):
                 user = User.objects.filter(user_id=user_id).select_for_update().get()
             except User.DoesNotExist:
                 raise
-            if user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
+            if data.get("allow_relay_premium", False) is False and \
+                    user.relay_addresses.all().count() >= MAX_FREE_RElAY_DOMAIN:
                 raise MaxRelayAddressReachedException
             return cls.create(user, **data)
 
