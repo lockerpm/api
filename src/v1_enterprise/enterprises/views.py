@@ -116,7 +116,7 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         # Failed login
         being_blocked_login = members.filter(
             status=E_MEMBER_STATUS_CONFIRMED, user__login_block_until__gte=now()
-        ).annotate(blocked_time=F('user__last_request_login')).values('user_id', 'blocked_time')
+        ).annotate(blocked_time=F('user__last_request_login')).values('id', 'user_id', 'blocked_time')
 
         # failed_login_events = Event.objects.filter(
         #     type=EVENT_USER_BLOCK_LOGIN, team_id=enterprise.id, user_id__in=confirmed_user_ids

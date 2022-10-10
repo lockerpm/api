@@ -16,6 +16,7 @@ from shared.constants.event import EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_UPDA
 from shared.constants.transactions import PAYMENT_METHOD_CARD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.member_permission import MemberPwdPermission
+from shared.utils.app import now
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer, \
     EnabledMemberSerializer, ShortDetailMemberSerializer
@@ -113,6 +114,13 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 members_qs = members_qs.filter(is_activated=False)
             elif is_activated_param == "1":
                 members_qs = members_qs.filter(is_activated=True)
+
+        # Filter by Blocking login or not
+        block_login_param = self.request.query_params.get("block_login")
+        if is_activated_param == "1":
+            members_qs = members_qs.filter(user__login_block_until__isnull=False).filter(
+                user__login_block_until__gt=now()
+            )
 
         # Sorting the results
         sort_param = self.request.query_params.get("sort", None)
@@ -391,6 +399,20 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 "type": EVENT_E_MEMBER_ENABLED if activated is True else EVENT_E_MEMBER_DISABLED, "ip_address": ip
             })
 
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def unblock(self, request, *args, **kwargs):
+        user = self.request.user
+        enterprise = self.get_object()
+        enterprise_member = self.get_enterprise_member(enterprise=enterprise, member_id=kwargs.get("member_id"))
+        if enterprise_member.status != E_MEMBER_STATUS_CONFIRMED:
+            raise NotFound
+        if enterprise_member.user_id == user.user_id:
+            raise PermissionDenied
+        enterprise_member.user.login_failed_attempts = 0
+        enterprise_member.user.login_block_until = None
+        enterprise_member.user.save()
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)

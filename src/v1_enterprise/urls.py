@@ -33,6 +33,8 @@ urlpatterns += [
         views.MemberPwdViewSet.as_view({'post': 'reinvite'})),
     url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/activated$',
         views.MemberPwdViewSet.as_view({'put': 'activated'})),
+    url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/unblock$',
+        views.MemberPwdViewSet.as_view({'put': 'unblock'})),
 
     url(r'^members/invitation/confirmation$', views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
     url(r'^members/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
