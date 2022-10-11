@@ -19,7 +19,7 @@ from shared.permissions.locker_permissions.enterprise.member_permission import M
 from shared.utils.app import now
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer, \
-    EnabledMemberSerializer, ShortDetailMemberSerializer
+    EnabledMemberSerializer, ShortDetailMemberSerializer, DetailActiveMemberSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -34,6 +34,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 self.serializer_class = ShortDetailMemberSerializer
             else:
                 self.serializer_class = DetailMemberSerializer
+        elif self.action == "retrieve":
+            self.serializer_class = DetailActiveMemberSerializer
         elif self.action == "update":
             self.serializer_class = UpdateMemberSerializer
         elif self.action == "user_invitations":
@@ -246,6 +248,13 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 # TODO: Log activity create new members
 
         return Response(status=200, data=added_members)
+
+    def retrieve(self, request, *args, **kwargs):
+        enterprise = self.get_object()
+        member_id = kwargs.get("member_id")
+        member_obj = self.get_enterprise_member(enterprise=enterprise, member_id=member_id)
+        serializer = self.get_serializer(member_obj)
+        return Response(status=200, data=serializer.data)
 
     def update(self, request, *args, **kwargs):
         ip = request.data.get("ip")

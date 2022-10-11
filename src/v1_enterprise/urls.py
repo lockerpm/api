@@ -28,7 +28,7 @@ urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/members/multiple$', views.MemberPwdViewSet.as_view({'post': 'create_multiple'})),
     url(r'^(?P<pk>[0-9a-z]+)/members/invitation$', views.MemberPwdViewSet.as_view({'post': 'invitation_multiple'})),
     url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)$',
-        views.MemberPwdViewSet.as_view({'put': 'update', 'delete': 'destroy'})),
+        views.MemberPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
     url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/reinvite$',
         views.MemberPwdViewSet.as_view({'post': 'reinvite'})),
     url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/activated$',
