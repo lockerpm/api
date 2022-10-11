@@ -41,6 +41,12 @@ class ShortDetailMemberSerializer(serializers.ModelSerializer):
         return data
 
 
+class DetailActiveMemberSerializer(DetailMemberSerializer):
+    def to_representation(self, instance):
+        data = super(DetailActiveMemberSerializer, self).to_representation(instance)
+        data["login_block_until"] = instance.user.login_block_until if instance.user else None
+        return data
+
 class UpdateMemberSerializer(serializers.Serializer):
     role = serializers.ChoiceField(
         choices=[E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_MEMBER], default=E_MEMBER_ROLE_MEMBER, required=False
