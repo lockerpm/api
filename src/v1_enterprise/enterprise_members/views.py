@@ -117,7 +117,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
         # Filter by Blocking login or not
         block_login_param = self.request.query_params.get("block_login")
-        if is_activated_param == "1":
+        if block_login_param == "1":
             members_qs = members_qs.filter(user__login_block_until__isnull=False).filter(
                 user__login_block_until__gt=now()
             )
