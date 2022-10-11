@@ -9,6 +9,8 @@ class EnterprisePwdPermission(LockerPermission):
     scope = 'enterprise'
 
     def has_permission(self, request, view):
+        if view.action in ["list"]:
+            return self.is_auth(request)
         return self.is_auth(request) and request.user.activated
 
     def has_object_permission(self, request, view, obj):
