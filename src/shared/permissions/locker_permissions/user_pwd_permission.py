@@ -5,7 +5,7 @@ class UserPwdPermission(LockerPermission):
     def has_permission(self, request, view):
         if view.action in ["password_hint"]:
             return True
-        if view.action in ["prelogin", "me", "session"]:
+        if view.action in ["prelogin", "me", "session", "passwordless_require"]:
             return self.is_auth(request)
         elif view.action in ["register"]:
             return self.is_auth(request) and request.user.activated is False

@@ -20,7 +20,7 @@ from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
-from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN
+from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS
 from shared.constants.transactions import *
 from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
@@ -224,6 +224,19 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "login_method": login_method,
             "require_passwordless": require_passwordless
         })
+
+    @action(methods=["get"], detail=False)
+    def passwordless_require(self, request, *args, **kwargs):
+        user = self.request.user
+        e_member = user.enterprise_members.filter(enterprise__locked=False).first()
+        e_passwordless_policy = False
+        if e_member:
+            enterprise = e_member.enterprise
+            policy = enterprise.policies.filter(policy_type=POLICY_TYPE_PASSWORDLESS, enabled=True).first()
+            e_passwordless_policy = policy.policy_passwordless.only_allow_passwordless if policy else \
+                e_passwordless_policy
+
+        return Response(status=200, data={"require_passwordless": e_passwordless_policy})
 
     @action(methods=["get"], detail=False)
     def violation_me(self, request, *args, **kwargs):
