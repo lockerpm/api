@@ -17,7 +17,7 @@ from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import InvoiceSerializer, CalcSerializer, UpgradePlanSerializer, BillingAddressSerializer, \
-    DetailInvoiceSerializer, CalcPublicSerializer
+    DetailInvoiceSerializer, CalcPublicSerializer, UpgradePlanPublicSerializer
 
 
 class PaymentPwdViewSet(EnterpriseViewSet):
@@ -35,6 +35,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             self.serializer_class = CalcPublicSerializer
         elif self.action == "upgrade_plan":
             self.serializer_class = UpgradePlanSerializer
+        elif self.action == "upgrade_plan_public":
+            self.serializer_class = UpgradePlanPublicSerializer
         elif self.action == "billing_address":
             self.serializer_class = BillingAddressSerializer
         return super(PaymentPwdViewSet, self).get_serializer_class()
@@ -162,9 +164,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)
-    def upgrade_plan(self, request, *args, **kwargs):
+    def upgrade_public(self, request, *args, **kwargs):
         user = self.request.user
-        enterprise = self.get_enterprise()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         card = request.data.get("card")
@@ -175,8 +176,23 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         validated_data = serializer.validated_data
         promo_code_obj = validated_data.get("promo_code_obj", None)
         duration = validated_data.get("duration", DURATION_MONTHLY)
-        number_members = enterprise.get_activated_members_count()
         currency = validated_data.get("currency")
+        quantity = validated_data.get("quantity")
+        organization = validated_data.get("organization")
+        card = request.data.get("card")
+        enterprise = self.user_repository.get_default_enterprise(
+            user=user, enterprise_name=organization, create_if_not_exist=True
+        )
+        self._upgrade_plan(user=user, enterprise=enterprise, card=card, promo_code_obj=promo_code_obj,
+                           duration=duration, number_members=quantity, currency=currency)
+        return Response(status=200, data={"success": True})
+
+    def _upgrade_plan(self, user, enterprise, card, promo_code_obj=None,
+                      duration=DURATION_MONTHLY, number_members=None, currency=CURRENCY_USD):
+        if not card:
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        if not card.get("id_card"):
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
         metadata = {
             "currency": currency,
             "promo_code": promo_code_obj,
@@ -187,10 +203,6 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         if current_plan.get_plan_obj().is_team_plan is False:
             raise ValidationError(detail={"non_field_errors": [gen_error("7014")]})
-        # if current_plan.end_period and current_plan.end_period > now():
-        #     metadata.update({
-        #         "trial_end": int(current_plan.end_period)
-        #     })
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
         calc_payment = self._calc_payment(
@@ -221,6 +233,70 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
         except ObjectDoesNotExist:
             pass
+
+    @action(methods=["post"], detail=False)
+    def upgrade_plan(self, request, *args, **kwargs):
+        user = self.request.user
+        enterprise = self.get_enterprise()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        card = request.data.get("card")
+        if not card:
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        if not card.get("id_card"):
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        validated_data = serializer.validated_data
+        promo_code_obj = validated_data.get("promo_code_obj", None)
+        duration = validated_data.get("duration", DURATION_MONTHLY)
+        number_members = enterprise.get_activated_members_count()
+        currency = validated_data.get("currency")
+        self._upgrade_plan(user=user, enterprise=enterprise, card=card, promo_code_obj=promo_code_obj,
+                           duration=duration, number_members=number_members, currency=currency)
+
+        # metadata = {
+        #     "currency": currency,
+        #     "promo_code": promo_code_obj,
+        #     "card": card,
+        #     "number_members": number_members,
+        #     "enterprise_id": enterprise.id,
+        # }
+        # current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # if current_plan.get_plan_obj().is_team_plan is False:
+        #     raise ValidationError(detail={"non_field_errors": [gen_error("7014")]})
+        # # if current_plan.end_period and current_plan.end_period > now():
+        # #     metadata.update({
+        # #         "trial_end": int(current_plan.end_period)
+        # #     })
+        # # Calc payment price of new plan
+        # promo_code_value = promo_code_obj.code if promo_code_obj else None
+        # calc_payment = self._calc_payment(
+        #     enterprise=enterprise, duration=duration, currency=currency, promo_code=promo_code_value
+        # )
+        # immediate_payment = calc_payment.get("immediate_payment")
+        #
+        # payment = PaymentMethodFactory.get_method(
+        #     user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+        # )
+        # payment_result = payment.upgrade_recurring_subscription(
+        #     amount=immediate_payment, plan_type=PLAN_TYPE_PM_ENTERPRISE, coupon=promo_code_obj, duration=duration,
+        #     **metadata
+        # )
+        # update_result = payment_result.get("success")
+        # if update_result is False:
+        #     if payment_result.get("stripe_error"):
+        #         return Response(status=400, data={
+        #             "code": "7009",
+        #             "message": "Your card was declined (insufficient funds, etc...)",
+        #             "details": payment_result.get("error_details")
+        #         })
+        #     raise ValidationError({"non_field_errors": [gen_error("7009")]})
+        #
+        # # Set default payment method
+        # try:
+        #     current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        #     current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
+        # except ObjectDoesNotExist:
+        #     pass
         return Response(status=200, data={"success": True})
 
     @action(methods=["get", "put"], detail=False)
