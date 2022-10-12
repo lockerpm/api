@@ -8,6 +8,7 @@ from cystack_models.factory.payment_method.payment_method_factory import Payment
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.payments.payment_items import PaymentItem
 from cystack_models.models.payments.payments import Payment
+from cystack_models.models.payments.promo_codes import PromoCode
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
@@ -16,7 +17,7 @@ from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import InvoiceSerializer, CalcSerializer, UpgradePlanSerializer, BillingAddressSerializer, \
-    DetailInvoiceSerializer
+    DetailInvoiceSerializer, CalcPublicSerializer
 
 
 class PaymentPwdViewSet(EnterpriseViewSet):
@@ -30,6 +31,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             self.serializer_class = DetailInvoiceSerializer
         elif self.action == "calc":
             self.serializer_class = CalcSerializer
+        elif self.action == "calc_public":
+            self.serializer_class = CalcPublicSerializer
         elif self.action == "upgrade_plan":
             self.serializer_class = UpgradePlanSerializer
         elif self.action == "billing_address":
@@ -145,6 +148,20 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)
+    def calc_public(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        promo_code = validated_data.get("promo_code")
+        duration = validated_data.get("duration", DURATION_MONTHLY)
+        currency = validated_data.get("currency", CURRENCY_USD)
+        quantity = validated_data.get("quantity", 1)
+        result = self._calc_payment_public(
+            quantity=quantity, duration=duration, currency=currency, promo_code=promo_code
+        )
+        return Response(status=200, data=result)
+
+    @action(methods=["post"], detail=False)
     def upgrade_plan(self, request, *args, **kwargs):
         user = self.request.user
         enterprise = self.get_enterprise()
@@ -234,4 +251,53 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         )
         result["quantity"] = quantity
         result["plan"] = PMPlanSerializer(plan, many=False).data
+        return result
+
+    def _calc_payment_public(self, quantity: int, duration=DURATION_MONTHLY, currency=CURRENCY_USD, promo_code=None):
+        plan = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
+        current_time = now()
+        # Get new plan price
+        new_plan_price = plan.get_price(duration=duration, currency=currency)
+        # Number of month duration billing by new duration
+        duration_next_billing_month = Payment.get_duration_month_number(duration)
+        # Calc discount
+        error_promo = None
+        promo_code_obj = None
+        promo_description_en = None
+        promo_description_vi = None
+        if promo_code is not None and promo_code != "":
+            promo_code_obj = PromoCode.check_valid(value=promo_code, current_user=None)
+            if not promo_code_obj:
+                error_promo = {"promo_code": ["This coupon is expired or incorrect"]}
+            else:
+                # if not (new_duration == DURATION_YEARLY and promo_code_obj.duration < 12):
+                #     duration_next_billing_month = promo_code_obj.duration
+                promo_description_en = promo_code_obj.description_en
+                promo_description_vi = promo_code_obj.description_vi
+
+        total_amount = new_plan_price * quantity
+        next_billing_time = current_time + duration_next_billing_month * 30 * 86400
+
+        # Discount and immediate payment
+        total_amount = max(total_amount, 0)
+        discount = promo_code_obj.get_discount(total_amount, duration=duration) if promo_code_obj else 0.0
+        immediate_amount = max(round(total_amount - discount, 2), 0)
+
+        result = {
+            "alias": plan.get_alias(),
+            "price": round(new_plan_price, 2),
+            "total_price": total_amount,
+            "discount": discount,
+            "duration": duration,
+            "currency": currency,
+            "immediate_payment": immediate_amount,
+            "next_billing_time": next_billing_time,
+            "promo_description": {
+                "en": promo_description_en,
+                "vi": promo_description_vi
+            },
+            "error_promo": error_promo,
+            "quantity": quantity,
+            "plan": PMPlanSerializer(plan, many=False).data
+        }
         return result

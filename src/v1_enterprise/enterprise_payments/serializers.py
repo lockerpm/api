@@ -43,6 +43,13 @@ class CalcSerializer(serializers.Serializer):
     currency = serializers.ChoiceField(choices=LIST_CURRENCY, default=CURRENCY_USD, required=False)
 
 
+class CalcPublicSerializer(serializers.Serializer):
+    quantity = serializers.IntegerField(required=True, min_value=1)
+    promo_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    duration = serializers.ChoiceField(choices=LIST_DURATION, default=DURATION_MONTHLY)
+    currency = serializers.ChoiceField(choices=LIST_CURRENCY, default=CURRENCY_USD, required=False)
+
+
 class UpgradePlanSerializer(serializers.Serializer):
     promo_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     duration = serializers.ChoiceField(choices=LIST_DURATION, default=DURATION_MONTHLY, required=False)

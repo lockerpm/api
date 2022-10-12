@@ -6,6 +6,8 @@ class PaymentPwdPermission(EnterprisePwdPermission):
     scope = 'payment'
 
     def has_permission(self, request, view):
+        if view.action in ["calc_public"]:
+            return True
         return self.is_auth(request)
 
     def has_object_permission(self, request, view, obj):

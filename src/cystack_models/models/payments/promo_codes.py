@@ -90,8 +90,9 @@ class PromoCode(models.Model):
         try:
             promo_code = cls.objects.get(code=value, valid=True)
             # If promo code was expired or promo code was used by this user?
-            if (promo_code.expired_time < now()) or (promo_code.remaining_times <= 0) or \
-                    (current_user.payments.filter(promo_code=promo_code).count() > 0):
+            if promo_code.expired_time < now() or promo_code.remaining_times <= 0:
+                return False
+            if current_user is not None and current_user.payments.filter(promo_code=promo_code).count() > 0:
                 return False
             return promo_code
         except cls.DoesNotExist:
