@@ -164,7 +164,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)
-    def upgrade_public(self, request, *args, **kwargs):
+    def upgrade_plan_public(self, request, *args, **kwargs):
         user = self.request.user
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
