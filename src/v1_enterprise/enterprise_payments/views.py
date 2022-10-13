@@ -183,6 +183,15 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         enterprise = self.user_repository.get_default_enterprise(
             user=user, enterprise_name=organization, create_if_not_exist=True
         )
+        # Update billing infor
+        enterprise.enterprise_address1 = validated_data.get("enterprise_address1", enterprise.enterprise_address1)
+        enterprise.enterprise_address2 = validated_data.get("enterprise_address2", enterprise.enterprise_address2)
+        enterprise.enterprise_phone = validated_data.get("enterprise_phone", enterprise.enterprise_phone)
+        enterprise.enterprise_country = validated_data.get("enterprise_country", enterprise.enterprise_country)
+        enterprise.enterprise_postal_code = validated_data.get("enterprise_postal_code", enterprise.enterprise_postal_code)
+        enterprise.revision_date = now()
+        enterprise.save()
+
         self._upgrade_plan(user=user, enterprise=enterprise, card=card, promo_code_obj=promo_code_obj,
                            duration=duration, number_members=quantity, currency=currency)
         return Response(status=200, data={"success": True})
