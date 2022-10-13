@@ -63,16 +63,22 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             return None
 
     def allow_upgrade_enterprise_trial(self, user):
-        # If this user does not created master pass
-        if user.activated is False:
-            raise ValidationError({"non_field_errors": [gen_error("1003")]})
-        # If this user has an enterprise => The trial plan is applied
-        if user.enterprise_members.exists() is True:
-            raise ValidationError({"non_field_errors": [gen_error("7013")]})
-        # If this user is in other plan => Don't allow
+        # # If this user does not created master pass
+        # if user.activated is False:
+        #     raise ValidationError({"non_field_errors": [gen_error("1003")]})
+        # # If this user has an enterprise => The trial plan is applied
+        # if user.enterprise_members.exists() is True:
+        #     raise ValidationError({"non_field_errors": [gen_error("7013")]})
+        # # If this user is in other plan => Don't allow
+        # pm_current_plan = self.user_repository.get_current_plan(user=user)
+        # if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
+        #     raise ValidationError({"non_field_errors": [gen_error("7014")]})
+
+        # TODO: Check the user applied trial enterprise or not
         pm_current_plan = self.user_repository.get_current_plan(user=user)
-        if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
-            raise ValidationError({"non_field_errors": [gen_error("7014")]})
+        if pm_current_plan.is_enterprise_trial_applied() is True:
+            raise ValidationError({"non_field_errors": [gen_error("7013")]})
+
         return pm_current_plan
 
     def get_queryset(self):
@@ -208,16 +214,26 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         self.allow_upgrade_enterprise_trial(user=user)
 
-        trial_plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
+        # TODO: Cancel immediately the Stripe subscription
+        PaymentMethodFactory.get_method(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+        ).cancel_immediately_recurring_subscription()
+
         plan_metadata = {
             "start_period": now(),
             "end_period": now() + TRIAL_TEAM_PLAN,
             "number_members": TRIAL_TEAM_MEMBERS
         }
         self.user_repository.update_plan(
-            user=user, plan_type_alias=trial_plan_obj.get_alias(),
+            user=user, plan_type_alias=PLAN_TYPE_PM_ENTERPRISE,
             duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
+        # Set default payment method and enterprise_trial_applied is True
+        pm_current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        pm_current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
+        pm_current_plan.enterprise_trial_applied = True
+        pm_current_plan.save()
+
         # Send trial mail
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
             func_name="trial_enterprise_successfully", **{

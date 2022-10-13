@@ -308,5 +308,21 @@ class PMUserPlan(UserPlan):
     def is_personal_trial_applied(self) -> bool:
         return self.personal_trial_applied
 
-    # def is_enterprise_trial_applied(self) -> bool:
-    #     return self.is_enterprise_trial_applied
+    def is_enterprise_trial_applied(self) -> bool:
+        return self.enterprise_trial_applied
+
+    def is_update_personal_to_enterprise(self, new_plan_alias) -> bool:
+        """
+        Handle event hooks: The plan update event is a personal plan while the current plan is Enterprise plan
+        So, we don't need to update the plan of this user
+        :param new_plan_alias: (str) Event hook plan
+        :return:
+        True - Event hook is personal plan. Current plan is Enterprise
+        """
+        try:
+            new_plan_obj = PMPlan.objects.get(alias=new_plan_alias)
+            if self.get_plan_obj().is_team_plan is True and new_plan_obj.is_team_plan is False:
+                return True
+        except PMPlan.DoesNotExist:
+            pass
+        return False
