@@ -174,7 +174,7 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         if mobile_invoice_id:
             mobile_invoice_exist = Payment.objects.filter(mobile_invoice_id=mobile_invoice_id).exists()
 
-        # If we done have any payment with mobile_invoice_id => Create new onew
+        # If we done have any payment with mobile_invoice_id => Create new one
         if mobile_invoice_exist is False:
             new_payment_data = {
                 "user": user,
@@ -203,6 +203,11 @@ class MobilePaymentViewSet(MicroServiceViewSet):
 
         # Set paid or not
         if status == PAYMENT_STATUS_PAID:
+            # If this plan is canceled because the Personal Plan upgrade to Enterprise Plan => Not downgrade
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            if current_plan.is_update_personal_to_enterprise(new_plan_alias=new_payment.plan) is True:
+                return Response(status=200, data={"is_update_personal_to_enterprise": True})
+
             # Upgrade new plan
             subscription_metadata = {
                 "end_period": end_period,
@@ -232,9 +237,11 @@ class MobilePaymentViewSet(MicroServiceViewSet):
             self.payment_repository.set_past_due(payment=new_payment, failure_reason=failure_reason)
         else:
             self.payment_repository.set_failed(payment=new_payment, failure_reason=failure_reason)
-            # if platform == "ios":
             # Only Downgrade - Not set mobile_original_id is Null
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            if current_plan.is_update_personal_to_enterprise(new_plan_alias=new_payment.plan) is True:
+                return Response(status=200, data={"is_update_personal_to_enterprise": True})
+
             old_plan = current_plan.get_plan_type_name()
             if not current_plan.user.pm_plan_family.exists():
                 self.user_repository.update_plan(
@@ -266,6 +273,8 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         cancel_at_period_end = validated_data.get("cancel_at_period_end")
         user = validated_data.get("user")
         current_plan = self.user_repository.get_current_plan(user=user, scope=scope)
+        if current_plan.is_update_personal_to_enterprise(new_plan_alias=request.data.get("plan")) is True:
+            return Response(status=200, data={"is_update_personal_to_enterprise": True})
         current_plan.cancel_at_period_end = cancel_at_period_end
         current_plan.save()
         if cancel_at_period_end is True:
@@ -291,6 +300,10 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         current_plan = self.user_repository.get_current_plan(user=user, scope=scope)
         old_plan = current_plan.get_plan_type_name()
         current_plan.cancel_mobile_subscription()
+
+        # If this plan is canceled because the Personal Plan upgrade to Enterprise Plan => Not downgrade
+        if current_plan.is_update_personal_to_enterprise(new_plan_alias=request.data.get("plan")) is True:
+            return Response(status=200, data={"old_plan": old_plan})
 
         # if this plan is canceled because the user is added into family plan => Not notify
         if not current_plan.user.pm_plan_family.exists():

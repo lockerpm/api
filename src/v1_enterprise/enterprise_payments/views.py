@@ -209,9 +209,9 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             "number_members": number_members,
             "enterprise_id": enterprise.id,
         }
-        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        if current_plan.get_plan_obj().is_team_plan is False:
-            raise ValidationError(detail={"non_field_errors": [gen_error("7014")]})
+        # current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # if current_plan.get_plan_obj().is_team_plan is False:
+        #     raise ValidationError(detail={"non_field_errors": [gen_error("7014")]})
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
         calc_payment = self._calc_payment(
