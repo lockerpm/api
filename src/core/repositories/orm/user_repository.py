@@ -23,6 +23,8 @@ from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from cystack_models.models.enterprises.domains.domains import Domain
+from shared.utils.network import extract_root_domain
 
 
 class UserRepository(IUserRepository):
@@ -127,6 +129,20 @@ class UserRepository(IUserRepository):
             email = user.get_from_cystack_id().get("email")
         if not email:
             return user
+        # Add this user into the Enterprise if the mail domain belongs to an Enterprise
+        try:
+            email_domain = email.split("@")[1]
+            root_domain = extract_root_domain(domain=email_domain)
+            domain = Domain.objects.filter(root_domain=root_domain, verification=True).first()
+            if domain:
+                EnterpriseMember(
+                    enterprise=domain.enterprise, user=user, role_id=E_MEMBER_ROLE_MEMBER, domain=domain,
+                    status=E_MEMBER_STATUS_INVITED, is_default=False, is_primary=False,
+                    access_time=now()
+                )
+        except (ValueError, IndexError, AttributeError):
+            CyLog.warning(**{"message": f"[enterprise_invitations_confirm] Can not get email: {user} {email}"})
+            pass
         enterprise_invitations = EnterpriseMember.objects.filter(email=email, status=PM_MEMBER_STATUS_INVITED)
         enterprise_invitations.update(email=None, token_invitation=None, user=user)
         return user
