@@ -215,6 +215,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         self.allow_upgrade_enterprise_trial(user=user)
 
         # TODO: Cancel immediately the Stripe subscription
+        pm_current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        old_plan = pm_current_plan.get_plan_type_alias()
+        old_end_period = pm_current_plan.end_period
         PaymentMethodFactory.get_method(
             user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
         ).cancel_immediately_recurring_subscription()
@@ -224,6 +227,11 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "end_period": now() + TRIAL_TEAM_PLAN,
             "number_members": TRIAL_TEAM_MEMBERS
         }
+        if old_plan != PLAN_TYPE_PM_FREE and old_end_period:
+            plan_metadata.update({
+                "extra_time": max(old_end_period - now(), 0),
+                "extra_plan": old_plan
+            })
         self.user_repository.update_plan(
             user=user, plan_type_alias=PLAN_TYPE_PM_ENTERPRISE,
             duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
