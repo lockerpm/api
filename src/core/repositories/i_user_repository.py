@@ -23,11 +23,11 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def sharing_invitations_confirm(self, user):
+    def sharing_invitations_confirm(self, user, email: str = None):
         pass
 
     @abstractmethod
-    def enterprise_invitations_confirm(self, user):
+    def enterprise_invitations_confirm(self, user, email: str = None):
         pass
 
     @abstractmethod

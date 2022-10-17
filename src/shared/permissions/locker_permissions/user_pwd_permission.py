@@ -3,7 +3,7 @@ from shared.permissions.locker_permissions.app import LockerPermission
 
 class UserPwdPermission(LockerPermission):
     def has_permission(self, request, view):
-        if view.action in ["password_hint"]:
+        if view.action in ["password_hint", "invitation_confirmation"]:
             return True
         if view.action in ["prelogin", "me", "session", "passwordless_require"]:
             return self.is_auth(request)

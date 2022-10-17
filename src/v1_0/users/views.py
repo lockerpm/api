@@ -175,6 +175,20 @@ class UserPwdViewSet(PasswordManagerViewSet):
         kdf_info = camel_snake_data(kdf_info, snake_to_camel=True)
         return Response(status=200, data=kdf_info)
 
+    @action(methods=["get"], detail=False)
+    def invitation_confirmation(self, request, *args, **kwargs):
+        email = self.request.query_params.get("email", None)
+        user_id = self.request.query_params.get("user_id", None)
+        if (email is None) or (user_id is None):
+            raise NotFound
+        member_user = self.user_repository.retrieve_or_create_by_id(user_id=user_id)
+        # Update sharing confirmation
+        self.user_repository.sharing_invitations_confirm(user=member_user, email=email)
+        # Update enterprise invitations
+        self.user_repository.enterprise_invitations_confirm(user=member_user, email=email)
+
+        return Response(status=200, data={"success": True})
+
     @action(methods=["get", "put"], detail=False)
     def me(self, request, *args, **kwargs):
         user = self.request.user
