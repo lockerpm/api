@@ -111,8 +111,9 @@ class UserRepository(IUserRepository):
                 invitation.save()
         return user
 
-    def sharing_invitations_confirm(self, user):
-        email = user.get_from_cystack_id().get("email")
+    def sharing_invitations_confirm(self, user, email: str = None):
+        if not email:
+            email = user.get_from_cystack_id().get("email")
         if not email:
             return user
         sharing_invitations = TeamMember.objects.filter(
@@ -121,8 +122,9 @@ class UserRepository(IUserRepository):
         sharing_invitations.update(email=None, token_invitation=None, user=user)
         return user
 
-    def enterprise_invitations_confirm(self, user):
-        email = user.get_from_cystack_id().get("email")
+    def enterprise_invitations_confirm(self, user, email: str = None):
+        if not email:
+            email = user.get_from_cystack_id().get("email")
         if not email:
             return user
         enterprise_invitations = EnterpriseMember.objects.filter(email=email, status=PM_MEMBER_STATUS_INVITED)

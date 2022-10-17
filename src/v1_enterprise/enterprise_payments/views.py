@@ -10,6 +10,7 @@ from cystack_models.models.payments.payment_items import PaymentItem
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.payments.promo_codes import PromoCode
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from shared.constants.enterprise_members import *
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.payment_permission import PaymentPwdPermission
@@ -166,6 +167,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
     @action(methods=["post"], detail=False)
     def upgrade_plan_public(self, request, *args, **kwargs):
         user = self.request.user
+        if user.enterprise_members.filter(role_id__in=[E_MEMBER_ROLE_MEMBER, E_MEMBER_ROLE_ADMIN]).exists():
+            raise ValidationError({"non_field_errors": [gen_error("7015")]})
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         card = request.data.get("card")
