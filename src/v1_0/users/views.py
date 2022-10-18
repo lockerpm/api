@@ -352,6 +352,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         if user_enterprises.filter(enterprise_members__user=user, enterprise_members__is_activated=False).exists():
             raise ValidationError({"non_field_errors": [gen_error("1009")]})
+        if user_enterprises.filter(enterprise_members__user=user, locked=True).exists():
+            raise ValidationError({"non_field_errors": [gen_error("1010")]})
 
         # Unblock login
         user.last_request_login = now()
