@@ -67,8 +67,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # if user.activated is False:
         #     raise ValidationError({"non_field_errors": [gen_error("1003")]})
         # # If this user has an enterprise => The trial plan is applied
-        # if user.enterprise_members.exists() is True:
-        #     raise ValidationError({"non_field_errors": [gen_error("7013")]})
+        if user.enterprise_members.exists() is True:
+            raise ValidationError({"non_field_errors": [gen_error("7015")]})
         # # If this user is in other plan => Don't allow
         # pm_current_plan = self.user_repository.get_current_plan(user=user)
         # if pm_current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
@@ -214,7 +214,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         self.allow_upgrade_enterprise_trial(user=user)
 
-        # TODO: Cancel immediately the Stripe subscription
+        # Cancel immediately the Stripe subscription
         pm_current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         old_plan = pm_current_plan.get_plan_type_alias()
         old_end_period = pm_current_plan.end_period
@@ -238,9 +238,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         # Set default payment method and enterprise_trial_applied is True
         pm_current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        pm_current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
         pm_current_plan.enterprise_trial_applied = True
         pm_current_plan.save()
+        pm_current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
 
         # Send trial mail
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
