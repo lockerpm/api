@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.conf import settings
 from rest_framework.response import Response
@@ -72,9 +73,10 @@ class RelaySubdomainViewSet(RelayViewSet):
         except MaxRelaySubdomainReachedException:
             raise ValidationError({"non_field_errors": [gen_error("8001")]})
         # Send job to AWS SQS to create new subdomain
-        action_msg = {'action': 'create', 'domain': f"{new_relay_subdomain.subdomain}.{new_relay_subdomain.domain_id}"}
-        create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_msg)}
-        sqs_service.send_message(message_body=json.dumps(create_msg))
+        if os.getenv("PROD_ENV") == "prod":
+            action_msg = {'action': 'create', 'domain': f"{new_relay_subdomain.subdomain}.{new_relay_subdomain.domain_id}"}
+            create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_msg)}
+            sqs_service.send_message(message_body=json.dumps(create_msg))
 
         return Response(status=200, data={"id": new_relay_subdomain.id, "subdomain": new_relay_subdomain.subdomain})
 
@@ -98,18 +100,20 @@ class RelaySubdomainViewSet(RelayViewSet):
                 relay_address.delete_permanently()
 
             # Create deletion SQS job
-            action_delete_msg = {'action': 'delete', 'domain': f"{old_subdomain}.{subdomain_obj.domain_id}"}
-            delete_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_delete_msg)}
-            sqs_service.send_message(message_body=json.dumps(delete_msg))
+            if os.getenv("PROD_ENV") == "prod":
+                action_delete_msg = {'action': 'delete', 'domain': f"{old_subdomain}.{subdomain_obj.domain_id}"}
+                delete_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_delete_msg)}
+                sqs_service.send_message(message_body=json.dumps(delete_msg))
             # Update object in the database
             subdomain_obj.subdomain = subdomain
             subdomain_obj.save()
             # Save subdomain object as deleted
             user.relay_subdomains.model.create(user=user, subdomain=old_subdomain, is_deleted=True)
             # Send creation job to SQS
-            action_create_msg = {'action': 'create', 'domain': f"{subdomain}.{subdomain_obj.domain_id}"}
-            create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_create_msg)}
-            sqs_service.send_message(message_body=json.dumps(create_msg))
+            if os.getenv("PROD_ENV") == "prod":
+                action_create_msg = {'action': 'create', 'domain': f"{subdomain}.{subdomain_obj.domain_id}"}
+                create_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_create_msg)}
+                sqs_service.send_message(message_body=json.dumps(create_msg))
 
         return Response(status=200, data={"id": subdomain_obj.id})
 
@@ -123,9 +127,10 @@ class RelaySubdomainViewSet(RelayViewSet):
             relay_address.delete_permanently()
 
         # Create deletion SQS job
-        action_delete_msg = {'action': 'delete', 'domain': f"{subdomain_obj.subdomain}.{subdomain_obj.domain_id}"}
-        delete_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_delete_msg)}
-        sqs_service.send_message(message_body=json.dumps(delete_msg))
+        if os.getenv("PROD_ENV") == "prod":
+            action_delete_msg = {'action': 'delete', 'domain': f"{subdomain_obj.subdomain}.{subdomain_obj.domain_id}"}
+            delete_msg = {'Type': 'DomainIdentity', 'Message': json.dumps(action_delete_msg)}
+            sqs_service.send_message(message_body=json.dumps(delete_msg))
 
         subdomain_obj.soft_delete()
         return Response(status=204)
