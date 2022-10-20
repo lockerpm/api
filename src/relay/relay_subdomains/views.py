@@ -2,6 +2,7 @@ import json
 import os
 
 from django.conf import settings
+from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, NotFound
@@ -82,13 +83,16 @@ class RelaySubdomainViewSet(RelayViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         subdomain_obj = self.get_object()
+        relay_addresses = subdomain_obj.relay_addresses.all()
+        num_spam = relay_addresses.aggregate(Sum('num_spam')).get("num_spam__sum") or 0
+        num_forwarded = relay_addresses.aggregate(Sum('num_forwarded')).get("num_forwarded__sum") or 0
         data = {
             "id": subdomain_obj.id,
             "subdomain": subdomain_obj.subdomain,
             "created_time": subdomain_obj.created_time,
-            "num_alias": subdomain_obj.relay_addresses.all().count(),
-            "num_block": 0,
-            "num_forward": 0,
+            "num_alias": relay_addresses.count(),
+            "num_spam": num_spam,
+            "num_forwarded": num_forwarded,
         }
         return Response(status=200, data=data)
 
