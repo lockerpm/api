@@ -169,6 +169,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
         user = self.request.user
         enterprise = self.get_object()
         added_members = []
+        non_added_members = []
 
         # TODO: Check the maximum number of members
         # current_total_members = enterprise.enterprise_members.all().count()
@@ -183,9 +184,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
         for member in members:
             # If this member is in other enterprise
             if EnterpriseMember.objects.filter(user_id=member["user_id"]).exists():
+                non_added_members.append(member["user_id"])
                 continue
             try:
                 enterprise.enterprise_members.get(user_id=member["user_id"])
+                non_added_members.append(member["user_id"])
             except EnterpriseMember.DoesNotExist:
                 role = member["role"]
                 member_user = self.user_repository.retrieve_or_create_by_id(user_id=member["user_id"])
@@ -200,7 +203,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
         return Response(status=200, data={
             "enterprise_id": enterprise.id,
             "enterprise_name": enterprise.name,
-            "members": added_members
+            "members": added_members,
+            "non_added_members": list(set(non_added_members))
         })
 
     @action(methods=["post"], detail=False)
@@ -215,6 +219,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
             raise ValidationError(detail={"members": ["Members are not valid. This field must be an array"]})
         enterprise = self.get_object()
         added_members = []
+        non_added_members = []
 
         # # TODO: Check the maximum number of members
         # current_total_members = enterprise.enterprise_members.all().count()
@@ -229,9 +234,11 @@ class MemberPwdViewSet(EnterpriseViewSet):
         for member in members:
             # If this member is in other enterprise
             if EnterpriseMember.objects.filter(email=member["email"]).exists():
+                non_added_members.append(member["email"])
                 continue
             try:
                 enterprise.enterprise_members.get(email=member["email"])
+                non_added_members.append(member["email"])
             except EnterpriseMember.DoesNotExist:
                 role = member["role"]
                 member_obj = enterprise.enterprise_members.model.create(
@@ -247,7 +254,10 @@ class MemberPwdViewSet(EnterpriseViewSet):
 
                 # TODO: Log activity create new members
 
-        return Response(status=200, data=added_members)
+        return Response(status=200, data={
+            "members": added_members,
+            "non_added_members": non_added_members
+        })
 
     def retrieve(self, request, *args, **kwargs):
         enterprise = self.get_object()
