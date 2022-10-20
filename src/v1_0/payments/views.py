@@ -205,6 +205,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         user_id = payload.get("user_id")
         expired_time = payload.get("expired_time")
         token_type = payload.get("token_type")
+        enterprise_name = payload.get("enterprise_name") or "My Enterprise"
         if token_type != TOKEN_TYPE_TRIAL_ENTERPRISE or (expired_time and expired_time < now()):
             raise ValidationError(detail={"token": ["The upgrade token is not valid"]})
         try:
@@ -225,7 +226,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         plan_metadata = {
             "start_period": now(),
             "end_period": now() + TRIAL_TEAM_PLAN,
-            "number_members": TRIAL_TEAM_MEMBERS
+            "number_members": TRIAL_TEAM_MEMBERS,
+            "enterprise_name": enterprise_name
         }
         if old_plan != PLAN_TYPE_PM_FREE and old_end_period:
             plan_metadata.update({
@@ -258,6 +260,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         payload = {
             "user_id": user.user_id,
             "plan": PLAN_TYPE_PM_ENTERPRISE,
+            "enterprise_name": request.data.get("enterprise_name", "My Enterprise"),
             "token_type": TOKEN_TYPE_TRIAL_ENTERPRISE,
             "expired_time": now() + TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE
         }
