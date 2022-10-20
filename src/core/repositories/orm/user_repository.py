@@ -200,7 +200,7 @@ class UserRepository(IUserRepository):
     def _create_default_enterprise(self, user: User, enterprise_name):
         from cystack_models.models.enterprises.enterprises import Enterprise
         from cystack_models.models.enterprises.members.enterprise_member_roles import EnterpriseMemberRole
-        enterprise_name = enterprise_name or user.get_from_cystack_id().get("full_name", "My Enterprise")
+        enterprise_name = enterprise_name or user.get_from_cystack_id().get("organization") or "My Enterprise"
         default_enterprise = Enterprise.create(**{
             "name": enterprise_name,
             "description": "",
