@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from rest_framework import serializers
 
 from cystack_models.models.relay.relay_subdomains import RelaySubdomain
@@ -5,9 +6,16 @@ from cystack_models.models.relay.relay_subdomains import RelaySubdomain
 
 class SubdomainSerializer(serializers.Serializer):
     def to_representation(self, instance):
+        relay_addresses = instance.relay_addresses.all()
+        num_spam = relay_addresses.aggregate(Sum('num_spam')).get("num_spam__sum") or 0
+        num_forwarded = relay_addresses.aggregate(Sum('num_forwarded')).get("num_forwarded__sum") or 0
         return {
             "id": instance.id,
-            "subdomain": instance.subdomain
+            "subdomain": instance.subdomain,
+            "created_time": instance.created_time,
+            "num_alias": relay_addresses.count(),
+            "num_spam": num_spam,
+            "num_forwarded": num_forwarded,
         }
 
 
