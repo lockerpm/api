@@ -80,6 +80,18 @@ class RelaySubdomainViewSet(RelayViewSet):
 
         return Response(status=200, data={"id": new_relay_subdomain.id, "subdomain": new_relay_subdomain.subdomain})
 
+    def retrieve(self, request, *args, **kwargs):
+        subdomain_obj = self.get_object()
+        data = {
+            "id": subdomain_obj.id,
+            "subdomain": subdomain_obj.subdomain,
+            "created_time": subdomain_obj.created_time,
+            "num_alias": subdomain_obj.relay_addresses.all().count(),
+            "num_block": 0,
+            "num_forward": 0,
+        }
+        return Response(status=200, data=data)
+
     def update(self, request, *args, **kwargs):
         user = self.request.user
         self.allow_relay_premium()
