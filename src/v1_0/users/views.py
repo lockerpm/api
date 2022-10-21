@@ -532,15 +532,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"success": True})
 
     def _delete_locker_user(self, user):
-        # Check if user is the owner of the enterprise
-        default_enterprise = self.user_repository.get_default_enterprise(user=user)
-        # Clear data of the default team
-        if default_enterprise:
-            default_enterprise.enterprise_members.all().order_by('id').delete()
-            default_enterprise.groups.order_by('id').delete()
-            default_enterprise.policies.order_by('id').delete()
-            default_enterprise.domains.all().order_by('id').delete()
-            default_enterprise.delete()
+        # TODO: Need to delete Enterprise or not???
+        # # Check if user is the owner of the enterprise
+        # default_enterprise = self.user_repository.get_default_enterprise(user=user)
+        # # Clear data of the default enterprise
+        # if default_enterprise:
+        #     default_enterprise.enterprise_members.all().order_by('id').delete()
+        #     default_enterprise.groups.order_by('id').delete()
+        #     default_enterprise.policies.order_by('id').delete()
+        #     default_enterprise.domains.all().order_by('id').delete()
+        #     default_enterprise.delete()
 
         # Check if user is the only owner of any teams (except default team)
         default_team = self.user_repository.get_default_team(user=user)
@@ -548,8 +549,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         owner_teams = user.team_members.all().filter(
             role__name=MEMBER_ROLE_OWNER, is_primary=True, team__key__isnull=False,
         ).exclude(team_id=default_team_id)
-        # Remove all share teams
-        # My share:
+        # Remove all user's share teams
         personal_share_teams = owner_teams.filter(team__personal_share=True)
         self.cipher_repository.delete_permanent_multiple_cipher_by_teams(
             team_ids=list(personal_share_teams.values_list('team_id', flat=True))
@@ -559,7 +559,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         owners_share_with_me = self.sharing_repository.delete_share_with_me(user)
         PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=owners_share_with_me).send()
 
-        # Deactivated this account
+        # Deactivated this account and cancel the current plan immediately
         self.user_repository.delete_account(user)
 
     @action(methods=["post"], detail=False)

@@ -37,7 +37,13 @@ class Enterprise(models.Model):
                 if cls.objects.filter(id=enterprise_id).exists() is False:
                     break
         new_enterprise = cls(
-            id=enterprise_id, name=name, description=description, creation_date=creation_date
+            id=enterprise_id, name=name, description=description, creation_date=creation_date,
+            enterprise_name=name,
+            enterprise_address1=data.get("enterprise_address1") or "",
+            enterprise_address2=data.get("enterprise_address2") or "",
+            enterprise_phone=data.get("enterprise_phone") or "",
+            enterprise_country=data.get("enterprise_country") or "",
+            enterprise_postal_code=data.get("enterprise_postal_code") or ""
         )
         new_enterprise.save()
 
