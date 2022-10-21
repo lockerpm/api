@@ -203,7 +203,7 @@ class UserRepository(IUserRepository):
         user_data = user.get_from_cystack_id()
         enterprise_name = enterprise_name or user_data.get("organization") or "My Enterprise"
         enterprise_phone = user_data.get("phone") or ""
-        enterprise_country = user_data.get("country") or "",
+        enterprise_country = user_data.get("country") or ""
         default_enterprise = Enterprise.create(**{
             "name": enterprise_name,
             "enterprise_phone": enterprise_phone,
