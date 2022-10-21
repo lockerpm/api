@@ -156,7 +156,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         user=user, plan_type_alias=trial_plan_obj.get_alias(),
                         duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
                     )
-                    # TODO: Send trial enterprise mail here
+                    pm_current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+                    pm_current_plan.enterprise_trial_applied = True
+                    pm_current_plan.save()
+                    # Send trial enterprise mail here
+                    LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                        func_name="trial_enterprise_successfully", **{
+                            "user_id": user.user_id,
+                            "scope": settings.SCOPE_PWD_MANAGER,
+                        }
+                    )
 
         # Upgrade plan if the user is a family member
         self.user_repository.upgrade_member_family_plan(user=user)
