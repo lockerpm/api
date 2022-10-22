@@ -121,7 +121,7 @@ class RelayHookViewSet(RelayViewSet):
         try:
             relay_address = self.get_relay_address_obj(email=relay_address)
         except RelayAddress.DoesNotExist:
-            CyLog.debug(**{"message": "Can not get relay address destination: {}".format(relay_address)})
+            # CyLog.debug(**{"message": "Can not get relay address destination: {}".format(relay_address)})
             raise NotFound
         return Response(status=200, data={"user_id": relay_address.user_id})
 
