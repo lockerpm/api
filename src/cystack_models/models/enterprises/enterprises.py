@@ -21,6 +21,10 @@ class Enterprise(models.Model):
     enterprise_country = models.CharField(max_length=128, blank=True, default="")
     enterprise_postal_code = models.CharField(max_length=16, blank=True, default="")
 
+    # Init members seats
+    init_seats = models.IntegerField(null=True, default=None)
+    init_seats_expired_time = models.FloatField(null=True, default=None)
+
     class Meta:
         db_table = 'e_enterprises'
 
