@@ -28,7 +28,7 @@ class UpdateSubdomainSerializer(serializers.Serializer):
         if RelaySubdomain.valid_subdomain(subdomain=subdomain) is False:
             raise serializers.ValidationError(detail={"subdomain": [
                 "This subdomain is not valid (has black words, blocked words, etc...)",
-                "Tên miền phụ này không hợp lệ vì có chứa từ khóa không hợp lệ"
+                "Tên miền phụ này có chứa từ khóa không hợp lệ"
             ]})
 
         return data

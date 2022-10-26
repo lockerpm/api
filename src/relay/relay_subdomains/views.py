@@ -67,7 +67,10 @@ class RelaySubdomainViewSet(RelayViewSet):
         if user.relay_subdomains.filter(is_deleted=False).exists() is True:
             raise ValidationError({"non_field_errors": [gen_error("8001")]})
         if RelaySubdomain.objects.filter(subdomain=subdomain).exists():
-            raise ValidationError(detail={"subdomain": ["This subdomain is used. Try another subdomain"]})
+            raise ValidationError(detail={"subdomain": [
+                "This subdomain is used. Try another subdomain",
+                "Tên miền phụ này đã được sử dụng. Hãy thử lại với tên miền phụ khác"
+            ]})
 
         try:
             new_relay_subdomain = user.relay_subdomains.model.create_atomic(user_id=user.user_id, subdomain=subdomain)
@@ -106,7 +109,10 @@ class RelaySubdomainViewSet(RelayViewSet):
         subdomain = validated_data.get("subdomain")
 
         if RelaySubdomain.objects.exclude(user=user, is_deleted=False).filter(subdomain=subdomain).exists():
-            raise ValidationError(detail={"subdomain": ["This subdomain is used. Try another subdomain"]})
+            raise ValidationError(detail={"subdomain": [
+                "This subdomain is used. Try another subdomain",
+                "Tên miền phụ này đã được sử dụng. Hãy thử lại với tên miền phụ khác"
+            ]})
 
         old_subdomain = subdomain_obj.subdomain
         if subdomain != old_subdomain:

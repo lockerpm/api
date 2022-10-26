@@ -93,7 +93,7 @@ class RelayAddressViewSet(RelayViewSet):
             if RelayAddress.valid_address(address=address, domain=relay_address.domain_id) is False:
                 raise ValidationError(detail={"address": [
                     "This address is not valid (has black words, blocked words, etc...)",
-                    "Địa chỉ này không hợp lệ vì có chứa từ khóa không hợp lệ"
+                    "Địa chỉ này có chứa từ khóa không hợp lệ"
                 ]})
             relay_address.address = address
         if enabled != relay_address.enabled or block_spam != relay_address.block_spam:
