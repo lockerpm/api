@@ -2066,5 +2066,7 @@ RELAY_BLOCKLISTED = [
 
 RELAY_LOCKER_BLOCKED_CHARACTER = [
     "cystack",
+    "websec",
+    "safechain",
     "locker"
 ]
