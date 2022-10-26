@@ -49,6 +49,8 @@ def enterprise_member_change_billing():
             num_active_members = enterprise.get_activated_members_count()
             pay_quantity = max(num_active_members - enterprise.init_seats, 0)
         if pay_quantity <= 0:
+            user_plan.member_billing_updated_time = current_time
+            user_plan.save()
             continue
 
         added_user_ids = list(added_events.values_list('user_id', flat=True).distinct())
