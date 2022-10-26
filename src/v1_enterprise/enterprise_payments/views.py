@@ -274,7 +274,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
         except ObjectDoesNotExist:
             pass
-        return update_result
+        return payment_result
 
     @action(methods=["post"], detail=False)
     def upgrade_plan(self, request, *args, **kwargs):
