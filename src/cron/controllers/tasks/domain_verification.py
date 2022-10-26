@@ -16,8 +16,7 @@ def domain_verification():
             LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
                 func_name="domain_verified", **{
                     "owner_user_id": owner_user_id,
-                    "domain": unverified_domain,
-                    "verification": True
+                    "domain": unverified_domain
                 }
             )
         else:
