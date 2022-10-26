@@ -89,10 +89,11 @@ class RelayAddressViewSet(RelayViewSet):
             if not oldest_relay_address or oldest_relay_address.id != relay_address.id:
                 raise PermissionDenied
             if RelayAddress.objects.filter(address=address).exists() is True:
-                raise ValidationError(detail={"address": ["This relay address exists"]})
+                raise ValidationError(detail={"address": ["This address exists", "Địa chỉ đã tồn tại"]})
             if RelayAddress.valid_address(address=address, domain=relay_address.domain_id) is False:
                 raise ValidationError(detail={"address": [
-                    "This relay address is not valid (has black words, blocked words, etc...)"
+                    "This address is not valid (has black words, blocked words, etc...)",
+                    "Địa chỉ này không hợp lệ vì có chứa từ khóa không hợp lệ"
                 ]})
             relay_address.address = address
         if enabled != relay_address.enabled or block_spam != relay_address.block_spam:
