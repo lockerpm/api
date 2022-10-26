@@ -59,6 +59,9 @@ class Enterprise(models.Model):
 
     def lock_enterprise(self, lock: bool):
         self.locked = lock
+        if lock is True:
+            self.init_seats = None
+            self.init_seats_expired_time = None
         self.save()
 
     def get_activated_members_count(self):
