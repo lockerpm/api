@@ -27,8 +27,7 @@ def domain_verification():
                 LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
                     func_name="domain_unverified", **{
                         "owner_user_id": owner_user_id,
-                        "domain": unverified_domain,
-                        "verification": False
+                        "domain": unverified_domain
                     }
                 )
                 unverified_domain.is_notify_failed = True

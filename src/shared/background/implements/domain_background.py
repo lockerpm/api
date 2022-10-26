@@ -69,7 +69,7 @@ class DomainBackground(ILockerBackground):
             existed_user_ids = enterprise.enterprise_members.exclude(
                 user_id__isnull=True
             ).values_list('user_id', flat=True)
-            admins = list(enterprise.enterprise.enterprise_members.filter(
+            admins = list(enterprise.enterprise_members.filter(
                 role_id=E_MEMBER_ROLE_ADMIN, status=E_MEMBER_STATUS_CONFIRMED, is_activated=True
             ).values_list('user_id', flat=True))
 
