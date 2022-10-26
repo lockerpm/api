@@ -22,7 +22,7 @@ def domain_verification():
             )
         else:
             # Check the domain is added more than one day?
-            if current_time <= unverified_domain.created_time + 86400 and unverified_domain.is_notify_failed is False:
+            if current_time >= unverified_domain.created_time + 86400 and unverified_domain.is_notify_failed is False:
                 owner_user_id = unverified_domain.enterprise.enterprise_members.get(is_primary=True).user_id
                 LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
                     func_name="domain_unverified", **{
