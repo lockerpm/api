@@ -1,6 +1,6 @@
 from django.db import models
 
-from shared.constants.device_type import CLIENT_ID_MOBILE, CLIENT_ID_BROWSER
+from shared.constants.device_type import CLIENT_ID_MOBILE, CLIENT_ID_BROWSER, CLIENT_ID_DESKTOP
 from shared.utils.app import now
 from cystack_models.models.users.devices import Device
 
@@ -43,6 +43,6 @@ class DeviceAccessToken(models.Model):
 
     @classmethod
     def get_token_duration(cls, client_id):
-        if client_id in [CLIENT_ID_MOBILE, CLIENT_ID_BROWSER]:
+        if client_id in [CLIENT_ID_MOBILE, CLIENT_ID_BROWSER, CLIENT_ID_DESKTOP]:
             return 30 * 86400
         return 4 * 3600
