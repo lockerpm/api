@@ -1,3 +1,8 @@
+import traceback
+
+import stripe
+import stripe.error
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
@@ -6,13 +11,13 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from cystack_models.models.enterprises.enterprises import Enterprise
-from cystack_models.models.payments.payment_items import PaymentItem
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.payments.promo_codes import PromoCode
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from shared.constants.enterprise_members import *
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
+from shared.log.cylog import CyLog
 from shared.permissions.locker_permissions.enterprise.payment_permission import PaymentPwdPermission
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
@@ -191,12 +196,36 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         enterprise.enterprise_address2 = validated_data.get("enterprise_address2", enterprise.enterprise_address2)
         enterprise.enterprise_phone = validated_data.get("enterprise_phone", enterprise.enterprise_phone)
         enterprise.enterprise_country = validated_data.get("enterprise_country", enterprise.enterprise_country)
-        enterprise.enterprise_postal_code = validated_data.get("enterprise_postal_code", enterprise.enterprise_postal_code)
+        enterprise.enterprise_postal_code = validated_data.get(
+            "enterprise_postal_code", enterprise.enterprise_postal_code
+        )
         enterprise.revision_date = now()
         enterprise.save()
 
-        self._upgrade_plan(user=user, enterprise=enterprise, card=card, promo_code_obj=promo_code_obj,
-                           duration=duration, number_members=quantity, currency=currency)
+        # Upgrade to Enterprise Plan
+        update_result = self._upgrade_plan(
+            user=user, enterprise=enterprise, card=card, promo_code_obj=promo_code_obj,
+            duration=duration, number_members=quantity, currency=currency
+        )
+        # Saving the init seats of the enterprise
+        stripe_subscription_id = update_result.get("stripe_subscription_id")
+        if quantity > 1 and update_result.get("success") is True and stripe_subscription_id:
+            try:
+                stripe_subscription = stripe.Subscription.retrieve(stripe_subscription_id)
+                if stripe_subscription.status in ["trialing", "active"]:
+                    enterprise.init_seats = quantity
+                    enterprise.init_seats_expired_time = stripe_subscription.current_period_end
+                    enterprise.save()
+                    # Then, set the quantity to 1
+                    items = stripe_subscription.get("items").get("data")
+                    if items:
+                        si = items[0].get("id")
+                        plans = [{"id": si, "quantity": 1}]
+                        stripe.Subscription.modify(stripe_subscription.id, items=plans, proration_behavior='none')
+            except stripe.error.StripeError:
+                tb = traceback.format_exc()
+                CyLog.error(**{"message": f"Set init seat error: {user} {stripe_subscription_id}: \n{tb}"})
+
         return Response(status=200, data={"success": True})
 
     def _upgrade_plan(self, user, enterprise, card, promo_code_obj=None,
@@ -245,6 +274,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
             current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
         except ObjectDoesNotExist:
             pass
+        return update_result
 
     @action(methods=["post"], detail=False)
     def upgrade_plan(self, request, *args, **kwargs):
@@ -341,7 +371,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         result["plan"] = PMPlanSerializer(plan, many=False).data
         return result
 
-    def _calc_payment_public(self, quantity: int, duration=DURATION_MONTHLY, currency=CURRENCY_USD, promo_code=None):
+    @staticmethod
+    def _calc_payment_public(quantity: int, duration=DURATION_MONTHLY, currency=CURRENCY_USD, promo_code=None):
         plan = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
         current_time = now()
         # Get new plan price

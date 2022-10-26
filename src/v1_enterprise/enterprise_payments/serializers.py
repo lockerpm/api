@@ -81,7 +81,7 @@ class UpgradePlanSerializer(serializers.Serializer):
 
 
 class UpgradePlanPublicSerializer(UpgradePlanSerializer):
-    quantity = serializers.IntegerField(min_value=1)
+    quantity = serializers.IntegerField(min_value=1, default=1)
     organization = serializers.CharField(max_length=128, default="My Enterprise")
     enterprise_address1 = serializers.CharField(max_length=255, required=False, allow_blank=True)
     enterprise_address2 = serializers.CharField(max_length=255, required=False, allow_blank=True)

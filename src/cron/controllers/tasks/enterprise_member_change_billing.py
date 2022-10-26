@@ -41,6 +41,16 @@ def enterprise_member_change_billing():
         quantity = added_events.count()
         if quantity == 0:
             continue
+
+        pay_quantity = quantity
+        # Check init seats
+        if enterprise.init_seats and enterprise.init_seats_expired_time and \
+                current_time < enterprise.init_seats_expired_time:
+            num_active_members = enterprise.get_activated_members_count()
+            pay_quantity = max(num_active_members - enterprise.init_seats, 0)
+        if pay_quantity <= 0:
+            continue
+
         added_user_ids = list(added_events.values_list('user_id', flat=True).distinct())
         added_user_ids_str = ",".join(str(v) for v in added_user_ids)
 
@@ -54,10 +64,10 @@ def enterprise_member_change_billing():
         # https://stripe.com/docs/billing/invoices/subscription#adding-upcoming-invoice-items
         new_added_invoice_item = stripe.InvoiceItem.create(
             customer=stripe_subscription.customer,
-            description=f"{quantity} member(s) added into Locker Enterprise",
+            description=f"{pay_quantity} member(s) added into Locker Enterprise",
             unit_amount=int(unit_amount * 100),
             currency="USD",
-            quantity=quantity,
+            quantity=pay_quantity,
             subscription=stripe_subscription.id,
             metadata={
                 "scope": settings.SCOPE_PWD_MANAGER,

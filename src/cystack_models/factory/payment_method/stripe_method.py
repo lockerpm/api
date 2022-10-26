@@ -77,7 +77,7 @@ class StripePaymentMethod(IPaymentMethod):
                 "error_details": self.handle_error(e)
             }
 
-        return {"success": True, "stripe_error": False, "error_details": None}
+        return {"success": True, "stripe_error": False, "error_details": None, "stripe_subscription_id": stripe_sub.id}
 
     def upgrade_recurring_subscription(self, amount: float, plan_type: str, coupon=None,
                                        duration: str = DURATION_MONTHLY, **kwargs) -> dict:
@@ -170,7 +170,12 @@ class StripePaymentMethod(IPaymentMethod):
 
         # Upgrade successfully => Upgrade user plan
         CyLog.info(**{"message": "[Stripe] Start upgrade new plan: {} {} ".format(plan_type, duration)})
-        return {"success": True, "stripe_error": False, "error_details": None}
+        return {
+            "success": True,
+            "stripe_error": False,
+            "error_details": None,
+            "stripe_subscription_id": new_stripe_subscription.id
+        }
 
     def cancel_recurring_subscription(self, **kwargs):
         """

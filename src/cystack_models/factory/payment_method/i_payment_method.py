@@ -81,6 +81,7 @@ class IPaymentMethod:
         """
         Update the quantity of the subscribed plan
         :param new_quantity:
+        :param amount:
         :return:
         """
 
