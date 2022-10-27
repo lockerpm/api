@@ -27,24 +27,26 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             "domain": instance.domain.domain
         } if instance.domain else None
         data["groups"] = list(instance.groups_members.values_list('group__name', flat=True))
-        cipher_overview = instance.user.created_ciphers.filter(type=CIPHER_TYPE_LOGIN).aggregate(
-            cipher0=Sum(
-                Case(When(score=0, then=Value(1)), default=0), output_field=IntegerField()
-            ),
-            cipher1=Sum(
-                Case(When(score=1, then=Value(1)), default=0), output_field=IntegerField()
-            ),
-            cipher2=Sum(
-                Case(When(score=2, then=Value(1)), default=0), output_field=IntegerField()
-            ),
-            cipher3=Sum(
-                Case(When(score=3, then=Value(1)), default=0), output_field=IntegerField()
-            ),
-            cipher4=Sum(
-                Case(When(score=4, then=Value(1)), default=0), output_field=IntegerField()
-            ),
+        cipher_overview = {}
+        if instance.user:
+            cipher_overview = instance.user.created_ciphers.filter(type=CIPHER_TYPE_LOGIN).aggregate(
+                cipher0=Sum(
+                    Case(When(score=0, then=Value(1)), default=0), output_field=IntegerField()
+                ),
+                cipher1=Sum(
+                    Case(When(score=1, then=Value(1)), default=0), output_field=IntegerField()
+                ),
+                cipher2=Sum(
+                    Case(When(score=2, then=Value(1)), default=0), output_field=IntegerField()
+                ),
+                cipher3=Sum(
+                    Case(When(score=3, then=Value(1)), default=0), output_field=IntegerField()
+                ),
+                cipher4=Sum(
+                    Case(When(score=4, then=Value(1)), default=0), output_field=IntegerField()
+                ),
 
-        )
+            )
         data["cipher_overview"] = cipher_overview
         data["security_score"] = instance.user.master_password_score if instance.user else None
         return data
