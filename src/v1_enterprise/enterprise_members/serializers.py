@@ -27,6 +27,26 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             "domain": instance.domain.domain
         } if instance.domain else None
         data["groups"] = list(instance.groups_members.values_list('group__name', flat=True))
+        data["security_score"] = instance.user.master_password_score if instance.user else None
+        return data
+
+
+class ShortDetailMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnterpriseMember
+        fields = ('id', 'user_id', 'email', 'status')
+        read_only_fields = ('id', 'user_id', 'email', 'status')
+
+    def to_representation(self, instance):
+        data = super(ShortDetailMemberSerializer, self).to_representation(instance)
+        data["role"] = instance.role.name
+        return data
+
+
+class DetailActiveMemberSerializer(DetailMemberSerializer):
+    def to_representation(self, instance):
+        data = super(DetailActiveMemberSerializer, self).to_representation(instance)
+        data["login_block_until"] = instance.user.login_block_until if instance.user else None
         cipher_overview = {}
         if instance.user:
             cipher_overview = instance.user.created_ciphers.filter(type=CIPHER_TYPE_LOGIN).aggregate(
@@ -48,26 +68,6 @@ class DetailMemberSerializer(serializers.ModelSerializer):
 
             )
         data["cipher_overview"] = cipher_overview
-        data["security_score"] = instance.user.master_password_score if instance.user else None
-        return data
-
-
-class ShortDetailMemberSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EnterpriseMember
-        fields = ('id', 'user_id', 'email', 'status')
-        read_only_fields = ('id', 'user_id', 'email', 'status')
-
-    def to_representation(self, instance):
-        data = super(ShortDetailMemberSerializer, self).to_representation(instance)
-        data["role"] = instance.role.name
-        return data
-
-
-class DetailActiveMemberSerializer(DetailMemberSerializer):
-    def to_representation(self, instance):
-        data = super(DetailActiveMemberSerializer, self).to_representation(instance)
-        data["login_block_until"] = instance.user.login_block_until if instance.user else None
         return data
 
 class UpdateMemberSerializer(serializers.Serializer):
