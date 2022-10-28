@@ -21,6 +21,7 @@ from cron.controllers.tasks.delete_trash_ciphers import delete_trash_ciphers
 from cron.controllers.tasks.domain_verification import domain_verification
 from cron.controllers.tasks.enterprise_breach_scan import enterprise_breach_scan
 from cron.controllers.tasks.enterprise_member_change_billing import enterprise_member_change_billing
+from cron.controllers.tasks.tutorial_reminder import tutorial_reminder
 
 
 class CronTask:
@@ -108,6 +109,16 @@ class CronTask:
         finally:
             close_old_connections()
 
+    def tutorial_notification(self):
+        try:
+            tutorial_reminder()
+            self.logger.info("[+] tutorial_notification Done")
+        except Exception as e:
+            tb = traceback.format_exc()
+            self.logger.error("[!] tutorial_notification error: {}".format(tb))
+        finally:
+            close_old_connections()
+
     def start(self):
         schedule.every(10).minutes.do(self.subscription_by_wallet)
         schedule.every().day.at("19:30").do(self.plan_expiring_notification)
@@ -116,6 +127,7 @@ class CronTask:
         schedule.every(120).minutes.do(self.domain_verification)
         schedule.every().day.at("19:00").do(self.enterprise_breach_scan)
         schedule.every().day.at("09:30").do(self.enterprise_member_change_billing)
+        # schedule.every().day.at("07:30").do(self.tutorial_notification)
 
         # schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
         self.logger.info("[+] Starting Locker cron task")
