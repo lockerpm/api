@@ -129,7 +129,7 @@ class CronTask:
         schedule.every().day.at("09:30").do(self.enterprise_member_change_billing)
         # schedule.every().day.at("07:30").do(self.tutorial_notification)
 
-        # schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
+        schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
         self.logger.info("[+] Starting Locker cron task")
         while True:
             schedule.run_pending()
