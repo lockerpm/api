@@ -284,10 +284,10 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
     def save(self, **kwargs):
         cipher = kwargs.get("cipher")
         validated_data = self.validated_data
-        if cipher.team_id is None and validated_data.get("organizationId"):
-            raise serializers.ValidationError(detail={"organizationId": [
-                "You can not change team of cipher when update. Please share this cipher to change team"
-            ]})
+        # if cipher.team_id is None and validated_data.get("organizationId"):
+        #     raise serializers.ValidationError(detail={"organizationId": [
+        #         "You can not change team of cipher when update. Please share this cipher to change team"
+        #     ]})
 
         # Validate collection ids
         if cipher.team:
