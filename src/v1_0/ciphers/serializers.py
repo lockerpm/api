@@ -291,7 +291,7 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
 
         # Validate collection ids
         team = validated_data.get("team")
-        if team:
+        if team and team.id == cipher.team_id:
             team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
             user = self.context["request"].user
             try:
