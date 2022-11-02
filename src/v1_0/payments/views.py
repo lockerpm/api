@@ -265,6 +265,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "expired_time": now() + TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256').decode('utf-8')
+        from shared.log.cylog import CyLog
+        CyLog.debug(**{"message": f"{token}"})
         return Response(status=200, data={"token": token})
 
     @action(methods=["get"], detail=False)
