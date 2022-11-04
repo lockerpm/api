@@ -8,6 +8,7 @@ from shared.external_request.requester import requester, RequesterError
 
 
 API_NOTIFY_PAYMENT = "{}/micro_services/cystack_platform/payments".format(settings.GATEWAY_API)
+API_NOTIFY_LOCKER = "{}/micro_services/cystack_platform/pm/notify".format(settings.GATEWAY_API)
 HEADERS = {
     'User-agent': 'Locker Password Manager API',
     "Authorization": settings.MICRO_SERVICE_USER_AUTH
@@ -142,6 +143,20 @@ class NotifyBackground(ILockerBackground):
 
         except Exception:
             self.log_error(func_name="notify_pay_successfully")
+        finally:
+            if self.background:
+                connection.close()
+
+    def notify_tutorial(self, job, user_ids):
+        url = API_NOTIFY_LOCKER + "/tutorial"
+        try:
+            notification_data = {"job": job, "user_ids": user_ids}
+            requester(
+                method="POST", url=url, headers=HEADERS, data_send=notification_data,
+                retry=True, max_retries=3, timeout=5
+            )
+        except Exception:
+            self.log_error(func_name="notify_tutorial")
         finally:
             if self.background:
                 connection.close()

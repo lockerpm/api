@@ -146,8 +146,11 @@ class VaultItemSerializer(serializers.Serializer):
         if organization_id:
             try:
                 team_member = user.team_members.get(
-                    team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
+                    team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER],
                 )
+                # team_member = user.team_members.get(
+                #     team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
+                # )
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": [
                     "This team does not exist", "Team này không tồn tại"
@@ -183,11 +186,11 @@ class VaultItemSerializer(serializers.Serializer):
                 raise serializers.ValidationError(detail={
                     "collectionIds": ["Not found any collections"]
                 })
-            if role_id == MEMBER_ROLE_MANAGER and \
-                    team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
-                raise serializers.ValidationError(detail={
-                    "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
-                })
+            # if role_id == MEMBER_ROLE_MANAGER and \
+            #         team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
+            #     raise serializers.ValidationError(detail={
+            #         "collectionIds": ["The team collection id {} does not exist".format(default_collection_id)]
+            #     })
             return [default_collection_id]
         else:
             if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
@@ -243,9 +246,6 @@ class VaultItemSerializer(serializers.Serializer):
         }
         # Cipher data
         detail.update({"data": get_cipher_detail_data(validated_data)})
-        # detail["data"]["name"] = validated_data.get("name")
-        # if validated_data.get("notes"):
-        #     detail["data"]["notes"] = validated_data.get("notes")
 
         return detail
 
@@ -258,17 +258,17 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
     def validate_collections(self, team_member, collection_ids):
         team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
         team_obj = team_member.team
-        role_id = team_member.role_id
+        # role_id = team_member.role_id
         if not collection_ids:
             # Get default collection
             try:
                 default_collection = team_repository.get_default_collection(team=team_obj)
                 default_collection_id = default_collection.id
-                if role_id == MEMBER_ROLE_MANAGER and \
-                        team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
-                    raise serializers.ValidationError(detail={
-                        "collectionIds": ["You do not have permission in default collections"]
-                    })
+                # if role_id == MEMBER_ROLE_MANAGER and \
+                #         team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
+                #     raise serializers.ValidationError(detail={
+                #         "collectionIds": ["You do not have permission in default collections"]
+                #     })
                 return [default_collection_id]
             except ObjectDoesNotExist:
                 return []
@@ -284,22 +284,26 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
     def save(self, **kwargs):
         cipher = kwargs.get("cipher")
         validated_data = self.validated_data
-        if cipher.team_id is None and validated_data.get("organizationId"):
-            raise serializers.ValidationError(detail={"organizationId": [
-                "You can not change team of cipher when update. Please share this cipher to change team"
-            ]})
+        # if cipher.team_id is None and validated_data.get("organizationId"):
+        #     raise serializers.ValidationError(detail={"organizationId": [
+        #         "You can not change team of cipher when update. Please share this cipher to change team"
+        #     ]})
 
         # Validate collection ids
-        if cipher.team:
+        team = validated_data.get("team")
+        if team and team.id == cipher.team_id:
             team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
             user = self.context["request"].user
-            team_member = user.team_members.get(
-                team_id=cipher.team_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
-            )
+            try:
+                team_member = user.team_members.get(
+                    team_id=team.id, role_id__in=[MEMBER_ROLE_OWNER],
+                )
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(detail={"organizationId": ["The team does not exist"]})
             role_id = team_member.role_id
             cipher_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
             collection_ids = validated_data.get("collectionIds", [])
-            team_collection_ids = team_repository.get_list_collection_ids(team=cipher.team)
+            team_collection_ids = team_repository.get_list_collection_ids(team=team)
             if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
                 member_collection_ids = team_collection_ids
             else:

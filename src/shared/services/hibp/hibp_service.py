@@ -34,5 +34,5 @@ class HibpService:
             retry += 1
             if retry >= self.retries_number:
                 break
-        CyLog.error(**{"message": "[hibp] All retries number of checking breach reached: {} {}".format(url, HEADERS)})
+        CyLog.error(**{"message": "[hibp] All retries number of checking breach reached: {}".format(url)})
         return {}
