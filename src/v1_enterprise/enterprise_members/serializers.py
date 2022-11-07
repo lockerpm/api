@@ -49,7 +49,10 @@ class DetailActiveMemberSerializer(DetailMemberSerializer):
         data["login_block_until"] = instance.user.login_block_until if instance.user else None
         cipher_overview = {}
         if instance.user:
-            cipher_overview = instance.user.created_ciphers.filter(type=CIPHER_TYPE_LOGIN).aggregate(
+            # Don't get ciphers from trash
+            cipher_overview = instance.user.created_ciphers.filter(
+                type=CIPHER_TYPE_LOGIN, deleted_date__isnull=True
+            ).aggregate(
                 cipher0=Sum(
                     Case(When(score=0, then=Value(1)), default=0), output_field=IntegerField()
                 ),
@@ -64,8 +67,7 @@ class DetailActiveMemberSerializer(DetailMemberSerializer):
                 ),
                 cipher4=Sum(
                     Case(When(score=4, then=Value(1)), default=0), output_field=IntegerField()
-                ),
-
+                )
             )
         data["cipher_overview"] = cipher_overview
         return data
