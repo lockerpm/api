@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Value, When, Q, Case, IntegerField, Count, CharField, Max
 from django.db.models.expressions import RawSQL, F
@@ -16,6 +17,7 @@ from shared.constants.ciphers import CIPHER_TYPE_LOGIN
 from shared.constants.enterprise_members import *
 from shared.constants.event import EVENT_USER_LOGIN_FAILED, EVENT_USER_LOGIN, EVENT_USER_BLOCK_LOGIN, \
     EVENT_ENTERPRISE_UPDATED
+from shared.constants.transactions import PLAN_TYPE_PM_FREE
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.enterprise_permission import EnterprisePwdPermission
 from shared.utils.app import now
@@ -77,6 +79,27 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
             "type": EVENT_ENTERPRISE_UPDATED, "ip_address": ip
         })
         return super(EnterprisePwdViewSet, self).update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.request.user
+        ip = request.data.get("ip")
+        enterprise = self.get_object()
+        enterprise_id = enterprise.id
+
+        # Clear data of the enterprise
+        enterprise.enterprise_members.all().order_by('id').delete()
+        enterprise.groups.order_by('id').delete()
+        enterprise.policies.order_by('id').delete()
+        enterprise.domains.all().order_by('id').delete()
+        enterprise.delete()
+        # Delete all events
+        Event.objects.filter(team_id=enterprise_id).delete()
+
+        # Cancel the plan of the owner
+        primary_admin = enterprise.get_primary_admin_user()
+        self.user_repository.cancel_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, immediately=True)
+
+        return Response(status=204)
 
     @action(methods=["get"], detail=True)
     def dashboard(self, request, *args, **kwargs):
