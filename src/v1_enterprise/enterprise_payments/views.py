@@ -132,7 +132,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         primary_admin_plan = self.user_repository.get_current_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER)
         stripe_subscription = primary_admin_plan.get_stripe_subscription()
         # If the Enterprise plan doesn't have Stripe Subscription => Subscribe with stripe
-        if primary_admin_plan.get_plan_obj().is_team_plan and stripe_subscription is None:
+        if primary_admin_plan.get_plan_obj().is_team_plan and stripe_subscription is None and \
+                primary_admin_plan.end_period and primary_admin_plan.end_period > now():
             number_members = enterprise.get_activated_members_count()
             metadata = {
                 "currency": CURRENCY_USD,
@@ -140,7 +141,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
                 "card": request.data.get("card"),
                 "number_members": number_members,
                 "enterprise_id": enterprise.id,
-                "trial_end": primary_admin_plan.end_period
+                "trial_end": int(primary_admin_plan.end_period)
             }
             PaymentMethodFactory.get_method(
                 user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
