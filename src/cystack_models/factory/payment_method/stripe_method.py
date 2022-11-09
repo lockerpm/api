@@ -49,27 +49,45 @@ class StripePaymentMethod(IPaymentMethod):
         # Re-formatting Stripe plans
         plans = self.__reformatting_stripe_plans(plan_type=plan_type, duration=duration, **kwargs)
         # Create immediate subscription
+        trial_end = kwargs.get("trial_end")
+        billing_cycle_anchor = kwargs.get("billing_cycle_anchor")
+        billing_cycle_anchor_action = kwargs.get("billing_cycle_anchor_action") or "update"
+
         try:
-            stripe_sub = stripe.Subscription.create(
-                customer=card.get("stripe_customer_id"),
-                default_payment_method=card.get("id_card"),
-                items=plans,
-                metadata={
-                    "user_id": self.user.user_id,
-                    "scope": self.scope,
-                    "family_members": str(kwargs.get("family_members", [])),
-                    "enterprise_id": kwargs.get("enterprise_id"),
-                    "number_members": kwargs.get("number_members", 1)
-                },
-                coupon=coupon,
-                trial_end=kwargs.get("trial_end")
-            )
-            if kwargs.get("billing_cycle_anchor"):
-                stripe.Subscription.modify(
-                    stripe_sub.id,
-                    trial_end=kwargs.get("billing_cycle_anchor"),
+            stripe_sub_metadata = {
+                "user_id": self.user.user_id,
+                "scope": self.scope,
+                "family_members": str(kwargs.get("family_members", [])),
+                "enterprise_id": kwargs.get("enterprise_id"),
+                "number_members": kwargs.get("number_members", 1)
+            }
+            if billing_cycle_anchor and billing_cycle_anchor_action == "set":
+                # Set billing_cycle_anchor to void 0 USD invoice from Stripe
+                # https://stripe.com/docs/billing/subscriptions/billing-cycle
+                stripe_sub = stripe.Subscription.create(
+                    customer=card.get("stripe_customer_id"),
+                    default_payment_method=card.get("id_card"),
+                    items=plans,
+                    metadata=stripe_sub_metadata,
+                    coupon=coupon,
+                    billing_cycle_anchor=billing_cycle_anchor,
                     proration_behavior='none'
                 )
+            else:
+                stripe_sub = stripe.Subscription.create(
+                    customer=card.get("stripe_customer_id"),
+                    default_payment_method=card.get("id_card"),
+                    items=plans,
+                    metadata=stripe_sub_metadata,
+                    coupon=coupon,
+                    trial_end=trial_end
+                )
+                if billing_cycle_anchor:
+                    stripe.Subscription.modify(
+                        stripe_sub.id,
+                        trial_end=billing_cycle_anchor,
+                        proration_behavior='none'
+                    )
         except stripe.error.CardError as e:
             return {
                 "success": False,

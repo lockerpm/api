@@ -141,7 +141,8 @@ class PaymentPwdViewSet(EnterpriseViewSet):
                 "card": request.data.get("card"),
                 "number_members": number_members,
                 "enterprise_id": enterprise.id,
-                "billing_cycle_anchor": int(primary_admin_plan.end_period)
+                "billing_cycle_anchor": int(primary_admin_plan.end_period),
+                "billing_cycle_anchor_action": "set"
             }
             PaymentMethodFactory.get_method(
                 user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
