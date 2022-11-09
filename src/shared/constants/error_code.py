@@ -82,6 +82,11 @@ APP_CODE += [
         "code": "1010",
         "message": "The account is locked because the Enterprise plan is expired. Please contract your enterprise admin to unblock account",
         "description": "Tài khoản đã bị khóa bởi gói doanh nghiệp đã hết hạn. Vui lòng liên hệ quản trị viên của bạn để mở khóa tài khoản"
+    },
+    {
+        "code": "1011",
+        "message": "Your account is belong to Enterprise. Please request or contact your enterprise admin to continue using Locker",
+        "description": "Tài khoản của bạn đã thuộc về Doanh nghiệp. Vui lòng yêu cầu tham gia hoặc liên hệ Admin của bạn để tiếp tục sử dụng Locker"
     }
 ]
 

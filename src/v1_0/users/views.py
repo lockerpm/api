@@ -15,9 +15,10 @@ from core.utils.core_helpers import secure_random_string
 from cystack_models.models import Event
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
+from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
-from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
+from shared.constants.enterprise_members import *
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
 from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS
@@ -361,6 +362,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         if user_enterprises.filter(enterprise_members__user=user, enterprise_members__is_activated=False).exists():
             raise ValidationError({"non_field_errors": [gen_error("1009")]})
+        if EnterpriseMember.objects.filter(
+            user=user, status__in=[E_MEMBER_STATUS_REQUESTED, E_MEMBER_STATUS_INVITED], domain__isnull=False
+        ).exists():
+            raise ValidationError({"non_field_errors": [gen_error("1011")]})
         # if user_enterprises.filter(enterprise_members__user=user, locked=True).exists():
         #     raise ValidationError({"non_field_errors": [gen_error("1010")]})
 
