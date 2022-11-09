@@ -162,3 +162,19 @@ class ListUserSerializer(serializers.Serializer):
                 user=instance, scope=settings.SCOPE_PWD_MANAGER
             ).get_plan_type_alias()
         return data
+
+
+class UpdateOnboardingProcessSerializer(serializers.Serializer):
+    vault_to_dashboard = serializers.BooleanField(required=False)
+    enterprise_onboarding = serializers.ListField(
+        child=serializers.IntegerField(), required=False, max_length=10
+    )
+
+    def validate(self, data):
+        enterprise_onboarding = data.get("enterprise_onboarding")
+        if enterprise_onboarding:
+            if len([e for e in enterprise_onboarding if e > 10]) > 0:
+                raise serializers.ValidationError(detail={
+                    "enterprise_onboarding": ["The enterprise onboarding is not valid"]
+                })
+        return data

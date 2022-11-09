@@ -1,3 +1,4 @@
+import ast
 import uuid
 import requests
 
@@ -6,7 +7,8 @@ from django.db import models
 from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password, is_password_usable, make_password
 
-from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS
+from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS, \
+    DEFAULT_ONBOARDING_PROCESS
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.policy import POLICY_TYPE_PASSWORDLESS
 from shared.external_request.requester import requester, RequesterError
@@ -45,6 +47,9 @@ class User(models.Model):
     login_method = models.CharField(max_length=32, default=LOGIN_METHOD_PASSWORD)
     fd_credential_id = models.CharField(max_length=255, null=True)
     fd_random = models.CharField(max_length=128, null=True)
+
+    # On boarding process
+    onboarding_process = models.TextField(max_length=512, blank=True, default=DEFAULT_ONBOARDING_PROCESS)
 
     # Stores the raw password if set_password() is called so that it can
     # be passed to password_changed() after the model is saved.
@@ -120,3 +125,8 @@ class User(models.Model):
             e_passwordless_policy = policy.policy_passwordless.only_allow_passwordless if policy else \
                 e_passwordless_policy
         return self.login_method == LOGIN_METHOD_PASSWORDLESS or e_passwordless_policy
+
+    def get_onboarding_process(self):
+        if not self.onboarding_process:
+            return DEFAULT_ONBOARDING_PROCESS
+        return ast.literal_eval(str(self.onboarding_process))

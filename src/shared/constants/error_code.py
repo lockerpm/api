@@ -85,7 +85,7 @@ APP_CODE += [
     },
     {
         "code": "1011",
-        "message": "Your account is belong to Enterprise. Please request or contact your enterprise admin to continue using Locker",
+        "message": "Your account belongs to Enterprise. Please request or contact your enterprise admin to continue using Locker",
         "description": "Tài khoản của bạn đã thuộc về Doanh nghiệp. Vui lòng yêu cầu tham gia hoặc liên hệ Admin của bạn để tiếp tục sử dụng Locker"
     }
 ]

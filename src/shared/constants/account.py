@@ -6,3 +6,12 @@ ACCOUNT_TYPE_ENTERPRISE = "enterprise"
 
 LOGIN_METHOD_PASSWORD = "password"
 LOGIN_METHOD_PASSWORDLESS = "passwordless"
+
+
+# -------------------- Onboarding process --------------------- #
+ONBOARDING_CATEGORY_TO_DASHBOARD = "vault_to_dashboard"
+ONBOARDING_CATEGORY_ENTERPRISE = "enterprise_onboarding"
+DEFAULT_ONBOARDING_PROCESS = {
+    ONBOARDING_CATEGORY_TO_DASHBOARD: False,
+    ONBOARDING_CATEGORY_ENTERPRISE: []
+}
