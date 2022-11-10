@@ -48,9 +48,9 @@ class MemberPwdViewSet(EnterpriseViewSet):
         try:
             enterprise = Enterprise.objects.get(id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=enterprise)
-            if self.action in ["create", "update"]:
-                if enterprise.locked:
-                    raise ValidationError({"non_field_errors": [gen_error("3003")]})
+            # if self.action in ["create", "update", "create_multiple", "activated", ]:
+            if self.request.method in ["POST", "PUT", "DELETE"] and enterprise.locked:
+                raise ValidationError({"non_field_errors": [gen_error("3003")]})
             return enterprise
         except Enterprise.DoesNotExist:
             raise NotFound
