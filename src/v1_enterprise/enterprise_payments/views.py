@@ -96,8 +96,9 @@ class PaymentPwdViewSet(EnterpriseViewSet):
     def current_plan(self, request, *args, **kwargs):
         enterprise = self.get_enterprise()
         primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        enterprise_plan = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
         current_plan = self.user_repository.get_current_plan(user=primary_admin)
-        result = PMPlanSerializer(current_plan.get_plan_obj(), many=False).data
+        result = PMPlanSerializer(enterprise_plan, many=False).data
         result.update({
             "start_period": current_plan.start_period,
             "next_billing_time": current_plan.get_next_billing_time(),
@@ -109,7 +110,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
                 "current_members": enterprise.get_activated_members_count()
             },
             "stripe_subscription": current_plan.pm_stripe_subscription,
-            "primary_admin": primary_admin.user_id
+            "primary_admin": primary_admin.user_id,
         })
         return Response(status=200, data=result)
 
