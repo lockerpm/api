@@ -77,6 +77,7 @@ class DomainPwdViewSet(EnterpriseViewSet):
         })
 
     def update(self, request, *args, **kwargs):
+        ip_address = request.data.get("ip")
         domain = self.get_object()
         if domain.verification is False:
             raise ValidationError({"non_field_errors": [gen_error("3005")]})
@@ -86,6 +87,16 @@ class DomainPwdViewSet(EnterpriseViewSet):
         auto_approve = validated_data.get("auto_approve")
         domain.auto_approve = auto_approve
         domain.save()
+        # Accept all requested members if the auto_approve is True
+        if domain.auto_approve is True:
+            LockerBackgroundFactory.get_background(bg_name=BG_DOMAIN, background=False).run(
+                func_name="domain_auto_approve", **{
+                    "user_id_update_domain": self.request.user.user_id,
+                    "domain": domain,
+                    "ip_address": ip_address
+                }
+            )
+
         return Response(status=200, data={"id": domain.id})
 
     def destroy(self, request, *args, **kwargs):

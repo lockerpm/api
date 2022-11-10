@@ -75,11 +75,12 @@ class Enterprise(models.Model):
     def get_primary_admin_user(self):
         return self.enterprise_members.get(is_primary=True).user
 
-    def is_billing_members_added(self, member_user_id):
-        primary_admin_user = self.get_primary_admin_user()
-        user_plan = primary_admin_user.pm_user_plan
-        from_param = user_plan.start_period if user_plan.start_period else self.creation_date
-        to_param = user_plan.end_period if user_plan.end_period else now()
+    def is_billing_members_added(self, member_user_id, from_param=None, to_param=None):
+        if from_param is None or to_param is None:
+            primary_admin_user = self.get_primary_admin_user()
+            user_plan = primary_admin_user.pm_user_plan
+            from_param = user_plan.start_period if user_plan.start_period else self.creation_date
+            to_param = user_plan.end_period if user_plan.end_period else now()
         if Event.objects.filter(
             team_id=self.id, type__in=[EVENT_E_MEMBER_ENABLED, EVENT_E_MEMBER_CONFIRMED],
             user_id=member_user_id, creation_date__range=(from_param, to_param)

@@ -1,13 +1,18 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 
+
 from shared.background.i_background import ILockerBackground
-from shared.constants.enterprise_members import E_MEMBER_ROLE_MEMBER, E_MEMBER_STATUS_INVITED, E_MEMBER_ROLE_ADMIN, \
-    E_MEMBER_STATUS_CONFIRMED
+from shared.constants.enterprise_members import *
+from shared.constants.event import EVENT_E_MEMBER_CONFIRMED
+from shared.constants.transactions import PAYMENT_METHOD_CARD
 from shared.external_request.requester import requester
 from cystack_models.models.users.users import User
+from cystack_models.models.events.events import Event
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.utils.app import diff_list, now
+
 
 API_NOTIFY_DOMAIN = "{}/micro_services/cystack_platform/pm/domains".format(settings.GATEWAY_API)
 HEADERS = {
@@ -89,6 +94,53 @@ class DomainBackground(ILockerBackground):
                 )
         except Exception as e:
             self.log_error(func_name="domain_unverified")
+        finally:
+            if self.background:
+                connection.close()
+
+    def domain_auto_approve(self, user_id_update_domain, domain, ip_address: str = None):
+        try:
+            enterprise = domain.enterprise
+            primary_admin_user = enterprise.get_primary_admin_user()
+            user_plan = primary_admin_user.pm_user_plan
+            from_param = user_plan.start_period if user_plan.start_period else enterprise.creation_date
+            to_param = user_plan.end_period if user_plan.end_period else now()
+
+            # Get the number of billing members
+            members = domain.enterprise_members.filter(status=[E_MEMBER_STATUS_REQUESTED])
+            member_events_data = []
+            billing_members = 0
+            for member in members:
+                if enterprise.is_billing_members_added(
+                    member_user_id=member.user_id, from_param=from_param, to_param=to_param
+                ) is True:
+                    billing_members += 1
+                member_events_data.append({
+                    "acting_user_id": user_id_update_domain,
+                    "user_id": member.user_id,
+                    "team_id": enterprise.id,
+                    "team_member_id": member.id,
+                    "type": EVENT_E_MEMBER_CONFIRMED,
+                    "ip_address": ip_address
+                })
+
+            # Update the Stripe subscription
+            if billing_members > 0:
+                from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+                from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodNotSupportException
+                try:
+                    PaymentMethodFactory.get_method(
+                        user=enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
+                        payment_method=PAYMENT_METHOD_CARD
+                    ).update_quantity_subscription(amount=billing_members)
+                except (PaymentMethodNotSupportException, ObjectDoesNotExist):
+                    pass
+            # Auto accept all requested members
+            members.update(status=E_MEMBER_STATUS_CONFIRMED)
+            # Log events
+            Event.create_multiple_by_enterprise_members(member_events_data)
+        except Exception as e:
+            self.log_error(func_name="domain_auto_approve")
         finally:
             if self.background:
                 connection.close()
