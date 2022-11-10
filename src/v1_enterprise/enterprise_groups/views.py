@@ -48,7 +48,7 @@ class GroupPwdViewSet(EnterpriseViewSet):
         try:
             enterprise = Enterprise.objects.get(id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=enterprise)
-            if enterprise.locked:
+            if self.action in ["create", "update", "destroy"] and enterprise.locked:
                 raise ValidationError({"non_field_errors": [gen_error("3003")]})
             return enterprise
         except Enterprise.DoesNotExist:
