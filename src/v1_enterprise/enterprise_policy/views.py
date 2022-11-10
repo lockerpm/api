@@ -1,9 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.constants.policy import *
+from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.policy_permission import PolicyPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import PolicySerializer, UpdatePasswordPolicySerializer, UpdateMasterPasswordPolicySerializer, \
@@ -49,6 +50,8 @@ class PolicyPwdViewSet(EnterpriseViewSet):
         try:
             enterprise = Enterprise.objects.get(id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=enterprise)
+            if self.request.method in ["POST", "PUT", "DELETE"] and enterprise.locked:
+                raise ValidationError({"non_field_errors": [gen_error("3003")]})
             return enterprise
         except Enterprise.DoesNotExist:
             raise NotFound
