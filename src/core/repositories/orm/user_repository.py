@@ -343,6 +343,7 @@ class UserRepository(IUserRepository):
         if plan_type_alias == PLAN_TYPE_PM_FREE:
             pm_user_plan.start_period = None
             pm_user_plan.end_period = None
+            pm_user_plan.attempts = 0
             pm_user_plan.cancel_mobile_subscription()
             # Lock all primary sharing
             primary_sharing_owners = user.team_members.filter(is_primary=True, key__isnull=False)
@@ -372,6 +373,7 @@ class UserRepository(IUserRepository):
                 )
 
         else:
+            pm_user_plan.attempts = kwargs.get("attempts", 0)
             # Unlock all their sharing
             primary_sharing_owners = user.team_members.filter(is_primary=True, key__isnull=False)
             for primary_sharing_owner in primary_sharing_owners:

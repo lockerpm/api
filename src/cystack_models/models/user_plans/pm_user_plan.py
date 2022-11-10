@@ -28,6 +28,8 @@ class PMUserPlan(UserPlan):
     extra_plan = models.CharField(max_length=128, null=True, default=None)
     member_billing_updated_time = models.FloatField(null=True, default=None)
 
+    attempts = models.IntegerField(default=0)
+
     pm_plan = models.ForeignKey(PMPlan, on_delete=models.CASCADE, related_name="pm_user_plan")
     promo_code = models.ForeignKey(
         PromoCode, on_delete=models.SET_NULL, related_name="pm_user_plans", null=True, default=None
@@ -58,6 +60,12 @@ class PMUserPlan(UserPlan):
             user_plan = cls(pm_plan=plan_type, user=user, duration=duration)
             user_plan.save()
         return user_plan
+
+    @classmethod
+    def get_next_attempts_duration(cls, current_number_attempts):
+        if current_number_attempts < 2:
+            return 86400
+        return 86400 * 3
 
     def get_plan_obj(self):
         return self.pm_plan

@@ -11,6 +11,10 @@ REFERRAL_EXTRA_TIME = 86400 * 30        # 30 days
 REFERRAL_LIMIT = 3
 
 
+# -------------------- Max attempts ------------------------------ #
+MAX_ATTEMPTS = 3
+
+
 # -------------------- UTM Source Promotion ------------------------ #
 UTM_SOURCE_PROMOTIONS = "plans-promotion"
 LIST_UTM_SOURCE_PROMOTIONS = [UTM_SOURCE_PROMOTIONS]
