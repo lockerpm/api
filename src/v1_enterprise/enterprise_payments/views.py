@@ -96,8 +96,9 @@ class PaymentPwdViewSet(EnterpriseViewSet):
     def current_plan(self, request, *args, **kwargs):
         enterprise = self.get_enterprise()
         primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        enterprise_plan = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
         current_plan = self.user_repository.get_current_plan(user=primary_admin)
-        result = PMPlanSerializer(current_plan.get_plan_obj(), many=False).data
+        result = PMPlanSerializer(enterprise_plan, many=False).data
         result.update({
             "start_period": current_plan.start_period,
             "next_billing_time": current_plan.get_next_billing_time(),
@@ -109,7 +110,7 @@ class PaymentPwdViewSet(EnterpriseViewSet):
                 "current_members": enterprise.get_activated_members_count()
             },
             "stripe_subscription": current_plan.pm_stripe_subscription,
-            "primary_admin": primary_admin.user_id
+            "primary_admin": primary_admin.user_id,
         })
         return Response(status=200, data=result)
 
@@ -119,6 +120,38 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         primary_admin = enterprise.enterprise_members.get(is_primary=True).user
         primary_admin_plan = self.user_repository.get_current_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER)
         stripe_subscription = primary_admin_plan.get_stripe_subscription()
+        stripe_default_payment_method = stripe_subscription.default_payment_method if stripe_subscription else None
+        return Response(status=200, data={
+            "primary_admin": primary_admin.user_id,
+            "stripe_default_payment_method": stripe_default_payment_method
+        })
+
+    @action(methods=["get"], detail=False)
+    def add_card_subscription(self, request, *args, **kwargs):
+        enterprise = self.get_enterprise()
+        primary_admin = enterprise.get_primary_admin_user()
+        primary_admin_plan = self.user_repository.get_current_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER)
+        stripe_subscription = primary_admin_plan.get_stripe_subscription()
+        # If the Enterprise plan doesn't have Stripe Subscription => Subscribe with stripe
+        if primary_admin_plan.get_plan_obj().is_team_plan and stripe_subscription is None and \
+                primary_admin_plan.end_period and primary_admin_plan.end_period > now():
+            number_members = enterprise.get_activated_members_count()
+            metadata = {
+                "currency": CURRENCY_USD,
+                "promo_code": None,
+                "card": request.data.get("card"),
+                "number_members": number_members,
+                "enterprise_id": enterprise.id,
+                "billing_cycle_anchor": int(primary_admin_plan.end_period),
+                "billing_cycle_anchor_action": "set"
+            }
+            PaymentMethodFactory.get_method(
+                user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+            ).upgrade_recurring_subscription(
+                amount=0, plan_type=PLAN_TYPE_PM_ENTERPRISE, coupon=None, duration=primary_admin_plan.duration,
+                **metadata
+            )
+
         stripe_default_payment_method = stripe_subscription.default_payment_method if stripe_subscription else None
         return Response(status=200, data={
             "primary_admin": primary_admin.user_id,

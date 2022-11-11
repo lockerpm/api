@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import Count
+from django.db.models import Count, F
 
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
@@ -19,7 +19,9 @@ def pm_subscription():
     ).filter(family_members_count__lt=1)
     for pm_user_plan in pm_user_plans:
         user = pm_user_plan.user
-        current_plan_name = pm_user_plan.get_plan_type_name()
+        pm_plan = pm_user_plan.get_plan_obj()
+        current_plan_name = pm_plan.get_name()
+
         # If user cancels at the end of period => Downgrade
         if pm_user_plan.cancel_at_period_end is True:
             user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
@@ -35,14 +37,24 @@ def pm_subscription():
         if pm_user_plan.default_payment_method in [PAYMENT_METHOD_MOBILE]:
             continue
 
-        # Else, always cancel the subscription of the user and notify for this user
-        user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
-        LockerBackgroundFactory.get_background(
-            bg_name=BG_NOTIFY, background=False
-        ).run(func_name="downgrade_plan", **{
-            "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
-            "scope": settings.SCOPE_PWD_MANAGER
-        })
+        # Else, check the attempts number
+        # TODO: Attempts only apply for the Enterprise plan
+        if pm_user_plan.pm_plan.is_team_plan and pm_user_plan.attempts <= MAX_ATTEMPTS:
+            pm_user_plan.end_period = PMUserPlan.get_next_attempts_duration(
+                current_number_attempts=pm_user_plan.attempts
+            ) + now()
+            pm_user_plan.attempts = F('attempts') + 1
+            pm_user_plan.save()
+            # TODO: Notify for user here
+        else:
+            # Cancel the subscription of the user and notify for this user
+            user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
+            LockerBackgroundFactory.get_background(
+                bg_name=BG_NOTIFY, background=False
+            ).run(func_name="downgrade_plan", **{
+                "user_id": user.user_id, "old_plan": current_plan_name, "downgrade_time": now(),
+                "scope": settings.SCOPE_PWD_MANAGER
+            })
 
         # # Else, subtract wallet
         # coupon = pm_user_plan.promo_code

@@ -118,7 +118,7 @@ class PaymentViewSet(MicroServiceViewSet):
         scope = self.request.query_params.get("scope", settings.SCOPE_PWD_MANAGER)
         try:
             user = User.objects.get(user_id=user_id)
-        except User.DoesNotExist:
+        except (ValueError, User.DoesNotExist):
             raise NotFound
         current_plan = self.user_repository.get_current_plan(user=user, scope=scope)
         stripe_subscription = current_plan.get_stripe_subscription()
@@ -132,7 +132,7 @@ class PaymentViewSet(MicroServiceViewSet):
         scope = self.request.query_params.get("scope", settings.SCOPE_PWD_MANAGER)
         try:
             user = User.objects.get(user_id=user_id)
-        except User.DoesNotExist:
+        except (ValueError, User.DoesNotExist):
             raise NotFound
         payment_data = {}
         current_plan = self.user_repository.get_current_plan(user=user, scope=scope)

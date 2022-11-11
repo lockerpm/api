@@ -15,9 +15,11 @@ from core.utils.core_helpers import secure_random_string
 from cystack_models.models import Event
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
+from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
+from shared.constants.account import ONBOARDING_CATEGORY_TO_DASHBOARD, ONBOARDING_CATEGORY_ENTERPRISE
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
-from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
+from shared.constants.enterprise_members import *
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
 from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS
@@ -32,7 +34,7 @@ from shared.utils.network import detect_device
 from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
-    ListUserSerializer
+    ListUserSerializer, UpdateOnboardingProcessSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -57,6 +59,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserDeviceSerializer
         elif self.action in ["retrieve", "list", "list_users"]:
             self.serializer_class = ListUserSerializer
+        elif self.action == "onboarding_process":
+            self.serializer_class = UpdateOnboardingProcessSerializer
         return super(UserPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -361,8 +365,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         if user_enterprises.filter(enterprise_members__user=user, enterprise_members__is_activated=False).exists():
             raise ValidationError({"non_field_errors": [gen_error("1009")]})
-        # if user_enterprises.filter(enterprise_members__user=user, locked=True).exists():
-        #     raise ValidationError({"non_field_errors": [gen_error("1010")]})
+        if EnterpriseMember.objects.filter(
+            user=user, status__in=[E_MEMBER_STATUS_REQUESTED, E_MEMBER_STATUS_INVITED], domain__isnull=False
+        ).exists():
+            raise ValidationError({"non_field_errors": [gen_error("1011")]})
+        if user_enterprises.filter(enterprise_members__user=user, locked=True).exists():
+            raise ValidationError({"non_field_errors": [gen_error("1010")]})
 
         # Unblock login
         user.last_request_login = now()
@@ -588,6 +596,30 @@ class UserPwdViewSet(PasswordManagerViewSet):
         )
         notification = [c for c in shared_ciphers_members if c.get("shared_member") in notification_user_ids]
         return Response(status=200, data=notification)
+
+    @action(methods=["get", "put"], detail=False)
+    def onboarding_process(self, request, *args, **kwargs):
+        user = self.request.user
+        onboarding_process = user.get_onboarding_process()
+        if request.method == "GET":
+            return Response(status=200, data=onboarding_process)
+        elif request.method == "PUT":
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            vault_to_dashboard = validated_data.get(
+                "vault_to_dashboard", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
+            )
+            enterprise_onboarding = validated_data.get(
+                "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
+            )
+            onboarding_process.update({
+                ONBOARDING_CATEGORY_TO_DASHBOARD: vault_to_dashboard,
+                ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding
+            })
+            user.onboarding_process = onboarding_process
+            user.save()
+            return Response(status=200, data=user.get_onboarding_process())
 
     @action(methods=["get"], detail=False)
     def invitations(self, request, *args, **kwargs):
