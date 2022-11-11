@@ -19,7 +19,9 @@ def pm_subscription():
     ).filter(family_members_count__lt=1)
     for pm_user_plan in pm_user_plans:
         user = pm_user_plan.user
-        current_plan_name = pm_user_plan.get_plan_type_name()
+        pm_plan = pm_user_plan.get_plan_obj()
+        current_plan_name = pm_plan.get_name()
+
         # If user cancels at the end of period => Downgrade
         if pm_user_plan.cancel_at_period_end is True:
             user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)
@@ -36,7 +38,8 @@ def pm_subscription():
             continue
 
         # Else, check the attempts number
-        if pm_user_plan.attempts <= MAX_ATTEMPTS:
+        # TODO: Attempts only apply for the Enterprise plan
+        if pm_user_plan.pm_plan.is_team_plan and pm_user_plan.attempts <= MAX_ATTEMPTS:
             pm_user_plan.end_period = PMUserPlan.get_next_attempts_duration(
                 current_number_attempts=pm_user_plan.attempts
             ) + now()
