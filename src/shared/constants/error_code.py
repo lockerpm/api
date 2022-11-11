@@ -80,7 +80,7 @@ APP_CODE += [
     },
     {
         "code": "1010",
-        "message": "The account is locked because the Enterprise plan is expired. Please contract your enterprise admin to unblock account",
+        "message": "The account is locked because the Enterprise plan is expired. Please contact your enterprise admin to unblock account",
         "description": "Tài khoản đã bị khóa bởi gói doanh nghiệp đã hết hạn. Vui lòng liên hệ quản trị viên của bạn để mở khóa tài khoản"
     },
     {
