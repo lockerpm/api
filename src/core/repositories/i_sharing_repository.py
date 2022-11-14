@@ -54,6 +54,10 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def add_group_members(self, team, shared_collection, groups):
+        pass
+
+    @abstractmethod
     def get_my_personal_shared_teams(self, user):
         pass
 

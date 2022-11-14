@@ -342,7 +342,7 @@ class SharingRepository(ISharingRepository):
                 continue
             member_data = {"user": member_user, "email": email, "role": member.get("role"), "key": member.get("key")}
             shared_member = self.__create_shared_member(
-                team=team, member=member_data, shared_collection=shared_collection
+                team=team, member_data=member_data, shared_collection=shared_collection
             )
             if shared_member.user_id:
                 existed_member_users.append(shared_member.user_id)
@@ -350,26 +350,42 @@ class SharingRepository(ISharingRepository):
             if shared_member.email:
                 non_existed_member_users.append(shared_member.email)
                 existed_emails.append(shared_member.email)
-        return existed_member_users, non_existed_member_users
 
-    def __create_shared_member(self, team, member, shared_collection=None):
-        shared_member = team.team_members.model.objects.create(
-            user=member.get("user"),
-            email=member.get("email"),
-            role_id=member.get("role"),
-            key=member.get("key"),
-            team=team,
-            access_time=now(),
-            is_primary=False,
-            is_default=False,
-            status=PM_MEMBER_STATUS_INVITED,
-        )
+        if groups:
+            existed_group_member_users, non_existed_group_member_users = self.add_group_members(
+                team=team, shared_collection=shared_collection, groups=groups
+            )
+            existed_member_users += existed_group_member_users
+            non_existed_member_users += non_existed_group_member_users
+        return list(set(existed_member_users)), list(set(non_existed_member_users))
+
+    @staticmethod
+    def __create_shared_member(team, member_data, shared_collection=None):
+        # shared_member = team.team_members.model.objects.create(
+        #     user=member.get("user"),
+        #     email=member.get("email"),
+        #     role_id=member.get("role"),
+        #     key=member.get("key"),
+        #     team=team,
+        #     access_time=now(),
+        #     is_primary=False,
+        #     is_default=False,
+        #     status=PM_MEMBER_STATUS_INVITED,
+        # )
+
+        shared_member = team.team_members.model.create_with_data(team, role_id=member_data.get("role"), **{
+            "user": member_data.get("user"),
+            "email": member_data.get("email"),
+            "key": member_data.get("key"),
+            "is_added_by_group": member_data.get("is_added_by_group", False),
+            "status": PM_MEMBER_STATUS_INVITED,
+        })
 
         # Create collection for this shared member
         if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
             shared_member.collections_members.model.objects.create(
                 collection=shared_collection, member=shared_member,
-                hide_passwords=member.get("hide_passwords", False)
+                hide_passwords=member_data.get("hide_passwords", False)
             )
         # DEPRECATED: Not use hide_passwords
         # if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
@@ -380,21 +396,43 @@ class SharingRepository(ISharingRepository):
     def add_group_members(self, team, shared_collection, groups):
         non_existed_member_users = []
         existed_member_users = []
+        existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
+        existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
+
+        members_groups_data = [group.get("members") or [] for group in groups]
+        members_groups_user_ids = [member.get("user_id") for member in members_groups_data if member.get("user_id")]
+        members_groups_users = User.objects.filter(user_id__in=members_groups_user_ids, activated=True)
+        members_groups_users_dict = dict()
+        for u in members_groups_users:
+            members_groups_users_dict[u.user_id] = u
+
         for group in groups:
-            try:
-                enterprise_group = EnterpriseGroup.objects.get(id=group.get("id"))
-            except EnterpriseGroup.DoesNotExist:
-                continue
-            team_group = team.groups.model.retrieve_or_create(
-                team_id=team.id, enterprise_group_id=enterprise_group.id, **{
-                    "role_id": group.get("role")
+            members = group.get("members") or []
+            for member in members:
+                member_user = members_groups_users_dict.get(member.get("user_id"))
+                email = None if member_user else member.get("email")
+
+                if member_user and member_user.user_id in existed_user_ids:
+                    continue
+                if email and email in existed_emails:
+                    continue
+                member_data = {
+                    "user": member_user,
+                    "email": email,
+                    "role": member.get("role"),
+                    "key": member.get("key"),
+                    "is_added_by_group": True
                 }
-            )
-            enterprise_group_user_ids = list(
-                enterprise_group.groups_members.values_list('member__user_id', flat=True).distinct()
-            )
-            users = User.objects.filter(user_id__in=enterprise_group_user_ids)
-            non_existed_user_ids = [user_id for user_id in enterprise_group_user_ids if user_id not in users]
+                shared_member = self.__create_shared_member(
+                    team=team, member_data=member_data, shared_collection=shared_collection
+                )
+                if shared_member.user_id:
+                    existed_member_users.append(shared_member.user_id)
+                    existed_user_ids.append(shared_member.user_id)
+                if shared_member.email:
+                    non_existed_member_users.append(shared_member.email)
+                    existed_emails.append(shared_member.email)
+        return existed_member_users, non_existed_member_users
 
     def get_my_personal_shared_teams(self, user: User):
         """
