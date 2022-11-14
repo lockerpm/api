@@ -16,6 +16,7 @@ class TeamMember(models.Model):
     access_time = models.IntegerField()
     is_default = models.BooleanField(default=False)
     is_primary = models.BooleanField(default=False)
+    is_added_by_group = models.BooleanField(default=False)
 
     # Show/hide passwords when the team ciphers don't have any collections
     hide_passwords = models.BooleanField(default=False)
@@ -61,6 +62,21 @@ class TeamMember(models.Model):
             is_primary=is_primary,
             is_default=is_default,
             status=status
+        )
+        return new_member
+
+    @classmethod
+    def create_with_data(cls, team: Team, role_id: str, **data):
+        new_member = TeamMember.objects.create(
+            team=team, role_id=role_id, access_time=now(),
+            user=data.get("user"),
+            email=data.get("email"),
+            is_primary=data.get("is_primary", False),
+            is_default=data.get("is_default", False),
+            is_added_by_group=data.get("is_added_by_group", False),
+            status=data.get("status", PM_MEMBER_STATUS_CONFIRMED),
+            key=data.get("key"),
+            token_invitation=data.get("token_invitation")
         )
         return new_member
 

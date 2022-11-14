@@ -327,6 +327,8 @@ class SharingRepository(ISharingRepository):
     def add_members(self, team, shared_collection, members, groups=None):
         non_existed_member_users = []
         existed_member_users = []
+        existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
+        existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
         for member in members:
             try:
                 member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
@@ -334,9 +336,9 @@ class SharingRepository(ISharingRepository):
             except User.DoesNotExist:
                 member_user = None
                 email = member.get("email")
-            if member_user and team.team_members.filter(user=member_user).exists() is True:
+            if member_user and member_user.user_id in existed_user_ids:
                 continue
-            if email and team.team_members.filter(email=email).exists():
+            if email and email in existed_emails:
                 continue
             member_data = {"user": member_user, "email": email, "role": member.get("role"), "key": member.get("key")}
             shared_member = self.__create_shared_member(
@@ -344,8 +346,10 @@ class SharingRepository(ISharingRepository):
             )
             if shared_member.user_id:
                 existed_member_users.append(shared_member.user_id)
+                existed_user_ids.append(shared_member.user_id)
             if shared_member.email:
                 non_existed_member_users.append(shared_member.email)
+                existed_emails.append(shared_member.email)
         return existed_member_users, non_existed_member_users
 
     def __create_shared_member(self, team, member, shared_collection=None):

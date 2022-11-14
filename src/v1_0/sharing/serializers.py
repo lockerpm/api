@@ -32,9 +32,45 @@ class MemberShareSerializer(serializers.Serializer):
         return data
 
 
+class GroupMemberShareSeralizer(serializers.Serializer):
+    user_id = serializers.IntegerField(allow_null=True, required=False)
+    email = serializers.EmailField(allow_null=True, required=False)
+    key = serializers.CharField(allow_null=True, required=False)
+
+    def validate(self, data):
+        user_id = data.get("user_id")
+        email = data.get("email")
+        if not user_id and not email:
+            raise serializers.ValidationError(detail={
+                "user_id": ["The user id or email is required"],
+                "email": ["The email or user id is required"]
+            })
+        return data
+
+
 class GroupShareSerializer(serializers.Serializer):
     id = serializers.CharField(max_length=128)
     role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MEMBER])
+    members = GroupMemberShareSeralizer(many=True)
+
+    def validate(self, data):
+        group_id = data.get("group_id")
+        try:
+            enterprise_group = EnterpriseGroup.objects.get(id=group_id)
+        except EnterpriseGroup.DoesNotExist:
+            raise serializers.ValidationError(detail={"id": ["The group id does not exist"]})
+        group_members = enterprise_group.groups_members.values('member__user_id', 'member__email')
+        members_user_ids = [member.get("member__user_id") for member in group_members if member.get("member__user_id")]
+        members_emails = [member.get("member__email") for member in group_members if member.get("member__email")]
+        members = data.get("members")
+        user_ids = [member.get("user_id") for member in members if member.get("user_id")]
+        emails = [member.get("email") for member in members if member.get("email")]
+        if any(user_id not in members_user_ids for user_id in user_ids):
+            raise serializers.ValidationError(detail={"members": ["The member user id are not valid"]})
+        if any(email not in members_emails for email in emails):
+            raise serializers.ValidationError(detail={"members": ["The member emails are not valid"]})
+
+        return data
 
 
 class CipherShareSerializer(serializers.Serializer):
