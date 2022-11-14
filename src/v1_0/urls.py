@@ -282,16 +282,6 @@ urlpatterns += [
 ]
 
 
-""" Group Management """
-urlpatterns += [
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups$', views.GroupPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)$',
-        views.GroupPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)/users$',
-        views.GroupPwdViewSet.as_view({'get': 'users', 'put': 'users'})),
-]
-
-
 """ Policy """
 urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/policy$', views.PolicyPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),

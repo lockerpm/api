@@ -26,3 +26,10 @@ class EnterpriseGroup(models.Model):
         )
         new_group.save()
         return new_group
+
+    @classmethod
+    def get_list_user_group_ids(cls, user):
+        return list(
+            cls.objects.filter(enterprise__enterprise_members__user=user).values_list('id', flat=True)
+        )
+

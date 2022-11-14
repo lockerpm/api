@@ -12,6 +12,9 @@ from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.users.users import User
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.teams.groups import Group
+from cystack_models.models.teams.groups_members import GroupMember
+from cystack_models.models.enterprises.groups.groups import EnterpriseGroup
 
 
 class SharingRepository(ISharingRepository):
@@ -197,13 +200,14 @@ class SharingRepository(ISharingRepository):
         member.delete()
         return member_user_id
 
-    def create_new_sharing(self, sharing_key: str, members,
+    def create_new_sharing(self, sharing_key: str, members, groups=None,
                            cipher: Cipher = None, shared_cipher_data=None,
                            folder: Folder = None, shared_collection_name: str = None, shared_collection_ciphers=None):
         """
         Personal share a cipher or a folder
         :param sharing_key: (str) org key
         :param members: list shared members
+        :param groups: list shared groups
         :param cipher: (obj) Cipher object
         :param shared_cipher_data: (dict) New shared cipher data
         :param folder: (obj) Folder object
@@ -228,7 +232,8 @@ class SharingRepository(ISharingRepository):
             # Create new sharing id
             id_generator = sharing_id_generator(user_id=user.user_id)
             sharing_id = next(id_generator)
-            team_name = user.get_from_cystack_id().get("full_name", "Sharing")
+            # team_name = user.get_from_cystack_id().get("full_name", "Sharing")
+            team_name = f"Sharing {user.user_id}"
             new_sharing = Team.create(**{
                 "id": sharing_id,
                 "name": team_name,
@@ -319,7 +324,7 @@ class SharingRepository(ISharingRepository):
         cipher.save()
         return cipher
 
-    def add_members(self, team, shared_collection, members):
+    def add_members(self, team, shared_collection, members, groups=None):
         non_existed_member_users = []
         existed_member_users = []
         for member in members:
@@ -333,33 +338,59 @@ class SharingRepository(ISharingRepository):
                 continue
             if email and team.team_members.filter(email=email).exists():
                 continue
-            shared_member = team.team_members.model.objects.create(
-                user=member_user,
-                email=email,
-                role_id=member.get("role"),
-                team=team,
-                access_time=now(),
-                is_primary=False,
-                is_default=False,
-                status=PM_MEMBER_STATUS_INVITED,
-                key=member.get("key"),
+            member_data = {"user": member_user, "email": email, "role": member.get("role"), "key": member.get("key")}
+            shared_member = self.__create_shared_member(
+                team=team, member=member_data, shared_collection=shared_collection
             )
-
-            # Create collection for this shared member
-            if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
-                shared_member.collections_members.model.objects.create(
-                    collection=shared_collection, member=shared_member,
-                    hide_passwords=member.get("hide_passwords", False)
-                )
-            if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
-                shared_member.hide_passwords = member.get("hide_passwords", False)
-                shared_member.save()
-
             if shared_member.user_id:
                 existed_member_users.append(shared_member.user_id)
             if shared_member.email:
                 non_existed_member_users.append(shared_member.email)
         return existed_member_users, non_existed_member_users
+
+    def __create_shared_member(self, team, member, shared_collection=None):
+        shared_member = team.team_members.model.objects.create(
+            user=member.get("user"),
+            email=member.get("email"),
+            role_id=member.get("role"),
+            key=member.get("key"),
+            team=team,
+            access_time=now(),
+            is_primary=False,
+            is_default=False,
+            status=PM_MEMBER_STATUS_INVITED,
+        )
+
+        # Create collection for this shared member
+        if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
+            shared_member.collections_members.model.objects.create(
+                collection=shared_collection, member=shared_member,
+                hide_passwords=member.get("hide_passwords", False)
+            )
+        # DEPRECATED: Not use hide_passwords
+        # if shared_member.role_id in [MEMBER_ROLE_MEMBER]:
+        #     shared_member.hide_passwords = member.get("hide_passwords", False)
+        #     shared_member.save()
+        return shared_member
+
+    def add_group_members(self, team, shared_collection, groups):
+        non_existed_member_users = []
+        existed_member_users = []
+        for group in groups:
+            try:
+                enterprise_group = EnterpriseGroup.objects.get(id=group.get("id"))
+            except EnterpriseGroup.DoesNotExist:
+                continue
+            team_group = team.groups.model.retrieve_or_create(
+                team_id=team.id, enterprise_group_id=enterprise_group.id, **{
+                    "role_id": group.get("role")
+                }
+            )
+            enterprise_group_user_ids = list(
+                enterprise_group.groups_members.values_list('member__user_id', flat=True).distinct()
+            )
+            users = User.objects.filter(user_id__in=enterprise_group_user_ids)
+            non_existed_user_ids = [user_id for user_id in enterprise_group_user_ids if user_id not in users]
 
     def get_my_personal_shared_teams(self, user: User):
         """

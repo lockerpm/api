@@ -4,6 +4,7 @@ from core.settings import CORE_CONFIG
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.enterprises.groups.groups import EnterpriseGroup
 from shared.utils.app import get_cipher_detail_data
 from v1_0.ciphers.serializers import ItemFieldSerializer, LoginVaultSerializer, SecurityNoteVaultSerializer, \
     CardVaultSerializer, IdentityVaultSerializer, CryptoAccountSerializer, CryptoWalletSerializer
@@ -17,7 +18,7 @@ class MemberShareSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(allow_null=True, required=False)
     email = serializers.EmailField(allow_null=True, required=False)
     hide_passwords = serializers.BooleanField(default=False)
-    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
+    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MEMBER])
     key = serializers.CharField(allow_null=True, required=False)
 
     def validate(self, data):
@@ -29,6 +30,11 @@ class MemberShareSerializer(serializers.Serializer):
                 "email": ["The email or user id is required"]
             })
         return data
+
+
+class GroupShareSerializer(serializers.Serializer):
+    id = serializers.CharField(max_length=128)
+    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MEMBER])
 
 
 class CipherShareSerializer(serializers.Serializer):
@@ -58,12 +64,14 @@ class FolderShareSerializer(serializers.Serializer):
 class SharingSerializer(serializers.Serializer):
     sharing_key = serializers.CharField(required=False, allow_null=True)
     members = MemberShareSerializer(many=True)
+    groups = GroupShareSerializer(many=True, required=False, allow_null=True)
     cipher = CipherShareSerializer(many=False, required=False, allow_null=True)
     folder = FolderShareSerializer(many=False, required=False, allow_null=True)
 
     def validate(self, data):
         cipher = data.get("cipher")
         folder = data.get("folder")
+        groups = data.get("groups")
         if not cipher and not folder:
             raise serializers.ValidationError(detail={
                 "cipher": ["The cipher or folder is required"],
@@ -74,9 +82,15 @@ class SharingSerializer(serializers.Serializer):
                 "cipher": ["You can only share a cipher or a folder"],
                 "folder": ["You can only share a cipher or a folder"]
             })
+        if groups:
+            user = self.context["request"].user
+            user_enterprise_group_ids = EnterpriseGroup.get_list_user_group_ids(user=user)
+            if any(group.get("id") not in user_enterprise_group_ids for group in groups):
+                raise serializers.ValidationError(detail={"groups": ["The groups are not valid"]})
         return data
 
-    def __get_shared_cipher_data(self, cipher):
+    @staticmethod
+    def __get_shared_cipher_data(cipher):
         shared_cipher_data = {
             "id": cipher.get("id"),
             "type": cipher.get("type"),
@@ -87,10 +101,6 @@ class SharingSerializer(serializers.Serializer):
             "collection_ids": [],
             "data": get_cipher_detail_data(cipher)
         }
-        # # Login data
-        # shared_cipher_data["data"]["name"] = cipher.get("name")
-        # if cipher.get("notes"):
-        #     shared_cipher_data["data"]["notes"] = cipher.get("notes")
         return shared_cipher_data
 
     def save(self, **kwargs):
@@ -115,11 +125,13 @@ class SharingSerializer(serializers.Serializer):
 
 class CipherMemberSharingSerializer(serializers.Serializer):
     members = MemberShareSerializer(many=True)
+    groups = GroupShareSerializer(many=True, required=False, allow_null=True)
     cipher = CipherShareSerializer(many=False, required=True, allow_null=False)
 
 
 class FolderMemberSharingSerializer(serializers.Serializer):
     members = MemberShareSerializer(many=True)
+    groups = GroupShareSerializer(many=True, required=False, allow_null=True)
     folder = FolderShareSerializer(many=False, required=True, allow_null=False)
 
 
@@ -152,6 +164,14 @@ class MultipleSharingSerializer(serializers.Serializer):
                 "folders": ["The maximum number of folders is 5"]
             })
 
+        # Validate groups
+        if ciphers:
+            for cipher in ciphers:
+                self.__check_groups(groups=cipher.get("groups"))
+        if folders:
+            for folder in folders:
+                self.__check_groups(groups=folder.get("groups"))
+
         return data
 
     @staticmethod
@@ -166,6 +186,13 @@ class MultipleSharingSerializer(serializers.Serializer):
             "data": get_cipher_detail_data(cipher)
         }
         return shared_cipher_data
+
+    def __check_groups(self, groups):
+        user = self.context["request"].user
+        user_enterprise_group_ids = EnterpriseGroup.get_list_user_group_ids(user=user)
+        if any(group.get("id") not in user_enterprise_group_ids for group in groups):
+            raise serializers.ValidationError(detail={"groups": ["The groups are not valid"]})
+        return groups
 
     def save(self, **kwargs):
         validated_data = self.validated_data

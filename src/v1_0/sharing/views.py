@@ -186,6 +186,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.save()
         sharing_key = validated_data.get("sharing_key")
         members = validated_data.get("members")
+        groups = validated_data.get("groups") or []
         cipher = validated_data.get("cipher")
         shared_cipher_data = validated_data.get("shared_cipher_data")
         folder = validated_data.get("folder")
@@ -193,7 +194,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         shared_type_name = None
         try:
             share_result = self.share_cipher_or_folder(
-                sharing_key=sharing_key, members=members,
+                sharing_key=sharing_key, members=members, groups=groups,
                 cipher=cipher, shared_cipher_data=shared_cipher_data, folder=folder
             )
         except ValidationError as e:
@@ -263,7 +264,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for cipher_member in ciphers:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=cipher_member.get("members") or [],
+                        sharing_key=sharing_key,
+                        members=cipher_member.get("members") or [],
+                        groups=cipher_member.get("groups") or [],
                         cipher=cipher_member.get("cipher"),
                         shared_cipher_data=cipher_member.get("shared_cipher_data"), folder=None
                     )
@@ -276,7 +279,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for folder in folders:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=folder.get("members") or [],
+                        sharing_key=sharing_key,
+                        members=folder.get("members") or [],
+                        groups=folder.get("groups") or [],
                         cipher=None, shared_cipher_data=None, folder=folder
                     )
                 except ValidationError as e:
@@ -321,7 +326,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "notification_user_ids": notification_user_ids,
         })
 
-    def share_cipher_or_folder(self, sharing_key, members, cipher, shared_cipher_data, folder):
+    def share_cipher_or_folder(self, sharing_key, members, groups, cipher, shared_cipher_data, folder):
         user = self.request.user
         cipher_obj = None
         folder_obj = None
@@ -369,7 +374,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
-            sharing_key=sharing_key, members=members,
+            sharing_key=sharing_key, members=members, groups=groups,
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )

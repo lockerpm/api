@@ -14,9 +14,6 @@ from cystack_models.models.users.users import User
 from cystack_models.models.ciphers.folders import Folder
 from cystack_models.models.teams.collections import Collection
 from cystack_models.models.teams.collections_ciphers import CollectionCipher
-from cystack_models.models.teams.collections_members import CollectionMember
-from cystack_models.models.teams.collections_groups import CollectionGroup
-from cystack_models.models.teams.groups_members import GroupMember
 
 
 class CipherRepository(ICipherRepository):
@@ -117,10 +114,10 @@ class CipherRepository(ICipherRepository):
                 collections_ciphers__collection__collections_members__member__in=confirmed_team_members,
                 team__team_members__user=user
             ) |
-            Q(
-                collections_ciphers__collection__collections_groups__group__groups_members__member__in=confirmed_team_members,
-                team__team_members__user=user
-            ) |
+            # Q(
+            #     collections_ciphers__collection__collections_groups__group__groups_members__member__in=confirmed_team_members,
+            #     team__team_members__user=user
+            # ) |
             # Personal share
             Q(
                 team__personal_share=True,

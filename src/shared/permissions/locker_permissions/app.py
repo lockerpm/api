@@ -85,14 +85,15 @@ class LockerPermission(AppBasePermission):
 
     @staticmethod
     def _member_belongs_cipher_groups(member, cipher):
-        from cystack_models.models.teams.collections_groups import CollectionGroup
-
-        cipher_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
-        member_group_ids = list(member.groups_members.values_list('group_id', flat=True))
-        cipher_group_ids = list(CollectionGroup.objects.filter(
-            collection_id=cipher_collection_ids
-        ).values_list('group_id', flat=True))
-        return any(group_id in cipher_group_ids for group_id in member_group_ids)
+        return False
+        # from cystack_models.models.teams.collections_groups import CollectionGroup
+        #
+        # cipher_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
+        # member_group_ids = list(member.groups_members.values_list('group_id', flat=True))
+        # cipher_group_ids = list(CollectionGroup.objects.filter(
+        #     collection_id=cipher_collection_ids
+        # ).values_list('group_id', flat=True))
+        # return any(group_id in cipher_group_ids for group_id in member_group_ids)
 
     @staticmethod
     def _cipher_team_policy(request, cipher):

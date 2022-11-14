@@ -12,7 +12,7 @@ from shared.permissions.locker_permissions.enterprise.group_permission import Gr
 from shared.utils.app import now, diff_list
 from v1_enterprise.apps import EnterpriseViewSet
 from v1_enterprise.enterprise_members.serializers import DetailMemberSerializer
-from .serializers import EnterpriseGroupSerializer, UpdateMemberGroupSerializer
+from .serializers import EnterpriseGroupSerializer, UpdateMemberGroupSerializer, DetailEnterpriseGroupSerializer
 
 
 class GroupPwdViewSet(EnterpriseViewSet):
@@ -26,6 +26,8 @@ class GroupPwdViewSet(EnterpriseViewSet):
                 self.serializer_class = DetailMemberSerializer
             elif self.request.method == "PUT":
                 self.serializer_class = UpdateMemberGroupSerializer
+        elif self.action == "members_list":
+            self.serializer_class = DetailEnterpriseGroupSerializer
         return super(GroupPwdViewSet, self).get_serializer_class()
 
     def get_queryset(self):
@@ -40,6 +42,14 @@ class GroupPwdViewSet(EnterpriseViewSet):
         enterprise = self.get_enterprise()
         try:
             group = enterprise.groups.get(id=self.kwargs.get("group_id"))
+            return group
+        except EnterpriseGroup.DoesNotExist:
+            raise NotFound
+
+    def get_enterprise_group(self):
+        try:
+            group = EnterpriseGroup.objects.get(id=self.kwargs.get("group_id"))
+            self.check_object_permissions(request=self.request, obj=group.enterprise)
             return group
         except EnterpriseGroup.DoesNotExist:
             raise NotFound
@@ -145,3 +155,17 @@ class GroupPwdViewSet(EnterpriseViewSet):
             enterprise_group.groups_members.filter(member_id__in=deleted_member_ids).delete()
             enterprise_group.groups_members.model.create_multiple(enterprise_group, *new_member_ids)
             return Response(status=200, data={"success": True})
+
+    @action(methods=["get"], detail=False)
+    def user_groups(self, request, *args, **kwargs):
+        user = self.request.user
+        groups = EnterpriseGroup.objects.filter(groups_members__member__user=user).distinct().values(
+            'id', 'name', 'creation_date', 'revision_date', 'enterprise_id'
+        )
+        return Response(status=200, data=groups)
+
+    @action(methods=["get"], detail=False)
+    def members_list(self, request, *args, **kwargs):
+        enterprise_group = self.get_enterprise_group()
+        serializer = self.get_serializer(enterprise_group)
+        return Response(status=200, data=serializer.data)

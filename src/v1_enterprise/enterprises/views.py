@@ -28,6 +28,7 @@ from .serializers import ListEnterpriseSerializer, UpdateEnterpriseSerializer
 class EnterprisePwdViewSet(EnterpriseViewSet):
     permission_classes = (EnterprisePwdPermission, )
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
+    lookup_value_regex = r'[0-9a-z]+'
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:

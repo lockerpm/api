@@ -57,6 +57,9 @@ urlpatterns += [
         views.GroupPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
     url(r'^(?P<pk>[0-9a-z]+)/groups/(?P<group_id>[a-zA-Z0-9\-]+)/members$',
         views.GroupPwdViewSet.as_view({'get': 'members', 'put': 'members'})),
+    url(r'user_groups$', views.GroupPwdViewSet.as_view({'get': 'user_groups'})),
+    url(r'user_groups/(?P<group_id>[a-zA-Z0-9\-]+)/members$',
+        views.GroupPwdViewSet.as_view({'get': 'members_list'})),
 ]
 
 

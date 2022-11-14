@@ -22,7 +22,7 @@ class PasswordManagerViewSet(AppGeneralViewSet):
     team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
     team_member_repository = CORE_CONFIG["repositories"]["ITeamMemberRepository"]()
     collection_repository = CORE_CONFIG["repositories"]["ICollectionRepository"]()
-    group_repository = CORE_CONFIG["repositories"]["IGroupRepository"]()
+    # group_repository = CORE_CONFIG["repositories"]["IGroupRepository"]()
     event_repository = CORE_CONFIG["repositories"]["IEventRepository"]()
     emergency_repository = CORE_CONFIG["repositories"]["IEmergencyAccessRepository"]()
 
