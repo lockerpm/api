@@ -196,15 +196,12 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
-        user = self.request.user
-        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         cipher = self.get_object()
         if cipher.type in IMMUTABLE_CIPHER_TYPES:
             raise PermissionDenied
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        team = serializer.validated_data.get("team")
         cipher_detail = serializer.save(**{"cipher": cipher})
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
@@ -212,13 +209,9 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[request.user.user_id],
-            team=team,
+            team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})
-        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-        #     "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #     "type": EVENT_CIPHER_UPDATED, "cipher_id": cipher.id, "ip_address": ip
-        # })
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)

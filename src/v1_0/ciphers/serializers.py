@@ -143,14 +143,17 @@ class VaultItemSerializer(serializers.Serializer):
         team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
         organization_id = data.get("organizationId")
         collection_ids = data.get("collectionIds", [])
+        # TODO: Check the permission in the organization_id
+        allow_roles = [MEMBER_ROLE_OWNER]
+        try:
+            action = self.context["view"].action
+            if action == "update":
+                allow_roles.append(MEMBER_ROLE_ADMIN)
+        except (KeyError, ValueError, AttributeError):
+            pass
         if organization_id:
             try:
-                team_member = user.team_members.get(
-                    team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER],
-                )
-                # team_member = user.team_members.get(
-                #     team_id=organization_id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER],
-                # )
+                team_member = user.team_members.get(team_id=organization_id, role_id__in=allow_roles)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": [
                     "This team does not exist", "Team này không tồn tại"
@@ -164,9 +167,7 @@ class VaultItemSerializer(serializers.Serializer):
             if team_repository.is_locked(team=team_obj):
                 raise serializers.ValidationError({"non_field_errors": [gen_error("3003")]})
             data["team"] = team_obj
-            data["collectionIds"] = self.validate_collections(
-                team_member=team_member, collection_ids=collection_ids
-            )
+            data["collectionIds"] = self.validate_collections(team_member=team_member, collection_ids=collection_ids)
 
         else:
             data["organizationId"] = None
@@ -258,17 +259,11 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
     def validate_collections(self, team_member, collection_ids):
         team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
         team_obj = team_member.team
-        # role_id = team_member.role_id
         if not collection_ids:
             # Get default collection
             try:
                 default_collection = team_repository.get_default_collection(team=team_obj)
                 default_collection_id = default_collection.id
-                # if role_id == MEMBER_ROLE_MANAGER and \
-                #         team_member.collections_members.filter(collection_id=default_collection_id).exists() is False:
-                #     raise serializers.ValidationError(detail={
-                #         "collectionIds": ["You do not have permission in default collections"]
-                #     })
                 return [default_collection_id]
             except ObjectDoesNotExist:
                 return []
@@ -282,22 +277,24 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
             return list(set(collection_ids))
 
     def save(self, **kwargs):
+        team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
+        user = self.context["request"].user
         cipher = kwargs.get("cipher")
         validated_data = self.validated_data
-        # if cipher.team_id is None and validated_data.get("organizationId"):
-        #     raise serializers.ValidationError(detail={"organizationId": [
-        #         "You can not change team of cipher when update. Please share this cipher to change team"
-        #     ]})
+        team = validated_data.get("team")
+
+        if not team and cipher.team_id:
+            try:
+                user.team_members.get(team_id=team.id, role_id=MEMBER_ROLE_OWNER)
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError(detail={
+                    "organizationId": ["You must be owner of the item to change this field"]
+                })
 
         # Validate collection ids
-        team = validated_data.get("team")
         if team and team.id == cipher.team_id:
-            team_repository = CORE_CONFIG["repositories"]["ITeamRepository"]()
-            user = self.context["request"].user
             try:
-                team_member = user.team_members.get(
-                    team_id=team.id, role_id__in=[MEMBER_ROLE_OWNER],
-                )
+                team_member = user.team_members.get(team_id=team.id, role_id=MEMBER_ROLE_OWNER)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": ["The team does not exist"]})
             role_id = team_member.role_id

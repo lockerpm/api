@@ -235,8 +235,7 @@ class SharingRepository(ISharingRepository):
             # Create new sharing id
             id_generator = sharing_id_generator(user_id=user.user_id)
             sharing_id = next(id_generator)
-            # team_name = user.get_from_cystack_id().get("full_name", "Sharing")
-            team_name = f"Sharing {user.user_id}"
+            team_name = user.get_from_cystack_id().get("full_name", "Sharing")
             new_sharing = Team.create(**{
                 "id": sharing_id,
                 "name": team_name,
