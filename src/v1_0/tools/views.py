@@ -4,7 +4,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
 from core.utils.data_helpers import camel_snake_data
-from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.tool_pwd_permission import ToolPwdPermission
 from shared.services.hibp.hibp_service import HibpService
@@ -16,7 +15,7 @@ class ToolPwdViewSet(PasswordManagerViewSet):
     permission_classes = (ToolPwdPermission, )
 
     def get_serializer_class(self):
-        if self.action == "breach":
+        if self.action in ["breach", "public_breach"]:
             self.serializer_class = BreachSerializer
         return super(ToolPwdViewSet, self).get_serializer_class()
 
@@ -40,6 +39,18 @@ class ToolPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         email = validated_data.get("email")
         # Request to https://haveibeenpwned.com/api/v3/breachedaccount
+        hibp_check = HibpService().check_breach(email=email)
+        if not hibp_check:
+            return Response(status=200, data=[])
+        hibp_check = camel_snake_data(hibp_check, camel_to_snake=True)
+        return Response(status=200, data=hibp_check)
+
+    @action(methods=["post"], detail=False)
+    def public_breach(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        email = validated_data.get("email")
         hibp_check = HibpService().check_breach(email=email)
         if not hibp_check:
             return Response(status=200, data=[])

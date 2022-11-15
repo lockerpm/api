@@ -46,6 +46,7 @@ urlpatterns += [
 # ----------------------------------- Tools ----------------------------- #
 urlpatterns += [
     url(r'^tools/breach$', views.ToolPwdViewSet.as_view({'post': 'breach'})),
+    url(r'^tools/public/breach$', views.ToolPwdViewSet.as_view({'post': 'public_breach'})),
 ]
 
 
