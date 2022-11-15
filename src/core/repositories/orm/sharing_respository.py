@@ -27,6 +27,9 @@ class SharingRepository(ISharingRepository):
                 return MEMBER_SHARE_TYPE_VIEW
         return MEMBER_SHARE_TYPE_EDIT
 
+    def get_share_type(self, role_id: str):
+        return MEMBER_SHARE_TYPE_VIEW if role_id in [MEMBER_ROLE_MEMBER] else MEMBER_SHARE_TYPE_EDIT
+
     def accept_invitation(self, member: TeamMember):
         """
         The user accepts the personal invitation
@@ -449,11 +452,12 @@ class SharingRepository(ISharingRepository):
         )
         return teams
 
-    def get_shared_members(self, personal_shared_team: Team, exclude_owner=True):
+    def get_shared_members(self, personal_shared_team: Team, exclude_owner=True, is_added_by_group=None):
         """
         Get list member of personal shared team
         :param personal_shared_team:
         :param exclude_owner:
+        :param is_added_by_group:
         :return:
         """
         order_whens = [
@@ -466,7 +470,18 @@ class SharingRepository(ISharingRepository):
         ).order_by("order_field").select_related('user').select_related('role')
         if exclude_owner:
             members_qs = members_qs.exclude(role_id=MEMBER_ROLE_OWNER)
+        if is_added_by_group is not None:
+            members_qs = members_qs.filter(is_added_by_group=is_added_by_group)
         return members_qs
+
+    def get_shared_groups(self, personal_share_team):
+        """
+        Get list shared groups of the shared team
+        :param personal_share_team:
+        :return:
+        """
+        groups_qs = personal_share_team.groups.all().order_by('-id').select_related('enterprise_group')
+        return groups_qs
 
     def delete_share_with_me(self, user: User):
         member_teams = user.team_members.filter(

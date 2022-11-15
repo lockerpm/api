@@ -458,7 +458,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         for personal_shared_team in personal_shared_teams:
             shared_members = self.sharing_repository.get_shared_members(
-                personal_shared_team=personal_shared_team, exclude_owner=True
+                personal_shared_team=personal_shared_team, exclude_owner=True, is_added_by_group=False
             )
             shared_members_data = []
             for member in shared_members:
@@ -473,12 +473,25 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     "share_type": self.sharing_repository.get_personal_share_type(member=member),
                     "pwd_user_id": member.user.internal_id if member.user else None
                 })
+
+            shared_groups = self.sharing_repository.get_shared_groups(personal_share_team=personal_shared_team)
+            shared_groups_data = []
+            for group in shared_groups:
+                shared_groups_data.append({
+                    "id": group.enterprise_group_id,
+                    "name": group.name,
+                    "access_time": group.creation_date,
+                    "role": group.role_id,
+                    "share_type": self.sharing_repository.get_share_type(role_id=group.role_id),
+                })
+
             team_data = {
                 "id": personal_shared_team.id,
                 "name": personal_shared_team.name,
                 "description": personal_shared_team.description,
                 "organization_id": personal_shared_team.id,
-                "members": shared_members_data
+                "members": shared_members_data,
+                "groups": shared_groups_data
             }
             my_shared_teams.append(team_data)
         return Response(status=200, data=my_shared_teams)

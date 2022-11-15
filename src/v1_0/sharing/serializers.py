@@ -120,7 +120,7 @@ class SharingSerializer(serializers.Serializer):
             })
         if groups:
             user = self.context["request"].user
-            user_enterprise_group_ids = EnterpriseGroup.get_list_user_group_ids(user=user)
+            user_enterprise_group_ids = EnterpriseGroup.get_list_active_user_group_ids(user=user)
             if any(group.get("id") not in user_enterprise_group_ids for group in groups):
                 raise serializers.ValidationError(detail={"groups": ["The groups are not valid"]})
         return data
@@ -225,7 +225,7 @@ class MultipleSharingSerializer(serializers.Serializer):
 
     def __check_groups(self, groups):
         user = self.context["request"].user
-        user_enterprise_group_ids = EnterpriseGroup.get_list_user_group_ids(user=user)
+        user_enterprise_group_ids = EnterpriseGroup.get_list_active_user_group_ids(user=user)
         if any(group.get("id") not in user_enterprise_group_ids for group in groups):
             raise serializers.ValidationError(detail={"groups": ["The groups are not valid"]})
         return groups

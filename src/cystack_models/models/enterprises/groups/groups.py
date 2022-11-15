@@ -19,7 +19,7 @@ class EnterpriseGroup(models.Model):
         db_table = 'e_enterprise_groups'
 
     @classmethod
-    def create(cls, enterprise: Enterprise, name: str, created_by = None):
+    def create(cls, enterprise: Enterprise, name: str, created_by=None):
         new_group = cls(
             name=name, enterprise=enterprise, creation_date=now(), revision_date=now(),
             created_by=created_by
@@ -33,3 +33,12 @@ class EnterpriseGroup(models.Model):
             cls.objects.filter(enterprise__enterprise_members__user=user).values_list('id', flat=True)
         )
 
+    @classmethod
+    def get_list_active_user_group_ids(cls, user):
+        return list(
+            cls.objects.filter(
+                enterprise__locked=False,
+                enterprise__enterprise_members__user=user,
+                enterprise__enterprise_members__is_activated=True
+            ).values_list('id', flat=True)
+        )
