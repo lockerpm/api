@@ -128,6 +128,8 @@ class CronTask:
         schedule.every().day.at("19:00").do(self.enterprise_breach_scan)
         schedule.every().day.at("09:30").do(self.enterprise_member_change_billing)
         # schedule.every().day.at("07:30").do(self.tutorial_notification)
+        # TODO: Test on the staging
+        schedule.every(15).minutes.do(self.tutorial_notification)
 
         schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
         self.logger.info("[+] Starting Locker cron task")

@@ -1,3 +1,5 @@
+import os
+
 from django.db.models import F
 
 from cystack_models.models import User, EnterpriseMember
@@ -15,9 +17,13 @@ def tutorial_reminder():
     ).values_list('user_id', flat=True)
     exclude_enterprise_users = users.exclude(user_id__in=enterprise_user_ids)
 
+    duration_unit = 86400       # day
+    if os.getenv("PROD_ENV") == "staging":
+        duration_unit = 15 * 60      # 15 minutes
+
     # 3 days
     users_3days = users.filter(
-        creation_date__range=(current_time - 4 * 86400, current_time - 3 * 86400)
+        creation_date__range=(current_time - 4 * duration_unit, current_time - 3 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -27,7 +33,7 @@ def tutorial_reminder():
 
     # 5 days
     users_5days = users.filter(
-        creation_date__range=(current_time - 6 * 86400, current_time - 5 * 86400)
+        creation_date__range=(current_time - 6 * duration_unit, current_time - 5 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -37,7 +43,7 @@ def tutorial_reminder():
 
     # 7 days
     users_7days = users.filter(
-        creation_date__range=(current_time - 8 * 86400, current_time - 7 * 86400)
+        creation_date__range=(current_time - 8 * duration_unit, current_time - 7 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -54,7 +60,7 @@ def tutorial_reminder():
         plan_period=F('pm_user_plan__end_period') - F('pm_user_plan__start_period'),
         remain_period=F('pm_user_plan__end_period') - current_time
     ).filter(
-        plan_period__lte=15 * 86400, remain_period__lte=86400, remain_period__gte=0
+        plan_period__lte=15 * duration_unit, remain_period__lte=duration_unit, remain_period__gte=0
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -64,7 +70,7 @@ def tutorial_reminder():
 
     # 20 days
     users_20days = exclude_enterprise_users.filter(
-        creation_date__range=(current_time - 21 * 86400, current_time - 20 * 86400)
+        creation_date__range=(current_time - 21 * duration_unit, current_time - 20 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
