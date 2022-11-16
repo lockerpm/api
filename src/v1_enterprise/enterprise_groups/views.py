@@ -4,7 +4,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.groups.groups import EnterpriseGroup
-from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.background import LockerBackgroundFactory, BG_EVENT, BG_ENTERPRISE_GROUP
 from shared.constants.event import EVENT_E_GROUP_CREATED, EVENT_E_GROUP_UPDATED, EVENT_E_GROUP_DELETED
 from shared.constants.enterprise_members import *
 from shared.error_responses.error import gen_error
@@ -118,7 +118,7 @@ class GroupPwdViewSet(EnterpriseViewSet):
         enterprise_id = enterprise_group.enterprise_id
         enterprise_group_id = enterprise_group.id
         enterprise_group_name = enterprise_group.name
-        enterprise_group.delete()
+        enterprise_group.full_delete()
         LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
             "enterprise_ids": [enterprise_id], "acting_user_id": user.user_id, "user_id": user.user_id,
             "group_id": enterprise_group_id, "type": EVENT_E_GROUP_DELETED,
@@ -152,8 +152,18 @@ class GroupPwdViewSet(EnterpriseViewSet):
             )
             deleted_member_ids = diff_list(existed_group_member_ids, member_ids)
             new_member_ids = diff_list(member_ids, existed_group_member_ids)
-            enterprise_group.groups_members.filter(member_id__in=deleted_member_ids).delete()
+
+            # Remove group members
+            enterprise_group.groups_members.model.remove_multiple_by_member_ids(enterprise_group, deleted_member_ids)
+            # Add group members
             enterprise_group.groups_members.model.create_multiple(enterprise_group, *new_member_ids)
+            # TODO Add new group members into sharing team
+            # LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
+            #     func_name="add_group_member_to_share", **{
+            #         "enterprise_group": enterprise_group,
+            #         "new_member_ids": new_member_ids
+            #     }
+            # )
             return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
