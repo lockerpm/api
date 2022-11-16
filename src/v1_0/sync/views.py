@@ -59,6 +59,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             user=user, exclude_team_ids=block_team_ids
         ).order_by('-revision_date').prefetch_related('collections_ciphers')
         total_cipher = ciphers.count()
+        not_deleted_total_cipher = ciphers.filter(deleted_date__isnull=True).count()
         # ciphers_page = self.paginate_queryset(ciphers)
         if paging_param == "0":
             ciphers_page = ciphers
@@ -80,6 +81,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             "object": "sync",
             "count": {
                 "ciphers": total_cipher,
+                "not_deleted_ciphers": not_deleted_total_cipher,
             },
             "profile": SyncProfileSerializer(user, many=False).data,
             "ciphers": ciphers_serializer.data,
