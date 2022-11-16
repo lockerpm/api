@@ -294,7 +294,7 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
         # Validate collection ids
         if team and team.id == cipher.team_id:
             try:
-                team_member = user.team_members.get(team_id=team.id, role_id=MEMBER_ROLE_OWNER)
+                team_member = user.team_members.get(team_id=team.id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN])
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": ["The team does not exist"]})
             role_id = team_member.role_id
