@@ -1,5 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage
+from django.db.models import Count
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -59,7 +60,11 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             user=user, exclude_team_ids=block_team_ids
         ).order_by('-revision_date').prefetch_related('collections_ciphers')
         total_cipher = ciphers.count()
-        not_deleted_total_cipher = ciphers.filter(deleted_date__isnull=True).count()
+        not_deleted_ciphers = ciphers.filter(deleted_date__isnull=True)
+        not_deleted_ciphers_statistic = not_deleted_ciphers.values('type').annotate(
+            count=Count('type')
+        ).order_by('-count')
+        not_deleted_ciphers_count = {item["type"]: item["count"] for item in list(not_deleted_ciphers_statistic)}
         # ciphers_page = self.paginate_queryset(ciphers)
         if paging_param == "0":
             ciphers_page = ciphers
@@ -81,7 +86,10 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             "object": "sync",
             "count": {
                 "ciphers": total_cipher,
-                "not_deleted_ciphers": not_deleted_total_cipher,
+                "not_deleted_ciphers": {
+                    "total": not_deleted_ciphers.count(),
+                    "ciphers": not_deleted_ciphers_count
+                },
             },
             "profile": SyncProfileSerializer(user, many=False).data,
             "ciphers": ciphers_serializer.data,
