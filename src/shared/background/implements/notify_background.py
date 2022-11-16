@@ -1,5 +1,7 @@
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
+
 
 from core.settings import CORE_CONFIG
 from shared.background.i_background import ILockerBackground
@@ -18,10 +20,17 @@ HEADERS = {
 class NotifyBackground(ILockerBackground):
     def downgrade_plan(self, user_id, old_plan, downgrade_time, scope, **metadata):
         try:
+            user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+            try:
+                user_plan = user_repository.get_current_plan(user=user_repository.get_by_id(user_id=user_id))
+                current_plan = "{} Plan".format(user_plan.get_plan_type_name())
+            except ObjectDoesNotExist:
+                current_plan = "Free Plan"
             url = API_NOTIFY_PAYMENT + "/notify_downgrade"
             notification_data = {
                 "user_id": user_id,
                 "old_plan": old_plan,
+                "current_plan": current_plan,
                 "downgrade_time": downgrade_time,
                 "payment_data": metadata.get("payment_data"),
                 "scope": scope

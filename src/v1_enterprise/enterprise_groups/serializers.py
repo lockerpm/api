@@ -27,7 +27,6 @@ class DetailEnterpriseGroupSerializer(serializers.ModelSerializer):
         groups_member_ids = list(
             instance.groups_members.all().order_by('member_id').values_list('member_id', flat=True)
         )
-        instance = EnterpriseGroup.objects.get()
         members = instance.enterprise.enterprise_members.filter(
             id__in=groups_member_ids
         ).select_related('user').select_related('role')
