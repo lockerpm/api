@@ -285,7 +285,7 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
 
         if not team and cipher.team_id:
             try:
-                user.team_members.get(team_id=team.id, role_id=MEMBER_ROLE_OWNER)
+                user.team_members.get(team_id=cipher.team_id, role_id=MEMBER_ROLE_OWNER)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={
                     "organizationId": ["You must be owner of the item to change this field"]
