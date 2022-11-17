@@ -9,6 +9,10 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def get_share_type(self, role_id: str):
+        pass
+
+    @abstractmethod
     def accept_invitation(self, member: TeamMember):
         pass
 
@@ -54,11 +58,19 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def add_group_members(self, team, shared_collection, groups):
+        pass
+
+    @abstractmethod
     def get_my_personal_shared_teams(self, user):
         pass
 
     @abstractmethod
-    def get_shared_members(self, personal_share_team, exclude_owner=True):
+    def get_shared_members(self, personal_share_team, exclude_owner=True, is_added_by_group=None):
+        pass
+
+    @abstractmethod
+    def get_shared_groups(self, personal_share_team):
         pass
 
     @abstractmethod

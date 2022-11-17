@@ -33,6 +33,5 @@ class LockerTokenAuthentication(AppGeneralAuthentication):
             user = self.user_repository.retrieve_or_create_by_id(user_id=user_id)
             return user, token_value
 
-        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.exceptions.InvalidAlgorithmError,
-                ValueError, ObjectDoesNotExist):
+        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidAlgorithmError, ValueError, ObjectDoesNotExist):
             return None

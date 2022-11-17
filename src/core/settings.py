@@ -15,7 +15,7 @@ CORE_CONFIG = {
         "ISharingRepository": SharingRepository,
         "ITeamMemberRepository": TeamMemberRepository,
         "ICollectionRepository": CollectionRepository,
-        "IGroupRepository": GroupRepository,
+        # "IGroupRepository": GroupRepository,
         "IEventRepository": EventRepository,
         "IEmergencyAccessRepository": EmergencyAccessRepository,
     }

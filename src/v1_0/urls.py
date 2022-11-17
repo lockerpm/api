@@ -46,6 +46,7 @@ urlpatterns += [
 # ----------------------------------- Tools ----------------------------- #
 urlpatterns += [
     url(r'^tools/breach$', views.ToolPwdViewSet.as_view({'post': 'breach'})),
+    url(r'^tools/public/breach$', views.ToolPwdViewSet.as_view({'post': 'public_breach'})),
 ]
 
 
@@ -279,16 +280,6 @@ urlpatterns += [
     url(r'^teams/(?P<pk>[0-9a-z\-]+)/members/(?P<member_id>[a-z0-9\-]+)/groups$',
         views.MemberPwdViewSet.as_view({'get': 'groups', 'put': 'groups'})),
 
-]
-
-
-""" Group Management """
-urlpatterns += [
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups$', views.GroupPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)$',
-        views.GroupPwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
-    url(r'^teams/(?P<pk>[0-9a-z\-]+)/groups/(?P<group_id>[0-9a-z\-]+)/users$',
-        views.GroupPwdViewSet.as_view({'get': 'users', 'put': 'users'})),
 ]
 
 

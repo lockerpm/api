@@ -186,6 +186,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.save()
         sharing_key = validated_data.get("sharing_key")
         members = validated_data.get("members")
+        groups = validated_data.get("groups") or []
         cipher = validated_data.get("cipher")
         shared_cipher_data = validated_data.get("shared_cipher_data")
         folder = validated_data.get("folder")
@@ -193,7 +194,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         shared_type_name = None
         try:
             share_result = self.share_cipher_or_folder(
-                sharing_key=sharing_key, members=members,
+                sharing_key=sharing_key, members=members, groups=groups,
                 cipher=cipher, shared_cipher_data=shared_cipher_data, folder=folder
             )
         except ValidationError as e:
@@ -263,7 +264,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for cipher_member in ciphers:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=cipher_member.get("members") or [],
+                        sharing_key=sharing_key,
+                        members=cipher_member.get("members") or [],
+                        groups=cipher_member.get("groups") or [],
                         cipher=cipher_member.get("cipher"),
                         shared_cipher_data=cipher_member.get("shared_cipher_data"), folder=None
                     )
@@ -276,7 +279,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             for folder in folders:
                 try:
                     share_result = self.share_cipher_or_folder(
-                        sharing_key=sharing_key, members=folder.get("members") or [],
+                        sharing_key=sharing_key,
+                        members=folder.get("members") or [],
+                        groups=folder.get("groups") or [],
                         cipher=None, shared_cipher_data=None, folder=folder
                     )
                 except ValidationError as e:
@@ -321,7 +326,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "notification_user_ids": notification_user_ids,
         })
 
-    def share_cipher_or_folder(self, sharing_key, members, cipher, shared_cipher_data, folder):
+    def share_cipher_or_folder(self, sharing_key, members, groups, cipher, shared_cipher_data, folder):
         user = self.request.user
         cipher_obj = None
         folder_obj = None
@@ -369,7 +374,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
         new_sharing, existed_member_users, non_existed_member_users = self.sharing_repository.create_new_sharing(
-            sharing_key=sharing_key, members=members,
+            sharing_key=sharing_key, members=members, groups=groups,
             cipher=cipher_obj, shared_cipher_data=shared_cipher_data,
             folder=folder_obj, shared_collection_name=folder_name, shared_collection_ciphers=folder_ciphers
         )
@@ -453,7 +458,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         for personal_shared_team in personal_shared_teams:
             shared_members = self.sharing_repository.get_shared_members(
-                personal_shared_team=personal_shared_team, exclude_owner=True
+                personal_shared_team=personal_shared_team, exclude_owner=True, is_added_by_group=False
             )
             shared_members_data = []
             for member in shared_members:
@@ -468,12 +473,25 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     "share_type": self.sharing_repository.get_personal_share_type(member=member),
                     "pwd_user_id": member.user.internal_id if member.user else None
                 })
+
+            shared_groups = self.sharing_repository.get_shared_groups(personal_share_team=personal_shared_team)
+            shared_groups_data = []
+            for group in shared_groups:
+                shared_groups_data.append({
+                    "id": group.enterprise_group_id,
+                    "name": group.name,
+                    "access_time": group.creation_date,
+                    "role": group.role_id,
+                    "share_type": self.sharing_repository.get_share_type(role_id=group.role_id),
+                })
+
             team_data = {
                 "id": personal_shared_team.id,
                 "name": personal_shared_team.name,
                 "description": personal_shared_team.description,
                 "organization_id": personal_shared_team.id,
-                "members": shared_members_data
+                "members": shared_members_data,
+                "groups": shared_groups_data
             }
             my_shared_teams.append(team_data)
         return Response(status=200, data=my_shared_teams)

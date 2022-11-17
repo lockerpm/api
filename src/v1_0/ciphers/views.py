@@ -196,15 +196,12 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=result)
 
     def update(self, request, *args, **kwargs):
-        user = self.request.user
-        ip = request.data.get("ip")
         self.check_pwd_session_auth(request=request)
         cipher = self.get_object()
         if cipher.type in IMMUTABLE_CIPHER_TYPES:
             raise PermissionDenied
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        team = serializer.validated_data.get("team")
         cipher_detail = serializer.save(**{"cipher": cipher})
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
@@ -212,13 +209,9 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[request.user.user_id],
-            team=team,
+            team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})
-        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-        #     "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #     "type": EVENT_CIPHER_UPDATED, "cipher_id": cipher.id, "ip_address": ip
-        # })
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
@@ -265,36 +258,34 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
 
-    @action(methods=["put"], detail=False)
-    def share(self, request, *args, **kwargs):
-        user = self.request.user
-        ip = request.data.get("ip")
-        self.check_pwd_session_auth(request=request)
-        cipher = self.get_object()
-        if cipher.team_id:
-            raise ValidationError({"non_field_errors": [gen_error("5000")]})
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        team = serializer.validated_data.get("team")
-        cipher_detail = serializer.save()
-        cipher_detail.pop("team", None)
-        cipher_detail = json.loads(json.dumps(cipher_detail))
-        cipher = self.cipher_repository.save_share_cipher(cipher=cipher, cipher_data=cipher_detail)
-        PwdSync(
-            event=SYNC_EVENT_CIPHER_UPDATE,
-            user_ids=[request.user.user_id],
-            team=team,
-            add_all=True
-        ).send(data={"id": cipher.id})
-        # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create", **{
-        #     "team_id": cipher.team_id, "user_id": user.user_id, "acting_user_id": user.user_id,
-        #     "type": EVENT_CIPHER_SHARED, "cipher_id": cipher.id, "ip_address": ip
-        # })
-        return Response(status=200, data={"id": cipher.id})
+    # --------------- DEPRECATED ---------------- #
+    # @action(methods=["put"], detail=False)
+    # def share(self, request, *args, **kwargs):
+    #     user = self.request.user
+    #     ip = request.data.get("ip")
+    #     self.check_pwd_session_auth(request=request)
+    #     cipher = self.get_object()
+    #     if cipher.team_id:
+    #         raise ValidationError({"non_field_errors": [gen_error("5000")]})
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     team = serializer.validated_data.get("team")
+    #     cipher_detail = serializer.save()
+    #     cipher_detail.pop("team", None)
+    #     cipher_detail = json.loads(json.dumps(cipher_detail))
+    #     cipher = self.cipher_repository.save_share_cipher(cipher=cipher, cipher_data=cipher_detail)
+    #     PwdSync(
+    #         event=SYNC_EVENT_CIPHER_UPDATE,
+    #         user_ids=[request.user.user_id],
+    #         team=team,
+    #         add_all=True
+    #     ).send(data={"id": cipher.id})
+    #     return Response(status=200, data={"id": cipher.id})
 
-    @action(methods=["get"], detail=False)
-    def share_members(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
-        cipher = self.get_object()
-        cipher_members = self.cipher_repository.get_cipher_members(cipher=cipher)
-        return Response(status=200, data=cipher_members)
+    # --------------- DEPRECATED ---------------- #
+    # @action(methods=["get"], detail=False)
+    # def share_members(self, request, *args, **kwargs):
+    #     self.check_pwd_session_auth(request=request)
+    #     cipher = self.get_object()
+    #     cipher_members = self.cipher_repository.get_cipher_members(cipher=cipher)
+    #     return Response(status=200, data=cipher_members)

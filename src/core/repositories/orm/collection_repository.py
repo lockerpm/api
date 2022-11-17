@@ -9,8 +9,6 @@ from cystack_models.models.users.users import User
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.teams.collections import Collection
 from cystack_models.models.teams.collections_members import CollectionMember
-from cystack_models.models.teams.collections_groups import CollectionGroup
-from cystack_models.models.teams.groups_members import GroupMember
 
 
 class CollectionRepository(ICollectionRepository):
@@ -38,10 +36,11 @@ class CollectionRepository(ICollectionRepository):
             collection_members.filter(hide_passwords=True).values_list('collection_id', flat=True)
         )
         collection_members_ids = list(collection_members.values_list('collection_id', flat=True))
-        collection_groups_ids = list(CollectionGroup.objects.filter(
-            group_id__in=GroupMember.objects.filter(member__in=limit_members).values_list('group_id', flat=True)
-        ).values_list('collection_id', flat=True))
-        limit_collections = Collection.objects.filter(id__in=collection_members_ids + collection_groups_ids)
+        # collection_groups_ids = list(CollectionGroup.objects.filter(
+        #     group_id__in=GroupMember.objects.filter(member__in=limit_members).values_list('group_id', flat=True)
+        # ).values_list('collection_id', flat=True))
+        # limit_collections = Collection.objects.filter(id__in=collection_members_ids + collection_groups_ids)
+        limit_collections = Collection.objects.filter(id__in=collection_members_ids)
 
         collections = (access_all_collections | limit_collections).distinct()
         if filter_ids:
@@ -67,10 +66,10 @@ class CollectionRepository(ICollectionRepository):
         collection.name = name
         collection.revision_date = now()
         collection.save()
-        if groups:
-            collection.collections_groups.all().delete()
-            groups_data = [{"id": group_id} for group_id in groups]
-            collection.collections_groups.model.create_multiple(collection, *groups_data)
+        # if groups:
+        #     collection.collections_groups.all().delete()
+        #     groups_data = [{"id": group_id} for group_id in groups]
+        #     collection.collections_groups.model.create_multiple(collection, *groups_data)
         bump_account_revision_date(team=collection.team)
         return collection
 
