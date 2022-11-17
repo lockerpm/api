@@ -169,9 +169,12 @@ class GroupPwdViewSet(EnterpriseViewSet):
     @action(methods=["get"], detail=False)
     def user_groups(self, request, *args, **kwargs):
         user = self.request.user
-        groups = EnterpriseGroup.objects.filter(groups_members__member__user=user).distinct().values(
-            'id', 'name', 'creation_date', 'revision_date', 'enterprise_id'
-        )
+        groups = EnterpriseGroup.objects.filter(groups_members__member__user=user)
+        q_param = self.request.query_params.get("q")
+        if q_param:
+            groups = groups.filter(name__icontains=q_param.lower())
+
+        groups = groups.distinct().values('id', 'name', 'creation_date', 'revision_date', 'enterprise_id')
         return Response(status=200, data=groups)
 
     @action(methods=["get"], detail=False)
