@@ -169,3 +169,16 @@ class NotifyBackground(ILockerBackground):
         finally:
             if self.background:
                 connection.close()
+
+    def notify_add_group_member_to_share(self, data):
+        url = API_NOTIFY_LOCKER + "/group_member_to_share"
+        try:
+            requester(
+                method="POST", url=url, headers=HEADERS, data_send=data,
+                retry=True, max_retries=3, timeout=5
+            )
+        except Exception:
+            self.log_error(func_name="notify_tutorial")
+        finally:
+            if self.background:
+                connection.close()
