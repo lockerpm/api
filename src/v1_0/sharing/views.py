@@ -37,7 +37,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = MultipleSharingSerializer
         elif self.action == "invitations":
             self.serializer_class = SharingInvitationSerializer
-        elif self.action in ["stop_share", "stop_share_cipher_folder"]:
+        elif self.action in ["stop_share", "stop_group_share", "stop_share_cipher_folder"]:
             self.serializer_class = StopSharingSerializer
         elif self.action == "update_role":
             self.serializer_class = UpdateInvitationRoleSerializer
@@ -535,12 +535,21 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(kwargs.get("pk"))
         member_id = kwargs.get("member_id")
-        # Retrieve member that accepted
-        try:
-            member = personal_share.team_members.exclude(user=user).get(id=member_id)
-        except ObjectDoesNotExist:
-            raise NotFound
-        shared_team = member.team
+        group_id = kwargs.get("group_id")
+
+        group = None
+        if group_id:
+            try:
+                group = personal_share.groups.get(enterprise_group_id=group_id)
+            except ObjectDoesNotExist:
+                raise NotFound
+        member = None
+        if member_id:
+            try:
+                member = personal_share.team_members.exclude(user=user).get(id=member_id)
+            except ObjectDoesNotExist:
+                raise NotFound
+        shared_team = group.team if group else member.team
 
         # Check plan of the user
         self.allow_personal_sharing(user=user)
@@ -586,19 +595,19 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
-        removed_member_user_id = self.sharing_repository.stop_share(
-            member=member,
+        removed_member_user_ids = self.sharing_repository.stop_share(
+            member=member, group=group,
             cipher=cipher_obj, cipher_data=personal_cipher_data,
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id, removed_member_user_id]).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id] + removed_member_user_ids).send()
         # Re-sync data of the owner and removed member
         if cipher_obj:
             PwdSync(
-                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id, removed_member_user_id]
+                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id] + removed_member_user_ids
             ).send(data={"id": cipher_obj.id})
         if collection_obj:
-            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_member_user_ids).send()
 
         return Response(status=200, data={"success": True})
 
