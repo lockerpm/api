@@ -137,6 +137,8 @@ urlpatterns += [
 
     url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)/stop$',
         views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/groups/(?P<group_id>[0-9a-z\-]+)/stop$',
+        views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/leave$',  views.SharingPwdViewSet.as_view({'post': 'leave'})),
     url(r'^sharing/(?P<pk>[0-9]+)/stop$',
         views.SharingPwdViewSet.as_view({'post': 'stop_share_cipher_folder'})),

@@ -1,6 +1,6 @@
 import uuid
 
-from django.db.models import When, Q, Value, Case, IntegerField
+from django.db.models import When, Q, Value, Case, IntegerField, Count
 
 from core.repositories import ISharingRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -142,12 +142,13 @@ class SharingRepository(ISharingRepository):
         bump_account_revision_date(user=user_owner)
         return other_members
 
-    def stop_share(self, member: TeamMember,
+    def stop_share(self, member: TeamMember = None, group: Group = None,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         """
         The owner stops share a item (or a collection) with a member
         :param member: (object) TeamMember object will be removed
+        :param group: (object) The Group object will be removed
         :param cipher: (obj) Cipher object
         :param cipher_data: (obj) New cipher data if the cipher does not share with any members
         :param collection: (obj) Team collection will be stopped sharing
@@ -155,15 +156,23 @@ class SharingRepository(ISharingRepository):
         :param personal_folder_ciphers: (obj) List new ciphers data in the collection if the user stops sharing
         :return: The member user id has been removed
         """
-        member_user = member.user
-        member_user_id = member.user_id
-        team = member.team
+        team = group.team if group else member.team
 
         # Get owner
         user_owner = team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
 
-        # Remove this member from the team
-        member.delete()
+        # Remove this member / group from the team
+        if group:
+            group_members_user_ids = group.groups_members.values('member__user_id', flat=True)
+            deleted_members = team.team_members.annotate(
+                group_count=Count('groups_members')
+            ).filter(user_id__in=group_members_user_ids, is_added_by_group=True, group_count=1)
+            deleted_members_user_ids = deleted_members.values_list('user_id', flat=True)
+            deleted_members.delete()
+            group.delete()
+        if member:
+            deleted_members_user_ids = [member.user_id]
+            member.delete()
 
         # If the team does not have any members (excluding owner)
         # => Remove shared team and change the cipher/collection to personal cipher/personal folder
@@ -173,10 +182,13 @@ class SharingRepository(ISharingRepository):
                                         personal_folder_ciphers=personal_folder_ciphers)
 
         # Update revision date of user
-        bump_account_revision_date(user=member_user)
+        if group:
+            bump_account_revision_date(team=team, **{"group_ids": [group.enterprise_group_id]})
+        else:
+            bump_account_revision_date(user=member.user)
         bump_account_revision_date(user=user_owner)
 
-        return member_user_id
+        return deleted_members_user_ids
 
     def delete_share_folder(self, team, collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         # Get owner
