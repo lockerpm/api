@@ -20,7 +20,7 @@ from shared.services.pm_sync import *
 from shared.utils.app import now
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
-    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer
+    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer, UpdateGroupInvitationRoleSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -41,6 +41,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = StopSharingSerializer
         elif self.action == "update_role":
             self.serializer_class = UpdateInvitationRoleSerializer
+        elif self.action == "update_group_role":
+            self.serializer_class = UpdateGroupInvitationRoleSerializer
         elif self.action == "update_share_folder":
             self.serializer_class = UpdateShareFolderSerializer
         elif self.action in ["stop_share_folder", "delete_share_folder"]:
@@ -238,7 +240,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={
             "id": new_sharing.id,
             "shared_type_name": shared_type_name,
-            # "existed_member_users": existed_member_users,
             "non_existed_member_users": non_existed_member_users,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
@@ -435,6 +436,38 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         else:
             share_collection = member.team.collections.first()
             PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[member.user_id]).send(
+                data={"id": share_collection.id}
+            )
+
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def update_group_role(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        group_id = kwargs.get("group_id")
+        # Retrieve member that accepted
+        try:
+            group = personal_share.groups.get(enterprise_group_id=group_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        role = validated_data.get("role")
+        group = self.sharing_repository.update_group_role_invitation(group=group, role_id=role)
+        # If share a cipher:
+        primary_member = self.team_repository.get_primary_member(team=group.team)
+        group_members_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
+        PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=group_members_user_ids + [primary_member.user_id]).send()
+        if group.team.collections.all().exists() is False:
+            share_cipher = group.team.ciphers.first()
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=group_members_user_ids).send(data={"id": share_cipher.id})
+        # Else, share a folder
+        else:
+            share_collection = group.team.collections.first()
+            PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=group_members_user_ids).send(
                 data={"id": share_collection.id}
             )
 
@@ -666,9 +699,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         members = validated_data.get("members")
+        groups = validated_data.get("groups")
 
         existed_member_users, non_existed_member_users = self.sharing_repository.add_members(
-            team=personal_share, shared_collection=share_folder, members=members
+            team=personal_share, shared_collection=share_folder, members=members, groups=groups
         )
         mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
         notification_user_ids = NotificationSetting.get_user_notification(

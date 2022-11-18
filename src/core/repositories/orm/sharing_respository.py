@@ -83,6 +83,21 @@ class SharingRepository(ISharingRepository):
         bump_account_revision_date(user=member.user)
         return member
 
+    def update_group_role_invitation(self, group: Group, role_id: str):
+        """
+        The owner updates the role of the group personal sharing
+        :param group:
+        :param role_id:
+        :return:
+        """
+        group.role_id = role_id
+        group.save()
+        group_user_ids = group.groups_members.values_list('member__user_id', flat=True)
+        group.team.team_members.filter(is_added_by_group=True, user_id__in=group_user_ids).update(role_id=role_id)
+        # Bump revision date
+        bump_account_revision_date(team=group.team, **{"group_ids": [group.enterprise_group_id]})
+        return group
+
     def stop_share_all_members(self, team, cipher=None, cipher_data=None,
                                collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
 

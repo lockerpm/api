@@ -132,6 +132,9 @@ urlpatterns += [
     url(r'^sharing/multiple$', views.SharingPwdViewSet.as_view({'put': 'multiple_share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)$',
         views.SharingPwdViewSet.as_view({'post': 'invitation_confirm', 'put': 'update_role'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/groups/(?P<group_id>[0-9a-z\-]+)$',
+        views.SharingPwdViewSet.as_view({'put': 'update_group_role'})),
+
     url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)/stop$',
         views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/leave$',  views.SharingPwdViewSet.as_view({'post': 'leave'})),
