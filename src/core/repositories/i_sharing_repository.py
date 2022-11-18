@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.teams.groups import Group
 
 
 class ISharingRepository(ABC):
@@ -26,6 +27,10 @@ class ISharingRepository(ABC):
 
     @abstractmethod
     def update_role_invitation(self, member: TeamMember, role_id: str, hide_passwords: bool = None):
+        pass
+
+    @abstractmethod
+    def update_group_role_invitation(self, group: Group, role_id: str):
         pass
 
     @abstractmethod
