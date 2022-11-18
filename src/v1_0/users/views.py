@@ -112,6 +112,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user.activated = True
         user.activated_date = now()
         user.revision_date = now()
+        user.delete_account_date = None
         user.save()
 
         # Upgrade trial plan
