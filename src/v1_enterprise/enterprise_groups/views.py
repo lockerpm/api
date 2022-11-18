@@ -158,12 +158,12 @@ class GroupPwdViewSet(EnterpriseViewSet):
             # Add group members
             enterprise_group.groups_members.model.create_multiple(enterprise_group, *new_member_ids)
             # TODO Add new group members into sharing team
-            # LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
-            #     func_name="add_group_member_to_share", **{
-            #         "enterprise_group": enterprise_group,
-            #         "new_member_ids": new_member_ids
-            #     }
-            # )
+            LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
+                func_name="add_group_member_to_share", **{
+                    "enterprise_group": enterprise_group,
+                    "new_member_ids": new_member_ids
+                }
+            )
             return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
