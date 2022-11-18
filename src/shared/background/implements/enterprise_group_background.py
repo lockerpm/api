@@ -6,7 +6,7 @@ from shared.background.i_background import ILockerBackground
 from shared.background.implements import NotifyBackground
 from shared.constants.members import PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.user_notification import NOTIFY_SHARING
-from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE
+from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE_GROUP_MEMBER
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 
@@ -58,7 +58,7 @@ class EnterpriseGroupBackground(ILockerBackground):
                 fcm_message = FCMRequestEntity(
                     fcm_ids=fcm_ids, priority="high",
                     data={
-                        "event": FCM_TYPE_NEW_SHARE,
+                        "event": FCM_TYPE_NEW_SHARE_GROUP_MEMBER,
                         "data": {
                             "pwd_user_ids": notification_user_ids,
                             "share_type": shared_type_name,
