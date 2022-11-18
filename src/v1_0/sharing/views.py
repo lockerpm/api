@@ -20,7 +20,8 @@ from shared.services.pm_sync import *
 from shared.utils.app import now
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
-    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer, UpdateGroupInvitationRoleSerializer
+    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer, UpdateGroupInvitationRoleSerializer, \
+    GroupMemberConfirmSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -41,6 +42,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = StopSharingSerializer
         elif self.action == "update_role":
             self.serializer_class = UpdateInvitationRoleSerializer
+        elif self.action == "invitation_group_confirm":
+            self.serializer_class = GroupMemberConfirmSerializer
         elif self.action == "update_group_role":
             self.serializer_class = UpdateGroupInvitationRoleSerializer
         elif self.action == "update_share_folder":
@@ -439,6 +442,35 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 data={"id": share_collection.id}
             )
 
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def invitation_group_confirm(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        group_id = kwargs.get("group_id")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        members_data = serializer.validated_data.get("members") or []
+        # Retrieve member that accepted
+        try:
+            group = personal_share.groups.get(id=group_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+        members_user_ids = [member_data.get("user_id") for member_data in members_data if member_data.get("user_id")]
+        invited_members = group.groups_members.filter(
+            member__status__in=[PM_MEMBER_STATUS_ACCEPTED, PM_MEMBER_STATUS_INVITED],
+            member__user_id__in=members_user_ids
+        ).select_related('member')
+        for invited_member in invited_members:
+            member_data = next(
+                (item for item in members_data if item["user_id"] == invited_member.member.user_id), None
+            )
+            if member_data and member_data.get("key"):
+                self.sharing_repository.confirm_invitation(member=invited_member, key=member_data.get("key"))
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=members_user_ids).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_CONFIRMED, user_ids=members_user_ids + [user.user_id]).send()
         return Response(status=200, data={"success": True})
 
     @action(methods=["put"], detail=False)

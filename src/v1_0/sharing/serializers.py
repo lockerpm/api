@@ -409,3 +409,7 @@ class AddItemShareFolderSerializer(serializers.Serializer):
         validated_data = self.validated_data
         validated_data["cipher"] = self.__get_share_cipher_data(cipher=validated_data.get("cipher"))
         return validated_data
+
+
+class GroupMemberConfirmSerializer(serializers.Serializer):
+    members = GroupMemberShareSeralizer(many=True)
