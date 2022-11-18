@@ -668,6 +668,7 @@ class UserRepository(IUserRepository):
         user.revision_date = None
         user.activated = False
         user.account_revision_date = None
+        user.delete_account_date = now()
         user.master_password = None
         user.master_password_hint = None
         user.master_password_score = 0

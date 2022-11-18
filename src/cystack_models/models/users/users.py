@@ -22,6 +22,7 @@ class User(models.Model):
     first_login = models.FloatField(null=True)
     activated = models.BooleanField(default=False)
     activated_date = models.FloatField(null=True)
+    delete_account_date = models.FloatField(null=True)
     account_revision_date = models.FloatField(null=True)
     master_password = models.CharField(max_length=300, null=True)
     master_password_hint = models.CharField(max_length=128, blank=True, null=True, default="")
