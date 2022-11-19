@@ -11,7 +11,7 @@ def bump_account_revision_date(user: User = None, team=None, **team_filters):
         team_members = team.team_members.filter(status=PM_MEMBER_STATUS_CONFIRMED)
         collection_ids = team_filters.get("collection_ids", [])
         role_name = team_filters.get("role_name", [])
-        group_ids = team_members.get("group_ids", [])
+        group_ids = team_filters.get("group_ids", [])
         # Filter by collection ids
         if collection_ids:
             team_members = team_members.filter(
