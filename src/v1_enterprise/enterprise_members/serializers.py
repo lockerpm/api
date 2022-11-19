@@ -4,6 +4,7 @@ from rest_framework import serializers
 from shared.constants.ciphers import CIPHER_TYPE_LOGIN
 from shared.constants.enterprise_members import *
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
+from cystack_models.models.enterprises.groups.groups import EnterpriseGroup
 
 
 class DetailMemberSerializer(serializers.ModelSerializer):
@@ -112,3 +113,17 @@ class UserInvitationSerializer(serializers.ModelSerializer):
         else:
             data["domain"] = None
         return data
+
+
+class SearchMemberGroupSerializer(serializers.Serializer):
+    query = serializers.CharField(max_length=255)
+    user_ids = serializers.ListSerializer(
+        child=serializers.IntegerField(), allow_null=True, allow_empty=True, required=False
+    )
+
+
+class EnterpriseGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnterpriseGroup
+        fields = ('id', 'name', 'creation_date', 'revision_date')
+        read_only_fields = ('id', 'name', 'creation_date', 'revision_date')

@@ -101,6 +101,7 @@ class TeamMember(models.Model):
         )
         if group:
             new_member.groups_members.model.retrieve_or_create(group.id, new_member.id)
+        return new_member
 
     @classmethod
     def create_with_collections(cls, team: Team, role_id: str, is_primary=False, is_default=False,
