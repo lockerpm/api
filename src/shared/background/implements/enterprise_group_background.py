@@ -31,7 +31,7 @@ class EnterpriseGroupBackground(ILockerBackground):
                 ).values_list('user_id', flat=True))
                 collection = team.collections.first()
                 groups = [{
-                    "id": sharing_group.id,
+                    "id": sharing_group.enterprise_group_id,
                     "role": sharing_group.role_id,
                     "members": members
                 }]
