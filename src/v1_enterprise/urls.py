@@ -36,6 +36,8 @@ urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/members/(?P<member_id>[a-z0-9\-]+)/unblock$',
         views.MemberPwdViewSet.as_view({'put': 'unblock'})),
 
+    url(r'^(?P<pk>[0-9a-z]+)/members_groups/search$',
+        views.MemberPwdViewSet.as_view({'post': 'search_members_groups'})),
     url(r'^members/invitation/confirmation$', views.MemberPwdViewSet.as_view({'get': 'invitation_confirmation'})),
     url(r'^members/invitations$', views.MemberPwdViewSet.as_view({'get': 'user_invitations'})),
     url(r'^members/invitations/(?P<pk>[a-z0-9\-]+)$', views.MemberPwdViewSet.as_view({'put': 'user_invitation_update'})),

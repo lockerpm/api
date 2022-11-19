@@ -19,7 +19,8 @@ from shared.permissions.locker_permissions.enterprise.member_permission import M
 from shared.utils.app import now
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import DetailMemberSerializer, UpdateMemberSerializer, UserInvitationSerializer, \
-    EnabledMemberSerializer, ShortDetailMemberSerializer, DetailActiveMemberSerializer
+    EnabledMemberSerializer, ShortDetailMemberSerializer, DetailActiveMemberSerializer, SearchMemberGroupSerializer, \
+    EnterpriseGroupSerializer
 
 
 class MemberPwdViewSet(EnterpriseViewSet):
@@ -42,6 +43,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
             self.serializer_class = UserInvitationSerializer
         elif self.action == "activated":
             self.serializer_class = EnabledMemberSerializer
+        elif self.action == "search_members_groups":
+            self.serializer_class = SearchMemberGroupSerializer
         return super(MemberPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -536,3 +539,28 @@ class MemberPwdViewSet(EnterpriseViewSet):
             invitation.save()
 
         return Response(status=200, data={"enterprise_ids": list(enterprise_ids)})
+
+    @action(methods=["post"], detail=False)
+    def search_members_groups(self, request, *args, **kwargs):
+        user = self.request.user
+        enterprise = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        query = validated_data.get("query")
+        user_ids = validated_data.get("user_ids") or []
+        status = validated_data.get("status", E_MEMBER_STATUS_CONFIRMED)
+
+        members = enterprise.enterprise_members.filter(status=status).filter(
+            user_id__in=user_ids
+        ).order_by('-access_time')[:5]
+        groups = enterprise.groups.filter(groups_members__member__user=user).filter(
+            name__icontains=query.lower()
+        ).order_by('-id')[:5]
+
+        members_serializer = ShortDetailMemberSerializer(members, many=True)
+        groups_serializer = EnterpriseGroupSerializer(groups, many=True)
+        return Response(status=200, data={
+            "members": members_serializer.data,
+            "groups": groups_serializer.data
+        })
