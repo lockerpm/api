@@ -402,13 +402,22 @@ class SharingRepository(ISharingRepository):
         #     status=PM_MEMBER_STATUS_INVITED,
         # )
 
-        shared_member = team.team_members.model.create_with_data(team, role_id=member_data.get("role"), **{
+        # shared_member = team.team_members.model.create_with_data(team, role_id=member_data.get("role"), **{
+        #     "user": member_data.get("user"),
+        #     "email": member_data.get("email"),
+        #     "key": member_data.get("key"),
+        #     "is_added_by_group": member_data.get("is_added_by_group", False),
+        #     "status": PM_MEMBER_STATUS_INVITED,
+        #     "group_id": member_data.get("group_id")
+        # })
+        shared_member = team.team_members.model.create_with_group(team, **{
             "user": member_data.get("user"),
             "email": member_data.get("email"),
             "key": member_data.get("key"),
             "is_added_by_group": member_data.get("is_added_by_group", False),
             "status": PM_MEMBER_STATUS_INVITED,
-            "group_id": member_data.get("group_id")
+            "role_id": member_data.get("role"),
+            "group": member_data.get("group")
         })
 
         # Create collection for this shared member
@@ -459,7 +468,7 @@ class SharingRepository(ISharingRepository):
                     "role": member.get("role"),
                     "key": member.get("key"),
                     "is_added_by_group": True,
-                    "group_id": team_group.id,
+                    "group": team_group,
                 }
                 shared_member = self.__create_shared_member(
                     team=team, member_data=member_data, shared_collection=shared_collection
