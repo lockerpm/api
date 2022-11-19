@@ -294,7 +294,7 @@ class SharingRepository(ISharingRepository):
 
         # Create sharing members
         existed_member_users, non_existed_member_users = self.add_members(
-            team=new_sharing, shared_collection=shared_collection, members=members
+            team=new_sharing, shared_collection=shared_collection, members=members, groups=groups
         )
 
         # Sharing the folder
@@ -408,6 +408,7 @@ class SharingRepository(ISharingRepository):
             "key": member_data.get("key"),
             "is_added_by_group": member_data.get("is_added_by_group", False),
             "status": PM_MEMBER_STATUS_INVITED,
+            "group_id": member_data.get("group_id")
         })
 
         # Create collection for this shared member
@@ -429,7 +430,9 @@ class SharingRepository(ISharingRepository):
         existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
 
         members_groups_data = [group.get("members") or [] for group in groups]
-        members_groups_user_ids = [member.get("user_id") for member in members_groups_data if member.get("user_id")]
+        members_groups_user_ids = []
+        for members_group_data in members_groups_data:
+            members_groups_user_ids += [m.get("user_id") for m in members_group_data if m.get("user_id")]
         members_groups_users = User.objects.filter(user_id__in=members_groups_user_ids, activated=True)
         members_groups_users_dict = dict()
         for u in members_groups_users:
@@ -437,6 +440,11 @@ class SharingRepository(ISharingRepository):
 
         for group in groups:
             members = group.get("members") or []
+            team_group = team.groups.model.retrieve_or_create(
+                team.id, group.get("id"), **{
+                    "role_id": group.get("role") or group.get("role_id") or MEMBER_ROLE_MEMBER
+                }
+            )
             for member in members:
                 member_user = members_groups_users_dict.get(member.get("user_id"))
                 email = None if member_user else member.get("email")
@@ -450,7 +458,8 @@ class SharingRepository(ISharingRepository):
                     "email": email,
                     "role": member.get("role"),
                     "key": member.get("key"),
-                    "is_added_by_group": True
+                    "is_added_by_group": True,
+                    "group_id": team_group.id,
                 }
                 shared_member = self.__create_shared_member(
                     team=team, member_data=member_data, shared_collection=shared_collection
