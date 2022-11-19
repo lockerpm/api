@@ -38,6 +38,10 @@ class LockerSpreadSheet:
         sheet = self.client.open_by_url(self.url).worksheet("Email from survey")
         return sheet
 
+    def add_sheet(self, name: str, rows=1, cols=10):
+        sheet = self.client.open_by_url(self.url).add_worksheet(name, rows=rows, cols=cols)
+        return sheet
+
     def upgrade_survey_email(self):
         current_time = now()
         current_time_str = datetime.fromtimestamp(current_time).strftime("%d-%b-%Y")
