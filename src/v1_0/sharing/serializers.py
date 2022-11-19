@@ -54,7 +54,7 @@ class GroupShareSerializer(serializers.Serializer):
     members = GroupMemberShareSeralizer(many=True)
 
     def validate(self, data):
-        group_id = data.get("group_id")
+        group_id = data.get("id")
         try:
             enterprise_group = EnterpriseGroup.objects.get(id=group_id)
         except EnterpriseGroup.DoesNotExist:

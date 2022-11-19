@@ -78,6 +78,8 @@ class TeamMember(models.Model):
             key=data.get("key"),
             token_invitation=data.get("token_invitation")
         )
+        if data.get("group_id"):
+            new_member.groups_members.model.retrieve_or_create(data.get("group_id"), new_member.id)
         return new_member
 
     @classmethod
