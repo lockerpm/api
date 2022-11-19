@@ -455,7 +455,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         members_data = serializer.validated_data.get("members") or []
         # Retrieve member that accepted
         try:
-            group = personal_share.groups.get(id=group_id)
+            group = personal_share.groups.get(enterprise_group_id=group_id)
         except ObjectDoesNotExist:
             raise NotFound
         members_user_ids = [member_data.get("user_id") for member_data in members_data if member_data.get("user_id")]
@@ -468,7 +468,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 (item for item in members_data if item["user_id"] == invited_member.member.user_id), None
             )
             if member_data and member_data.get("key"):
-                self.sharing_repository.confirm_invitation(member=invited_member, key=member_data.get("key"))
+                self.sharing_repository.confirm_invitation(member=invited_member.member, key=member_data.get("key"))
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=members_user_ids).send()
         PwdSync(event=SYNC_EVENT_MEMBER_CONFIRMED, user_ids=members_user_ids + [user.user_id]).send()
         return Response(status=200, data={"success": True})
