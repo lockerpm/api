@@ -1,5 +1,6 @@
 import json
 import os
+import urllib3
 import requests
 from requests import Response
 import time
@@ -8,6 +9,9 @@ from django.conf import settings
 # from rest_framework.response import Response
 
 from shared.error_responses.error import refer_error, gen_error
+
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def requester(method, url, headers=None, data_send=None, retry=False, max_retries=10, timeout=10):

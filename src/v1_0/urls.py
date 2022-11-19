@@ -14,6 +14,7 @@ urlpatterns = [
 # ------------------------------- Management Command ----------------------------- #
 urlpatterns += [
     url(r'^managements/commands/(?P<pk>[a-z_]+)$', views.ManagementCommandPwdViewSet.as_view({'post': 'commands'})),
+    url(r'^managements/statistics/users$', views.ManagementCommandPwdViewSet.as_view({'get': 'users'})),
 ]
 
 
