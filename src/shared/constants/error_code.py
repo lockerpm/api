@@ -87,6 +87,11 @@ APP_CODE += [
         "code": "1011",
         "message": "Your account belongs to Enterprise. Please request or contact your enterprise admin to continue using Locker",
         "description": "Tài khoản của bạn đã thuộc về Doanh nghiệp. Vui lòng yêu cầu tham gia hoặc liên hệ Admin của bạn để tiếp tục sử dụng Locker"
+    },
+    {
+        "code": "1012",
+        "message": "The enterprise requires you to enable 2-Step Verification",
+        "description": "Doanh nghiệp yêu cầu phải bật xác thực 2 bước"
     }
 ]
 

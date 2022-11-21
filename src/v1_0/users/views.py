@@ -22,7 +22,7 @@ from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.enterprise_members import *
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
-from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS
+from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS, POLICY_TYPE_2FA
 from shared.constants.transactions import *
 from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
@@ -372,6 +372,22 @@ class UserPwdViewSet(PasswordManagerViewSet):
             raise ValidationError({"non_field_errors": [gen_error("1011")]})
         if user_enterprises.filter(enterprise_members__user=user, locked=True).exists():
             raise ValidationError({"non_field_errors": [gen_error("1010")]})
+
+        # Check 2FA policy
+        is_factor2 = request.data.get("is_factor2", False)
+        if is_factor2 is False:
+            for enterprise in user_enterprises:
+                policy = enterprise.policies.filter(policy_type=POLICY_TYPE_2FA, enabled=True).first()
+                if not policy:
+                    continue
+                try:
+                    member_role = enterprise.enterprise_members.get(user=user).role_id
+                except ObjectDoesNotExist:
+                    continue
+                only_admin = policy.policy_2fa.only_admin
+                if only_admin is False or \
+                        (only_admin and member_role in [E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_PRIMARY_ADMIN]):
+                    raise ValidationError({"non_field_errors": [gen_error("1012")]})
 
         # Unblock login
         user.last_request_login = now()

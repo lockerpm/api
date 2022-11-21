@@ -74,6 +74,7 @@ from cystack_models.models.enterprises.policy.policy_password import PolicyPassw
 from cystack_models.models.enterprises.policy.policy_master_password import PolicyMasterPassword
 from cystack_models.models.enterprises.policy.policy_failed_login import PolicyFailedLogin
 from cystack_models.models.enterprises.policy.policy_passwordless import PolicyPasswordless
+from cystack_models.models.enterprises.policy.policy_2fa import Policy2FA
 
 
 # -------------------------- RELAY ADDRESS -------------------------- #
