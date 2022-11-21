@@ -109,12 +109,12 @@ class DomainBackground(ILockerBackground):
             # Get the number of billing members
             members = domain.enterprise_members.filter(status=[E_MEMBER_STATUS_REQUESTED])
             member_events_data = []
-            billing_members = 0
+            billing_members = members.count()
             for member in members:
-                if enterprise.is_billing_members_added(
-                    member_user_id=member.user_id, from_param=from_param, to_param=to_param
-                ) is True:
-                    billing_members += 1
+                # if enterprise.is_billing_members_added(
+                #     member_user_id=member.user_id, from_param=from_param, to_param=to_param
+                # ) is True:
+                #     billing_members += 1
                 member_events_data.append({
                     "acting_user_id": user_id_update_domain,
                     "user_id": member.user_id,
