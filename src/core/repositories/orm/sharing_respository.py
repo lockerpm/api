@@ -162,12 +162,14 @@ class SharingRepository(ISharingRepository):
         user_owner = team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
 
         # Remove this member / group from the team
+        deleted_members_user_ids = []
         if group:
-            group_members_user_ids = group.groups_members.values('member__user_id', flat=True)
+            # TODO: Check members are shared by User 1-1 (not by Group)
+            group_members_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
             deleted_members = team.team_members.annotate(
                 group_count=Count('groups_members')
             ).filter(user_id__in=group_members_user_ids, is_added_by_group=True, group_count=1)
-            deleted_members_user_ids = deleted_members.values_list('user_id', flat=True)
+            deleted_members_user_ids = list(deleted_members.values_list('user_id', flat=True))
             deleted_members.delete()
             group.delete()
         if member:
