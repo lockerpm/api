@@ -92,7 +92,7 @@ class SharingRepository(ISharingRepository):
         """
         group.role_id = role_id
         group.save()
-        group_user_ids = group.groups_members.values_list('member__user_id', flat=True)
+        group_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
         group.team.team_members.filter(is_added_by_group=True, user_id__in=group_user_ids).update(role_id=role_id)
         # Bump revision date
         bump_account_revision_date(team=group.team, **{"group_ids": [group.enterprise_group_id]})
