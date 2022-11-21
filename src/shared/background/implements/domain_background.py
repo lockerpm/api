@@ -101,13 +101,8 @@ class DomainBackground(ILockerBackground):
     def domain_auto_approve(self, user_id_update_domain, domain, ip_address: str = None):
         try:
             enterprise = domain.enterprise
-            primary_admin_user = enterprise.get_primary_admin_user()
-            user_plan = primary_admin_user.pm_user_plan
-            from_param = user_plan.start_period if user_plan.start_period else enterprise.creation_date
-            to_param = user_plan.end_period if user_plan.end_period else now()
-
             # Get the number of billing members
-            members = domain.enterprise_members.filter(status=[E_MEMBER_STATUS_REQUESTED])
+            members = domain.enterprise_members.filter(status__in=[E_MEMBER_STATUS_REQUESTED])
             member_events_data = []
             billing_members = members.count()
             for member in members:
