@@ -54,7 +54,7 @@ class GroupShareSerializer(serializers.Serializer):
     members = GroupMemberShareSeralizer(many=True)
 
     def validate(self, data):
-        group_id = data.get("group_id")
+        group_id = data.get("id")
         try:
             enterprise_group = EnterpriseGroup.objects.get(id=group_id)
         except EnterpriseGroup.DoesNotExist:
@@ -64,7 +64,7 @@ class GroupShareSerializer(serializers.Serializer):
         members_emails = [member.get("member__email") for member in group_members if member.get("member__email")]
         members = data.get("members")
         user_ids = [member.get("user_id") for member in members if member.get("user_id")]
-        emails = [member.get("email") for member in members if member.get("email")]
+        emails = [member.get("email") for member in members if member.get("email") and not member.get("user_id")]
         if any(user_id not in members_user_ids for user_id in user_ids):
             raise serializers.ValidationError(detail={"members": ["The member user id are not valid"]})
         if any(email not in members_emails for email in emails):

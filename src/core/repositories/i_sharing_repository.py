@@ -59,7 +59,7 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
-    def add_members(self, team, shared_collection, members):
+    def add_members(self, team, shared_collection, members, groups=None):
         pass
 
     @abstractmethod

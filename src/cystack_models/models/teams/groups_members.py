@@ -25,3 +25,12 @@ class GroupMember(models.Model):
         for group_id in group_ids:
             member_groups.append(cls(group_id=group_id, member=member))
         cls.objects.bulk_create(member_groups, ignore_conflicts=True, batch_size=10)
+
+    @classmethod
+    def retrieve_or_create(cls, group_id, member_id):
+        group_member, is_created = cls.objects.get_or_create(
+            group_id=group_id, member_id=member_id, defaults={
+                "group_id": group_id, "member_id": member_id
+            }
+        )
+        return group_member

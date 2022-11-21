@@ -78,6 +78,29 @@ class TeamMember(models.Model):
             key=data.get("key"),
             token_invitation=data.get("token_invitation")
         )
+        if data.get("group_id"):
+            new_member.groups_members.model.retrieve_or_create(data.get("group_id"), new_member.id)
+        return new_member
+
+    @classmethod
+    def create_with_group(cls, team: Team, **data):
+        group = data.get("group")
+        role_id = group.role_id if group else (data.get("role_id") or data.get("role"))
+        new_member = TeamMember.objects.create(
+            team=team,
+            role_id=role_id,
+            access_time=now(),
+            user=data.get("user"),
+            email=data.get("email"),
+            is_primary=data.get("is_primary", False),
+            is_default=data.get("is_default", False),
+            is_added_by_group=data.get("is_added_by_group", False),
+            status=data.get("status", PM_MEMBER_STATUS_CONFIRMED),
+            key=data.get("key"),
+            token_invitation=data.get("token_invitation")
+        )
+        if group:
+            new_member.groups_members.model.retrieve_or_create(group.id, new_member.id)
         return new_member
 
     @classmethod
