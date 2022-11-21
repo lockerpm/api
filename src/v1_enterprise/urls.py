@@ -47,7 +47,7 @@ urlpatterns += [
 # ----------------------------------- Policy ------------------------- #
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/policy$', views.PolicyPwdViewSet.as_view({'get': 'list'})),
-    url(r'^(?P<pk>[0-9a-z]+)/policy/(?P<policy_type>[a-z_]+)$',
+    url(r'^(?P<pk>[0-9a-z]+)/policy/(?P<policy_type>[a-z0-9_]+)$',
         views.PolicyPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
 ]
 
