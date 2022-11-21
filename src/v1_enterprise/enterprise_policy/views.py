@@ -8,7 +8,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.policy_permission import PolicyPwdPermission
 from v1_enterprise.apps import EnterpriseViewSet
 from .serializers import PolicySerializer, UpdatePasswordPolicySerializer, UpdateMasterPasswordPolicySerializer, \
-    UpdateFailedLoginPolicySerializer, UpdatePasswordlessPolicySerializer
+    UpdateFailedLoginPolicySerializer, UpdatePasswordlessPolicySerializer, Update2FAPolicySerializer
 
 
 class PolicyPwdViewSet(EnterpriseViewSet):
@@ -28,13 +28,15 @@ class PolicyPwdViewSet(EnterpriseViewSet):
                 self.serializer_class = UpdateFailedLoginPolicySerializer
             elif policy_type == POLICY_TYPE_PASSWORDLESS:
                 self.serializer_class = UpdatePasswordlessPolicySerializer
+            elif policy_type == POLICY_TYPE_2FA:
+                self.serializer_class = Update2FAPolicySerializer
         return super(PolicyPwdViewSet, self).get_serializer_class()
 
     def get_queryset(self):
         enterprise = self.get_enterprise()
-        if enterprise.policies.exists() is False:
+        if enterprise.policies.count() < len(LIST_POLICY_TYPE):
             for policy_type in LIST_POLICY_TYPE:
-                enterprise.policies.model.create(enterprise, policy_type)
+                enterprise.policies.model.retrieve_or_create(enterprise, policy_type)
         policies = enterprise.policies.all().order_by('id')
         return policies
 
