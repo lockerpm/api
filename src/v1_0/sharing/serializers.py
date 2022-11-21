@@ -60,13 +60,18 @@ class GroupShareSerializer(serializers.Serializer):
         except EnterpriseGroup.DoesNotExist:
             raise serializers.ValidationError(detail={"id": ["The group id does not exist"]})
         group_members = enterprise_group.groups_members.values('member__user_id', 'member__email')
+
+        print("Group members: ", group_members)
+
         members_user_ids = [member.get("member__user_id") for member in group_members if member.get("member__user_id")]
         members_emails = [member.get("member__email") for member in group_members if member.get("member__email")]
         members = data.get("members")
+        print("DATA: ", members)
         user_ids = [member.get("user_id") for member in members if member.get("user_id")]
-        emails = [member.get("email") for member in members if member.get("email")]
+        emails = [member.get("email") for member in members if member.get("email") and not member.get("user_id")]
         if any(user_id not in members_user_ids for user_id in user_ids):
             raise serializers.ValidationError(detail={"members": ["The member user id are not valid"]})
+        print("Emails: ", emails, members_emails)
         if any(email not in members_emails for email in emails):
             raise serializers.ValidationError(detail={"members": ["The member emails are not valid"]})
 
