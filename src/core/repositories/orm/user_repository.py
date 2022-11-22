@@ -646,10 +646,10 @@ class UserRepository(IUserRepository):
 
         return data_customer_stripe
 
-
     def get_list_invitations(self, user: User, personal_share=False):
         member_invitations = user.team_members.filter(
-            status__in=[PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED], team__personal_share=personal_share
+            status__in=[PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED], team__personal_share=personal_share,
+            is_added_by_group=False
         ).select_related('team').order_by('access_time')
         return member_invitations
 
