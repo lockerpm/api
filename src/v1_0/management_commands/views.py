@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.db import close_old_connections, connection
-from django.db.models import Count, When, Case, IntegerField, Sum, F, FloatField, Value
+from django.db.models import Count, When, Case, IntegerField, Sum, F, FloatField, Value, Q
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -91,7 +91,48 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
             raise PermissionDenied
         duration = self.request.query_params.get("duration") or 30
         BackgroundThread(task=self.list_activated_users, **{"duration": duration * 86400})
-        return Response(status=200, data={"success": True})
+        statistic_data = self.users_statistic()
+        return Response(status=200, data=statistic_data)
+
+    @staticmethod
+    def users_statistic():
+        current_time = now()
+        users = User.objects.filter().select_related('pm_user_plan__pm_plan')
+
+        activated_users = users.filter(activated=True)
+        activated_in_30 = activated_users.filter(activated_date__gte=current_time - 30 * 86400).count()
+        activated_in_60 = activated_users.filter(activated_date__gte=current_time - 2 * 30 * 86400).count()
+
+        not_login_30 = activated_users.filter(last_request_login__lt=current_time - 30 * 86400).count()
+        not_login_60 = activated_users.filter(last_request_login__lt=current_time - 2 * 30 * 86400).count()
+
+        deleted_users = users.filter(delete_account_date__isnull=False)
+        deleted_in_30 = deleted_users.filter(delete_account_date__gte=current_time - 30 * 86600).count()
+        deleted_in_60 = deleted_users.filter(delete_account_date__gte=current_time - 2 * 30 * 86600).count()
+
+        total_activate_users_not_deleted = activated_users.exclude(
+            user_id__in=list(deleted_users.values_list('user_id', flat=True))
+        ).count()
+
+        total_activate_users = activated_users.count()
+
+        statistic_data = {
+            "total_activate_users": total_activate_users,
+            "total_activate_users_not_deleted": total_activate_users_not_deleted,
+            "activated": {
+                "in_30": activated_in_30,
+                "in_60": activated_in_60
+            },
+            "not_login": {
+                "in_30": not_login_30,
+                "in_60": not_login_60
+            },
+            "deleted": {
+                "in_30": deleted_in_30,
+                "in_60": deleted_in_60
+            }
+        }
+        return statistic_data
 
     def list_activated_users(self, duration):
         try:
@@ -174,7 +215,6 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
         users_paid_statistic_dict = dict()
         for e in users_paid_statistic:
             users_paid_statistic_dict.update({e["user_id"]: e})
-        print("TOTAL users: ", users.count())
         # Request to IDs
         url = "{}/micro_services/users".format(settings.GATEWAY_API)
         headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
