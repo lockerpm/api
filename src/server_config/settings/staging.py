@@ -22,6 +22,7 @@ DATABASES = {
         }
     },
 }
+DATABASE_ROUTERS = []
 
 
 LOCKER_WEB_URL = "https://staging.locker.io"
