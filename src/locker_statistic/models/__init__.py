@@ -1,0 +1,1 @@
+from locker_statistic.models.user_statistics import UserStatistic
