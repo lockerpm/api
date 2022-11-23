@@ -368,8 +368,10 @@ class SharingRepository(ISharingRepository):
                 member_user = None
                 email = member.get("email")
             if member_user and member_user.user_id in existed_user_ids:
+                team.team_members.filter(user_id=member_user.user_id).update(is_added_by_group=False)
                 continue
             if email and email in existed_emails:
+                team.team_members.filter(email=email).update(is_added_by_group=False)
                 continue
             member_data = {"user": member_user, "email": email, "role": member.get("role"), "key": member.get("key")}
             shared_member = self.__create_shared_member(
@@ -392,27 +394,7 @@ class SharingRepository(ISharingRepository):
 
     @staticmethod
     def __create_shared_member(team, member_data, shared_collection=None):
-        # shared_member = team.team_members.model.objects.create(
-        #     user=member.get("user"),
-        #     email=member.get("email"),
-        #     role_id=member.get("role"),
-        #     key=member.get("key"),
-        #     team=team,
-        #     access_time=now(),
-        #     is_primary=False,
-        #     is_default=False,
-        #     status=PM_MEMBER_STATUS_INVITED,
-        # )
-
-        # shared_member = team.team_members.model.create_with_data(team, role_id=member_data.get("role"), **{
-        #     "user": member_data.get("user"),
-        #     "email": member_data.get("email"),
-        #     "key": member_data.get("key"),
-        #     "is_added_by_group": member_data.get("is_added_by_group", False),
-        #     "status": PM_MEMBER_STATUS_INVITED,
-        #     "group_id": member_data.get("group_id")
-        # })
-        shared_member = team.team_members.model.create_with_group(team, **{
+        shared_member = team.team_members.model.retrieve_or_create_with_group(team, **{
             "user": member_data.get("user"),
             "email": member_data.get("email"),
             "key": member_data.get("key"),
@@ -424,7 +406,7 @@ class SharingRepository(ISharingRepository):
 
         # Create collection for this shared member
         if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
-            shared_member.collections_members.model.objects.create(
+            shared_member.collections_members.model.retrieve_or_create(
                 collection=shared_collection, member=shared_member,
                 hide_passwords=member_data.get("hide_passwords", False)
             )
@@ -460,10 +442,12 @@ class SharingRepository(ISharingRepository):
                 member_user = members_groups_users_dict.get(member.get("user_id"))
                 email = None if member_user else member.get("email")
 
-                if member_user and member_user.user_id in existed_user_ids:
-                    continue
-                if email and email in existed_emails:
-                    continue
+                # if member_user and member_user.user_id in existed_user_ids:
+                #     # TODO: Check the member is in group or not. If the member group doesnt exist, create member group
+                #     continue
+                # if email and email in existed_emails:
+                #     # TODO: Check the member is in group or not. If the member group doesnt exist, create member group
+                #     continue
                 member_data = {
                     "user": member_user,
                     "email": email,
@@ -475,10 +459,10 @@ class SharingRepository(ISharingRepository):
                 shared_member = self.__create_shared_member(
                     team=team, member_data=member_data, shared_collection=shared_collection
                 )
-                if shared_member.user_id:
+                if shared_member.user_id and shared_member.user_id not in existed_user_ids:
                     existed_member_users.append(shared_member.user_id)
                     existed_user_ids.append(shared_member.user_id)
-                if shared_member.email:
+                if shared_member.email and shared_member.email not in existed_emails:
                     non_existed_member_users.append(shared_member.email)
                     existed_emails.append(shared_member.email)
         return existed_member_users, non_existed_member_users
