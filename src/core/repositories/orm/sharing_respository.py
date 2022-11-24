@@ -380,11 +380,14 @@ class SharingRepository(ISharingRepository):
         return cipher
 
     def add_members(self, team, shared_collection, members, groups=None):
+        primary_user = team.team_members.get(is_primary=True).user
         non_existed_member_users = []
         existed_member_users = []
         existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
         existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
         for member in members:
+            if member.get("user_id") == primary_user.user_id:
+                continue
             # Retrieve activated user
             try:
                 member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
@@ -447,6 +450,7 @@ class SharingRepository(ISharingRepository):
         return shared_member
 
     def add_group_members(self, team, shared_collection, groups):
+        primary_user = team.team_members.get(is_primary=True).user
         non_existed_member_users = []
         existed_member_users = []
         existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
@@ -469,6 +473,8 @@ class SharingRepository(ISharingRepository):
                 }
             )
             for member in members:
+                if member.get("user_id") == primary_user.user_id:
+                    continue
                 member_user = members_groups_users_dict.get(member.get("user_id"))
                 email = None if member_user else member.get("email")
 
