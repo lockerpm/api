@@ -157,7 +157,7 @@ class GroupPwdViewSet(EnterpriseViewSet):
             enterprise_group.groups_members.model.remove_multiple_by_member_ids(enterprise_group, deleted_member_ids)
             # Add group members
             enterprise_group.groups_members.model.create_multiple(enterprise_group, *new_member_ids)
-            # TODO Add new group members into sharing team
+            # Add new group members into sharing team
             if new_member_ids:
                 LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
                     func_name="add_group_member_to_share", **{

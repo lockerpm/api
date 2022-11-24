@@ -5,6 +5,7 @@ FCM_TYPE_CONFIRM_SHARE = "confirm_share_item"
 FCM_TYPE_ACCEPT_SHARE = "accept_share_item"
 FCM_TYPE_REJECT_SHARE = "reject_share_item"
 FCM_TYPE_NEW_SHARE_GROUP_MEMBER = "new_share_group_member"
+FCM_TYPE_CONFIRM_SHARE_GROUP_MEMBER_ADDED = "confirm_share_group_member_added"
 
 FCM_TYPE_EMERGENCY_INVITE = "emergency_invite"
 FCM_TYPE_EMERGENCY_ACCEPT_INVITATION = "emergency_accept_invitation"
