@@ -87,6 +87,10 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         enterprise = self.get_object()
         enterprise_id = enterprise.id
 
+        # Cancel the plan of the owner
+        primary_admin = enterprise.get_primary_admin_user()
+        self.user_repository.cancel_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, immediately=True)
+
         # Clear data of the enterprise
         enterprise.enterprise_members.all().order_by('id').delete()
         enterprise.groups.order_by('id').delete()
@@ -95,10 +99,6 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         enterprise.delete()
         # Delete all events
         Event.objects.filter(team_id=enterprise_id).delete()
-
-        # Cancel the plan of the owner
-        primary_admin = enterprise.get_primary_admin_user()
-        self.user_repository.cancel_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, immediately=True)
 
         return Response(status=204)
 
