@@ -1,6 +1,6 @@
 import uuid
 
-from django.db.models import When, Q, Value, Case, IntegerField, Count
+from django.db.models import When, Q, Value, Case, IntegerField, Count, OuterRef, Subquery, CharField
 
 from core.repositories import ISharingRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -164,17 +164,41 @@ class SharingRepository(ISharingRepository):
         # Remove this member / group from the team
         deleted_members_user_ids = []
         if group:
-            # TODO: Check members are shared by User 1-1 (not by Group)
+            # Check members are shared by User 1-1 (not by Group)
             group_members_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
-            deleted_members = team.team_members.annotate(
+            team_members = team.team_members.filter(
+                user_id__in=group_members_user_ids, is_added_by_group=True
+            ).annotate(
                 group_count=Count('groups_members')
-            ).filter(user_id__in=group_members_user_ids, is_added_by_group=True, group_count=1)
+            )
+
+            # Filter list members have only one group. Then delete them
+            deleted_members = team_members.filter(group_count=1)
             deleted_members_user_ids = list(deleted_members.values_list('user_id', flat=True))
             deleted_members.delete()
+            # Filter list members have other groups => Set role_id by other groups
+            first_group_subquery = GroupMember.objects.filter(member_id=OuterRef('id')).order_by('group__creation_date')
+            # more_one_groups_members = team.team_members.filter(
+            #     id__in=list(team_members.filter(group_count__gt=1).values_list('id', flat=True))
+            # )
+            more_one_groups = team_members.filter(group_count__gt=1).annotate(
+                first_group_role=Subquery(first_group_subquery.values('member__role_id')[:1], output_field=CharField())
+            )
+            for m in more_one_groups:
+                if m.first_group_role:
+                    m.role_id = m.first_group_role
+                    m.save()
+            # Delete this group
             group.delete()
         if member:
-            deleted_members_user_ids = [member.user_id]
-            member.delete()
+            group_member = member.groups_members.all().order_by('group__creation_date').first()
+            if not group_member:
+                deleted_members_user_ids = [member.user_id]
+                member.delete()
+            else:
+                member.is_added_by_group = True
+                member.role_id = group_member.group.role_id
+                member.save()
 
         # If the team does not have any members (excluding owner)
         # => Remove shared team and change the cipher/collection to personal cipher/personal folder
@@ -361,26 +385,32 @@ class SharingRepository(ISharingRepository):
         existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
         existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
         for member in members:
+            # Retrieve activated user
             try:
                 member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
                 email = None
             except User.DoesNotExist:
                 member_user = None
                 email = member.get("email")
-            if member_user and member_user.user_id in existed_user_ids:
-                team.team_members.filter(user_id=member_user.user_id).update(is_added_by_group=False)
-                continue
-            if email and email in existed_emails:
-                team.team_members.filter(email=email).update(is_added_by_group=False)
-                continue
+            # if member_user and member_user.user_id in existed_user_ids:
+            #     team.team_members.filter(user_id=member_user.user_id).update(is_added_by_group=False)
+            #     continue
+            # if email and email in existed_emails:
+            #     team.team_members.filter(email=email).update(is_added_by_group=False)
+            #     continue
             member_data = {"user": member_user, "email": email, "role": member.get("role"), "key": member.get("key")}
             shared_member = self.__create_shared_member(
                 team=team, member_data=member_data, shared_collection=shared_collection
             )
-            if shared_member.user_id:
+            # Make sure the shared member is added as single person and role is set by member_data
+            shared_member.is_added_by_group = False
+            shared_member.role_id = member.get("role")
+            shared_member.save()
+            # Append to existed_member_users and non_existed_member_users list
+            if shared_member.user_id and shared_member.user_id not in existed_user_ids:
                 existed_member_users.append(shared_member.user_id)
                 existed_user_ids.append(shared_member.user_id)
-            if shared_member.email:
+            if shared_member.email and shared_member.email not in existed_emails:
                 non_existed_member_users.append(shared_member.email)
                 existed_emails.append(shared_member.email)
 
