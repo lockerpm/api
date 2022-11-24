@@ -166,6 +166,8 @@ class ListUserSerializer(serializers.Serializer):
 
 class UpdateOnboardingProcessSerializer(serializers.Serializer):
     vault_to_dashboard = serializers.BooleanField(required=False)
+    welcome = serializers.BooleanField(required=False)
+    tutorial = serializers.BooleanField(required=False)
     enterprise_onboarding = serializers.ListField(
         child=serializers.IntegerField(), required=False, max_length=10
     )

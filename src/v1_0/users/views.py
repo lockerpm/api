@@ -17,7 +17,7 @@ from cystack_models.models.notifications.notification_settings import Notificati
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
-from shared.constants.account import ONBOARDING_CATEGORY_TO_DASHBOARD, ONBOARDING_CATEGORY_ENTERPRISE
+from shared.constants.account import *
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.enterprise_members import *
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
@@ -627,12 +627,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
             vault_to_dashboard = validated_data.get(
                 "vault_to_dashboard", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
             )
+            welcome = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_WELCOME))
+            tutorial = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
             enterprise_onboarding = validated_data.get(
                 "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
             )
             onboarding_process.update({
                 ONBOARDING_CATEGORY_TO_DASHBOARD: vault_to_dashboard,
-                ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding
+                ONBOARDING_CATEGORY_WELCOME: welcome,
+                ONBOARDING_CATEGORY_TUTORIAL: tutorial,
+                ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding,
             })
             user.onboarding_process = onboarding_process
             user.save()
