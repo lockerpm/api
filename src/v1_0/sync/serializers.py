@@ -19,6 +19,9 @@ class SyncOrgDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
+        role_id = instance.role_id
+        group_member_roles = list(instance.groups_members.values_list('group__role_id', flat=True))
+        real_role = min([MAP_MEMBER_TYPE_BW.get(r) for r in group_member_roles + [role_id]])
         team_member_data = {
             "object": "profileOrganization",
             "has_public_and_private_keys": True,
@@ -61,7 +64,7 @@ class SyncOrgDetailSerializer(serializers.ModelSerializer):
             "key": instance.key,
             "name": instance.team.name,
             "status": MAP_MEMBER_STATUS_TO_INT.get(instance.status),
-            "type": MAP_MEMBER_TYPE_BW.get(instance.role_id),
+            "type": real_role,
             # "personal_share": team_member.team.personal_share,
         }
         return team_member_data

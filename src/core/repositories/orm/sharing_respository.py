@@ -177,12 +177,11 @@ class SharingRepository(ISharingRepository):
             deleted_members_user_ids = list(deleted_members.values_list('user_id', flat=True))
             deleted_members.delete()
             # Filter list members have other groups => Set role_id by other groups
-            first_group_subquery = GroupMember.objects.filter(member_id=OuterRef('id')).order_by('group__creation_date')
-            # more_one_groups_members = team.team_members.filter(
-            #     id__in=list(team_members.filter(group_count__gt=1).values_list('id', flat=True))
-            # )
+            first_group_subquery = GroupMember.objects.exclude(group_id=group.id).filter(
+                member_id=OuterRef('id')
+            ).order_by('group_id')
             more_one_groups = team_members.filter(group_count__gt=1).annotate(
-                first_group_role=Subquery(first_group_subquery.values('member__role_id')[:1], output_field=CharField())
+                first_group_role=Subquery(first_group_subquery.values('group__role_id')[:1], output_field=CharField())
             )
             for m in more_one_groups:
                 if m.first_group_role:
