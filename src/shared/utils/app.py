@@ -23,6 +23,14 @@ def now(return_float=False):
     return int(timestamp_now)
 
 
+def datetime_from_ts(ts):
+    try:
+        ts = int(ts)
+        return datetime.fromtimestamp(ts, tz=pytz.UTC)
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
 def random_n_digit(n):
     """
     Generating new random string
