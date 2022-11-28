@@ -22,6 +22,7 @@ from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
+from cystack_models.models.enterprises.groups.group_members import EnterpriseGroupMember
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from cystack_models.models.enterprises.domains.domains import Domain
 from shared.utils.network import extract_root_domain
@@ -151,8 +152,17 @@ class UserRepository(IUserRepository):
             enterprise_invitations.update(email=None, token_invitation=None, user=user)
         return user
 
-    def enterprise_share_groups_confirm(self, user, email: str = None):
-        pass
+    def enterprise_share_groups_confirm(self, user):
+        from shared.background import LockerBackgroundFactory, BG_ENTERPRISE_GROUP
+        enterprise_group_members = EnterpriseGroupMember.objects.filter(member__user=user)
+        for enterprise_group_member in enterprise_group_members:
+            LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
+                func_name="add_group_member_to_share", **{
+                    "enterprise_group": enterprise_group_member.group,
+                    "new_member_ids": [user.user_id]
+                }
+            )
+        return user
 
     def get_by_id(self, user_id) -> User:
         return User.objects.get(user_id=user_id)

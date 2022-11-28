@@ -179,6 +179,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.user_repository.sharing_invitations_confirm(user=user)
         # Update enterprise invitations
         self.user_repository.enterprise_invitations_confirm(user=user)
+        # Update enterprise share groups
+        self.user_repository.enterprise_share_groups_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 

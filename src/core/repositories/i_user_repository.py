@@ -31,7 +31,7 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def enterprise_share_groups_confirm(self, user, email: str = None):
+    def enterprise_share_groups_confirm(self, user):
         pass
 
     @abstractmethod
