@@ -130,22 +130,29 @@ class UserRepository(IUserRepository):
         if not email:
             return user
         # Add this user into the Enterprise if the mail domain belongs to an Enterprise
+        belong_enterprise_domain = False
         try:
             email_domain = email.split("@")[1]
             root_domain = extract_root_domain(domain=email_domain)
             domain = Domain.objects.filter(root_domain=root_domain, verification=True).first()
             if domain:
-                EnterpriseMember(
-                    enterprise=domain.enterprise, user=user, role_id=E_MEMBER_ROLE_MEMBER, domain=domain,
-                    status=E_MEMBER_STATUS_INVITED, is_default=False, is_primary=False,
-                    access_time=now()
+                belong_enterprise_domain = True
+                EnterpriseMember.retrieve_or_create_by_user(
+                    enterprise=domain.enterprise, user=user, role_id=E_MEMBER_ROLE_MEMBER, **{"domain": domain}
                 )
+                # Cancel all other invitations
+                EnterpriseMember.objects.filter(email=email, status=PM_MEMBER_STATUS_INVITED).delete()
         except (ValueError, IndexError, AttributeError):
             CyLog.warning(**{"message": f"[enterprise_invitations_confirm] Can not get email: {user} {email}"})
             pass
-        enterprise_invitations = EnterpriseMember.objects.filter(email=email, status=PM_MEMBER_STATUS_INVITED)
-        enterprise_invitations.update(email=None, token_invitation=None, user=user)
+        # Update existed invitations
+        if belong_enterprise_domain is False:
+            enterprise_invitations = EnterpriseMember.objects.filter(email=email, status=PM_MEMBER_STATUS_INVITED)
+            enterprise_invitations.update(email=None, token_invitation=None, user=user)
         return user
+
+    def enterprise_share_groups_confirm(self, user, email: str = None):
+        pass
 
     def get_by_id(self, user_id) -> User:
         return User.objects.get(user_id=user_id)

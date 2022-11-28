@@ -114,6 +114,15 @@ class PaymentPwdViewSet(EnterpriseViewSet):
         })
         return Response(status=200, data=result)
 
+    @action(methods=["get"], detail=False)
+    def next_attempt(self, request, *args, **kwargs):
+        enterprise = self.get_enterprise()
+        primary_admin = enterprise.enterprise_members.get(is_primary=True).user
+        current_plan = self.user_repository.get_current_plan(user=primary_admin)
+        return Response(status=200, data={
+            "next_payment_attempt": current_plan.get_next_retry_payment_date(),
+        })
+
     @action(methods=["get", "post"], detail=False)
     def cards(self, request, *args, **kwargs):
         enterprise = self.get_enterprise()

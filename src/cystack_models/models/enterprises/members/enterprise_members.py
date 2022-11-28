@@ -7,7 +7,7 @@ from django.db import models
 
 from shared.constants.token import TOKEN_EXPIRED_TIME_INVITE_MEMBER, TOKEN_TYPE_INVITE_MEMBER, TOKEN_PREFIX
 from shared.utils.app import now
-from shared.constants.members import *
+from shared.constants.enterprise_members import *
 from cystack_models.models.users.users import User
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.domains.domains import Domain
@@ -21,7 +21,7 @@ class EnterpriseMember(models.Model):
     is_primary = models.BooleanField(default=False)
     is_activated = models.BooleanField(default=True)
 
-    status = models.CharField(max_length=128, default=PM_MEMBER_STATUS_CONFIRMED)
+    status = models.CharField(max_length=128, default=E_MEMBER_STATUS_INVITED)
     email = models.CharField(max_length=128, null=True)
     token_invitation = models.TextField(null=True, default=None)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enterprise_members", null=True)
@@ -51,7 +51,7 @@ class EnterpriseMember(models.Model):
 
     @classmethod
     def create(cls, enterprise: Enterprise, role_id: str, is_primary=False, is_default=False,
-               status=PM_MEMBER_STATUS_CONFIRMED, user: User=None, email: str = None):
+               status=E_MEMBER_STATUS_INVITED, user: User=None, email: str = None):
         new_member = EnterpriseMember.objects.create(
             user=user, email=email, role_id=role_id, enterprise=enterprise, access_time=now(),
             is_primary=is_primary,
@@ -59,6 +59,22 @@ class EnterpriseMember(models.Model):
             status=status
         )
         return new_member
+
+    @classmethod
+    def retrieve_or_create_by_user(cls, enterprise: Enterprise, user: User, role_id: str, **data):
+        member, is_created = cls.objects.get_or_create(
+            enterprise=enterprise, user=user, defaults={
+                "enterprise": enterprise,
+                "user": user,
+                "role_id": role_id,
+                "domain": data.get("domain"),
+                "status": data.get("status", E_MEMBER_STATUS_INVITED),
+                "is_default": data.get("is_default",  False),
+                "is_primary": data.get("is_primary", False),
+                "access_time": now(),
+            }
+        )
+        return member
 
     def create_invitation_token(self):
         if self.email:
@@ -79,30 +95,3 @@ class EnterpriseMember(models.Model):
         self.token_invitation = token_value
         self.save()
         return token_value
-
-    # def active_or_deactivate(self, activated: bool):
-    #     if self.is_activated == activated:
-    #         return
-    #     self.is_activated = activated
-    #     self.save()
-    #
-    #     # Update billing
-    #     from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodNotSupportException, \
-    #         PaymentMethodFactory
-    #     if activated is True and self.enterprise.is_billing_members_added(member_user_id=self.user_id):
-    #         try:
-    #             PaymentMethodFactory.get_method(
-    #                 user=self.enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
-    #                 payment_method=PAYMENT_METHOD_CARD
-    #             ).update_quantity_subscription(amount=1)
-    #         except (PaymentMethodNotSupportException, ObjectDoesNotExist):
-    #             pass
-    #
-    #     if activated is False and self.enterprise.is_billing_members_removed(member_user_id=self.user_id):
-    #         try:
-    #             PaymentMethodFactory.get_method(
-    #                 user=self.enterprise.get_primary_admin_user(), scope=settings.SCOPE_PWD_MANAGER,
-    #                 payment_method=PAYMENT_METHOD_CARD
-    #             ).update_quantity_subscription(amount=-1)
-    #         except (PaymentMethodNotSupportException, ObjectDoesNotExist):
-    #             pass
