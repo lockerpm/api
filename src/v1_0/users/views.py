@@ -269,6 +269,33 @@ class UserPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"require_passwordless": e_passwordless_policy})
 
     @action(methods=["get"], detail=False)
+    def block_by_2fa_policy(self, request, *args, **kwargs):
+        user = self.request.user
+        is_factor2_param = self.request.query_params.get("is_factor2")
+        if is_factor2_param and (is_factor2_param == "1" or is_factor2_param in [True, "true", "True"]):
+            is_factor2 = True
+        else:
+            is_factor2 = False
+
+        if is_factor2 is False:
+            user_enterprises = Enterprise.objects.filter(
+                enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
+            )
+            for enterprise in user_enterprises:
+                policy = enterprise.policies.filter(policy_type=POLICY_TYPE_2FA, enabled=True).first()
+                if not policy:
+                    continue
+                try:
+                    member_role = enterprise.enterprise_members.get(user=user).role_id
+                except ObjectDoesNotExist:
+                    continue
+                only_admin = policy.policy_2fa.only_admin
+                if only_admin is False or \
+                        (only_admin and member_role in [E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_PRIMARY_ADMIN]):
+                    return Response(status=200, data={"block": True})
+        return Response(status=200, data={"block": False})
+
+    @action(methods=["get"], detail=False)
     def violation_me(self, request, *args, **kwargs):
         user = self.request.user
         start_ts, end_ts = start_end_month_current()
