@@ -23,7 +23,7 @@ from cron.controllers.tasks.domain_verification import domain_verification
 from cron.controllers.tasks.enterprise_breach_scan import enterprise_breach_scan
 from cron.controllers.tasks.enterprise_member_change_billing import enterprise_member_change_billing
 from cron.controllers.tasks.tutorial_reminder import tutorial_reminder
-from cron.controllers.tasks.locker_statistic import locker_statistic
+# from cron.controllers.tasks.locker_statistic import locker_statistic
 
 
 class CronTask:
@@ -121,15 +121,15 @@ class CronTask:
         finally:
             close_old_connections()
 
-    def locker_statistic_users(self):
-        try:
-            locker_statistic()
-            self.logger.info("[+] locker_statistic_users Done")
-        except Exception as e:
-            tb = traceback.format_exc()
-            self.logger.error("[!] locker_statistic_users error: {}".format(tb))
-        finally:
-            close_old_connections()
+    # def locker_statistic_users(self):
+    #     try:
+    #         locker_statistic()
+    #         self.logger.info("[+] locker_statistic_users Done")
+    #     except Exception as e:
+    #         tb = traceback.format_exc()
+    #         self.logger.error("[!] locker_statistic_users error: {}".format(tb))
+    #     finally:
+    #         close_old_connections()
 
     def start(self):
         schedule.every(10).minutes.do(self.subscription_by_wallet)
@@ -147,8 +147,8 @@ class CronTask:
         schedule.every().day.at("17:00").do(self.delete_trash_ciphers)
 
         # Only PROD
-        if os.getenv("PROD_ENV") == "prod":
-            schedule.every().day.at("10:00").minutes.do(self.locker_statistic_users)
+        # if os.getenv("PROD_ENV") == "prod":
+        #     schedule.every().day.at("10:00").minutes.do(self.locker_statistic_users)
 
         self.logger.info("[+] Starting Locker cron task")
         while True:
