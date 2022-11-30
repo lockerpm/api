@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 
 from shared.constants.transactions import PLAN_TYPE_PM_FREE
 
@@ -34,3 +34,60 @@ class UserStatistic(models.Model):
 
     class Meta:
         db_table = 'lk_user_statistics'
+
+    @classmethod
+    def bulk_update_or_create(cls, common_keys, unique_key_name, unique_key_to_defaults,
+                              batch_size=None, ignore_conflicts=False):
+        """
+        Source: https://stackoverflow.com/questions/27047630/django-batching-bulk-update-or-create
+        ex. Event.bulk_update_or_create(
+            {"organization": organization}, "external_id", {1234: {"started": True}}
+        )
+        :param common_keys: {field_name: field_value}
+        :param unique_key_name: field_name
+        :param unique_key_to_defaults: {field_value: {field_name: field_value}}
+        :param batch_size:
+        :param ignore_conflicts:
+        :return:
+        """
+
+        with transaction.atomic(using="locker_statistics_db"):
+            filter_kwargs = dict(common_keys)
+            filter_kwargs[f"{unique_key_name}__in"] = unique_key_to_defaults.keys()
+            existing_objs = {
+                getattr(obj, unique_key_name): obj
+                for obj in cls.objects.filter(**filter_kwargs).select_for_update()
+            }
+
+            create_data = {
+                k: v for k, v in unique_key_to_defaults.items() if k not in existing_objs
+            }
+            for unique_key_value, obj in create_data.items():
+                obj[unique_key_name] = unique_key_value
+                obj.update(common_keys)
+            creates = [cls(**obj_data) for obj_data in create_data.values()]
+            if creates:
+                cls.objects.bulk_create(creates, batch_size=batch_size, ignore_conflicts=ignore_conflicts)
+
+            # This set should contain the name of the `auto_now` field of the model
+            update_fields = set()
+            updates = []
+            for key, obj in existing_objs.items():
+                obj.update(unique_key_to_defaults[key], save=False)
+                update_fields.update(unique_key_to_defaults[key].keys())
+                updates.append(obj)
+            if existing_objs:
+                cls.objects.bulk_update(updates, update_fields)
+        return creates, updates
+
+    def update(self, update_dict=None, save=True, **kwargs):
+        """ Helper method to update objects """
+        if not update_dict:
+            update_dict = kwargs
+        # This set should contain the name of the `auto_now` field of the model
+        update_fields = set()
+        for k, v in update_dict.items():
+            setattr(self, k, v)
+            update_fields.add(k)
+        if save:
+            self.save(update_fields=update_fields)

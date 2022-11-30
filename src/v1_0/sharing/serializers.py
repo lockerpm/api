@@ -54,7 +54,7 @@ class GroupShareSerializer(serializers.Serializer):
     members = GroupMemberShareSeralizer(many=True)
 
     def validate(self, data):
-        group_id = data.get("group_id")
+        group_id = data.get("id")
         try:
             enterprise_group = EnterpriseGroup.objects.get(id=group_id)
         except EnterpriseGroup.DoesNotExist:
@@ -64,7 +64,7 @@ class GroupShareSerializer(serializers.Serializer):
         members_emails = [member.get("member__email") for member in group_members if member.get("member__email")]
         members = data.get("members")
         user_ids = [member.get("user_id") for member in members if member.get("user_id")]
-        emails = [member.get("email") for member in members if member.get("email")]
+        emails = [member.get("email") for member in members if member.get("email") and not member.get("user_id")]
         if any(user_id not in members_user_ids for user_id in user_ids):
             raise serializers.ValidationError(detail={"members": ["The member user id are not valid"]})
         if any(email not in members_emails for email in emails):
@@ -337,11 +337,26 @@ class SharingInvitationSerializer(serializers.ModelSerializer):
 
 class AddMemberSerializer(serializers.Serializer):
     members = MemberShareSerializer(many=True)
+    groups = GroupShareSerializer(many=True, required=False, allow_null=True)
+
+    def validate(self, data):
+        groups = data.get("groups")
+        if groups:
+            user = self.context["request"].user
+            user_enterprise_group_ids = EnterpriseGroup.get_list_active_user_group_ids(user=user)
+            if any(group.get("id") not in user_enterprise_group_ids for group in groups):
+                raise serializers.ValidationError(detail={"groups": ["The groups are not valid"]})
+        return data
+
 
 
 class UpdateInvitationRoleSerializer(serializers.Serializer):
     hide_passwords = serializers.BooleanField(default=False)
-    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER])
+    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MEMBER])
+
+
+class UpdateGroupInvitationRoleSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MEMBER])
 
 
 class UpdateShareFolderSerializer(serializers.Serializer):
@@ -394,3 +409,7 @@ class AddItemShareFolderSerializer(serializers.Serializer):
         validated_data = self.validated_data
         validated_data["cipher"] = self.__get_share_cipher_data(cipher=validated_data.get("cipher"))
         return validated_data
+
+
+class GroupMemberConfirmSerializer(serializers.Serializer):
+    members = GroupMemberShareSeralizer(many=True)

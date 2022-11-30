@@ -54,9 +54,11 @@ urlpatterns += [
 # ----------------------------------- Users ----------------------------- #
 urlpatterns += [
     url(r'^users/me$', views.UserPwdViewSet.as_view({'get': 'me', 'put': 'me'})),
+
     url(r'^users/me/revision_date$', views.UserPwdViewSet.as_view({'get': 'revision_date'})),
     url(r'^users/me/onboarding_process$',
         views.UserPwdViewSet.as_view({'get': 'onboarding_process', 'put': 'onboarding_process'})),
+    url(r'^users/me/block_by_2fa$', views.UserPwdViewSet.as_view({'get': 'block_by_2fa_policy'})),
     url(r'^users/me/login_method$', views.UserPwdViewSet.as_view({'get': 'login_method_me'})),
     url(r'^users/me/passwordless_require$', views.UserPwdViewSet.as_view({'get': 'passwordless_require'})),
     url(r'^users/me/violation$', views.UserPwdViewSet.as_view({'get': 'violation_me'})),
@@ -133,7 +135,12 @@ urlpatterns += [
     url(r'^sharing/multiple$', views.SharingPwdViewSet.as_view({'put': 'multiple_share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)$',
         views.SharingPwdViewSet.as_view({'post': 'invitation_confirm', 'put': 'update_role'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/groups/(?P<group_id>[0-9a-z\-]+)$',
+        views.SharingPwdViewSet.as_view({'post': 'invitation_group_confirm', 'put': 'update_group_role'})),
+
     url(r'^sharing/(?P<pk>[0-9]+)/members/(?P<member_id>[0-9a-z\-]+)/stop$',
+        views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
+    url(r'^sharing/(?P<pk>[0-9]+)/groups/(?P<group_id>[0-9a-z\-]+)/stop$',
         views.SharingPwdViewSet.as_view({'post': 'stop_share'})),
     url(r'^sharing/(?P<pk>[0-9]+)/leave$',  views.SharingPwdViewSet.as_view({'post': 'leave'})),
     url(r'^sharing/(?P<pk>[0-9]+)/stop$',

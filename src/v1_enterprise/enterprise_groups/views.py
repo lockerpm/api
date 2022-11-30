@@ -157,21 +157,25 @@ class GroupPwdViewSet(EnterpriseViewSet):
             enterprise_group.groups_members.model.remove_multiple_by_member_ids(enterprise_group, deleted_member_ids)
             # Add group members
             enterprise_group.groups_members.model.create_multiple(enterprise_group, *new_member_ids)
-            # TODO Add new group members into sharing team
-            # LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
-            #     func_name="add_group_member_to_share", **{
-            #         "enterprise_group": enterprise_group,
-            #         "new_member_ids": new_member_ids
-            #     }
-            # )
+            # Add new group members into sharing team
+            if new_member_ids:
+                LockerBackgroundFactory.get_background(bg_name=BG_ENTERPRISE_GROUP).run(
+                    func_name="add_group_member_to_share", **{
+                        "enterprise_group": enterprise_group,
+                        "new_member_ids": new_member_ids
+                    }
+                )
             return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def user_groups(self, request, *args, **kwargs):
         user = self.request.user
-        groups = EnterpriseGroup.objects.filter(groups_members__member__user=user).distinct().values(
-            'id', 'name', 'creation_date', 'revision_date', 'enterprise_id'
-        )
+        groups = EnterpriseGroup.objects.filter(groups_members__member__user=user)
+        q_param = self.request.query_params.get("q")
+        if q_param:
+            groups = groups.filter(name__icontains=q_param.lower())
+
+        groups = groups.distinct().values('id', 'name', 'creation_date', 'revision_date', 'enterprise_id')
         return Response(status=200, data=groups)
 
     @action(methods=["get"], detail=False)

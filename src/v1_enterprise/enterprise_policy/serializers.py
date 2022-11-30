@@ -93,3 +93,19 @@ class UpdatePasswordlessPolicySerializer(serializers.Serializer):
         config_obj.policy.enabled = enabled
         config_obj.policy.save()
         return config_obj
+
+
+class Update2FAPolicySerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    only_admin = serializers.BooleanField(required=False)
+
+    def save(self, **kwargs):
+        config_obj = kwargs.get("config_obj")
+        validated_data = self.validated_data
+        enabled = validated_data.get("enabled")
+        only_admin = validated_data.get("only_admin", config_obj.only_admin)
+        config_obj.only_admin = only_admin
+        config_obj.save()
+        config_obj.policy.enabled = enabled
+        config_obj.policy.save()
+        return config_obj

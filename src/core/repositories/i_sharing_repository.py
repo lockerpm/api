@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cystack_models.models.members.team_members import TeamMember
+from cystack_models.models.teams.groups import Group
 
 
 class ISharingRepository(ABC):
@@ -29,12 +30,16 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
+    def update_group_role_invitation(self, group: Group, role_id: str):
+        pass
+
+    @abstractmethod
     def stop_share_all_members(self, team, cipher=None, cipher_data=None,
                                collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         pass
 
     @abstractmethod
-    def stop_share(self, member: TeamMember,
+    def stop_share(self, member: TeamMember = None, group: Group = None,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         pass
@@ -54,7 +59,7 @@ class ISharingRepository(ABC):
         pass
 
     @abstractmethod
-    def add_members(self, team, shared_collection, members):
+    def add_members(self, team, shared_collection, members, groups=None):
         pass
 
     @abstractmethod

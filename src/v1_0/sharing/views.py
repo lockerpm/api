@@ -20,7 +20,8 @@ from shared.services.pm_sync import *
 from shared.utils.app import now
 from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer, SharingInvitationSerializer, \
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
-    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer
+    StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer, UpdateGroupInvitationRoleSerializer, \
+    GroupMemberConfirmSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -37,10 +38,14 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = MultipleSharingSerializer
         elif self.action == "invitations":
             self.serializer_class = SharingInvitationSerializer
-        elif self.action in ["stop_share", "stop_share_cipher_folder"]:
+        elif self.action in ["stop_share", "stop_group_share", "stop_share_cipher_folder"]:
             self.serializer_class = StopSharingSerializer
         elif self.action == "update_role":
             self.serializer_class = UpdateInvitationRoleSerializer
+        elif self.action == "invitation_group_confirm":
+            self.serializer_class = GroupMemberConfirmSerializer
+        elif self.action == "update_group_role":
+            self.serializer_class = UpdateGroupInvitationRoleSerializer
         elif self.action == "update_share_folder":
             self.serializer_class = UpdateShareFolderSerializer
         elif self.action in ["stop_share_folder", "delete_share_folder"]:
@@ -238,7 +243,6 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={
             "id": new_sharing.id,
             "shared_type_name": shared_type_name,
-            # "existed_member_users": existed_member_users,
             "non_existed_member_users": non_existed_member_users,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
@@ -440,6 +444,67 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         return Response(status=200, data={"success": True})
 
+    @action(methods=["post"], detail=False)
+    def invitation_group_confirm(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        group_id = kwargs.get("group_id")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        members_data = serializer.validated_data.get("members") or []
+        # Retrieve member that accepted
+        try:
+            group = personal_share.groups.get(enterprise_group_id=group_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+        members_user_ids = [member_data.get("user_id") for member_data in members_data if member_data.get("user_id")]
+        invited_members = group.groups_members.filter(
+            member__status__in=[PM_MEMBER_STATUS_ACCEPTED, PM_MEMBER_STATUS_INVITED],
+            member__user_id__in=members_user_ids
+        ).select_related('member')
+        for invited_member in invited_members:
+            member_data = next(
+                (item for item in members_data if item["user_id"] == invited_member.member.user_id), None
+            )
+            if member_data and member_data.get("key"):
+                self.sharing_repository.confirm_invitation(member=invited_member.member, key=member_data.get("key"))
+        PwdSync(event=SYNC_EVENT_CIPHER, user_ids=members_user_ids).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_CONFIRMED, user_ids=members_user_ids + [user.user_id]).send()
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["put"], detail=False)
+    def update_group_role(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request)
+        personal_share = self.get_personal_share(sharing_id=kwargs.get("pk"))
+        group_id = kwargs.get("group_id")
+        # Retrieve member that accepted
+        try:
+            group = personal_share.groups.get(enterprise_group_id=group_id)
+        except ObjectDoesNotExist:
+            raise NotFound
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        role = validated_data.get("role")
+        group = self.sharing_repository.update_group_role_invitation(group=group, role_id=role)
+        # If share a cipher:
+        primary_member = self.team_repository.get_primary_member(team=group.team)
+        group_members_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
+        PwdSync(event=SYNC_EVENT_MEMBER_UPDATE, user_ids=group_members_user_ids + [primary_member.user_id]).send()
+        if group.team.collections.all().exists() is False:
+            share_cipher = group.team.ciphers.first()
+            PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=group_members_user_ids).send(data={"id": share_cipher.id})
+        # Else, share a folder
+        else:
+            share_collection = group.team.collections.first()
+            PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=group_members_user_ids).send(
+                data={"id": share_collection.id}
+            )
+
+        return Response(status=200, data={"success": True})
+
     @action(methods=["get"], detail=False)
     def my_share(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
@@ -502,12 +567,21 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(kwargs.get("pk"))
         member_id = kwargs.get("member_id")
-        # Retrieve member that accepted
-        try:
-            member = personal_share.team_members.exclude(user=user).get(id=member_id)
-        except ObjectDoesNotExist:
-            raise NotFound
-        shared_team = member.team
+        group_id = kwargs.get("group_id")
+
+        group = None
+        if group_id:
+            try:
+                group = personal_share.groups.get(enterprise_group_id=group_id)
+            except ObjectDoesNotExist:
+                raise NotFound
+        member = None
+        if member_id:
+            try:
+                member = personal_share.team_members.exclude(user=user).get(id=member_id)
+            except ObjectDoesNotExist:
+                raise NotFound
+        shared_team = group.team if group else member.team
 
         # Check plan of the user
         self.allow_personal_sharing(user=user)
@@ -553,19 +627,19 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
-        removed_member_user_id = self.sharing_repository.stop_share(
-            member=member,
+        removed_member_user_ids = self.sharing_repository.stop_share(
+            member=member, group=group,
             cipher=cipher_obj, cipher_data=personal_cipher_data,
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
         )
-        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id, removed_member_user_id]).send()
+        PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id] + removed_member_user_ids).send()
         # Re-sync data of the owner and removed member
         if cipher_obj:
             PwdSync(
-                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id, removed_member_user_id]
+                event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id] + removed_member_user_ids
             ).send(data={"id": cipher_obj.id})
         if collection_obj:
-            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id, removed_member_user_id]).send()
+            PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_member_user_ids).send()
 
         return Response(status=200, data={"success": True})
 
@@ -666,9 +740,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         members = validated_data.get("members")
+        groups = validated_data.get("groups")
 
         existed_member_users, non_existed_member_users = self.sharing_repository.add_members(
-            team=personal_share, shared_collection=share_folder, members=members
+            team=personal_share, shared_collection=share_folder, members=members, groups=groups
         )
         mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
         notification_user_ids = NotificationSetting.get_user_notification(

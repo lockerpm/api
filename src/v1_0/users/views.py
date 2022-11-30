@@ -17,12 +17,12 @@ from cystack_models.models.notifications.notification_settings import Notificati
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
-from shared.constants.account import ONBOARDING_CATEGORY_TO_DASHBOARD, ONBOARDING_CATEGORY_ENTERPRISE
+from shared.constants.account import *
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.enterprise_members import *
 from shared.constants.members import PM_MEMBER_STATUS_INVITED, MEMBER_ROLE_OWNER, PM_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import *
-from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS
+from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_PASSWORDLESS, POLICY_TYPE_2FA
 from shared.constants.transactions import *
 from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
@@ -179,6 +179,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.user_repository.sharing_invitations_confirm(user=user)
         # Update enterprise invitations
         self.user_repository.enterprise_invitations_confirm(user=user)
+        # Update enterprise share groups
+        self.user_repository.enterprise_share_groups_confirm(user=user)
 
         return Response(status=200, data={"success": True})
 
@@ -265,6 +267,33 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 e_passwordless_policy
 
         return Response(status=200, data={"require_passwordless": e_passwordless_policy})
+
+    @action(methods=["get"], detail=False)
+    def block_by_2fa_policy(self, request, *args, **kwargs):
+        user = self.request.user
+        is_factor2_param = self.request.query_params.get("is_factor2")
+        if is_factor2_param and (is_factor2_param == "1" or is_factor2_param in [True, "true", "True"]):
+            is_factor2 = True
+        else:
+            is_factor2 = False
+
+        if is_factor2 is False:
+            user_enterprises = Enterprise.objects.filter(
+                enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
+            )
+            for enterprise in user_enterprises:
+                policy = enterprise.policies.filter(policy_type=POLICY_TYPE_2FA, enabled=True).first()
+                if not policy:
+                    continue
+                try:
+                    member_role = enterprise.enterprise_members.get(user=user).role_id
+                except ObjectDoesNotExist:
+                    continue
+                only_admin = policy.policy_2fa.only_admin
+                if only_admin is False or \
+                        (only_admin and member_role in [E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_PRIMARY_ADMIN]):
+                    return Response(status=200, data={"block": True})
+        return Response(status=200, data={"block": False})
 
     @action(methods=["get"], detail=False)
     def violation_me(self, request, *args, **kwargs):
@@ -372,6 +401,22 @@ class UserPwdViewSet(PasswordManagerViewSet):
             raise ValidationError({"non_field_errors": [gen_error("1011")]})
         if user_enterprises.filter(enterprise_members__user=user, locked=True).exists():
             raise ValidationError({"non_field_errors": [gen_error("1010")]})
+
+        # Check 2FA policy
+        is_factor2 = request.data.get("is_factor2", False)
+        if is_factor2 is False:
+            for enterprise in user_enterprises:
+                policy = enterprise.policies.filter(policy_type=POLICY_TYPE_2FA, enabled=True).first()
+                if not policy:
+                    continue
+                try:
+                    member_role = enterprise.enterprise_members.get(user=user).role_id
+                except ObjectDoesNotExist:
+                    continue
+                only_admin = policy.policy_2fa.only_admin
+                if only_admin is False or \
+                        (only_admin and member_role in [E_MEMBER_ROLE_ADMIN, E_MEMBER_ROLE_PRIMARY_ADMIN]):
+                    raise ValidationError({"non_field_errors": [gen_error("1012")]})
 
         # Unblock login
         user.last_request_login = now()
@@ -611,12 +656,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
             vault_to_dashboard = validated_data.get(
                 "vault_to_dashboard", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
             )
+            welcome = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_WELCOME))
+            tutorial = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
             enterprise_onboarding = validated_data.get(
                 "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
             )
             onboarding_process.update({
                 ONBOARDING_CATEGORY_TO_DASHBOARD: vault_to_dashboard,
-                ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding
+                ONBOARDING_CATEGORY_WELCOME: welcome,
+                ONBOARDING_CATEGORY_TUTORIAL: tutorial,
+                ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding,
             })
             user.onboarding_process = onboarding_process
             user.save()

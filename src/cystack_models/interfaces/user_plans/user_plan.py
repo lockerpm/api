@@ -69,6 +69,9 @@ class UserPlan(models.Model):
         """
         raise NotImplementedError
 
+    def get_next_retry_payment_date(self, stripe_subscription=None):
+        pass
+
     def calc_difference_price(self, new_plan, new_duration, currency):
         """
         Calc difference price when upgrade plan

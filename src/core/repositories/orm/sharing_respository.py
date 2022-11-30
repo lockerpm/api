@@ -1,6 +1,6 @@
 import uuid
 
-from django.db.models import When, Q, Value, Case, IntegerField
+from django.db.models import When, Q, Value, Case, IntegerField, Count, OuterRef, Subquery, CharField
 
 from core.repositories import ISharingRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -83,6 +83,21 @@ class SharingRepository(ISharingRepository):
         bump_account_revision_date(user=member.user)
         return member
 
+    def update_group_role_invitation(self, group: Group, role_id: str):
+        """
+        The owner updates the role of the group personal sharing
+        :param group:
+        :param role_id:
+        :return:
+        """
+        group.role_id = role_id
+        group.save()
+        group_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
+        group.team.team_members.filter(is_added_by_group=True, user_id__in=group_user_ids).update(role_id=role_id)
+        # Bump revision date
+        bump_account_revision_date(team=group.team, **{"group_ids": [group.enterprise_group_id]})
+        return group
+
     def stop_share_all_members(self, team, cipher=None, cipher_data=None,
                                collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
 
@@ -127,12 +142,13 @@ class SharingRepository(ISharingRepository):
         bump_account_revision_date(user=user_owner)
         return other_members
 
-    def stop_share(self, member: TeamMember,
+    def stop_share(self, member: TeamMember = None, group: Group = None,
                    cipher=None, cipher_data=None,
                    collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         """
         The owner stops share a item (or a collection) with a member
         :param member: (object) TeamMember object will be removed
+        :param group: (object) The Group object will be removed
         :param cipher: (obj) Cipher object
         :param cipher_data: (obj) New cipher data if the cipher does not share with any members
         :param collection: (obj) Team collection will be stopped sharing
@@ -140,15 +156,48 @@ class SharingRepository(ISharingRepository):
         :param personal_folder_ciphers: (obj) List new ciphers data in the collection if the user stops sharing
         :return: The member user id has been removed
         """
-        member_user = member.user
-        member_user_id = member.user_id
-        team = member.team
+        team = group.team if group else member.team
 
         # Get owner
         user_owner = team.team_members.get(role_id=MEMBER_ROLE_OWNER, is_primary=True).user
 
-        # Remove this member from the team
-        member.delete()
+        # Remove this member / group from the team
+        deleted_members_user_ids = []
+        if group:
+            # Check members are shared by User 1-1 (not by Group)
+            group_members_user_ids = list(group.groups_members.values_list('member__user_id', flat=True))
+            team_members = team.team_members.filter(
+                user_id__in=group_members_user_ids, is_added_by_group=True
+            ).annotate(
+                group_count=Count('groups_members')
+            )
+
+            # Filter list members have only one group. Then delete them
+            deleted_members = team_members.filter(group_count=1)
+            deleted_members_user_ids = list(deleted_members.values_list('user_id', flat=True))
+            deleted_members.delete()
+            # Filter list members have other groups => Set role_id by other groups
+            first_group_subquery = GroupMember.objects.exclude(group_id=group.id).filter(
+                member_id=OuterRef('id')
+            ).order_by('group_id')
+            more_one_groups = team_members.filter(group_count__gt=1).annotate(
+                first_group_role=Subquery(first_group_subquery.values('group__role_id')[:1], output_field=CharField())
+            )
+            for m in more_one_groups:
+                if m.first_group_role:
+                    m.role_id = m.first_group_role
+                    m.save()
+            # Delete this group
+            group.delete()
+        if member:
+            group_member = member.groups_members.all().order_by('group__creation_date').first()
+            if not group_member:
+                deleted_members_user_ids = [member.user_id]
+                member.delete()
+            else:
+                member.is_added_by_group = True
+                member.role_id = group_member.group.role_id
+                member.save()
 
         # If the team does not have any members (excluding owner)
         # => Remove shared team and change the cipher/collection to personal cipher/personal folder
@@ -158,10 +207,13 @@ class SharingRepository(ISharingRepository):
                                         personal_folder_ciphers=personal_folder_ciphers)
 
         # Update revision date of user
-        bump_account_revision_date(user=member_user)
+        if group:
+            bump_account_revision_date(team=team, **{"group_ids": [group.enterprise_group_id]})
+        else:
+            bump_account_revision_date(user=member.user)
         bump_account_revision_date(user=user_owner)
 
-        return member_user_id
+        return deleted_members_user_ids
 
     def delete_share_folder(self, team, collection=None, personal_folder_name: str = None, personal_folder_ciphers=None):
         # Get owner
@@ -267,7 +319,7 @@ class SharingRepository(ISharingRepository):
 
         # Create sharing members
         existed_member_users, non_existed_member_users = self.add_members(
-            team=new_sharing, shared_collection=shared_collection, members=members
+            team=new_sharing, shared_collection=shared_collection, members=members, groups=groups
         )
 
         # Sharing the folder
@@ -327,29 +379,40 @@ class SharingRepository(ISharingRepository):
         return cipher
 
     def add_members(self, team, shared_collection, members, groups=None):
+        primary_user = team.team_members.get(is_primary=True).user
         non_existed_member_users = []
         existed_member_users = []
         existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
         existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
         for member in members:
+            if member.get("user_id") == primary_user.user_id:
+                continue
+            # Retrieve activated user
             try:
                 member_user = User.objects.get(user_id=member.get("user_id"), activated=True)
                 email = None
             except User.DoesNotExist:
                 member_user = None
                 email = member.get("email")
-            if member_user and member_user.user_id in existed_user_ids:
-                continue
-            if email and email in existed_emails:
-                continue
+            # if member_user and member_user.user_id in existed_user_ids:
+            #     team.team_members.filter(user_id=member_user.user_id).update(is_added_by_group=False)
+            #     continue
+            # if email and email in existed_emails:
+            #     team.team_members.filter(email=email).update(is_added_by_group=False)
+            #     continue
             member_data = {"user": member_user, "email": email, "role": member.get("role"), "key": member.get("key")}
             shared_member = self.__create_shared_member(
                 team=team, member_data=member_data, shared_collection=shared_collection
             )
-            if shared_member.user_id:
+            # Make sure the shared member is added as single person and role is set by member_data
+            shared_member.is_added_by_group = False
+            shared_member.role_id = member.get("role")
+            shared_member.save()
+            # Append to existed_member_users and non_existed_member_users list
+            if shared_member.user_id and shared_member.user_id not in existed_user_ids:
                 existed_member_users.append(shared_member.user_id)
                 existed_user_ids.append(shared_member.user_id)
-            if shared_member.email:
+            if shared_member.email and shared_member.email not in existed_emails:
                 non_existed_member_users.append(shared_member.email)
                 existed_emails.append(shared_member.email)
 
@@ -363,29 +426,19 @@ class SharingRepository(ISharingRepository):
 
     @staticmethod
     def __create_shared_member(team, member_data, shared_collection=None):
-        # shared_member = team.team_members.model.objects.create(
-        #     user=member.get("user"),
-        #     email=member.get("email"),
-        #     role_id=member.get("role"),
-        #     key=member.get("key"),
-        #     team=team,
-        #     access_time=now(),
-        #     is_primary=False,
-        #     is_default=False,
-        #     status=PM_MEMBER_STATUS_INVITED,
-        # )
-
-        shared_member = team.team_members.model.create_with_data(team, role_id=member_data.get("role"), **{
+        shared_member = team.team_members.model.retrieve_or_create_with_group(team, **{
             "user": member_data.get("user"),
             "email": member_data.get("email"),
             "key": member_data.get("key"),
             "is_added_by_group": member_data.get("is_added_by_group", False),
             "status": PM_MEMBER_STATUS_INVITED,
+            "role_id": member_data.get("role"),
+            "group": member_data.get("group")
         })
 
         # Create collection for this shared member
         if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
-            shared_member.collections_members.model.objects.create(
+            shared_member.collections_members.model.retrieve_or_create(
                 collection=shared_collection, member=shared_member,
                 hide_passwords=member_data.get("hide_passwords", False)
             )
@@ -396,13 +449,16 @@ class SharingRepository(ISharingRepository):
         return shared_member
 
     def add_group_members(self, team, shared_collection, groups):
+        primary_user = team.team_members.get(is_primary=True).user
         non_existed_member_users = []
         existed_member_users = []
         existed_user_ids = list(team.team_members.filter(user_id__isnull=False).values_list('user_id', flat=True))
         existed_emails = list(team.team_members.filter(email__isnull=False).values_list('email', flat=True))
 
         members_groups_data = [group.get("members") or [] for group in groups]
-        members_groups_user_ids = [member.get("user_id") for member in members_groups_data if member.get("user_id")]
+        members_groups_user_ids = []
+        for members_group_data in members_groups_data:
+            members_groups_user_ids += [m.get("user_id") for m in members_group_data if m.get("user_id")]
         members_groups_users = User.objects.filter(user_id__in=members_groups_user_ids, activated=True)
         members_groups_users_dict = dict()
         for u in members_groups_users:
@@ -410,28 +466,38 @@ class SharingRepository(ISharingRepository):
 
         for group in groups:
             members = group.get("members") or []
+            team_group = team.groups.model.retrieve_or_create(
+                team.id, group.get("id"), **{
+                    "role_id": group.get("role") or group.get("role_id") or MEMBER_ROLE_MEMBER
+                }
+            )
             for member in members:
+                if member.get("user_id") == primary_user.user_id:
+                    continue
                 member_user = members_groups_users_dict.get(member.get("user_id"))
                 email = None if member_user else member.get("email")
 
-                if member_user and member_user.user_id in existed_user_ids:
-                    continue
-                if email and email in existed_emails:
-                    continue
+                # if member_user and member_user.user_id in existed_user_ids:
+                #     # TODO: Check the member is in group or not. If the member group doesnt exist, create member group
+                #     continue
+                # if email and email in existed_emails:
+                #     # TODO: Check the member is in group or not. If the member group doesnt exist, create member group
+                #     continue
                 member_data = {
                     "user": member_user,
                     "email": email,
                     "role": member.get("role"),
                     "key": member.get("key"),
-                    "is_added_by_group": True
+                    "is_added_by_group": True,
+                    "group": team_group,
                 }
                 shared_member = self.__create_shared_member(
                     team=team, member_data=member_data, shared_collection=shared_collection
                 )
-                if shared_member.user_id:
+                if shared_member.user_id and shared_member.user_id not in existed_user_ids:
                     existed_member_users.append(shared_member.user_id)
                     existed_user_ids.append(shared_member.user_id)
-                if shared_member.email:
+                if shared_member.email and shared_member.email not in existed_emails:
                     non_existed_member_users.append(shared_member.email)
                     existed_emails.append(shared_member.email)
         return existed_member_users, non_existed_member_users

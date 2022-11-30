@@ -155,6 +155,25 @@ class PMUserPlan(UserPlan):
         # User is not still subscribe any subscription
         return now() + Payment.get_duration_month_number(duration=duration) * 30 * 86400
 
+    def get_next_retry_payment_date(self, stripe_subscription=None):
+        if self.get_plan_type_alias() in [PLAN_TYPE_PM_FREE]:
+            return None
+        # Retrieve Stripe subscription object
+        if not stripe_subscription:
+            stripe_subscription = self.get_stripe_subscription()
+        if stripe_subscription:
+            if stripe_subscription.status not in [PAYMENT_STATUS_PAST_DUE]:
+                return None
+            latest_invoice = stripe_subscription.latest_invoice
+            if not latest_invoice:
+                return None
+            latest_invoice_obj = stripe.Invoice.retrieve(latest_invoice)
+            return latest_invoice_obj.next_payment_attempt
+        if self.attempts > 0:
+            return PMUserPlan.get_next_attempts_duration(
+                current_number_attempts=self.attempts
+            ) + self.end_period
+
     def get_current_number_members(self):
         return self.number_members
 
