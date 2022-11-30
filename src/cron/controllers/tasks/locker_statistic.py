@@ -7,7 +7,7 @@ from cystack_models.models.users.users import User
 from locker_statistic.models.user_statistics import UserStatistic
 from locker_statistic.models.user_statistics_date import UserStatisticDate
 from shared.constants.ciphers import *
-from shared.constants.transactions import PAYMENT_STATUS_PAID, PLAN_TYPE_PM_FREE
+from shared.constants.transactions import PAYMENT_STATUS_PAID
 from shared.external_request.requester import requester
 from shared.log.cylog import CyLog
 from shared.utils.app import datetime_from_ts, now
