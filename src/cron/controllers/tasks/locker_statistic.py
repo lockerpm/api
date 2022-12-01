@@ -199,7 +199,7 @@ def list_users_statistic(user_ids):
         user_statistic_data = {
             "user_id": user.user_id,
             "country": user_from_id_data.get("country"),
-            "verified": user_from_id_data.get("verified"),
+            "verified": user_from_id_data.get("verified") or False,
             "created_master_password": user.activated,
             "cs_created_date": datetime_from_ts(user_from_id_data.get("registered_time")),
             "lk_created_date": datetime_from_ts(user.creation_date),
