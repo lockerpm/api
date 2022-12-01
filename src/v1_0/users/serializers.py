@@ -111,10 +111,9 @@ class UserChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"master_password_hash": ["The master password is not correct"]})
 
         # Check login method: if user sets normal login method, we will check enterprise policy
-        login_method = data.get("login_method") or user.login_method
-        if login_method == LOGIN_METHOD_PASSWORD and user.enterprise_require_passwordless is True:
+        login_method = data.get("login_method")     # or user.login_method
+        if login_method and login_method == LOGIN_METHOD_PASSWORD and user.enterprise_require_passwordless is True:
             raise serializers.ValidationError(detail={"login_method": ["Your enterprise requires passwordless method"]})
-
         return data
 
 
