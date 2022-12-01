@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db.models import OuterRef, Count, IntegerField, When, Case, Sum, Value, F, FloatField, \
     CharField, Subquery, Q
 
+from cron.controllers.utils.logger import Logger
 from cystack_models.models.users.users import User
 from locker_statistic.models.user_statistics import UserStatistic
 from locker_statistic.models.user_statistics_date import UserStatisticDate
@@ -228,8 +229,8 @@ def list_users_statistic(user_ids):
         user_statistic_dicts.update({user.user_id: user_statistic_dict_data})
 
     # TODO: Bulk update or create django
-    # UserStatistic.objects.bulk_create(user_statistic_objs, batch_size=200, ignore_conflicts=True)
-
+    logger = Logger()
+    logger.info(f"[+] The user statistic dicts: \n{user_statistic_dicts}")
     UserStatistic.bulk_update_or_create(
         common_keys={},
         unique_key_name='user_id',

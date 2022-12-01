@@ -721,9 +721,12 @@ class UserRepository(IUserRepository):
         DeviceAccessToken.objects.filter(device__user=user).delete()
         return user
 
-    def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str, score: float = None):
+    def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str, score: float = None,
+                                    login_method: str = None):
         user.set_master_password(new_master_password_hash)
         user.key = key
         if score:
             user.master_password_score = score
+        if login_method:
+            user.login_method = login_method
         user.save()
