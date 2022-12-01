@@ -148,7 +148,8 @@ class CronTask:
 
         # Only PROD
         if os.getenv("PROD_ENV") == "prod":
-            schedule.every().day.at("17:00").minutes.do(self.locker_statistic_users)
+            schedule.every(20).minutes.do(self.locker_statistic_users)
+            # schedule.every().day.at("17:00").do(self.locker_statistic_users)
 
         self.logger.info("[+] Starting Locker cron task")
         while True:
