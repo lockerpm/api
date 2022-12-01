@@ -8,7 +8,7 @@ class UserStatistic(models.Model):
     country = models.CharField(max_length=32)
     verified = models.BooleanField(default=True)
     created_master_password = models.BooleanField(default=False)
-    cs_created_date = models.DateTimeField()
+    cs_created_date = models.DateTimeField(null=True)
     lk_created_date = models.DateTimeField(null=True)
     # Used platforms?
     use_web_app = models.BooleanField(default=False)
