@@ -514,6 +514,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         new_master_password_hash = validated_data.get("new_master_password_hash")
         key = validated_data.get("key")
         score = validated_data.get("score", user.master_password_score)
+        login_method = validated_data.get("login_method", user.login_method)
 
         # Update the master password cipher
         master_password_cipher = request.data.get("master_password_cipher")
@@ -556,7 +557,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 )
 
         self.user_repository.change_master_password_hash(
-            user=user, new_master_password_hash=new_master_password_hash, key=key, score=score
+            user=user, new_master_password_hash=new_master_password_hash, key=key, score=score,
+            login_method=login_method
         )
         self.user_repository.revoke_all_sessions(user=user)
         mail_user_ids = NotificationSetting.get_user_mail(
