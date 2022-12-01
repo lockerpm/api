@@ -45,7 +45,15 @@ def pm_subscription():
             ) + now()
             pm_user_plan.attempts = F('attempts') + 1
             pm_user_plan.save()
-            # TODO: Notify for user here
+            # Notify for user here
+            LockerBackgroundFactory.get_background(
+                bg_name=BG_NOTIFY, background=False
+            ).run(func_name="pay_failed", **{
+                "user_id": user.user_id,
+                "current_attempt": pm_user_plan.attempts,
+                "next_attempt": PMUserPlan.get_next_attempts_day_str(current_number_attempts=pm_user_plan.attempts),
+                "scope": settings.SCOPE_PWD_MANAGER
+            })
         else:
             # Cancel the subscription of the user and notify for this user
             user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_FREE, scope=settings.SCOPE_PWD_MANAGER)

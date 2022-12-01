@@ -1,13 +1,14 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
-
 
 from core.settings import CORE_CONFIG
 from shared.background.i_background import ILockerBackground
 from shared.constants.transactions import PAYMENT_STATUS_PAID
 from shared.external_request.requester import requester, RequesterError
-
+from shared.utils.app import now
 
 API_NOTIFY_PAYMENT = "{}/micro_services/cystack_platform/payments".format(settings.GATEWAY_API)
 API_NOTIFY_LOCKER = "{}/micro_services/cystack_platform/pm/notify".format(settings.GATEWAY_API)
@@ -152,6 +153,25 @@ class NotifyBackground(ILockerBackground):
 
         except Exception:
             self.log_error(func_name="notify_pay_successfully")
+        finally:
+            if self.background:
+                connection.close()
+
+    def pay_failed(self, **data):
+        url = API_NOTIFY_PAYMENT + "/notify_payment_failed"
+        try:
+            notification_data = {
+                "scope": data.get("scope"),
+                "user_id": data.get("user_id"),
+                "check_time": "{} (UTC)".format(
+                    datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
+                ),
+                "current_attempt": data.get("current_attempt"),
+                "next_attempt": data.get("next_attempt"),
+            }
+            requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
+        except Exception:
+            self.log_error(func_name="notify_pay_failed")
         finally:
             if self.background:
                 connection.close()
