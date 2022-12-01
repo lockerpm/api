@@ -29,7 +29,7 @@ class UserStatistic(models.Model):
 
     deleted_account = models.BooleanField(default=False)
     lk_plan = models.CharField(max_length=64, default=PLAN_TYPE_PM_FREE)
-    utm_source = models.CharField(max_length=64, blank=True, null=True, default=None)
+    utm_source = models.CharField(max_length=128, blank=True, null=True, default=None)
     paid_money = models.FloatField(default=0)
 
     class Meta:
