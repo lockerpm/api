@@ -5,7 +5,7 @@ from shared.constants.transactions import PLAN_TYPE_PM_FREE
 
 class UserStatistic(models.Model):
     user_id = models.IntegerField(primary_key=True)
-    country = models.CharField(max_length=32)
+    country = models.CharField(max_length=32, null=True)
     verified = models.BooleanField(default=True)
     created_master_password = models.BooleanField(default=False)
     cs_created_date = models.DateTimeField(null=True)
