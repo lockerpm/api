@@ -178,6 +178,7 @@ class UpdateOnboardingProcessSerializer(serializers.Serializer):
     enterprise_onboarding = serializers.ListField(
         child=serializers.IntegerField(), required=False, max_length=10
     )
+    enterprise_onboarding_skip = serializers.BooleanField(required=False)
 
     def validate(self, data):
         enterprise_onboarding = data.get("enterprise_onboarding")

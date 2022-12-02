@@ -661,13 +661,17 @@ class UserPwdViewSet(PasswordManagerViewSet):
             welcome = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_WELCOME))
             tutorial = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
             enterprise_onboarding = validated_data.get(
-                "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
+                "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_ENTERPRISE)
+            )
+            enterprise_onboarding_skip = validated_data.get(
+                "enterprise_onboarding_skip", onboarding_process.get(ONBOARDING_CATEGORY_ENTERPRISE_SKIP)
             )
             onboarding_process.update({
                 ONBOARDING_CATEGORY_TO_DASHBOARD: vault_to_dashboard,
                 ONBOARDING_CATEGORY_WELCOME: welcome,
                 ONBOARDING_CATEGORY_TUTORIAL: tutorial,
                 ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding,
+                ONBOARDING_CATEGORY_ENTERPRISE_SKIP: enterprise_onboarding_skip,
             })
             user.onboarding_process = onboarding_process
             user.save()
