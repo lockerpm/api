@@ -131,8 +131,7 @@ class TeamMember(models.Model):
             )
         if group:
             member.groups_members.model.retrieve_or_create(group.id, member.id)
-        return member
-
+        return member, is_created
 
     @classmethod
     def create_with_collections(cls, team: Team, role_id: str, is_primary=False, is_default=False,
