@@ -431,7 +431,7 @@ class SharingRepository(ISharingRepository):
             "email": member_data.get("email"),
             "key": member_data.get("key"),
             "is_added_by_group": member_data.get("is_added_by_group", False),
-            "status": PM_MEMBER_STATUS_INVITED,
+            "status": member_data.get("status") or PM_MEMBER_STATUS_INVITED,
             "role_id": member_data.get("role"),
             "group": member_data.get("group")
         })
@@ -492,6 +492,7 @@ class SharingRepository(ISharingRepository):
                     "email": email,
                     "role": member.get("role"),
                     "key": member.get("key"),
+                    "status": PM_MEMBER_STATUS_CONFIRMED if member.get("key") else PM_MEMBER_STATUS_INVITED,
                     "is_added_by_group": True,
                     "group": team_group,
                 }
