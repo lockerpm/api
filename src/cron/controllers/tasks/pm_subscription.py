@@ -89,13 +89,15 @@ def pm_subscription():
 
 
 def pm_expiring_notify():
-    # Filter PWD Plan nearly expired
+    # Filter PWD Plan nearly expired - Only notify to Trial users
     current_time = now()
-    expiring_plans = PMUserPlan.objects.filter(
-        # pm_stripe_subscription__isnull=True
-    ).exclude(
+    expiring_plans = PMUserPlan.objects.exclude(
         pm_plan__alias=PLAN_TYPE_PM_FREE
-    ).exclude(end_period__isnull=True).exclude(cancel_at_period_end=True).filter(
+    ).exclude(end_period__isnull=True).annotate(
+        plan_period=F('end_period') - F('start_period'),
+    ).filter(
+        plan_period__lte=15 * 86400, plan_period__gt=0
+    ).exclude(cancel_at_period_end=True).filter(
         end_period__gte=current_time + 5 * 86400,
         end_period__lte=current_time + 7 * 86400
     )

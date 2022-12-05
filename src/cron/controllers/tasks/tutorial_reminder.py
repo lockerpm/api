@@ -23,7 +23,7 @@ def tutorial_reminder():
 
     # 3 days
     users_3days = users.filter(
-        creation_date__range=(current_time - 4 * duration_unit, current_time - 3 * duration_unit)
+        creation_date__range=(current_time - 3 * duration_unit, current_time - 2 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -33,7 +33,7 @@ def tutorial_reminder():
 
     # 5 days
     users_5days = users.filter(
-        creation_date__range=(current_time - 6 * duration_unit, current_time - 5 * duration_unit)
+        creation_date__range=(current_time - 5 * duration_unit, current_time - 4 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -43,7 +43,7 @@ def tutorial_reminder():
 
     # 7 days
     users_7days = users.filter(
-        creation_date__range=(current_time - 8 * duration_unit, current_time - 7 * duration_unit)
+        creation_date__range=(current_time - 7 * duration_unit, current_time - 6 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
@@ -70,7 +70,7 @@ def tutorial_reminder():
 
     # 20 days
     users_20days = exclude_enterprise_users.filter(
-        creation_date__range=(current_time - 21 * duration_unit, current_time - 20 * duration_unit)
+        creation_date__range=(current_time - 20 * duration_unit, current_time - 19 * duration_unit)
     ).values_list('user_id', flat=True)
     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         func_name="notify_tutorial", **{
