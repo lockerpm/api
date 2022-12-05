@@ -251,7 +251,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         login_method = user.login_method
         require_passwordless = user.require_passwordless
         return Response(status=200, data={
-            "set_up_pwd": True if user.fd_credential_id else False,
+            "set_up_passwordless": True if user.fd_credential_id else False,
             "login_method": login_method,
             "require_passwordless": require_passwordless
         })
