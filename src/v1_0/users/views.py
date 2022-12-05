@@ -249,7 +249,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
     def login_method_me(self, request, *args, **kwargs):
         user = self.request.user
         login_method = user.login_method
-        require_passwordless = user.require_passwordless
+        require_passwordless = user.enterprise_require_passwordless
         return Response(status=200, data={
             "set_up_passwordless": True if user.fd_credential_id else False,
             "login_method": login_method,
