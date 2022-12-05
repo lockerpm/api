@@ -34,7 +34,7 @@ from shared.utils.network import detect_device
 from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
-    ListUserSerializer, UpdateOnboardingProcessSerializer
+    ListUserSerializer, UpdateOnboardingProcessSerializer, UserCheckPasswordSerializer
 from v1_0.apps import PasswordManagerViewSet
 
 
@@ -53,6 +53,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserMasterPasswordHashSerializer
         elif self.action == "password":
             self.serializer_class = UserChangePasswordSerializer
+        elif self.action == "check_password":
+            self.serializer_class = UserCheckPasswordSerializer
         elif self.action == "fcm_id":
             self.serializer_class = DeviceFcmSerializer
         elif self.action == "devices":
@@ -568,6 +570,18 @@ class UserPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"notification": True if user.user_id in mail_user_ids else False})
 
     @action(methods=["post"], detail=False)
+    def check_password(self, request, *args, **kwargs):
+        user = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        master_password_hash = serializer.validated_data.get("master_password_hash")
+        try:
+            valid = user.check_master_password(master_password_hash)
+        except TypeError:
+            valid = False
+        return Response(status=200, data={"valid": valid})
+
+    @action(methods=["post"], detail=False)
     def password_hint(self, request, *args, **kwargs):
         user_id = request.data.get("user_id")
         try:
@@ -662,13 +676,17 @@ class UserPwdViewSet(PasswordManagerViewSet):
             welcome = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_WELCOME))
             tutorial = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
             enterprise_onboarding = validated_data.get(
-                "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
+                "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_ENTERPRISE)
+            )
+            enterprise_onboarding_skip = validated_data.get(
+                "enterprise_onboarding_skip", onboarding_process.get(ONBOARDING_CATEGORY_ENTERPRISE_SKIP)
             )
             onboarding_process.update({
                 ONBOARDING_CATEGORY_TO_DASHBOARD: vault_to_dashboard,
                 ONBOARDING_CATEGORY_WELCOME: welcome,
                 ONBOARDING_CATEGORY_TUTORIAL: tutorial,
                 ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding,
+                ONBOARDING_CATEGORY_ENTERPRISE_SKIP: enterprise_onboarding_skip,
             })
             user.onboarding_process = onboarding_process
             user.save()

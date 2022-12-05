@@ -67,6 +67,12 @@ class PMUserPlan(UserPlan):
             return 86400
         return 86400 * 3
 
+    @classmethod
+    def get_next_attempts_day_str(cls, current_number_attempts):
+        if current_number_attempts < 2:
+            return "1 day from today"
+        return "3 days from today"
+
     def get_plan_obj(self):
         return self.pm_plan
 

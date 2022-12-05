@@ -426,15 +426,19 @@ class SharingRepository(ISharingRepository):
 
     @staticmethod
     def __create_shared_member(team, member_data, shared_collection=None):
-        shared_member = team.team_members.model.retrieve_or_create_with_group(team, **{
+        shared_member, is_created = team.team_members.model.retrieve_or_create_with_group(team, **{
             "user": member_data.get("user"),
             "email": member_data.get("email"),
             "key": member_data.get("key"),
             "is_added_by_group": member_data.get("is_added_by_group", False),
-            "status": PM_MEMBER_STATUS_INVITED,
+            "status": member_data.get("status") or PM_MEMBER_STATUS_INVITED,
             "role_id": member_data.get("role"),
             "group": member_data.get("group")
         })
+        # Update key:
+        if is_created is False and member_data.get("key"):
+            shared_member.key = member_data.get("key")
+            shared_member.save()
 
         # Create collection for this shared member
         if shared_member.role_id in [MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER] and shared_collection:
@@ -488,6 +492,7 @@ class SharingRepository(ISharingRepository):
                     "email": email,
                     "role": member.get("role"),
                     "key": member.get("key"),
+                    "status": PM_MEMBER_STATUS_CONFIRMED if member.get("key") else PM_MEMBER_STATUS_INVITED,
                     "is_added_by_group": True,
                     "group": team_group,
                 }

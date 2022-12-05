@@ -117,6 +117,10 @@ class UserChangePasswordSerializer(serializers.Serializer):
         return data
 
 
+class UserCheckPasswordSerializer(serializers.Serializer):
+    master_password_hash = serializers.CharField()
+
+
 class DeviceFcmSerializer(serializers.Serializer):
     fcm_id = serializers.CharField(max_length=255, allow_null=True)
     device_identifier = serializers.CharField(max_length=128)
@@ -178,6 +182,7 @@ class UpdateOnboardingProcessSerializer(serializers.Serializer):
     enterprise_onboarding = serializers.ListField(
         child=serializers.IntegerField(), required=False, max_length=10
     )
+    enterprise_onboarding_skip = serializers.BooleanField(required=False)
 
     def validate(self, data):
         enterprise_onboarding = data.get("enterprise_onboarding")
