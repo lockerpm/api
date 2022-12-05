@@ -34,9 +34,9 @@ class PasswordlessPwdViewSet(PasswordManagerViewSet):
             validated_data = serializer.validated_data
             credential_id = validated_data.get("credential_id")
             credential_random = random.randbytes(16).hex()
-            if not user.fd_credential_id:
-                user.fd_credential_id = credential_id
-                user.fd_random = credential_random
-                user.login_method = LOGIN_METHOD_PASSWORDLESS
-                user.save()
+            # if not user.fd_credential_id:
+            user.fd_credential_id = credential_id
+            user.fd_random = credential_random
+            user.login_method = LOGIN_METHOD_PASSWORDLESS
+            user.save()
             return Response(status=200, data={"credential_id": user.fd_credential_id, "random": user.fd_random})
