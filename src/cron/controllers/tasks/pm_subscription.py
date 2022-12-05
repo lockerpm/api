@@ -81,6 +81,7 @@ def pm_subscription():
 
 
 def pm_expiring_notify():
+    return 
     # Filter PWD Plan nearly expired
     current_time = now()
     expiring_plans = PMUserPlan.objects.filter(
