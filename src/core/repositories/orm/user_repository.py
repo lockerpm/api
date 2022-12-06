@@ -717,8 +717,11 @@ class UserRepository(IUserRepository):
         bump_account_revision_date(user=user)
         return list(shared_ciphers_members)
 
-    def revoke_all_sessions(self, user: User):
-        DeviceAccessToken.objects.filter(device__user=user).delete()
+    def revoke_all_sessions(self, user: User, exclude_sso_token_ids=None):
+        device_access_tokens = DeviceAccessToken.objects.filter(device__user=user)
+        if exclude_sso_token_ids:
+            device_access_tokens = device_access_tokens.exclude(sso_token_id__in=exclude_sso_token_ids)
+        device_access_tokens.delete()
         return user
 
     def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str, score: float = None,

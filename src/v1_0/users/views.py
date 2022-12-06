@@ -563,7 +563,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
             user=user, new_master_password_hash=new_master_password_hash, key=key, score=score,
             login_method=login_method
         )
-        self.user_repository.revoke_all_sessions(user=user)
+        # Revoke all sessions
+        exclude_sso_token_ids = None
+        if request.data.get("login_method"):
+            decoded_token = self.decode_token(request.auth)
+            sso_token_id = decoded_token.get("sso_token_id") if decoded_token else None
+            exclude_sso_token_ids = [sso_token_id] if sso_token_id else None
+        self.user_repository.revoke_all_sessions(user=user, exclude_sso_token_ids=exclude_sso_token_ids)
         mail_user_ids = NotificationSetting.get_user_mail(
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[user.user_id]
         )
