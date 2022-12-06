@@ -229,6 +229,7 @@ class UserRepository(IUserRepository):
             "members": [{
                 "user": user,
                 "role": EnterpriseMemberRole.objects.get(name=E_MEMBER_ROLE_PRIMARY_ADMIN),
+                "status": E_MEMBER_STATUS_CONFIRMED,
                 "is_default": True,
                 "is_primary": True
             }]
