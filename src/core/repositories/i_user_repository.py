@@ -123,7 +123,7 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def revoke_all_sessions(self, user: User):
+    def revoke_all_sessions(self, user: User, exclude_sso_token_ids = None):
         pass
 
     @abstractmethod
