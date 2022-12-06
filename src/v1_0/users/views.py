@@ -515,7 +515,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         from shared.log.cylog import CyLog
         CyLog.debug(**{"message": "[+] Change pw data: {}".format(request.data)})
 
-        self.check_pwd_session_auth(request=request)
+        # self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
