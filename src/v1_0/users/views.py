@@ -16,6 +16,7 @@ from cystack_models.models import Event
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
+from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
 from shared.constants.account import *
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
@@ -565,15 +566,25 @@ class UserPwdViewSet(PasswordManagerViewSet):
         )
         # Revoke all sessions
         exclude_sso_token_ids = None
+        client = None
         if request.data.get("login_method"):
             decoded_token = self.decode_token(request.auth)
             sso_token_id = decoded_token.get("sso_token_id") if decoded_token else None
             exclude_sso_token_ids = [sso_token_id] if sso_token_id else None
+
+            exclude_device_access_token = DeviceAccessToken.objects.filter(
+                device__user=user, sso_token_id__in=exclude_sso_token_ids
+            ).order_by('-id').first()
+            client = exclude_device_access_token.device.client_id if exclude_device_access_token else None
+
         self.user_repository.revoke_all_sessions(user=user, exclude_sso_token_ids=exclude_sso_token_ids)
         mail_user_ids = NotificationSetting.get_user_mail(
             category_id=NOTIFY_CHANGE_MASTER_PASSWORD, user_ids=[user.user_id]
         )
-        return Response(status=200, data={"notification": True if user.user_id in mail_user_ids else False})
+        return Response(status=200, data={
+            "notification": True if user.user_id in mail_user_ids else False,
+            "client": client
+        })
 
     @action(methods=["post"], detail=False)
     def check_password(self, request, *args, **kwargs):
