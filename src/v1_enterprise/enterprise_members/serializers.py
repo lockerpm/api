@@ -28,7 +28,10 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             "domain": instance.domain.domain
         } if instance.domain else None
         data["groups"] = list(instance.groups_members.values_list('group__name', flat=True))
-        data["security_score"] = instance.user.master_password_score if instance.user else None
+        if instance.status != E_MEMBER_STATUS_INVITED:
+            data["security_score"] = instance.user.master_password_score if instance.user else None
+        else:
+            data["security_score"] = None
         return data
 
 
@@ -49,7 +52,7 @@ class DetailActiveMemberSerializer(DetailMemberSerializer):
         data = super(DetailActiveMemberSerializer, self).to_representation(instance)
         data["login_block_until"] = instance.user.login_block_until if instance.user else None
         cipher_overview = {}
-        if instance.user:
+        if instance.user and instance.status != E_MEMBER_STATUS_INVITED:
             # Don't get ciphers from trash
             cipher_overview = instance.user.created_ciphers.filter(
                 type=CIPHER_TYPE_LOGIN, deleted_date__isnull=True
@@ -72,6 +75,7 @@ class DetailActiveMemberSerializer(DetailMemberSerializer):
             )
         data["cipher_overview"] = cipher_overview
         return data
+
 
 class UpdateMemberSerializer(serializers.Serializer):
     role = serializers.ChoiceField(
