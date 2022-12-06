@@ -692,7 +692,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 "vault_to_dashboard", onboarding_process.get(ONBOARDING_CATEGORY_TO_DASHBOARD)
             )
             welcome = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_WELCOME))
-            tutorial = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
+            tutorial = validated_data.get("tutorial", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
             enterprise_onboarding = validated_data.get(
                 "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_ENTERPRISE)
             )
