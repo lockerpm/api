@@ -21,7 +21,7 @@ class EnterpriseMember(models.Model):
     is_primary = models.BooleanField(default=False)
     is_activated = models.BooleanField(default=True)
 
-    status = models.CharField(max_length=128, default=E_MEMBER_STATUS_INVITED)
+    status = models.CharField(max_length=128, default=E_MEMBER_STATUS_CONFIRMED)
     email = models.CharField(max_length=128, null=True)
     token_invitation = models.TextField(null=True, default=None)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enterprise_members", null=True)
