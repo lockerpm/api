@@ -511,6 +511,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
         #     user=user, status=PM_MEMBER_STATUS_CONFIRMED
         # ).values_list('id', flat=True))
         ip = request.data.get("ip")
+
+        from shared.log.cylog import CyLog
+        CyLog.debug(**{"message": "[+] Change pw data: {}".format(request.data)})
+
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
