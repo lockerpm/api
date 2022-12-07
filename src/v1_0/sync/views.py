@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
+from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
+from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
     SyncCollectionSerializer, SyncPolicySerializer, SyncOrgDetailSerializer, SyncEnterprisePolicySerializer
@@ -56,8 +58,13 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         #     if check_policy is False:
         #         block_team_ids.append(policy.team_id)
 
+        # Check the login method to exclude
+        exclude_types = []
+        if user.login_method == LOGIN_METHOD_PASSWORDLESS:
+            exclude_types = [CIPHER_TYPE_MASTER_PASSWORD]
+
         ciphers = self.cipher_repository.get_multiple_by_user(
-            user=user, exclude_team_ids=block_team_ids
+            user=user, exclude_team_ids=block_team_ids, exclude_types=exclude_types
         ).order_by('-revision_date').prefetch_related('collections_ciphers')
         total_cipher = ciphers.count()
         not_deleted_ciphers = ciphers.filter(deleted_date__isnull=True)

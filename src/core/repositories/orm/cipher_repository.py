@@ -68,7 +68,7 @@ class CipherRepository(ICipherRepository):
 
     def get_multiple_by_user(self, user: User, only_personal=False, only_managed_team=False,
                              only_edited=False, only_deleted=False,
-                             exclude_team_ids=None, filter_ids=None):
+                             exclude_team_ids=None, filter_ids=None, exclude_types=None):
         """
         Get list ciphers of user
         :param user: (obj) User object
@@ -78,9 +78,11 @@ class CipherRepository(ICipherRepository):
         :param only_deleted: (bool) if True => Only get list ciphers that user is allowed delete permission
         :param exclude_team_ids: (list) Excluding all ciphers have team_id in this list
         :param filter_ids: (list) List filtered cipher ids
+        :param exclude_types: (list) Excluding all ciphers have type in this list
         :return:
         """
-
+        if exclude_types is None:
+            exclude_types = []
         personal_ciphers = self.get_personal_ciphers(user=user)
         if filter_ids:
             personal_ciphers = personal_ciphers.filter(id__in=filter_ids)
@@ -157,7 +159,7 @@ class CipherRepository(ICipherRepository):
             )
         return Cipher.objects.filter(
             id__in=list(personal_ciphers.values_list('id', flat=True)) + list(team_ciphers.values_list('id', flat=True))
-        ).annotate(
+        ).exclude(type__in=exclude_types).annotate(
             view_password=Case(
                 When(id__in=hide_password_cipher_ids, then=False),
                 default=True,
