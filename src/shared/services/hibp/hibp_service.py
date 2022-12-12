@@ -25,6 +25,10 @@ class HibpService:
         retry = 0
         while True:
             res = requests.get(url=url, headers=HEADERS)
+            CyLog.debug(**{
+                "message": f"[hibp] Check result {email} - {res.status_code} - {res.text}",
+                "output": ["stdout"]
+            })
             if 200 <= res.status_code < 300:
                 return res.json()
             elif res.status_code == 404:
