@@ -25,7 +25,7 @@ class HibpService:
         retry = 0
         while True:
             res = requests.get(url=url, headers=HEADERS)
-            CyLog.debug(**{
+            CyLog.info(**{
                 "message": f"[hibp] Check result {email} - {res.status_code} - {res.text}",
                 "output": ["stdout"]
             })
