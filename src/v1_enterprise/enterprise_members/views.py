@@ -554,9 +554,7 @@ class MemberPwdViewSet(EnterpriseViewSet):
         members = enterprise.enterprise_members.filter(status=status).filter(
             user_id__in=user_ids
         ).order_by('-access_time')[:5]
-        groups = enterprise.groups.filter(groups_members__member__user=user).filter(
-            name__icontains=query.lower()
-        ).order_by('-id')[:5]
+        groups = enterprise.groups.filter(name__icontains=query.lower()).order_by('-id')[:5]
 
         members_serializer = ShortDetailMemberSerializer(members, many=True)
         groups_serializer = EnterpriseGroupSerializer(groups, many=True)
