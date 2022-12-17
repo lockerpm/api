@@ -44,7 +44,8 @@ class EnterpriseMember(models.Model):
                     user=member["user"],
                     role_id=member["role"].name,
                     is_primary=member.get("is_primary", False),
-                    is_default=member.get("is_default", False)
+                    is_default=member.get("is_default", False),
+                    status=member.get("status") or E_MEMBER_STATUS_INVITED
                 )
             except:
                 continue
