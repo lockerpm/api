@@ -634,7 +634,13 @@ class UserPwdViewSet(PasswordManagerViewSet):
         default_enterprise = self.user_repository.get_default_enterprise(user=user)
         # Clear data of the default enterprise
         if default_enterprise:
-            default_enterprise.clear_data()
+            default_enterprise.delete_complete()
+            # default_enterprise.enterprise_members.exclude(user=user).order_by('id').delete()
+            # default_enterprise.policies.order_by('id').delete()
+            # default_enterprise.domains.all().order_by('id').delete()
+            # groups = default_enterprise.groups.order_by('id')
+            # for group in groups:
+            #     group.full_delete()
 
         # Check if user is the only owner of any teams (except default team)
         default_team = self.user_repository.get_default_team(user=user)
