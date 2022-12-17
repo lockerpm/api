@@ -11,7 +11,7 @@ from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
 from v1_0.sync.serializers import SyncProfileSerializer, SyncCipherSerializer, SyncFolderSerializer, \
     SyncCollectionSerializer, SyncPolicySerializer, SyncOrgDetailSerializer, SyncEnterprisePolicySerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class SyncPwdViewSet(PasswordManagerViewSet):

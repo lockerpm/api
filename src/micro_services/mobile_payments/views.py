@@ -4,12 +4,10 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 
-from micro_services.apps import MicroServiceViewSet
+from micro_services.general_view import MicroServiceViewSet
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.transactions import *
-from shared.error_responses.error import gen_error
 from shared.permissions.micro_service_permissions.mobile_payment_permissions import MobilePaymentPermission
 from shared.utils.app import now
 from cystack_models.models.payments.payments import Payment

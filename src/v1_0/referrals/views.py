@@ -10,7 +10,7 @@ from shared.log.cylog import CyLog
 from shared.permissions.locker_permissions.referral_pwd_permission import ReferralPwdPermission
 from shared.utils.app import now
 from v1_0.referrals.serializers import ClaimSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class ReferralPwdViewSet(PasswordManagerViewSet):

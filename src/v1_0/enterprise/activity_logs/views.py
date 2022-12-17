@@ -5,7 +5,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_event_pwd_permission import TeamEventPwdPermission
 from shared.utils.app import now
 from v1_0.enterprise.activity_logs.serializers import EventSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class ActivityLogViewSet(PasswordManagerViewSet):

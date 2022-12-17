@@ -3,7 +3,7 @@ from rest_framework.response import Response
 
 from cystack_models.models.form_submissions.affiliate_submissions import AffiliateSubmission
 from shared.permissions.locker_permissions.form_submission_permission import FormSubmissionPermission
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 from v1_0.form_submissions.affiliate_submissions.serializers import AffiliateSubmissionSerializer, \
     UpdateStatusSerializer
 

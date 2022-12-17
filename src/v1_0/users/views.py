@@ -36,7 +36,7 @@ from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSeriali
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
     ListUserSerializer, UpdateOnboardingProcessSerializer, UserCheckPasswordSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class UserPwdViewSet(PasswordManagerViewSet):

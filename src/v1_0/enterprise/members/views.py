@@ -5,18 +5,14 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from core.utils.account_revision_date import bump_account_revision_date
-from shared.background import *
-from shared.constants.event import *
 from shared.constants.members import *
-from shared.constants.transactions import PLAN_TYPE_PM_PREMIUM
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.member_pwd_permission import MemberPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_MEMBER_INVITATION, SYNC_EVENT_CIPHER, SYNC_EVENT_VAULT
 from cystack_models.models.teams.teams import Team
 from cystack_models.models.members.team_members import TeamMember
-from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
 from v1_0.enterprise.members.serializers import DetailMemberSerializer, MemberGroupSerializer, UpdateMemberSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class MemberPwdViewSet(PasswordManagerViewSet):

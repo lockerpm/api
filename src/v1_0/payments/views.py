@@ -21,7 +21,7 @@ from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class PaymentPwdViewSet(PasswordManagerViewSet):

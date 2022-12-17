@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 
 from cystack_models.models.user_plans.pm_plans import PMPlan
 from v1_0.resources.serializers import PMPlanSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class ResourcePwdViewSet(PasswordManagerViewSet):

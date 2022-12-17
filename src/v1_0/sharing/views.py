@@ -22,7 +22,7 @@ from v1_0.sharing.serializers import UserPublicKeySerializer, SharingSerializer,
     StopSharingSerializer, UpdateInvitationRoleSerializer, MultipleSharingSerializer, UpdateShareFolderSerializer, \
     StopSharingFolderSerializer, AddMemberSerializer, AddItemShareFolderSerializer, UpdateGroupInvitationRoleSerializer, \
     GroupMemberConfirmSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class SharingPwdViewSet(PasswordManagerViewSet):

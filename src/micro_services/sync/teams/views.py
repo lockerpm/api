@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from micro_services.apps import MicroServiceViewSet
+from micro_services.general_view import MicroServiceViewSet
 from shared.constants.members import MEMBER_ROLE_OWNER
 from shared.permissions.micro_service_permissions.sync_permissions import SyncPermission
 from cystack_models.models.teams.teams import Team

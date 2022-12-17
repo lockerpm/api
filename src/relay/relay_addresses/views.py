@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 from cystack_models.models.relay.relay_addresses import RelayAddress, MaxRelayAddressReachedException
-from relay.apps import RelayViewSet
+from relay.general_view import RelayViewSet
 from relay.relay_addresses.serializers import RelayAddressSerializer, UpdateRelayAddressSerializer
-from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN, DEFAULT_RELAY_DOMAIN
+from shared.constants.relay_address import DEFAULT_RELAY_DOMAIN
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
 from shared.utils.app import now

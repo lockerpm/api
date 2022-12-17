@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 
 from cystack_models.models import User
 from shared.permissions.locker_permissions.notification_setting_pwd_permission import NotificationSettingPermission
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 from v1_0.notification_settings.serializers import ListNotificationSettingSerializer
 
 

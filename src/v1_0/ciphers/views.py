@@ -14,7 +14,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVEN
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer, \
     SyncOfflineCipherSerializer, DetailCipherSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class CipherPwdViewSet(PasswordManagerViewSet):
