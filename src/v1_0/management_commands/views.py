@@ -16,7 +16,7 @@ from shared.external_request.requester import requester, RequesterError
 from shared.log.cylog import CyLog
 from shared.services.spreadsheet.spreadsheet import LockerSpreadSheet
 from shared.utils.app import now
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class ManagementCommandPwdViewSet(PasswordManagerViewSet):

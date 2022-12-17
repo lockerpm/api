@@ -6,7 +6,7 @@ from core.utils.data_helpers import camel_snake_data
 from shared.permissions.locker_permissions.folder_pwd_permission import FolderPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_FOLDER_UPDATE, SYNC_EVENT_FOLDER_DELETE
 from v1_0.folders.serializers import FolderSerializer, DetailFolderSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class FolderPwdViewSet(PasswordManagerViewSet):

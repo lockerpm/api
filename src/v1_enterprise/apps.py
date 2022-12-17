@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class V1EnterpriseConfig(AppConfig):

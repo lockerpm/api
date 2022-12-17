@@ -5,7 +5,6 @@ from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
 from shared.constants.transactions import *
-from cystack_models.models.users.users import User
 from cystack_models.models.payments.payments import Payment
 from shared.utils.app import now
 

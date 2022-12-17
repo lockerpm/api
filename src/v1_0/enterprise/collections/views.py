@@ -15,7 +15,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EVENT_COLLECTION_UPDATE, SYNC_
 from v1_0.enterprise.collections.serializers import CollectionSerializer, UpdateCollectionSerializer, \
     UpdateUserCollectionSerializer, DetailCollectionSerializer
 from v1_0.enterprise.members.serializers import DetailMemberSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class TeamCollectionPwdViewSet(PasswordManagerViewSet):

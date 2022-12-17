@@ -9,9 +9,8 @@ from rest_framework.exceptions import PermissionDenied, NotFound, ValidationErro
 from rest_framework.decorators import action
 
 from cystack_models.models.relay.relay_addresses import RelayAddress
-from cystack_models.models.relay.relay_domains import RelayDomain
 from cystack_models.models.relay.reply import Reply
-from relay.apps import RelayViewSet
+from relay.general_view import RelayViewSet
 from relay.relay_hook.serializer import ReplySerializer, StatisticSerializer
 from shared.constants.relay_address import RELAY_STATISTIC_TYPE_FORWARDED, RELAY_STATISTIC_TYPE_BLOCKED_SPAM
 from shared.log.cylog import CyLog

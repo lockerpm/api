@@ -4,14 +4,13 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
-from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.ciphers import *
 from shared.constants.members import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.team_pwd_permission import TeamPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT
 from v1_0.enterprise.teams.serializers import ListTeamSerializer, UpdateTeamPwdSerializer, ImportTeamSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class TeamPwdViewSet(PasswordManagerViewSet):

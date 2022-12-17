@@ -8,7 +8,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.tool_pwd_permission import ToolPwdPermission
 from shared.services.hibp.hibp_service import HibpService
 from v1_0.tools.serializers import BreachSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class ToolPwdViewSet(PasswordManagerViewSet):

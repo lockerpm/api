@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from shared.permissions.locker_permissions.import_pwd_permission import ImportPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT
 from v1_0.import_data.serializers import ImportFolderSerializer, ImportCipherSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class ImportDataPwdViewSet(PasswordManagerViewSet):

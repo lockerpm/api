@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 
 from cystack_models.models import User
-from micro_services.apps import MicroServiceViewSet
+from micro_services.general_view import MicroServiceViewSet
 from shared.permissions.micro_service_permissions.user_permissions import UserPermission
 from shared.utils.app import now
 

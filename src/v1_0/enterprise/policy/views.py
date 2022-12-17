@@ -2,12 +2,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from shared.background import *
-from shared.constants.event import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.policy_pwd_permission import PolicyPwdPermission
 from v1_0.enterprise.policy.serializers import PolicyDetailSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class PolicyPwdViewSet(PasswordManagerViewSet):

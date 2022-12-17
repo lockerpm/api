@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, NotFound
 
 from cystack_models.models.relay.relay_subdomains import RelaySubdomain, MaxRelaySubdomainReachedException
-from relay.apps import RelayViewSet
+from relay.general_view import RelayViewSet
 from shared.error_responses.error import gen_error
 from shared.permissions.relay_permissions.relay_address_permission import RelayAddressPermission
 from shared.services.sqs.sqs import sqs_service

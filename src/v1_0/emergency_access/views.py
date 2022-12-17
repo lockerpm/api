@@ -21,7 +21,7 @@ from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSeriali
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
     InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
 from v1_0.sync.serializers import SyncCipherSerializer
-from v1_0.apps import PasswordManagerViewSet
+from v1_0.general_view import PasswordManagerViewSet
 
 
 class EmergencyAccessPwdViewSet(PasswordManagerViewSet):

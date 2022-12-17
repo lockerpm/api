@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 
-from micro_services.apps import MicroServiceViewSet
+from micro_services.general_view import MicroServiceViewSet
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.transactions import *
 from shared.permissions.micro_service_permissions.payment_permissions import PaymentPermission
