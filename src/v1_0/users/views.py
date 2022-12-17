@@ -630,16 +630,11 @@ class UserPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"success": True})
 
     def _delete_locker_user(self, user):
-        # TODO: Need to delete Enterprise or not???
-        # # Check if user is the owner of the enterprise
-        # default_enterprise = self.user_repository.get_default_enterprise(user=user)
-        # # Clear data of the default enterprise
-        # if default_enterprise:
-        #     default_enterprise.enterprise_members.all().order_by('id').delete()
-        #     default_enterprise.groups.order_by('id').delete()
-        #     default_enterprise.policies.order_by('id').delete()
-        #     default_enterprise.domains.all().order_by('id').delete()
-        #     default_enterprise.delete()
+        # Check if user is the owner of the enterprise
+        default_enterprise = self.user_repository.get_default_enterprise(user=user)
+        # Clear data of the default enterprise
+        if default_enterprise:
+            default_enterprise.clear_data()
 
         # Check if user is the only owner of any teams (except default team)
         default_team = self.user_repository.get_default_team(user=user)

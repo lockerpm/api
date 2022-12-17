@@ -64,6 +64,21 @@ class Enterprise(models.Model):
             self.init_seats_expired_time = None
         self.save()
 
+    def delete_complete(self):
+        enterprise_id = self.id
+        self.clear_data()
+        self.delete()
+        # Delete all events
+        Event.objects.filter(team_id=enterprise_id).delete()
+
+    def clear_data(self):
+        self.enterprise_members.order_by('id').delete()
+        self.policies.order_by('id').delete()
+        self.domains.all().order_by('id').delete()
+        groups = self.groups.order_by('id')
+        for group in groups:
+            group.full_delete()
+
     def get_activated_members_count(self):
         return self.enterprise_members.filter(
             status=E_MEMBER_STATUS_CONFIRMED, is_activated=True
