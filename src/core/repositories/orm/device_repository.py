@@ -54,7 +54,7 @@ class DeviceRepository(IDeviceRepository):
             "iat": created_time,
             "amr": ["Application"]
         }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256').decode('utf-8')
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return token
 
     def fetch_user_access_token(self, user: User, sso_token_id: str = None) -> Optional[DeviceAccessToken]:
