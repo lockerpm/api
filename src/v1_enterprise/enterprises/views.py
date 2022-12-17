@@ -82,23 +82,12 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         return super(EnterprisePwdViewSet, self).update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        user = self.request.user
-        ip = request.data.get("ip")
         enterprise = self.get_object()
-        enterprise_id = enterprise.id
-
         # Cancel the plan of the owner
         primary_admin = enterprise.get_primary_admin_user()
         self.user_repository.cancel_plan(user=primary_admin, scope=settings.SCOPE_PWD_MANAGER, immediately=True)
-
         # Clear data of the enterprise
-        enterprise.enterprise_members.all().order_by('id').delete()
-        enterprise.groups.order_by('id').delete()
-        enterprise.policies.order_by('id').delete()
-        enterprise.domains.all().order_by('id').delete()
-        enterprise.delete()
-        # Delete all events
-        Event.objects.filter(team_id=enterprise_id).delete()
+        enterprise.delete_complete()
 
         return Response(status=204)
 
