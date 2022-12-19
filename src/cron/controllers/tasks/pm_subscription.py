@@ -100,17 +100,24 @@ def pm_expiring_notify():
     ).exclude(cancel_at_period_end=True).filter(
         end_period__gte=current_time + 5 * 86400,
         end_period__lte=current_time + 7 * 86400
-    )
+    ).select_related('pm_plan')
 
     for pm_user_plan in expiring_plans:
         user = pm_user_plan.user
+        plan_obj = pm_user_plan.get_plan_obj()
+        plan_name = plan_obj.get_name()
+        if plan_obj.is_team_plan:
+            link = "https://enterprise.locker.io/admin/billing/payment-method"
+        else:
+            link = "https://locker.io/settings/plans-billing"
         LockerBackgroundFactory.get_background(
             bg_name=BG_NOTIFY, background=False
         ).run(func_name="banking_expiring", **{
             "user_id": user.user_id,
-            "current_plan": pm_user_plan.get_plan_type_name(),
+            "current_plan": plan_name,
             "start_period": pm_user_plan.start_period,
             "end_period": pm_user_plan.end_period,
             "payment_method": pm_user_plan.get_default_payment_method(),
-            "scope": settings.SCOPE_PWD_MANAGER
+            "scope": settings.SCOPE_PWD_MANAGER,
+            "link": link
         })
