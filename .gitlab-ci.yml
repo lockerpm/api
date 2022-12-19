@@ -25,6 +25,7 @@ deploy_staging:
 build:
   stage: build
   script:
+    - pwd
     - cystack-deployer
   tags:
     - cs_responding
