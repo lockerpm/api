@@ -264,7 +264,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "token_type": TOKEN_TYPE_TRIAL_ENTERPRISE,
             "expired_time": now() + TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE
         }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256').decode('utf-8')
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return Response(status=200, data={"token": token})
 
     @action(methods=["get"], detail=False)
