@@ -49,7 +49,7 @@ class TeamMemberRepository(ITeamMemberRepository):
             "token_type": TOKEN_TYPE_INVITE_MEMBER
         }
         token_value = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-        token_value = TOKEN_PREFIX + token_value.decode('utf-8')
+        token_value = TOKEN_PREFIX + token_value
         member.token_invitation = token_value
         member.save()
         return token_value
