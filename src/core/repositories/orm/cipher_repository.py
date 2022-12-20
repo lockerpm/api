@@ -1,7 +1,7 @@
 import json
 import uuid
 
-from django.db.models import Q, Case, When, Value, IntegerField, BooleanField, Count
+from django.db.models import Q, Case, When, Value, IntegerField, BooleanField, Count, F
 
 from core.repositories import ICipherRepository
 from core.utils.account_revision_date import bump_account_revision_date
@@ -264,6 +264,22 @@ class CipherRepository(ICipherRepository):
 
     def save_share_cipher(self, cipher: Cipher, cipher_data) -> Cipher:
         return self.save_update_cipher(cipher, cipher_data)
+
+    def save_cipher_use(self, cipher: Cipher, cipher_use_data) -> Cipher:
+        user_id = cipher_use_data.get("user_id")
+        # Set favorite
+        if user_id:
+            favorite = cipher_use_data.get("favorite", cipher.get_favorites().get(user_id, False))
+            cipher.set_favorite(user_id=user_id, is_favorite=favorite)
+        # Set last_use_date, num_use
+        if cipher_use_data.get("use"):
+            cipher.last_use_date = cipher_use_data.get("last_use_date", now(return_float=True))
+            cipher.num_use = F('num_use') + 1
+        cipher.save()
+        # Update revision date
+        bump_account_revision_date(team=cipher.team)
+        bump_account_revision_date(user=cipher.user)
+        return cipher
 
     def delete_multiple_cipher(self, cipher_ids: list, user_deleted: User = None):
         """

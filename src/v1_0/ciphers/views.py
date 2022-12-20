@@ -13,7 +13,7 @@ from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPw
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer, \
-    SyncOfflineCipherSerializer, DetailCipherSerializer
+    SyncOfflineCipherSerializer, DetailCipherSerializer, UpdateCipherUseSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -38,6 +38,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = ImportCipherSerializer
         elif self.action in ["sync_offline"]:
             self.serializer_class = SyncOfflineCipherSerializer
+        elif self.action in ["cipher_user"]:
+            self.serializer_class = UpdateCipherUseSerializer
         return super(CipherPwdViewSet, self).get_serializer_class()
 
     def get_object(self):
@@ -209,6 +211,30 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[request.user.user_id],
+            team=cipher.team,
+            add_all=True
+        ).send(data={"id": cipher.id})
+        return Response(status=200, data={"id": cipher.id})
+
+    @action(methods=["put"], detail=False)
+    def cipher_use(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
+        cipher = self.get_object()
+        if cipher.type in IMMUTABLE_CIPHER_TYPES:
+            raise PermissionDenied
+        user = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        cipher_use_data = {
+            "favorite": validated_data.get("favorite"),
+            "use": validated_data.get("use"),
+            "user_id": user.user_id
+        }
+        cipher = self.cipher_repository.save_cipher_use(cipher=cipher, cipher_use_data=cipher_use_data)
+        PwdSync(
+            event=SYNC_EVENT_CIPHER_UPDATE,
+            user_ids=[user.user_id],
             team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})

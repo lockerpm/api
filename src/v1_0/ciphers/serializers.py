@@ -336,6 +336,11 @@ class ShareVaultItemSerializer(VaultItemSerializer):
         return super(ShareVaultItemSerializer, self).save(**kwargs)
 
 
+class UpdateCipherUseSerializer(serializers.Serializer):
+    favorite = serializers.BooleanField(default=False, required=False)
+    use = serializers.BooleanField(default=False, required=False)
+
+
 class MutipleItemIdsSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.CharField(), allow_empty=False, allow_null=False, required=True)
 

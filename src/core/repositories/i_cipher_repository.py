@@ -47,6 +47,10 @@ class ICipherRepository(ABC):
         pass
 
     @abstractmethod
+    def save_cipher_use(self, cipher: Cipher, cipher_use_data) -> Cipher:
+        pass
+
+    @abstractmethod
     def delete_multiple_cipher(self, cipher_ids, user_deleted):
         pass
 

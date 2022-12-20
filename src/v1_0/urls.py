@@ -120,6 +120,7 @@ urlpatterns += [
     url(r'^ciphers/import$', views.CipherPwdViewSet.as_view({'post': 'import_data'})),
     url(r'^ciphers/sync/offline$', views.CipherPwdViewSet.as_view({'post': 'sync_offline'})),
     url(r'^ciphers/(?P<pk>[0-9a-z\-]+)$', views.CipherPwdViewSet.as_view({'get': 'retrieve', 'put': 'update'})),
+    url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/use$', views.CipherPwdViewSet.as_view({'put': 'cipher_use'})),
     # url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share$', views.CipherPwdViewSet.as_view({'put': 'share'})),
     # url(r'^ciphers/(?P<pk>[0-9a-z\-]+)/share/members$', views.CipherPwdViewSet.as_view({'get': 'share_members'})),
 

@@ -12,6 +12,8 @@ class Cipher(models.Model):
     creation_date = models.FloatField()
     revision_date = models.FloatField()
     deleted_date = models.FloatField(null=True)
+    last_use_date = models.FloatField(null=True)
+    num_use = models.IntegerField(default=0)
     reprompt = models.IntegerField(default=0)
 
     score = models.FloatField(default=0)
