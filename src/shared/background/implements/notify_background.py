@@ -59,7 +59,7 @@ class NotifyBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
-    def banking_expiring(self, user_id, current_plan, start_period, end_period, payment_method, scope):
+    def banking_expiring(self, user_id, current_plan, start_period, end_period, payment_method, scope, link=None):
         try:
             url = API_NOTIFY_PAYMENT + "/notify_expiring"
             notification_data = {
@@ -69,6 +69,7 @@ class NotifyBackground(ILockerBackground):
                 "end_period": end_period,
                 "payment_method": payment_method,
                 "scope": scope,
+                "link": link,
                 "demo": False
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)

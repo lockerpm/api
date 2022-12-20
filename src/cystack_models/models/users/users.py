@@ -78,7 +78,7 @@ class User(models.Model):
             self.set_master_password(raw)
             # Password hash upgrades shouldn't be considered password changes.
             self._password = None
-            self.save(update_fields=["password"])
+            self.save(update_fields=["master_password"])
         return check_password(raw_password, self.master_password, setter)
 
     @classmethod
