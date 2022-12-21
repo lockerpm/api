@@ -14,6 +14,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVEN
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer, \
     SyncOfflineCipherSerializer, DetailCipherSerializer, UpdateCipherUseSerializer
+from v1_0.sync.serializers import SyncCipherSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -214,6 +215,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})
+        data = SyncCipherSerializer(cipher, many=True, context={"user": request.user}).data
+        return Response(status=200, data=data)
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
@@ -238,6 +241,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})
+        data = SyncCipherSerializer(cipher, many=True, context={"user": request.user}).data
+        return Response(status=200, data=data)
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
