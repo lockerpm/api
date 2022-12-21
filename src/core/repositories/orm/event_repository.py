@@ -1,3 +1,5 @@
+from typing import List
+
 from core.repositories import IEventRepository
 
 from cystack_models.models.events.events import Event
@@ -15,3 +17,6 @@ class EventRepository(IEventRepository):
 
     def save_new_event_by_ciphers(self, ciphers, **data):
         return Event.create_multiple_by_ciphers(ciphers, **data)
+
+    def normalize_enterprise_activity(self, activity_logs: List[Event]):
+        pass
