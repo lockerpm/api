@@ -59,8 +59,10 @@ class LockerPermission(AppBasePermission):
         role_id = member.role_id
         if role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
             return True
-        if role_id in [MEMBER_ROLE_MEMBER]:
-            return False
+        # if role_id in [MEMBER_ROLE_MEMBER]:
+        #     return False
+        if self._member_group_can_edit(member=member) is True:
+            return True
 
         # Check member collection: Member belongs to one of collections of cipher and member has write permission
         if self._member_belongs_cipher_collections(member=member, cipher=cipher) and role_id != MEMBER_ROLE_MEMBER:
@@ -70,10 +72,9 @@ class LockerPermission(AppBasePermission):
         if self._member_belongs_cipher_groups(member, cipher):
             return True
 
-        # Check member policy
-        if self._cipher_team_policy(request, cipher) is True:
-            return True
-
+        # TODO: Check member policy
+        # if self._cipher_team_policy(request, cipher) is True:
+        #     return True
         return False
 
     @staticmethod
@@ -94,6 +95,11 @@ class LockerPermission(AppBasePermission):
         #     collection_id=cipher_collection_ids
         # ).values_list('group_id', flat=True))
         # return any(group_id in cipher_group_ids for group_id in member_group_ids)
+
+    @staticmethod
+    def _member_group_can_edit(member):
+        group_member_roles = list(member.groups_members.values_list('group__role_id', flat=True))
+        return any(role_id in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN] for role_id in group_member_roles)
 
     @staticmethod
     def _cipher_team_policy(request, cipher):
