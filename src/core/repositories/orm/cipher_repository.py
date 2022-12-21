@@ -276,6 +276,7 @@ class CipherRepository(ICipherRepository):
             cipher.last_use_date = cipher_use_data.get("last_use_date", now(return_float=True))
             cipher.num_use = F('num_use') + 1
         cipher.save()
+        cipher.refresh_from_db()
         # Update revision date
         bump_account_revision_date(team=cipher.team)
         bump_account_revision_date(user=cipher.user)
