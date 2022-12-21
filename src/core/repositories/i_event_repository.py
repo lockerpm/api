@@ -19,3 +19,7 @@ class IEventRepository(ABC):
     @abstractmethod
     def save_new_event_by_ciphers(self, ciphers, **data):
         pass
+
+    @abstractmethod
+    def normalize_enterprise_activity(self, activity_logs):
+        pass

@@ -99,6 +99,16 @@ class User(models.Model):
             return res.json()
         return {}
 
+    @classmethod
+    def get_infor_by_user_ids(cls, user_ids):
+        url = "{}/micro_services/users".format(settings.GATEWAY_API)
+        headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
+        data_send = {"ids": user_ids, "emails": []}
+        res = requester(method="POST", url=url, headers=headers, data_send=data_send, retry=True)
+        if res.status_code == 200:
+            return res.json()
+        return []
+
     def get_from_cystack_id(self):
         """
         Request to API Gateway to get user information

@@ -76,6 +76,7 @@ urlpatterns += [
 # ----------------------------------- Activity Log ------------------------- #
 urlpatterns += [
     url(r'^(?P<pk>[0-9a-z]+)/activity$', views.ActivityLogPwdViewSet.as_view({'get': 'list'})),
+    url(r'^(?P<pk>[0-9a-z]+)/activity/export$', views.ActivityLogPwdViewSet.as_view({'get': 'export'})),
 ]
 
 
