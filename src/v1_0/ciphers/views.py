@@ -215,7 +215,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})
-        data = SyncCipherSerializer(cipher, many=True, context={"user": request.user}).data
+        data = SyncCipherSerializer(cipher, many=False, context={"user": request.user}).data
         return Response(status=200, data=data)
         return Response(status=200, data={"id": cipher.id})
 
@@ -241,7 +241,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             team=cipher.team,
             add_all=True
         ).send(data={"id": cipher.id})
-        data = SyncCipherSerializer(cipher, many=True, context={"user": request.user}).data
+        data = SyncCipherSerializer(cipher, many=False, context={"user": request.user}).data
         return Response(status=200, data=data)
         return Response(status=200, data={"id": cipher.id})
 
