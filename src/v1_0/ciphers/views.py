@@ -216,7 +216,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             add_all=True
         ).send(data={"id": cipher.id})
         data = SyncCipherSerializer(cipher, many=False, context={"user": request.user}).data
-        return Response(status=200, data=data)
+        return Response(status=200, data=camel_snake_data(data, snake_to_camel=True))
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
@@ -242,7 +242,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             add_all=True
         ).send(data={"id": cipher.id})
         data = SyncCipherSerializer(cipher, many=False, context={"user": request.user}).data
-        return Response(status=200, data=data)
+        return Response(status=200, data=camel_snake_data(data, snake_to_camel=True))
         return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
