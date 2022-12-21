@@ -10,6 +10,7 @@ class UserStatistic(models.Model):
     created_master_password = models.BooleanField(default=False)
     cs_created_date = models.DateTimeField(null=True)
     lk_created_date = models.DateTimeField(null=True)
+    lk_last_login = models.DateTimeField(null=True)
     # Used platforms?
     use_web_app = models.BooleanField(default=False)
     use_android = models.BooleanField(default=False)

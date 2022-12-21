@@ -1,5 +1,7 @@
 from django.db.models import Q
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
 
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.events.events import Event
@@ -105,3 +107,10 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
         else:
             self.pagination_class.page_size = page_size_param if page_size_param else 10
         return super(ActivityLogPwdViewSet, self).list(request, *args, **kwargs)
+
+    @action(methods=["get"], detail=False)
+    def export(self, request, *args, **kwargs):
+        activity_logs_qs = self.get_queryset()
+        logs = []
+        # logs = self.event_repository.normalize_enterprise_activity(activity_logs=activity_logs_qs)
+        return Response(status=200, data=logs)

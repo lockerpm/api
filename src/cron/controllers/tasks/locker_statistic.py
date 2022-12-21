@@ -203,6 +203,7 @@ def list_users_statistic(user_ids):
             "created_master_password": user.activated,
             "cs_created_date": datetime_from_ts(user_from_id_data.get("registered_time")),
             "lk_created_date": datetime_from_ts(user.creation_date),
+            "lk_last_login": datetime_from_ts(user.last_request_login),
             "use_web_app": use_web,
             "use_android": use_android,
             "use_ios": use_ios,
