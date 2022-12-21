@@ -127,6 +127,11 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         collection_ids = []
         if instance.collections_ciphers.exists() > 0:
             collection_ids = list(instance.collections_ciphers.values_list('collection_id', flat=True))
+
+        try:
+            view_password = instance.view_password
+        except AttributeError:
+            view_password = True
         data = {
             "object": "cipherDetails",
             "attachments": None,
@@ -153,7 +158,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "revision_date": convert_readable_date(instance.revision_date),
             "secure_note": secure_note,
             "type": instance.type,
-            "view_password": instance.view_password,
+            "view_password": view_password,
             "num_use": instance.num_use
         }
         return data
