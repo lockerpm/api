@@ -38,7 +38,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = ImportCipherSerializer
         elif self.action in ["sync_offline"]:
             self.serializer_class = SyncOfflineCipherSerializer
-        elif self.action in ["cipher_user"]:
+        elif self.action in ["cipher_use"]:
             self.serializer_class = UpdateCipherUseSerializer
         return super(CipherPwdViewSet, self).get_serializer_class()
 

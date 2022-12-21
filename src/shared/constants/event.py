@@ -7,36 +7,6 @@ EVENT_USER_LOGIN_FAILED = 1005
 # EVENT_USER_EXPORT_VAULT = 1007
 EVENT_USER_BLOCK_LOGIN = 1008
 
-# EVENT_CIPHER_CREATED = 1100
-# EVENT_CIPHER_UPDATED = 1101
-# EVENT_CIPHER_DELETED = 1102
-# EVENT_CIPHER_ATTACHMENT_CREATED = 1103
-# EVENT_CIPHER_ATTACHMENT_DELETED = 1104
-# EVENT_CIPHER_SHARED = 1105
-# EVENT_CIPHER_UPDATE_COLLECTION = 1106
-# EVENT_CIPHER_VIEWED = 1107
-# EVENT_CIPHER_SOFT_DELETED = 1115
-# EVENT_CIPHER_RESTORE = 1116
-
-# EVENT_COLLECTION_CREATED = 1300
-# EVENT_COLLECTION_UPDATED = 1301
-# EVENT_COLLECTION_DELETED = 1202
-
-# EVENT_GROUP_CREATED = 1400
-# EVENT_GROUP_UPDATED = 1401
-# EVENT_GROUP_DELETED = 1402
-
-# EVENT_MEMBER_INVITED = 1500
-# EVENT_MEMBER_CONFIRMED = 1501
-# EVENT_MEMBER_UPDATED = 1502
-# EVENT_MEMBER_REMOVED = 1503
-# EVENT_MEMBER_UPDATED_GROUP = 1504
-
-# EVENT_TEAM_UPDATED = 1600
-# EVENT_TEAM_PURGED_DATA = 1601
-
-# EVENT_TEAM_POLICY_UPDATED = 1700
-
 
 # ---------------- New events code ids of the Enterprise ----------------- #
 EVENT_ENTERPRISE_CREATED = 1800
@@ -57,3 +27,92 @@ EVENT_E_GROUP_DELETED = 2002
 EVENT_E_DOMAIN_CREATED = 2100
 EVENT_E_DOMAIN_VERIFIED = 2101
 EVENT_E_DOMAIN_DELETED = 2102
+
+
+LOG_TYPES = {
+    # User Events
+    EVENT_USER_LOGIN: {
+        "vi": "Đăng nhập",
+        "en": "Logged in"
+    },
+    EVENT_USER_CHANGE_PASSWORD: {
+        "vi": "Đã thay đổi mật khẩu chính của tài khoản",
+        "en": "Changed account password"
+    },
+    EVENT_USER_LOGIN_FAILED: {
+        "vi": "Cố gắng đăng nhập với mật khẩu không chính xác",
+        "en": "Login attempted failed with incorrect password"
+    },
+    EVENT_USER_BLOCK_LOGIN: {
+        "vi": "User <b>{user_email}</b> đã bị khóa đăng nhập bởi chính sách của doanh nghiệp",
+        "en": "User <b>{user_email}</b> is blocked login by the enterprise policy"
+    },
+
+    # Enterprise events
+    EVENT_ENTERPRISE_CREATED: {
+        "vi": "Doanh nghiệp đã được tạo",
+        "en": "The enterprise is created"
+    },
+    EVENT_ENTERPRISE_UPDATED: {
+        "vi": "Thông tin của doanh nghiệp đã được cập nhật",
+        "en": "The enterprise's information is updated"
+    },
+
+    # Enterprise member events
+    EVENT_E_MEMBER_INVITED: {
+        "vi": "User <b>{user_email}</b> đã được mời vào doanh nghiệp",
+        "en": "User <b>{user_email}</b> has been invited to your enterprise"
+    },
+    EVENT_E_MEMBER_CONFIRMED: {
+        "vi": "User <b>{user_email}</b> đã tham gia vào doanh nghiệp",
+        "en": "User <b>{user_email}</b> has joined your enterprise"
+    },
+    EVENT_E_MEMBER_UPDATED_ROLE: {
+        "vi": "User <b>{user_email}</b> vừa chuyển từ {old_role} sang {new_role}",
+        "en": "User <b>{user_email}</b> has been changed from {old_role} to {new_role}"
+    },
+    EVENT_E_MEMBER_REMOVED: {
+        "vi": "User <b>{user_email}</b> đã rời khỏi doanh nghiệp",
+        "en": "User <b>{user_email}</b> has left your enterprise"
+    },
+    EVENT_E_MEMBER_UPDATED_GROUP: {
+        "vi": "Nhóm của user <b>{user_email}</b> vừa được cập nhật",
+        "en": "The groups of user <b>{user_email}</b> has been updated"
+    },
+    EVENT_E_MEMBER_ENABLED: {
+        "vi": "User <b>{user_email}</b> đã được kích hoạt",
+        "en": "User <b>{user_email}</b> has been enabled"
+    },
+    EVENT_E_MEMBER_DISABLED: {
+        "vi": "User <b>{user_email}</b> đã bị vô hiệu hóa",
+        "en": "User <b>{user_email}</b> has been disabled"
+    },
+
+    # Enterprise group events
+    EVENT_E_GROUP_CREATED: {
+        "vi": "Nhóm {group_name} đã được tạo",
+        "en": "A group {group_name} has been created"
+    },
+    EVENT_E_GROUP_UPDATED: {
+        "vi": "Tên nhóm đã được chuyển từ {old_name} sang {new_name}",
+        "en": "The group's name has been changed from {old_name} to {new_name}"
+    },
+    EVENT_E_GROUP_DELETED: {
+        "vi": "Nhóm {group_name} đã bị xóa",
+        "en": "The group {group_name} is deleted"
+    },
+
+    # Enterprise domain events
+    EVENT_E_DOMAIN_CREATED: {
+        "vi": "Tên miền <b>{domain_address}</b> đã được tạo",
+        "en": "The domain <b>{domain_address}</b> has been created"
+    },
+    EVENT_E_DOMAIN_VERIFIED: {
+        "vi": "Tên miền <b>{domain_address}</b> đã được xác thực",
+        "en": "The domain <b>{domain_address}</b> has been verified"
+    },
+    EVENT_E_DOMAIN_DELETED: {
+        "vi": "Tên miền <b>{domain_address}</b> đã bị xóa",
+        "en": "The domain <b>{domain_address}</b> is deleted"
+    },
+}

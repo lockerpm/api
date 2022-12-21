@@ -136,6 +136,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "collection_ids": collection_ids,
             "data": data,
             "deleted_date": instance.deleted_date,
+            "last_use_date": instance.last_use_date,
             "edit": True,
             "favorite": favorite,
             "fields": fields,
@@ -152,7 +153,8 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "revision_date": convert_readable_date(instance.revision_date),
             "secure_note": secure_note,
             "type": instance.type,
-            "view_password": instance.view_password
+            "view_password": instance.view_password,
+            "num_use": instance.num_use
         }
         return data
 
