@@ -112,5 +112,5 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
     def export(self, request, *args, **kwargs):
         activity_logs_qs = self.get_queryset()
         logs = []
-        # logs = self.event_repository.normalize_enterprise_activity(activity_logs=activity_logs_qs)
-        return Response(status=200, data=logs)
+        self.event_repository.normalize_enterprise_activity(activity_logs=activity_logs_qs)
+        return Response(status=200, data={"success": True})

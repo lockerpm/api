@@ -1,3 +1,5 @@
+import django_rq
+
 from django.db.models import QuerySet
 
 from core.repositories import IEventRepository
@@ -20,6 +22,11 @@ class EventRepository(IEventRepository):
         return Event.create_multiple_by_ciphers(ciphers, **data)
 
     def normalize_enterprise_activity(self, activity_logs: QuerySet[Event]):
+        # TODO: Send job to redis queue
+        # django_rq.enqueue(self.export_enterprise_activity, activity_logs)
+        return
+
+    def export_enterprise_activity(self, activity_logs):
         user_ids = activity_logs.exclude(user_id__isnull=True).values_list('user_id', flat=True)
         acting_user_ids = activity_logs.exclude(acting_user_id__isnull=True).values_list('acting_user_id', flat=True)
         query_user_ids = list(set(list(user_ids) + list(acting_user_ids)))

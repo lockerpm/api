@@ -1,10 +1,11 @@
 asgiref==3.3.2
 Django==3.2.16
 django-cors-headers==3.5.0
-django-redis==4.9.0
+django-redis==5.2.0
 django-rest-framework-mongoengine==3.3.1
 djangorestframework==3.11.2
 django-dotenv==1.4.2
+django-rq==2.6.0
 dnslib==0.9.19
 dnspython==1.15.0
 mysqlclient==2.1.0
