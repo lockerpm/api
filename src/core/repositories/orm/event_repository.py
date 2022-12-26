@@ -1,11 +1,18 @@
+import io
+
 import django_rq
+import xlsxwriter
 
 from django.db.models import QuerySet
 
 from core.repositories import IEventRepository
+from core.utils.data_helpers import convert_readable_date
 from cystack_models.models.events.events import Event
 from cystack_models.models.users.users import User
 from shared.constants.event import LOG_TYPES
+from shared.log.cylog import CyLog
+from shared.services.s3.s3_service import s3_service
+from shared.utils.app import now
 
 
 class EventRepository(IEventRepository):
@@ -22,11 +29,6 @@ class EventRepository(IEventRepository):
         return Event.create_multiple_by_ciphers(ciphers, **data)
 
     def normalize_enterprise_activity(self, activity_logs: QuerySet[Event]):
-        # TODO: Send job to redis queue
-        # django_rq.enqueue(self.export_enterprise_activity, activity_logs)
-        return
-
-    def export_enterprise_activity(self, activity_logs):
         user_ids = activity_logs.exclude(user_id__isnull=True).values_list('user_id', flat=True)
         acting_user_ids = activity_logs.exclude(acting_user_id__isnull=True).values_list('acting_user_id', flat=True)
         query_user_ids = list(set(list(user_ids) + list(acting_user_ids)))
@@ -34,7 +36,6 @@ class EventRepository(IEventRepository):
         users_data_dict = dict()
         for user_data in users_data:
             users_data_dict[user_data.get("id")] = user_data
-
         logs = []
         for activity_log in activity_logs:
             acting_user_id = activity_log.acting_user_id
@@ -60,6 +61,42 @@ class EventRepository(IEventRepository):
             log.pop("metadata", None)
             logs.append(log)
         return logs
+
+    def export_enterprise_activity(self, enterprise_id: str, activity_logs: QuerySet[Event]):
+        django_rq.enqueue(self.export_enterprise_activity_job, enterprise_id, activity_logs)
+
+    def export_enterprise_activity_job(self, enterprise_id, activity_logs):
+        current_time = now()
+        filename = "activity_logs_{}".format(convert_readable_date(current_time, "%Y%m%d"))
+        logs = self.normalize_enterprise_activity(activity_logs=activity_logs)
+
+        # Write to xlsx file
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet()
+        title = ["Action", "Actor", "Time", "IP Address"]
+        worksheet.write_row(0, 0, title)
+        row_index = 2
+        for log in logs:
+            row = [
+                log.get("description", {}).get("en"),
+                log.get("acting_user", {}).get("email") if log.get("acting_user") else "",
+                convert_readable_date(log.get("creation_date")),
+                log.get("ip_address")
+            ]
+            worksheet.write_row(row_index, 0, row)
+            row_index += 1
+        workbook.close()
+        output.seek(0)
+
+        # Upload to S3
+        s3_path = f"support/tmp/activity/{enterprise_id}/{filename}.xlsx"
+        s3_service.upload_bytes_object(key=s3_path, io_bytes=output)
+
+        download_url = s3_service.gen_one_time_url(file_path=s3_path, **{"expired": 900})
+        CyLog.debug(**{"message": f"Exported to {download_url}"})
+
+        # TODO: Sending mail
 
     @staticmethod
     def __get_activity_log_data(activity_log: Event):

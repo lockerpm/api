@@ -100,17 +100,25 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
         return events
 
     def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
         paging_param = self.request.query_params.get("paging", "1")
         page_size_param = self.check_int_param(self.request.query_params.get("size", 10))
         if paging_param == "0":
             self.pagination_class = None
         else:
             self.pagination_class.page_size = page_size_param if page_size_param else 10
-        return super(ActivityLogPwdViewSet, self).list(request, *args, **kwargs)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            logs = Event.objects.filter(id__in=[p.id for p in page]).order_by('-creation_date')
+            normalize_page = self.event_repository.normalize_enterprise_activity(activity_logs=logs)
+            return self.get_paginated_response(normalize_page)
+        logs = self.event_repository.normalize_enterprise_activity(activity_logs=queryset)
+        return Response(status=200, data=logs)
 
     @action(methods=["get"], detail=False)
     def export(self, request, *args, **kwargs):
         activity_logs_qs = self.get_queryset()
-        logs = []
-        self.event_repository.normalize_enterprise_activity(activity_logs=activity_logs_qs)
+        self.event_repository.export_enterprise_activity(
+            enterprise_id=kwargs.get("pk"), activity_logs=activity_logs_qs
+        )
         return Response(status=200, data={"success": True})

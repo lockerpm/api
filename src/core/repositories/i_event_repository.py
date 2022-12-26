@@ -23,3 +23,7 @@ class IEventRepository(ABC):
     @abstractmethod
     def normalize_enterprise_activity(self, activity_logs):
         pass
+
+    @abstractmethod
+    def export_enterprise_activity(self, enterprise_id: str, activity_logs):
+        pass
