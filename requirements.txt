@@ -1,5 +1,5 @@
 asgiref==3.3.2
-cryptography==37.0.4
+cryptography==38.0.3
 Django==3.2.16
 django-cors-headers==3.5.0
 django-redis==5.2.0

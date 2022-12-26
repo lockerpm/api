@@ -93,6 +93,9 @@ class EventRepository(IEventRepository):
         s3_path = f"support/tmp/activity/{enterprise_id}/{filename}.xlsx"
         s3_service.upload_bytes_object(key=s3_path, io_bytes=output)
 
+        # Close IO Stream
+        output.close()
+
         download_url = s3_service.gen_one_time_url(file_path=s3_path, **{"expired": 900})
         CyLog.debug(**{"message": f"Exported to {download_url}"})
 
