@@ -15,7 +15,7 @@ import os
 from django.db import close_old_connections
 
 from cron.controllers.utils.logger import Logger
-from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_notify
+from cron.controllers.tasks.pm_subscription import pm_subscription, pm_expiring_notify, pm_enterprise_reminder
 from cron.controllers.tasks.emergency_access_auto_approve import emergency_access_auto_approve
 from cron.controllers.tasks.feedback import upgrade_survey_emails, log_new_users
 from cron.controllers.tasks.delete_trash_ciphers import delete_trash_ciphers
@@ -43,6 +43,7 @@ class CronTask:
     def plan_expiring_notification(self):
         try:
             pm_expiring_notify()
+            pm_enterprise_reminder()
             self.logger.info("[+] pm_expiring_notify Done")
         except Exception as e:
             tb = traceback.format_exc()
