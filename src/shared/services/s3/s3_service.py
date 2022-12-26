@@ -7,10 +7,10 @@ import boto3
 from botocore.config import Config
 from botocore.errorfactory import ClientError
 from botocore.signers import CloudFrontSigner
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+# from cryptography.hazmat.backends import default_backend
+# from cryptography.hazmat.primitives import hashes
+# from cryptography.hazmat.primitives import serialization
+# from cryptography.hazmat.primitives.asymmetric import padding
 from django.conf import settings
 
 from shared.log.cylog import CyLog
@@ -80,55 +80,55 @@ class S3Service:
         """
         if not file_path:
             return
-        if is_cdn:
-            expired = kwargs.get("expired", DEFAULT_S3_EXPIRED)
-            expire_date = datetime.utcfromtimestamp(now() + expired)  # 1 minute
-            cloudfront_signer = CloudFrontSigner(settings.AWS_CLOUDFRONT_PUBLIC_KEY_ID, self._rsa_signer)
-            if not file_path.startswith("https://") and not file_path.startswith("http://"):
-                file_path = "{}/{}".format(settings.CDN_ATTACHMENT_URL, file_path)
-
-            # Addition headers
-            response_content_disposition = kwargs.get("response_content_disposition")
-            if response_content_disposition:
-                encode_response_content_disposition = urllib.parse.unquote(
-                    response_content_disposition
-                ).replace("+", "%20")
-                file_path = "{}?response-content-disposition={}".format(file_path, encode_response_content_disposition)
-
-            # Create a signed url that will be valid until the specific expiry date provided using a canned policy.
-            signed_url = cloudfront_signer.generate_presigned_url(file_path, date_less_than=expire_date)
-            return signed_url
-
-        else:
-            expired_in = kwargs.get("expired", DEFAULT_S3_EXPIRED)
-            response_content_disposition = kwargs.get("response_content_disposition", None)
-            bucket_params = {
-                'Bucket': source,
-                'Key': file_path,
-            }
-            if response_content_disposition:
-                bucket_params.update({"ResponseContentDisposition": response_content_disposition})
-            pre_signed_params = {
-                "Params": bucket_params,
-                "ExpiresIn": expired_in
-            }
-            url = self.client.generate_presigned_url(
-                'get_object',
-                **pre_signed_params
-            )
-            # url = url.replace("https://{}.s3.amazonaws.com".format(source), settings.CDN_ATTACHMENT_URL)
-            return url
-
-    @staticmethod
-    def _rsa_signer(message):
-        credentials_json_data = ast.literal_eval(str(settings.AWS_CLOUDFRONT_PRIVATE_KEY))
-        secret = bytes(credentials_json_data.get("secret"), 'utf-8')
-        private_key = serialization.load_pem_private_key(
-            secret,
-            password=None,
-            backend=default_backend()
+        # if is_cdn:
+        #     expired = kwargs.get("expired", DEFAULT_S3_EXPIRED)
+        #     expire_date = datetime.utcfromtimestamp(now() + expired)  # 1 minute
+        #     cloudfront_signer = CloudFrontSigner(settings.AWS_CLOUDFRONT_PUBLIC_KEY_ID, self._rsa_signer)
+        #     if not file_path.startswith("https://") and not file_path.startswith("http://"):
+        #         file_path = "{}/{}".format(settings.CDN_ATTACHMENT_URL, file_path)
+        #
+        #     # Addition headers
+        #     response_content_disposition = kwargs.get("response_content_disposition")
+        #     if response_content_disposition:
+        #         encode_response_content_disposition = urllib.parse.unquote(
+        #             response_content_disposition
+        #         ).replace("+", "%20")
+        #         file_path = "{}?response-content-disposition={}".format(file_path, encode_response_content_disposition)
+        #
+        #     # Create a signed url that will be valid until the specific expiry date provided using a canned policy.
+        #     signed_url = cloudfront_signer.generate_presigned_url(file_path, date_less_than=expire_date)
+        #     return signed_url
+        #
+        # else:
+        expired_in = kwargs.get("expired", DEFAULT_S3_EXPIRED)
+        response_content_disposition = kwargs.get("response_content_disposition", None)
+        bucket_params = {
+            'Bucket': source,
+            'Key': file_path,
+        }
+        if response_content_disposition:
+            bucket_params.update({"ResponseContentDisposition": response_content_disposition})
+        pre_signed_params = {
+            "Params": bucket_params,
+            "ExpiresIn": expired_in
+        }
+        url = self.client.generate_presigned_url(
+            'get_object',
+            **pre_signed_params
         )
-        return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
+        # url = url.replace("https://{}.s3.amazonaws.com".format(source), settings.CDN_ATTACHMENT_URL)
+        return url
+
+    # @staticmethod
+    # def _rsa_signer(message):
+    #     credentials_json_data = ast.literal_eval(str(settings.AWS_CLOUDFRONT_PRIVATE_KEY))
+    #     secret = bytes(credentials_json_data.get("secret"), 'utf-8')
+    #     private_key = serialization.load_pem_private_key(
+    #         secret,
+    #         password=None,
+    #         backend=default_backend()
+    #     )
+    #     return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
 
 
 s3_service = S3Service(
