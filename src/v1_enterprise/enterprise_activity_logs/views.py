@@ -11,15 +11,17 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.activity_log_permission import ActivityLogPwdPermission
 from shared.utils.app import now
 from v1_enterprise.apps import EnterpriseViewSet
-from .serializers import ActivityLogSerializer
+from .serializers import ActivityLogSerializer, ExportEmailActivityLogSerializer
 
 
 class ActivityLogPwdViewSet(EnterpriseViewSet):
     permission_classes = (ActivityLogPwdPermission, )
-    http_method_names = ["head", "options", "get"]
+    http_method_names = ["head", "options", "get", "post"]
     serializer_class = ActivityLogSerializer
 
     def get_serializer_class(self):
+        if self.action == "export_to_email":
+            self.serializer_class = ExportEmailActivityLogSerializer
         return super(ActivityLogPwdViewSet, self).get_serializer_class()
 
     def get_enterprise(self):
@@ -118,7 +120,24 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
     @action(methods=["get"], detail=False)
     def export(self, request, *args, **kwargs):
         activity_logs_qs = self.get_queryset()
+        enterprise = self.get_enterprise()
+        enterprise_member = enterprise.enterprise_members.get(user=self.request.user)
         self.event_repository.export_enterprise_activity(
-            enterprise_id=kwargs.get("pk"), activity_logs=activity_logs_qs
+            enterprise_member=enterprise_member, activity_logs=activity_logs_qs
+        )
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def export_to_email(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        activity_logs_qs = self.get_queryset()
+        enterprise = self.get_enterprise()
+        enterprise_member = enterprise.enterprise_members.get(user=self.request.user)
+        self.event_repository.export_enterprise_activity(
+            enterprise_member=enterprise_member,
+            activity_logs=activity_logs_qs,
+            cc_emails=validated_data.get("cc", [])
         )
         return Response(status=200, data={"success": True})

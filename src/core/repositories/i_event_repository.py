@@ -25,5 +25,5 @@ class IEventRepository(ABC):
         pass
 
     @abstractmethod
-    def export_enterprise_activity(self, enterprise_id: str, activity_logs):
+    def export_enterprise_activity(self, enterprise_member, activity_logs, cc_emails=None):
         pass

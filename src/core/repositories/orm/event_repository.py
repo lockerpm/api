@@ -62,10 +62,10 @@ class EventRepository(IEventRepository):
             logs.append(log)
         return logs
 
-    def export_enterprise_activity(self, enterprise_id: str, activity_logs: QuerySet[Event]):
-        django_rq.enqueue(self.export_enterprise_activity_job, enterprise_id, activity_logs)
+    def export_enterprise_activity(self, enterprise_member, activity_logs: QuerySet[Event], cc_emails=None):
+        django_rq.enqueue(self.export_enterprise_activity_job, enterprise_member, activity_logs, cc_emails)
 
-    def export_enterprise_activity_job(self, enterprise_id, activity_logs):
+    def export_enterprise_activity_job(self, enterprise_member, activity_logs, cc_emails=None):
         current_time = now()
         filename = "activity_logs_{}".format(convert_readable_date(current_time, "%Y%m%d"))
         logs = self.normalize_enterprise_activity(activity_logs=activity_logs)
@@ -90,7 +90,7 @@ class EventRepository(IEventRepository):
         output.seek(0)
 
         # Upload to S3
-        s3_path = f"support/tmp/activity/{enterprise_id}/{filename}.xlsx"
+        s3_path = f"support/tmp/activity/{enterprise_member.enterprise_id}/{filename}.xlsx"
         s3_service.upload_bytes_object(key=s3_path, io_bytes=output)
 
         # Close IO Stream
@@ -100,6 +100,12 @@ class EventRepository(IEventRepository):
         CyLog.debug(**{"message": f"Exported to {download_url}"})
 
         # TODO: Sending mail
+        from shared.background.implements import NotifyBackground
+        NotifyBackground(background=False).notify_enterprise_export(data={
+            "user_ids": [],
+            "cc": cc_emails,
+            "download_url": download_url,
+        })
 
     @staticmethod
     def __get_activity_log_data(activity_log: Event):
