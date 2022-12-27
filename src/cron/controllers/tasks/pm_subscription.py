@@ -112,9 +112,9 @@ def pm_expiring_notify():
         plan_obj = pm_user_plan.get_plan_obj()
         plan_name = plan_obj.get_name()
         if plan_obj.is_team_plan:
-            link = "https://enterprise.locker.io/admin/billing/payment-method"
+            payment_url = "https://enterprise.locker.io/admin/billing/payment-method"
         else:
-            link = "https://locker.io/settings/plans-billing"
+            payment_url = "https://locker.io/settings/plans-billing"
         LockerBackgroundFactory.get_background(
             bg_name=BG_NOTIFY, background=False
         ).run(func_name="banking_expiring", **{
@@ -124,7 +124,7 @@ def pm_expiring_notify():
             "end_period": pm_user_plan.end_period,
             "payment_method": pm_user_plan.get_default_payment_method(),
             "scope": settings.SCOPE_PWD_MANAGER,
-            "link": link
+            "payment_url": payment_url
         })
 
 
