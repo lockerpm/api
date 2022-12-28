@@ -62,10 +62,14 @@ class EventRepository(IEventRepository):
             logs.append(log)
         return logs
 
-    def export_enterprise_activity(self, enterprise_member, activity_logs: QuerySet[Event], cc_emails=None):
-        django_rq.enqueue(self.export_enterprise_activity_job, enterprise_member, activity_logs, cc_emails)
+    def export_enterprise_activity(self, enterprise_member, activity_logs: QuerySet[Event], cc_emails=None, **kwargs):
+        django_rq.enqueue(
+            self.export_enterprise_activity_job, enterprise_member, activity_logs, cc_emails,
+            kwargs.get("from"), kwargs.get("to")
+        )
 
-    def export_enterprise_activity_job(self, enterprise_member, activity_logs, cc_emails=None):
+    def export_enterprise_activity_job(self, enterprise_member, activity_logs, cc_emails=None,
+                                       from_param=None, to_param=None):
         current_time = now()
         filename = "activity_logs_{}".format(convert_readable_date(current_time, "%Y%m%d"))
         logs = self.normalize_enterprise_activity(activity_logs=activity_logs)
@@ -104,7 +108,13 @@ class EventRepository(IEventRepository):
         NotifyBackground(background=False).notify_enterprise_export(data={
             "user_ids": [],
             "cc": cc_emails,
-            "download_url": download_url,
+            "attachments": [{
+                "url": download_url,
+                "name": f"{filename}.xlsx"
+            }],
+            "org_name": enterprise_member.enterprise.name,
+            "start_date": from_param,
+            "end_date": to_param
         })
 
     @staticmethod

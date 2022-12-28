@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
+from core.utils.data_helpers import convert_readable_date
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.events.events import Event
 from shared.constants.enterprise_members import *
@@ -129,6 +130,11 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
 
     @action(methods=["post"], detail=False)
     def export_to_email(self, request, *args, **kwargs):
+        to_param = self.check_int_param(self.request.query_params.get("to")) or now()
+        from_param = self.check_int_param(self.request.query_params.get("from")) or now() - 30 * 86400
+        to_param_str = convert_readable_date(to_param, "%m/%d/%Y")
+        from_param_str = convert_readable_date(from_param, "%m/%d/%Y")
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -138,6 +144,7 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
         self.event_repository.export_enterprise_activity(
             enterprise_member=enterprise_member,
             activity_logs=activity_logs_qs,
-            cc_emails=validated_data.get("cc", [])
+            cc_emails=validated_data.get("cc", []),
+            **{"to": to_param_str, "from": from_param_str}
         )
         return Response(status=200, data={"success": True})
