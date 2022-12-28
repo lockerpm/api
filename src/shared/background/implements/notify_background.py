@@ -219,15 +219,14 @@ class NotifyBackground(ILockerBackground):
                 connection.close()
 
     def notify_enterprise_export(self, data):
-        print("DATA: ", data)
-        # url = API_NOTIFY_LOCKER + "/enterprise_export"
-        # try:
-        #     requester(
-        #         method="POST", url=url, headers=HEADERS, data_send=data,
-        #         retry=True, max_retries=3, timeout=5
-        #     )
-        # except Exception:
-        #     self.log_error(func_name="notify_enterprise_export")
-        # finally:
-        #     if self.background:
-        #         connection.close()
+        url = API_NOTIFY_LOCKER + "/enterprise_export"
+        try:
+            requester(
+                method="POST", url=url, headers=HEADERS, data_send=data,
+                retry=True, max_retries=3, timeout=5
+            )
+        except Exception:
+            self.log_error(func_name="notify_enterprise_export")
+        finally:
+            if self.background:
+                connection.close()

@@ -103,7 +103,7 @@ class EventRepository(IEventRepository):
         download_url = s3_service.gen_one_time_url(file_path=s3_path, **{"expired": 900})
         CyLog.debug(**{"message": f"Exported to {download_url}"})
 
-        # TODO: Sending mail
+        # Sending mail
         from shared.background.implements import NotifyBackground
         NotifyBackground(background=False).notify_enterprise_export(data={
             "user_ids": [],
