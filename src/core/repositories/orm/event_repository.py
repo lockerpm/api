@@ -106,7 +106,7 @@ class EventRepository(IEventRepository):
         # Sending mail
         from shared.background.implements import NotifyBackground
         NotifyBackground(background=False).notify_enterprise_export(data={
-            "user_ids": [],
+            "user_ids": [enterprise_member.user_id],
             "cc": cc_emails,
             "attachments": [{
                 "url": download_url,
