@@ -9,6 +9,7 @@ from cystack_models.models.users.users import User
 from shared.constants.token import TOKEN_PREFIX
 
 
+# The context var represents the database alias in the settings
 context_var = contextvars.ContextVar("DB", default='default')
 
 
@@ -38,11 +39,13 @@ class TenantDBMiddleware(object):
         if not enterprise_member:
             return None
         enterprise = enterprise_member.enterprise
-        print("User_id: ", enterprise)
+        print("User_id: ", user_id, enterprise)
         # TODO: Check enterprise has a tenant db?
         if enterprise.id in [""]:
             db = f'locker_tenant_{enterprise.id}'
             context_var.set(db)
+
+        # TODO: Handle /micro_services: MS payments, etc...
 
     def decode_user_id(self, request):
         token_value = self.get_auth_token(request)
@@ -58,7 +61,7 @@ class TenantDBMiddleware(object):
             # Get profile in token
             user_id = int(user_id)
             return user_id
-        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidAlgorithmError, ValueError, ObjectDoesNotExist):
+        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidAlgorithmError, ValueError):
             return None
 
     @staticmethod
