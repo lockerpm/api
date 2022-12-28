@@ -420,6 +420,12 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 "user_id": enterprise_member.user_id, "team_member_id": enterprise_member.id,
                 "type": EVENT_E_MEMBER_ENABLED if activated is True else EVENT_E_MEMBER_DISABLED, "ip_address": ip
             })
+            return Response(status=200, data={
+                "success": True, "notification": True,
+                "member_user_id": enterprise_member.user_id,
+                "enterprise_name": enterprise_member.enterprise.name,
+                "activated": activated
+            })
 
         return Response(status=200, data={"success": True})
 
