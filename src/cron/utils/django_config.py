@@ -5,9 +5,6 @@ import django
 import traceback
 
 from cron.controllers.utils.logger import logger
-# from cron.manage import *
-#
-# start()
 
 
 def django_config():
