@@ -1,3 +1,4 @@
+import os
 import time
 import schedule
 import requests
@@ -75,7 +76,8 @@ class Feedback(Task):
         })
 
     def scheduling(self):
-        schedule.every().day.at("10:00").do(self.run)
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
+        if os.getenv("PROD_ENV") != "staging":
+            schedule.every().day.at("10:00").do(self.run)
+            while True:
+                schedule.run_pending()
+                time.sleep(1)
