@@ -15,7 +15,7 @@
       "limit_secure_note": 50,
       "limit_identity": 10,
       "limit_payment_card": 5,
-      "limit_crypto_asset": 1,
+      "limit_crypto_asset": 5,
       "tools_password_reuse": true,
       "tools_master_password_check": true,
       "tools_data_breach": false,

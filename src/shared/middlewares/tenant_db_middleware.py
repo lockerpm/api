@@ -41,9 +41,12 @@ class TenantDBMiddleware(object):
         enterprise = enterprise_member.enterprise
         print("User_id: ", user_id, enterprise)
         # TODO: Check enterprise has a tenant db?
-        if enterprise.id in [""]:
+        if enterprise.id in ["3xu9cp"]:
             db = f'locker_tenant_{enterprise.id}'
             context_var.set(db)
+            # Retrieve or create User, Enterprise
+            User.retrieve_or_create(user_id=user_id)
+            self.retrieve_or_create_tenant_enterprise(enterprise_member=enterprise_member)
 
         # TODO: Handle /micro_services: MS payments, etc...
 
@@ -81,3 +84,26 @@ class TenantDBMiddleware(object):
             return token  # Having `cs.`
         except (ValueError, KeyError, AttributeError):
             return None
+
+    @staticmethod
+    def retrieve_or_create_tenant_enterprise(enterprise_member):
+        from cystack_models.models.enterprises.enterprises import Enterprise
+        enterprise = enterprise_member.enterprise
+        tenant_enterprise = Enterprise.retrieve_or_create(**{
+            "id": enterprise_member.enterprise_id,
+            "name": enterprise.name,
+            "enterprise_phone": enterprise.enterprise_phone,
+            "enterprise_country": enterprise.enterprise_country,
+            "enterprise_address1": enterprise.enterprise_address1,
+            "enterprise_address2": enterprise.enterprise_address2,
+            "enterprise_postal_code": enterprise.enterprise_postal_code,
+            "members": [{
+                "user": enterprise_member.user,
+                "email": enterprise_member.email,
+                "role_id": enterprise_member.role_id,
+                "status": enterprise_member.status,
+                "is_default": enterprise_member.is_default,
+                "is_primary": enterprise_member.is_primary,
+            }]
+        })
+        return tenant_enterprise
