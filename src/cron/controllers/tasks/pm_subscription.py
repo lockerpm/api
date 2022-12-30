@@ -45,6 +45,7 @@ def pm_subscription():
             ) + now()
             pm_user_plan.attempts = F('attempts') + 1
             pm_user_plan.save()
+            pm_user_plan.refresh_from_db()
             # Notify for user here
             LockerBackgroundFactory.get_background(
                 bg_name=BG_NOTIFY, background=False
