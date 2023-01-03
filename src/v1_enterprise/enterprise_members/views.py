@@ -472,12 +472,14 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 raise ValidationError(detail={"status": ["You cannot reject this enterprise"]})
             if member_invitation.domain.auto_approve is True:
                 member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+                member_invitation.access_time = now()
             else:
                 member_invitation.status = E_MEMBER_STATUS_REQUESTED
             member_invitation.save()
         else:
             if status == "confirmed":
                 member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+                member_invitation.access_time = now()
                 member_invitation.save()
             else:
                 member_invitation.delete()
