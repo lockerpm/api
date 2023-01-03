@@ -148,8 +148,8 @@ class EventRepository(IEventRepository):
             }
         else:
             description = {
-                "vi": LOG_TYPES.get(log_type, {}).get("vi_non_html", ""),
-                "en": LOG_TYPES.get(log_type, {}).get("en_non_html", ""),
+                "vi": LOG_TYPES.get(log_type, {}).get("vi_non_html", "") or LOG_TYPES.get(log_type, {}).get("vi", ""),
+                "en": LOG_TYPES.get(log_type, {}).get("en_non_html", "") or LOG_TYPES.get(log_type, {}).get("en", ""),
             }
         final_description = description.copy()
         normalizer_metadata = self.__get_normalizer_metadata(metadata)
