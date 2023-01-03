@@ -113,6 +113,27 @@ class LockerStatistic(Task):
             )
         )
 
+        subquery_paid_platforms = User.objects.filter(user_id=OuterRef('user_id')).annotate(
+            web_paid_count=Count(
+                Case(
+                    When(Q(payments__status=PAYMENT_STATUS_PAID, payments__stripe_invoice_id__isnull=False), then=1),
+                    output_field=IntegerField()
+                )
+            ),
+            ios_paid_count=Count(
+                Case(
+                    When(Q(payments__status=PAYMENT_STATUS_PAID, payments__mobile_invoice_id__startswith="GPA."), then=1),
+                    output_field=IntegerField()
+                )
+            ),
+            android_paid_count=Count(
+                Case(
+                    When(Q(payments__status=PAYMENT_STATUS_PAID, payments__mobile_invoice_id__regex=r'^\d+'), then=1),
+                    output_field=IntegerField()
+                )
+            )
+        )
+
         subquery_user_plan = User.objects.filter(user_id=OuterRef('user_id')).annotate(
             plan=F('pm_user_plan__pm_plan__name')
         ).annotate(
@@ -172,6 +193,16 @@ class LockerStatistic(Task):
                 subquery_user_payments.values_list('paid_money', flat=True)
             )
         ).annotate(
+            web_paid_count=Subquery(
+                subquery_paid_platforms.values_list('web_paid_count', flat=True)
+            ),
+            ios_paid_count=Subquery(
+                subquery_paid_platforms.values_list('ios_paid_count', flat=True)
+            ),
+            android_paid_count=Subquery(
+                subquery_paid_platforms.values_list('android_paid_count', flat=True)
+            )
+        ).annotate(
             plan_name=Subquery(
                 subquery_user_plan.values_list('plan_name', flat=True)
             )
@@ -180,7 +211,7 @@ class LockerStatistic(Task):
         # Request to IDs
         url = "{}/micro_services/users".format(settings.GATEWAY_API)
         headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
-        data_send = {"ids": list(users.values_list('user_id', flat=True)), "emails": []}
+        data_send = {"ids": list(users.values_list('user_id', flat=True)), "emails": [], "lk_referral_count": True}
         try:
             res = requester(method="POST", url=url, headers=headers, data_send=data_send, timeout=180)
             if res.status_code != 200:
@@ -211,6 +242,15 @@ class LockerStatistic(Task):
             deleted_account = True if user.delete_account_date or user_from_id_data.get("is_deleting") \
                                       or (not user_from_id_data.get("email")) else False
 
+            paid_platforms = []
+            if user.web_paid_count > 0:
+                paid_platforms.append("web")
+            if user.ios_paid_count > 0:
+                paid_platforms.append("ios")
+            if user.android_paid_count > 0:
+                paid_platforms.append("android")
+            paid_platforms_str = ",".join(paid_platforms)
+
             user_statistic_data = {
                 "user_id": user.user_id,
                 "country": user_from_id_data.get("country"),
@@ -234,8 +274,10 @@ class LockerStatistic(Task):
                 "num_private_emails": user.private_emails,
                 "deleted_account": deleted_account,
                 "lk_plan": user.plan_name,
+                "lk_referral_count": user_from_id_data.get("lk_referral_count"),
                 "utm_source": user_from_id_data.get("utm_source"),
                 "paid_money": user.paid_money,
+                "paid_platforms": paid_platforms_str
             }
             user_statistic_dict_data = user_statistic_data.copy()
             user_statistic_dict_data.pop('user_id', None)
