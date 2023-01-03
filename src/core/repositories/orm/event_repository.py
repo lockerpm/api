@@ -28,7 +28,7 @@ class EventRepository(IEventRepository):
     def save_new_event_by_ciphers(self, ciphers, **data):
         return Event.create_multiple_by_ciphers(ciphers, **data)
 
-    def normalize_enterprise_activity(self, activity_logs: QuerySet[Event]):
+    def normalize_enterprise_activity(self, activity_logs: QuerySet[Event], use_html: bool = True):
         user_ids = activity_logs.exclude(user_id__isnull=True).values_list('user_id', flat=True)
         acting_user_ids = activity_logs.exclude(acting_user_id__isnull=True).values_list('acting_user_id', flat=True)
         query_user_ids = list(set(list(user_ids) + list(acting_user_ids)))
@@ -57,7 +57,7 @@ class EventRepository(IEventRepository):
             } if user_data else None
             metadata = log.get("metadata", {})
             metadata.update({"user_email": user_data.get("email") if user_data else "Former user"})
-            log["description"] = self.__get_description(log.get("type"), metadata)
+            log["description"] = self.__get_description(log.get("type"), metadata, use_html=use_html)
             log.pop("metadata", None)
             logs.append(log)
         return logs
@@ -72,7 +72,7 @@ class EventRepository(IEventRepository):
                                        from_param=None, to_param=None):
         current_time = now()
         filename = "activity_logs_{}".format(convert_readable_date(current_time, "%Y%m%d"))
-        logs = self.normalize_enterprise_activity(activity_logs=activity_logs)
+        logs = self.normalize_enterprise_activity(activity_logs=activity_logs, use_html=False)
 
         # Write to xlsx file
         output = io.BytesIO()
@@ -139,11 +139,19 @@ class EventRepository(IEventRepository):
             "metadata": activity_log.get_metadata(),
         }
 
-    def __get_description(self, log_type, metadata):
+    def __get_description(self, log_type, metadata, use_html=True):
         log_type = int(log_type)
-        description = LOG_TYPES.get(log_type, {"vi": "", "en": ""})
+        if use_html:
+            description = {
+                "vi": LOG_TYPES.get(log_type, {}).get("vi", ""),
+                "en": LOG_TYPES.get(log_type, {}).get("en", ""),
+            }
+        else:
+            description = {
+                "vi": LOG_TYPES.get(log_type, {}).get("vi_non_html", ""),
+                "en": LOG_TYPES.get(log_type, {}).get("en_non_html", ""),
+            }
         final_description = description.copy()
-
         normalizer_metadata = self.__get_normalizer_metadata(metadata)
         final_description["vi"] = description["vi"].format(**normalizer_metadata)
         final_description["en"] = description["en"].format(**normalizer_metadata)

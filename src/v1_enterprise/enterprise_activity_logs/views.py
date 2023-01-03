@@ -132,8 +132,8 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
     def export_to_email(self, request, *args, **kwargs):
         to_param = self.check_int_param(self.request.query_params.get("to")) or now()
         from_param = self.check_int_param(self.request.query_params.get("from")) or now() - 30 * 86400
-        to_param_str = convert_readable_date(to_param, "%m/%d/%Y")
-        from_param_str = convert_readable_date(from_param, "%m/%d/%Y")
+        to_param_str = convert_readable_date(to_param, "%m/%d/%Y %H:%M:%S") + " (UTC+00)"
+        from_param_str = convert_readable_date(from_param, "%m/%d/%Y %H:%M:%S") + " (UTC+00)"
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
