@@ -58,7 +58,7 @@ class GroupPwdViewSet(EnterpriseViewSet):
         try:
             enterprise = Enterprise.objects.get(id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=enterprise)
-            if self.request.method in ["POST", "PUT", "DELETE"] and enterprise.locked:
+            if enterprise.locked:
                 raise ValidationError({"non_field_errors": [gen_error("3003")]})
 
             return enterprise
