@@ -29,8 +29,8 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
         try:
             enterprise = Enterprise.objects.get(id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=enterprise)
-            if enterprise.locked:
-                raise ValidationError({"non_field_errors": [gen_error("3003")]})
+            # if enterprise.locked:
+            #     raise ValidationError({"non_field_errors": [gen_error("3003")]})
             enterprise = self.check_allow_plan(enterprise=enterprise)
             return enterprise
         except Enterprise.DoesNotExist:
