@@ -274,7 +274,7 @@ class LockerStatistic(Task):
                 "num_private_emails": user.private_emails,
                 "deleted_account": deleted_account,
                 "lk_plan": user.plan_name,
-                "lk_referral_count": user_from_id_data.get("lk_referral_count"),
+                "lk_referral_count": user_from_id_data.get("lk_referral_count") or 0,
                 "utm_source": user_from_id_data.get("utm_source"),
                 "paid_money": user.paid_money,
                 "paid_platforms": paid_platforms_str
