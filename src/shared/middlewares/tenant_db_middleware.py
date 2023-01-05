@@ -35,6 +35,7 @@ class TenantDBMiddleware(object):
         # Get user_id and enterprise of user
         user_id = self.decode_user_id(request)
         user = User.retrieve_or_create(user_id=user_id)
+        user_data = user.to_json_user_data()
         enterprise_member = user.enterprise_members.first()
         if not enterprise_member:
             return None
@@ -45,7 +46,7 @@ class TenantDBMiddleware(object):
             db = f'locker_tenant_{enterprise.id}'
             context_var.set(db)
             # Retrieve or create User, Enterprise
-            User.retrieve_or_create(user_id=user_id)
+            self.retrieve_or_create_tenant_user(user_id, user_data)
             self.retrieve_or_create_tenant_enterprise(enterprise_member=enterprise_member)
 
         # TODO: Handle /micro_services: MS payments, etc...
@@ -84,6 +85,11 @@ class TenantDBMiddleware(object):
             return token  # Having `cs.`
         except (ValueError, KeyError, AttributeError):
             return None
+
+    @staticmethod
+    def retrieve_or_create_tenant_user(user_id, user_data):
+        tenant_user, is_updated = User.objects.update_or_create(user_id=user_id, defaults=user_data)
+        return tenant_user
 
     @staticmethod
     def retrieve_or_create_tenant_enterprise(enterprise_member):
