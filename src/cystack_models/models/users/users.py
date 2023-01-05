@@ -93,6 +93,42 @@ class User(models.Model):
             self.save(update_fields=["master_password"])
         return check_password(raw_password, self.master_password, setter)
 
+    def to_json_user_data(self, contain_user_id=False):
+        user_data = {
+            "internal_id": self.internal_id,
+            "creation_date": self.creation_date,
+            "revision_date": self.revision_date,
+            "first_login": self.first_login,
+            "activated": self.activated,
+            "activated_date": self.activated_date,
+            "delete_account_date": self.delete_account_date,
+            "account_revision_date": self.account_revision_date,
+            "master_password": self.master_password,
+            "master_password_hint": self.master_password_hint,
+            "master_password_score": self.master_password_score,
+            "security_stamp": self.security_stamp,
+            "key": self.key,
+            "public_key": self.public_key,
+            "private_key": self.private_key,
+            "kdf": self.kdf,
+            "kdf_iterations": self.kdf_iterations,
+            "api_key": self.api_key,
+            "timeout": self.timeout,
+            "timeout_action": self.timeout_action,
+            "is_leaked": self.is_leaked,
+            "use_relay_subdomain": self.use_relay_subdomain,
+            "last_request_login": self.last_request_login,
+            "login_failed_attempts": self.login_failed_attempts,
+            "login_block_until": self.login_block_until,
+            "login_method": self.login_method,
+            "fd_credential_id": self.fd_credential_id,
+            "fd_random": self.fd_random,
+            "onboarding_process": self.onboarding_process
+        }
+        if contain_user_id:
+            user_data.update({"user_id": self.user_id})
+        return user_data
+
     @classmethod
     def search_from_cystack_id(cls, **filter_params):
         q_param = filter_params.get("q")
