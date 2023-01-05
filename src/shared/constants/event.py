@@ -45,7 +45,9 @@ LOG_TYPES = {
     },
     EVENT_USER_BLOCK_LOGIN: {
         "vi": "User <b>{user_email}</b> đã bị khóa đăng nhập bởi chính sách của doanh nghiệp",
-        "en": "User <b>{user_email}</b> is blocked login by the enterprise policy"
+        "vi_non_html": "User {user_email} đã bị khóa đăng nhập bởi chính sách của doanh nghiệp",
+        "en": "User <b>{user_email}</b> is blocked login by the enterprise policy",
+        "en_non_html": "User {user_email} is blocked login by the enterprise policy",
     },
 
     # Enterprise events
@@ -61,31 +63,45 @@ LOG_TYPES = {
     # Enterprise member events
     EVENT_E_MEMBER_INVITED: {
         "vi": "User <b>{user_email}</b> đã được mời vào doanh nghiệp",
-        "en": "User <b>{user_email}</b> has been invited to your enterprise"
+        "vi_non_html": "User {user_email} đã được mời vào doanh nghiệp",
+        "en": "User <b>{user_email}</b> has been invited to your enterprise",
+        "en_non_html": "User {user_email} has been invited to your enterprise"
     },
     EVENT_E_MEMBER_CONFIRMED: {
         "vi": "User <b>{user_email}</b> đã tham gia vào doanh nghiệp",
-        "en": "User <b>{user_email}</b> has joined your enterprise"
+        "vi_non_html": "User {user_email} đã tham gia vào doanh nghiệp",
+        "en": "User <b>{user_email}</b> has joined your enterprise",
+        "en_non_html": "User {user_email} has joined your enterprise"
     },
     EVENT_E_MEMBER_UPDATED_ROLE: {
         "vi": "User <b>{user_email}</b> vừa chuyển từ {old_role} sang {new_role}",
-        "en": "User <b>{user_email}</b> has been changed from {old_role} to {new_role}"
+        "vi_non_html": "User {user_email} vừa chuyển từ {old_role} sang {new_role}",
+        "en": "User <b>{user_email}</b> has been changed from {old_role} to {new_role}",
+        "en_non_html": "User {user_email} has been changed from {old_role} to {new_role}"
     },
     EVENT_E_MEMBER_REMOVED: {
         "vi": "User <b>{user_email}</b> đã rời khỏi doanh nghiệp",
-        "en": "User <b>{user_email}</b> has left your enterprise"
+        "vi_non_html": "User {user_email} đã rời khỏi doanh nghiệp",
+        "en": "User <b>{user_email}</b> has left your enterprise",
+        "en_non_html": "User {user_email} has left your enterprise"
     },
     EVENT_E_MEMBER_UPDATED_GROUP: {
         "vi": "Nhóm của user <b>{user_email}</b> vừa được cập nhật",
-        "en": "The groups of user <b>{user_email}</b> has been updated"
+        "vi_non_html": "Nhóm của user {user_email} vừa được cập nhật",
+        "en": "The groups of user <b>{user_email}</b> has been updated",
+        "en_non_html": "The groups of user {user_email} has been updated"
     },
     EVENT_E_MEMBER_ENABLED: {
         "vi": "User <b>{user_email}</b> đã được kích hoạt",
-        "en": "User <b>{user_email}</b> has been enabled"
+        "vi_non_html": "User {user_email} đã được kích hoạt",
+        "en": "User <b>{user_email}</b> has been enabled",
+        "en_non_html": "User {user_email} has been enabled"
     },
     EVENT_E_MEMBER_DISABLED: {
         "vi": "User <b>{user_email}</b> đã bị vô hiệu hóa",
-        "en": "User <b>{user_email}</b> has been disabled"
+        "vi_non_html": "User {user_email} đã bị vô hiệu hóa",
+        "en": "User <b>{user_email}</b> has been disabled",
+        "en_non_html": "User {user_email} has been disabled"
     },
 
     # Enterprise group events
@@ -105,14 +121,20 @@ LOG_TYPES = {
     # Enterprise domain events
     EVENT_E_DOMAIN_CREATED: {
         "vi": "Tên miền <b>{domain_address}</b> đã được tạo",
-        "en": "The domain <b>{domain_address}</b> has been created"
+        "vi_non_html": "Tên miền {domain_address} đã được tạo",
+        "en": "The domain <b>{domain_address}</b> has been created",
+        "en_non_html": "The domain {domain_address} has been created",
     },
     EVENT_E_DOMAIN_VERIFIED: {
         "vi": "Tên miền <b>{domain_address}</b> đã được xác thực",
-        "en": "The domain <b>{domain_address}</b> has been verified"
+        "vi_non_html": "Tên miền {domain_address} đã được xác thực",
+        "en": "The domain <b>{domain_address}</b> has been verified",
+        "en_non_html": "The domain {domain_address} has been verified"
     },
     EVENT_E_DOMAIN_DELETED: {
         "vi": "Tên miền <b>{domain_address}</b> đã bị xóa",
-        "en": "The domain <b>{domain_address}</b> is deleted"
+        "vi_non_html": "Tên miền {domain_address} đã bị xóa",
+        "en": "The domain <b>{domain_address}</b> is deleted",
+        "en_non_html": "The domain {domain_address} is deleted"
     },
 }

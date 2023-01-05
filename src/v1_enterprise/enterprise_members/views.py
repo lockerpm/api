@@ -52,7 +52,8 @@ class MemberPwdViewSet(EnterpriseViewSet):
             enterprise = Enterprise.objects.get(id=self.kwargs.get("pk"))
             self.check_object_permissions(request=self.request, obj=enterprise)
             # if self.action in ["create", "update", "create_multiple", "activated", ]:
-            if self.request.method in ["POST", "PUT", "DELETE"] and enterprise.locked:
+            if self.request.method in ["POST", "PUT", "DELETE"] and enterprise.locked and \
+                    self.action not in ["activated", "destroy"]:
                 raise ValidationError({"non_field_errors": [gen_error("3003")]})
             return enterprise
         except Enterprise.DoesNotExist:
@@ -420,6 +421,12 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 "user_id": enterprise_member.user_id, "team_member_id": enterprise_member.id,
                 "type": EVENT_E_MEMBER_ENABLED if activated is True else EVENT_E_MEMBER_DISABLED, "ip_address": ip
             })
+            return Response(status=200, data={
+                "success": True, "notification": True,
+                "member_user_id": enterprise_member.user_id,
+                "enterprise_name": enterprise_member.enterprise.name,
+                "activated": activated
+            })
 
         return Response(status=200, data={"success": True})
 
@@ -466,12 +473,14 @@ class MemberPwdViewSet(EnterpriseViewSet):
                 raise ValidationError(detail={"status": ["You cannot reject this enterprise"]})
             if member_invitation.domain.auto_approve is True:
                 member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+                member_invitation.access_time = now()
             else:
                 member_invitation.status = E_MEMBER_STATUS_REQUESTED
             member_invitation.save()
         else:
             if status == "confirmed":
                 member_invitation.status = E_MEMBER_STATUS_CONFIRMED
+                member_invitation.access_time = now()
                 member_invitation.save()
             else:
                 member_invitation.delete()

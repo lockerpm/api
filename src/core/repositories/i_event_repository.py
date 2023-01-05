@@ -21,5 +21,9 @@ class IEventRepository(ABC):
         pass
 
     @abstractmethod
-    def normalize_enterprise_activity(self, activity_logs):
+    def normalize_enterprise_activity(self, activity_logs, use_html: bool = True):
+        pass
+
+    @abstractmethod
+    def export_enterprise_activity(self, enterprise_member, activity_logs, cc_emails=None, **kwargs):
         pass

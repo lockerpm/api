@@ -57,6 +57,33 @@ class Enterprise(models.Model):
 
         return new_enterprise
 
+    @classmethod
+    def retrieve_or_create(cls, **data):
+        enterprise_id = data.get("id")
+        if not enterprise_id:
+            while True:
+                enterprise_id = random_n_digit(n=6)
+                if cls.objects.filter(id=enterprise_id).exists() is False:
+                    break
+        enterprise, is_created = cls.objects.get_or_create(
+            id=enterprise_id, defaults={
+                "id": enterprise_id,
+                "name": data.get("name"),
+                "creation_date": data.get("creation_date", now()),
+                "description": data.get("description", ""),
+                "enterprise_address1": data.get("enterprise_address1") or "",
+                "enterprise_address2": data.get("enterprise_address2") or "",
+                "enterprise_phone": data.get("enterprise_phone") or "",
+                "enterprise_country": data.get("enterprise_country") or "",
+                "enterprise_postal_code": data.get("enterprise_postal_code") or ""
+            }
+        )
+        # Create team members
+        members = data.get("members", [])
+        enterprise.enterprise_members.model.multiple_retrieve_or_create(enterprise, *members)
+
+        return enterprise
+
     def lock_enterprise(self, lock: bool):
         self.locked = lock
         if lock is True:

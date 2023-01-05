@@ -30,3 +30,12 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             "metadata": instance.get_metadata(),
         }
         return data
+
+
+class ExportEmailActivityLogSerializer(serializers.Serializer):
+    cc = serializers.ListSerializer(child=serializers.EmailField(), allow_empty=True, required=False)
+
+    def to_internal_value(self, data):
+        if data.get("cc") is None:
+            data["cc"] = []
+        return super(ExportEmailActivityLogSerializer, self).to_internal_value(data)

@@ -44,7 +44,7 @@ class EnterprisePwdViewSet(EnterpriseViewSet):
         except ObjectDoesNotExist:
             raise NotFound
         self.check_object_permissions(request=self.request, obj=enterprise)
-        if self.action in ["update", "dashboard"]:
+        if self.action in ["update"]:
             if enterprise.locked:
                 raise ValidationError({"non_field_errors": [gen_error("3003")]})
         return enterprise

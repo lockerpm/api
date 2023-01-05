@@ -12,6 +12,7 @@ from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWO
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.policy import POLICY_TYPE_PASSWORDLESS
 from shared.external_request.requester import requester, RequesterError
+from shared.utils.app import now
 
 
 class User(models.Model):
@@ -58,6 +59,17 @@ class User(models.Model):
 
     class Meta:
         db_table = 'cs_users'
+
+    @classmethod
+    def retrieve_or_create(cls, user_id: int, creation_date=None):
+        creation_date = now() if not creation_date else creation_date
+        user, is_created = cls.objects.get_or_create(user_id=user_id, defaults={
+            "user_id": user_id, "creation_date": creation_date
+        })
+        if is_created is True:
+            from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
+            return PMUserPlan.update_or_create(user)
+        return user
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

@@ -1,3 +1,10 @@
+# from cron.manage import *
+#
+# start()
+
+
 from cron.manage import *
 
-start()
+
+if __name__ == '__main__':
+    start()

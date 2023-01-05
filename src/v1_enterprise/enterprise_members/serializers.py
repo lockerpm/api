@@ -32,6 +32,7 @@ class DetailMemberSerializer(serializers.ModelSerializer):
             data["security_score"] = instance.user.master_password_score if instance.user else None
         else:
             data["security_score"] = None
+            data["access_time"] = None
         return data
 
 

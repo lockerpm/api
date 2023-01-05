@@ -59,7 +59,8 @@ class NotifyBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
-    def banking_expiring(self, user_id, current_plan, start_period, end_period, payment_method, scope, link=None):
+    def banking_expiring(self, user_id, current_plan, start_period, end_period, payment_method, scope,
+                         payment_url=None):
         try:
             url = API_NOTIFY_PAYMENT + "/notify_expiring"
             notification_data = {
@@ -69,7 +70,7 @@ class NotifyBackground(ILockerBackground):
                 "end_period": end_period,
                 "payment_method": payment_method,
                 "scope": scope,
-                "link": link,
+                "payment_url": payment_url,
                 "demo": False
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
@@ -200,6 +201,32 @@ class NotifyBackground(ILockerBackground):
             )
         except Exception:
             self.log_error(func_name="notify_tutorial")
+        finally:
+            if self.background:
+                connection.close()
+
+    def notify_enterprise_next_cycle(self, data):
+        url = API_NOTIFY_LOCKER + "/enterprise_next_cycle"
+        try:
+            requester(
+                method="POST", url=url, headers=HEADERS, data_send=data,
+                retry=True, max_retries=3, timeout=5
+            )
+        except Exception:
+            self.log_error(func_name="notify_enterprise_next_cycle")
+        finally:
+            if self.background:
+                connection.close()
+
+    def notify_enterprise_export(self, data):
+        url = API_NOTIFY_LOCKER + "/enterprise_export"
+        try:
+            requester(
+                method="POST", url=url, headers=HEADERS, data_send=data,
+                retry=True, max_retries=3, timeout=5
+            )
+        except Exception:
+            self.log_error(func_name="notify_enterprise_export")
         finally:
             if self.background:
                 connection.close()

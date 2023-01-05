@@ -5,6 +5,20 @@ DEBUG = False
 ALLOWED_HOSTS = ["locker-api.staging.cystack.org", "staging-api.locker.io", "cystack-locker-api.locker-staging"]
 
 
+# Cache DB
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv("CACHE_REDIS_STAGING_LOCATION"),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            # 'SOCKET_CONNECT_TIMEOUT': 360,
+            # 'SOCKET_TIMEOUT': 360,
+            'IGNORE_EXCEPTIONS': True
+        }
+    }
+}
+
 DATABASES = {
     'default': {
         'ENGINE': "django.db.backends.mysql",
@@ -34,3 +48,11 @@ MICRO_SERVICE_USER_AUTH = os.getenv("MICRO_SERVICE_USER_AUTH")
 # Stripe
 STRIPE_SECRET_KEY = os.getenv("STRIPE_STAGING_SECRET_KEY")
 stripe.api_key = STRIPE_SECRET_KEY
+
+
+# Redis queue
+RQ_QUEUES = {
+    'default': {
+        'USE_REDIS_CACHE': 'default',
+    },
+}

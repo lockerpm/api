@@ -4,10 +4,7 @@ from pathlib import Path
 import django
 import traceback
 
-from cron.controllers.utils.logger import logger
-# from cron.manage import *
-#
-# start()
+from cron.utils.logger import logger
 
 
 def django_config():
@@ -15,10 +12,11 @@ def django_config():
         valid_env = ['prod', 'env', 'staging']
         env = os.getenv("PROD_ENV")
         if env not in valid_env:
-            env = 'prod'
+            env = 'dev'
         if env == "dev":
-            dotenv.read_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent.parent, '.env'))
+            dotenv.read_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
         setting = "server_config.settings.%s" % env
+        logger.info(f"[+] Start cron by setting {setting}")
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", setting)
 
         django.setup()

@@ -21,12 +21,13 @@ def camel_snake_data(json_data, camel_to_snake=False, snake_to_camel=False):
         return json_data
 
 
-def convert_readable_date(timestamp):
+def convert_readable_date(timestamp, datetime_format="%Y-%m-%dT%H:%M:%S.%fZ"):
     """
     Convert timestamp to readable date string
     :param timestamp: (int)
+    :param datetime_format
     :return:
     """
     if timestamp is None or timestamp < 0:
         return None
-    return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    return datetime.utcfromtimestamp(timestamp).strftime(datetime_format)

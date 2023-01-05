@@ -62,6 +62,38 @@ class EnterpriseMember(models.Model):
         return new_member
 
     @classmethod
+    def multiple_retrieve_or_create(cls, enterprise: Enterprise, *members: [Dict]):
+        for member_data in members:
+            user = member_data.get("user")
+            email = member_data.get("email")
+            if email:
+                cls.objects.get_or_create(
+                    enterprise=enterprise, email=email, defaults={
+                        "enterprise": enterprise,
+                        "user": user,
+                        "role_id": member_data.get("role_id"),
+                        "domain": member_data.get("domain"),
+                        "status": member_data.get("status", E_MEMBER_STATUS_INVITED),
+                        "is_default": member_data.get("is_default", False),
+                        "is_primary": member_data.get("is_primary", False),
+                        "access_time": now(),
+                    }
+                )
+            else:
+                cls.objects.get_or_create(
+                    enterprise=enterprise, user=user, defaults={
+                        "enterprise": enterprise,
+                        "email": email,
+                        "role_id": member_data.get("role_id"),
+                        "domain": member_data.get("domain"),
+                        "status": member_data.get("status", E_MEMBER_STATUS_INVITED),
+                        "is_default": member_data.get("is_default", False),
+                        "is_primary": member_data.get("is_primary", False),
+                        "access_time": now(),
+                    }
+                )
+
+    @classmethod
     def retrieve_or_create_by_user(cls, enterprise: Enterprise, user: User, role_id: str, **data):
         member, is_created = cls.objects.get_or_create(
             enterprise=enterprise, user=user, defaults={

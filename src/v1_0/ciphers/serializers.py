@@ -153,11 +153,20 @@ class VaultItemSerializer(serializers.Serializer):
             pass
         if organization_id:
             try:
-                team_member = user.team_members.get(team_id=organization_id, role_id__in=allow_roles)
+                team_member = user.team_members.get(team_id=organization_id)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": [
                     "This team does not exist", "Team này không tồn tại"
                 ]})
+            if team_member.role_id not in allow_roles:
+                # Check the role in group
+                group_member_roles = list(team_member.groups_members.values_list('group__role_id', flat=True))
+                is_allowed = any(role_id in allow_roles for role_id in group_member_roles)
+                if not is_allowed:
+                    raise serializers.ValidationError(detail={"organizationId": [
+                        "This team does not exist", "Team này không tồn tại"
+                    ]})
+
             # Get team object and check team is locked?
             team_obj = team_member.team
             if not team_obj.key:
@@ -294,10 +303,14 @@ class UpdateVaultItemSerializer(VaultItemSerializer):
         # Validate collection ids
         if team and team.id == cipher.team_id:
             try:
-                team_member = user.team_members.get(team_id=team.id, role_id__in=[MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN])
+                team_member = user.team_members.get(team_id=team.id)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(detail={"organizationId": ["The team does not exist"]})
-            role_id = team_member.role_id
+            group_member_roles = list(team_member.groups_members.values_list('group__role_id', flat=True))
+            real_role = min([MAP_MEMBER_TYPE_BW.get(r) for r in group_member_roles + [team_member.role_id]])
+            role_id = MAP_MEMBER_TYPE_FROM_BW.get(real_role)
+            if role_id not in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]:
+                raise serializers.ValidationError(detail={"organizationId": ["The team does not exist"]})
             cipher_collection_ids = list(cipher.collections_ciphers.values_list('collection_id', flat=True))
             collection_ids = validated_data.get("collectionIds", [])
             team_collection_ids = team_repository.get_list_collection_ids(team=team)
