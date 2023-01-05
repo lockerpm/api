@@ -25,7 +25,6 @@ class DowngradePlan(Task):
 
     def real_run(self, *args):
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        # Filter PWD Subscription by VND wallet
         pm_user_plans = PMUserPlan.objects.filter(pm_stripe_subscription__isnull=True).exclude(
             pm_plan__alias=PLAN_TYPE_PM_FREE
         ).exclude(end_period__isnull=True).filter(end_period__lte=now()).annotate(
@@ -55,7 +54,7 @@ class DowngradePlan(Task):
 
             # Else, check the attempts number
             # Attempts only apply for the Enterprise plan
-            if pm_user_plan.pm_plan.is_team_plan and pm_user_plan.attempts <= MAX_ATTEMPTS:
+            if pm_user_plan.pm_plan.is_team_plan and pm_user_plan.attempts < MAX_ATTEMPTS:
                 pm_user_plan.end_period = PMUserPlan.get_next_attempts_duration(
                     current_number_attempts=pm_user_plan.attempts
                 ) + now()
