@@ -117,6 +117,20 @@ class UserChangePasswordSerializer(serializers.Serializer):
         return data
 
 
+class UserNewPasswordSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    new_master_password_hash = serializers.CharField()
+    score = serializers.FloatField(required=False, allow_null=True)
+    login_method = serializers.ChoiceField(choices=[LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS])
+
+    def validate(self, data):
+        user = self.context["request"].user
+        login_method = data.get("login_method")  # or user.login_method
+        if login_method and login_method == LOGIN_METHOD_PASSWORD and user.enterprise_require_passwordless is True:
+            raise serializers.ValidationError(detail={"login_method": ["Your enterprise requires passwordless method"]})
+        return data
+
+
 class UserCheckPasswordSerializer(serializers.Serializer):
     master_password_hash = serializers.CharField()
 

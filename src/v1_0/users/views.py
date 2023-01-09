@@ -35,7 +35,7 @@ from shared.utils.network import detect_device
 from v1_0.ciphers.serializers import UpdateVaultItemSerializer, VaultItemSerializer
 from v1_0.users.serializers import UserPwdSerializer, UserSessionSerializer, UserPwdInvitationSerializer, \
     UserMasterPasswordHashSerializer, UserChangePasswordSerializer, DeviceFcmSerializer, UserDeviceSerializer, \
-    ListUserSerializer, UpdateOnboardingProcessSerializer, UserCheckPasswordSerializer
+    ListUserSerializer, UpdateOnboardingProcessSerializer, UserCheckPasswordSerializer, UserNewPasswordSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -54,6 +54,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserMasterPasswordHashSerializer
         elif self.action == "password":
             self.serializer_class = UserChangePasswordSerializer
+        elif self.action == "new_password":
+            self.serializer_class = UserNewPasswordSerializer
         elif self.action == "check_password":
             self.serializer_class = UserCheckPasswordSerializer
         elif self.action == "fcm_id":
@@ -586,6 +588,10 @@ class UserPwdViewSet(PasswordManagerViewSet):
             "notification": True if user.user_id in mail_user_ids else False,
             "client": client
         })
+
+    @action(methods=["post"], detail=False)
+    def new_password(self, request, *args, **kwargs):
+        return self.password(request, *args, **kwargs)
 
     @action(methods=["post"], detail=False)
     def check_password(self, request, *args, **kwargs):
