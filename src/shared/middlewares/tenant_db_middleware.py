@@ -5,7 +5,6 @@ from django.conf import settings
 from django.utils.encoding import smart_text
 from rest_framework.authentication import get_authorization_header
 
-from cystack_models.models.users.users import User
 from shared.constants.token import TOKEN_PREFIX
 
 
@@ -32,6 +31,7 @@ class TenantDBMiddleware(object):
         return response
 
     def process_request(self, request):
+        from cystack_models.models.users.users import User
         # Get user_id and enterprise of user
         user_id = self.decode_user_id(request)
         user = User.retrieve_or_create(user_id=user_id)
@@ -88,6 +88,7 @@ class TenantDBMiddleware(object):
 
     @staticmethod
     def retrieve_or_create_tenant_user(user_id, user_data):
+        from cystack_models.models.users.users import User
         tenant_user, is_updated = User.objects.update_or_create(user_id=user_id, defaults=user_data)
         return tenant_user
 

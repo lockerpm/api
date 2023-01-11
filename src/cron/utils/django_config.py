@@ -1,13 +1,14 @@
 import os
 import dotenv
-from pathlib import Path
-import django
 import traceback
+from pathlib import Path
 
+import django
 from cron.utils.logger import logger
+from shared.middlewares.tenant_db_middleware import set_current_db_name
 
 
-def django_config():
+def django_config(db_name='default'):
     try:
         valid_env = ['prod', 'env', 'staging']
         env = os.getenv("PROD_ENV")
@@ -19,6 +20,7 @@ def django_config():
         # logger.info(f"[+] Start cron by setting {setting}")
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", setting)
 
+        set_current_db_name(db_name)
         django.setup()
     except:
         tb = traceback.format_exc()
