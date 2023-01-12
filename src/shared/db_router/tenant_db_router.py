@@ -13,7 +13,7 @@ class TenantDBRouter:
 
     def db_for_write(self, model, **hints):
         db_name = get_current_db_name()
-        print("TenantDBRouter::db_for_read:", db_name)
+        print("TenantDBRouter::db_for_write:", db_name)
         return db_name
 
     def allow_relation(self, obj1, obj2, **hints):

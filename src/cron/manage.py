@@ -1,13 +1,3 @@
-# from cron.controllers.core import CronTask
-#
-#
-# def start():
-#     cron_task = CronTask()
-#     cron_task.start()
-
-from cron.utils.django_config import django_config
-django_config()
-
 import os
 from os.path import join, isfile
 from multiprocessing import Pool

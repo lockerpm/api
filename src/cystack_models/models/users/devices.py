@@ -73,12 +73,26 @@ class Device(models.Model):
     @classmethod
     def retrieve_or_create(cls, user, **data):
         device_identifier = data.get("device_identifier")
-        device_obj = cls.objects.filter(device_identifier=device_identifier, user=user).first()
-        if not device_obj:
-            device_obj = cls.create(user, **data)
-        else:
-            device_obj.os = data.get("os") or ""
-            device_obj.browser = data.get("browser") or ""
+        os = data.get("os") or ""
+        browser = data.get("browser") or ""
+        device_obj, is_created = cls.objects.get_or_create(
+            device_identifier=device_identifier, user=user, defaults={
+                "user": user,
+                "refresh_token": data.get("refresh_token"),
+                "token_type": data.get("token_type"),
+                "scope": data.get("scope"),
+                "client_id": data.get("client_id"),
+                "device_name": data.get("device_name"),
+                "device_type": data.get("device_type"),
+                "device_identifier": device_identifier,
+                "os": os,
+                "browser": browser,
+                "created_time": now(return_float=True),
+            }
+        )
+        if is_created is False:
+            device_obj.os = os
+            device_obj.browser = browser
             device_obj.save()
         return device_obj
 
