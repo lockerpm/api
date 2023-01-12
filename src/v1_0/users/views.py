@@ -1,4 +1,5 @@
 import json
+import traceback
 from datetime import datetime, timedelta
 from typing import Dict, Union, Any
 
@@ -12,12 +13,13 @@ from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
 from core.utils.core_helpers import secure_random_string
-from cystack_models.models import Event
+from cystack_models.models import Event, User
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
 from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 from shared.background import LockerBackgroundFactory, BG_EVENT, BG_NOTIFY
+from shared.background.i_background import BackgroundThread
 from shared.constants.account import *
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.constants.enterprise_members import *
@@ -27,6 +29,7 @@ from shared.constants.policy import POLICY_TYPE_BLOCK_FAILED_LOGIN, POLICY_TYPE_
 from shared.constants.transactions import *
 from shared.constants.user_notification import NOTIFY_SHARING, NOTIFY_CHANGE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error, refer_error
+from shared.log.cylog import CyLog
 from shared.permissions.locker_permissions.user_pwd_permission import UserPwdPermission
 from shared.services.pm_sync import SYNC_EVENT_MEMBER_ACCEPTED, PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_MEMBER_UPDATE, \
     SYNC_EVENT_CIPHER_UPDATE
@@ -634,6 +637,21 @@ class UserPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         self._delete_locker_user(user=user)
         return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def delete_multiple(self, request, *args, **kwargs):
+        user_ids = request.data.get("user_ids", [])
+        users = User.objects.filter(user_id=user_ids)
+        BackgroundThread(task=self.__delete_multiple_locker_users, **{"users": users})
+        return Response(status=200, data={"success": True})
+
+    def __delete_multiple_locker_users(self, users):
+        for user in users:
+            try:
+                self._delete_locker_user(user)
+            except:
+                tb = traceback.format_exc()
+                CyLog.error(**{"message": f"[!] __delete_multiple_locker_users error: {tb}"})
 
     def _delete_locker_user(self, user):
         # Check if user is the owner of the enterprise
