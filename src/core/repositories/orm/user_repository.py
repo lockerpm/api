@@ -423,7 +423,7 @@ class UserRepository(IUserRepository):
 
         return pm_user_plan
 
-    def cancel_plan(self, user: User, scope=None, immediately=False):
+    def cancel_plan(self, user: User, scope=None, immediately=False, **kwargs):
         current_plan = self.get_current_plan(user=user, scope=scope)
         pm_plan_alias = current_plan.get_plan_type_alias()
         if pm_plan_alias == PLAN_TYPE_PM_FREE:
@@ -438,7 +438,7 @@ class UserRepository(IUserRepository):
         if immediately is False:
             end_time = PaymentMethodFactory.get_method(
                 user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method
-            ).cancel_recurring_subscription()
+            ).cancel_recurring_subscription(**kwargs)
         else:
             PaymentMethodFactory.get_method(
                 user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=payment_method

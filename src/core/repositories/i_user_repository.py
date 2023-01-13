@@ -95,7 +95,7 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def cancel_plan(self, user: User, scope=None, immediately=False):
+    def cancel_plan(self, user: User, scope=None, immediately=False, **kwargs):
         pass
 
     @abstractmethod

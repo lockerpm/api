@@ -117,7 +117,11 @@ class WalletPaymentMethod(IPaymentMethod):
         :return: End period if cancel plan. Return None if continue scan
         """
         current_plan = self.get_current_plan(**kwargs)
-        current_plan.cancel_at_period_end = True if current_plan.cancel_at_period_end is False else False
+        if "cancel_at_period_end" not in kwargs:
+            cancel_at_period_end = True if current_plan.cancel_at_period_end is False else False
+        else:
+            cancel_at_period_end = kwargs.get("cancel_at_period_end")
+        current_plan.cancel_at_period_end = cancel_at_period_end
         current_plan.save()
         if current_plan.cancel_at_period_end is True:
             return current_plan.end_period
