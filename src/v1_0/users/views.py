@@ -641,8 +641,12 @@ class UserPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def delete_multiple(self, request, *args, **kwargs):
         user_ids = request.data.get("user_ids", [])
+        immediately = request.data.get("immediately", True)
         users = User.objects.filter(user_id=user_ids)
-        BackgroundThread(task=self.__delete_multiple_locker_users, **{"users": users})
+        if immediately is True:
+            BackgroundThread(task=self.__delete_multiple_locker_users, **{"users": users})
+        elif immediately is False:
+            BackgroundThread(task=self.__delete_temporary_users, **{"users": users})
         return Response(status=200, data={"success": True})
 
     def __delete_multiple_locker_users(self, users):
@@ -652,6 +656,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
             except:
                 tb = traceback.format_exc()
                 CyLog.error(**{"message": f"[!] __delete_multiple_locker_users error: {tb}"})
+
+    def __delete_temporary_users(self, users):
+        for user in users:
+            try:
+                self.user_repository.cancel_plan(user=user, scope=settings.SCOPE_PWD_MANAGER, immediately=False, **{
+                    "cancel_at_period_end": True
+                })
+            except:
+                tb = traceback.format_exc()
+                CyLog.error(**{"message": f"[!] __delete_temporary_user error: {tb}"})
 
     def _delete_locker_user(self, user):
         # Check if user is the owner of the enterprise

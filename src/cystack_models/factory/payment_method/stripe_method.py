@@ -205,10 +205,14 @@ class StripePaymentMethod(IPaymentMethod):
         stripe_subscription = current_plan.get_stripe_subscription()
         if not stripe_subscription:
             return
-        cancel_at_period_end = stripe_subscription.cancel_at_period_end
+        if "cancel_at_period_end" not in kwargs:
+            stripe_cancel_at_period_end = stripe_subscription.cancel_at_period_end
+            cancel_at_period_end = True if stripe_cancel_at_period_end is False else False
+        else:
+            cancel_at_period_end = kwargs.get("cancel_at_period_end")
         stripe.Subscription.modify(
             stripe_subscription.id,
-            cancel_at_period_end=True if cancel_at_period_end is False else False
+            cancel_at_period_end=cancel_at_period_end
         )
         # Return end time if cancel current stripe subscription
         if cancel_at_period_end is False:
