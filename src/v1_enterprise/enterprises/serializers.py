@@ -1,8 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
+from core.settings import CORE_CONFIG
 from cystack_models.models.payments.country import Country
 from cystack_models.models.enterprises.enterprises import Enterprise
+from shared.constants.transactions import TRIAL_TEAM_PLAN
 from shared.utils.app import now
 
 
@@ -29,6 +31,19 @@ class ListEnterpriseSerializer(serializers.ModelSerializer):
         data["is_default"] = role_notify.get("is_default")
         data["role"] = role_notify.get("role")
 
+        try:
+            primary_admin = instance.get_primary_admin_user()
+        except ObjectDoesNotExist:
+            primary_admin = None
+        if primary_admin:
+            user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+            primary_admin_plan = user_repository.get_current_plan(user=primary_admin)
+            data["is_trialing"] = False
+            if primary_admin_plan.end_period and \
+                    primary_admin_plan.end_period - primary_admin_plan.start_period < TRIAL_TEAM_PLAN:
+                data["is_trialing"] = True
+            data["end_period"] = primary_admin_plan.end_period
+
         if view_action == "retrieve":
             data["enterprise_name"] = instance.enterprise_name
             data["enterprise_address1"] = instance.enterprise_address1
@@ -36,7 +51,7 @@ class ListEnterpriseSerializer(serializers.ModelSerializer):
             data["enterprise_phone"] = instance.enterprise_phone
             data["enterprise_country"] = instance.enterprise_country
             data["enterprise_postal_code"] = instance.enterprise_postal_code
-            data["primary_admin"] = instance.enterprise_members.get(is_primary=True).user_id
+            data["primary_admin"] = primary_admin.user_id if primary_admin else None
         return data
 
 
