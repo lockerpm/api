@@ -30,7 +30,10 @@ class ExpiringPlanNotification(Task):
         pass
 
     def real_run(self, *args):
-        self.pm_expiring_notify()
+        try:
+            self.pm_expiring_notify()
+        except Exception as e:
+            self.logger.error()
         self.pm_enterprise_reminder()
 
     @staticmethod
