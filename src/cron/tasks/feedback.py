@@ -26,8 +26,11 @@ class Feedback(Task):
         pass
 
     def real_run(self, *args):
+        try:
+            self.log_new_users()
+        except Exception as e:
+            self.logger.error()
         self.upgrade_survey_emails()
-        self.log_new_users()
 
     def upgrade_survey_emails(self):
         spread_sheet = LockerSpreadSheet()
