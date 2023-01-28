@@ -2,6 +2,7 @@ import time
 import schedule
 
 from django.conf import settings
+from django.db import close_old_connections
 from django.db.models import Count, F
 
 from cron.task import Task
@@ -24,6 +25,9 @@ class DowngradePlan(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
         pm_user_plans = PMUserPlan.objects.filter(pm_stripe_subscription__isnull=True).exclude(
             pm_plan__alias=PLAN_TYPE_PM_FREE

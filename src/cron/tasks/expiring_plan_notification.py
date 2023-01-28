@@ -3,6 +3,7 @@ import schedule
 import stripe
 
 from django.conf import settings
+from django.db import close_old_connections
 from django.db.models import F
 
 from cron.task import Task
@@ -30,10 +31,15 @@ class ExpiringPlanNotification(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         try:
             self.pm_expiring_notify()
         except Exception as e:
             self.logger.error()
+        # Close old connections
+        close_old_connections()
         self.pm_enterprise_reminder()
 
     @staticmethod

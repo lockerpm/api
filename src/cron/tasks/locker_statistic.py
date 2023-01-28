@@ -4,6 +4,7 @@ import requests
 import schedule
 
 from django.conf import settings
+from django.db import close_old_connections
 from django.db.models import OuterRef, Count, IntegerField, When, Case, Sum, Value, F, FloatField, \
     CharField, Subquery, Q
 
@@ -30,6 +31,9 @@ class LockerStatistic(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         current_time = now()
         latest_statistic_date = UserStatisticDate.objects.all().order_by('-id').first()
 

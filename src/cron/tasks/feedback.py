@@ -4,6 +4,7 @@ import schedule
 import requests
 from datetime import datetime
 
+from django.db import close_old_connections
 from django.db.models import OuterRef, Subquery, CharField
 
 from cron.task import Task
@@ -26,11 +27,13 @@ class Feedback(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
         try:
             self.log_new_users()
         except Exception as e:
             self.logger.error()
-        self.upgrade_survey_emails()
+        # self.upgrade_survey_emails()
 
     def upgrade_survey_emails(self):
         spread_sheet = LockerSpreadSheet()
