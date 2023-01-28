@@ -1,6 +1,7 @@
 import time
 import schedule
 
+from django.db import close_old_connections
 from django.db.models import F
 
 from cron.task import Task
@@ -21,6 +22,9 @@ class EmergencyAccessAutoApprove(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         current_time = now()
         EmergencyAccess.objects.filter(
             status=EMERGENCY_ACCESS_STATUS_RECOVERY_INITIATED,

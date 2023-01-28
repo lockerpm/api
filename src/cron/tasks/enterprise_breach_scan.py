@@ -1,6 +1,8 @@
 import time
 import schedule
 
+from django.db import close_old_connections
+
 from cron.task import Task
 from cystack_models.models.enterprises.enterprises import Enterprise
 from shared.services.hibp.hibp_service import HibpService
@@ -18,6 +20,9 @@ class EnterpriseBreachScan(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         enterprises = Enterprise.objects.filter(locked=False)
         for enterprise in enterprises:
             members = enterprise.enterprise_members.filter(

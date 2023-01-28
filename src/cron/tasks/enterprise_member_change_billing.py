@@ -5,6 +5,7 @@ import stripe.error
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import close_old_connections
 
 from cron.task import Task
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory, \
@@ -29,6 +30,9 @@ class EnterpriseMemberChangeBilling(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         current_time = now()
         enterprises = Enterprise.objects.filter(locked=False)
         for enterprise in enterprises:

@@ -2,6 +2,7 @@ import os
 import time
 import schedule
 
+from django.db import close_old_connections
 from django.db.models import F
 
 from cron.task import Task
@@ -23,6 +24,9 @@ class TutorialReminder(Task):
         pass
 
     def real_run(self, *args):
+        # Close old connections
+        close_old_connections()
+
         current_time = now()
 
         users = User.objects.filter()
