@@ -32,7 +32,10 @@ class EnterpriseMemberChangeBilling(Task):
         current_time = now()
         enterprises = Enterprise.objects.filter(locked=False)
         for enterprise in enterprises:
-            primary_admin_user = enterprise.get_primary_admin_user()
+            try:
+                primary_admin_user = enterprise.get_primary_admin_user()
+            except ObjectDoesNotExist:
+                continue
             user_plan = primary_admin_user.pm_user_plan
 
             # Only accept stripe subscription
