@@ -28,34 +28,12 @@ class DeviceRepository(IDeviceRepository):
         if not valid_access_token or renewal is True:
             # Generate new access token
             valid_access_token = DeviceAccessToken.create(device=device, **{
-                "access_token": self._gen_access_token_value(device=device),
+                "access_token": "access_token",
                 "grant_type": "refresh_token",
                 "expires_in": DeviceAccessToken.get_token_duration(client_id=device.client_id),
                 "sso_token_id": sso_token_id
             })
         return valid_access_token
-
-    def _gen_access_token_value(self, device: Device):
-        created_time = now()
-        expired_time = created_time + DeviceAccessToken.get_token_duration(client_id=device.client_id)
-        payload = {
-            "nbf": created_time,
-            "exp": expired_time,
-            "iss": "https://locker.io",
-            "client_id": device.client_id,
-            "sub": device.user.internal_id,
-            "auth_time": created_time,
-            "idp": "cystack",
-            "email_verified": device.user.activated,
-            "scope": ["api", "offline_access"],
-            "jti": device.id,
-            "device": device.device_identifier,
-            "orgowner": "",
-            "iat": created_time,
-            "amr": ["Application"]
-        }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-        return token
 
     def fetch_user_access_token(self, user: User, sso_token_id: str = None) -> Optional[DeviceAccessToken]:
         access_token = DeviceAccessToken.objects.filter(
