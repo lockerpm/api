@@ -42,6 +42,11 @@ APP_CODE += [
         "description": "Đăng nhập thất bại"
     },
     {
+        "code": "1002",
+        "message": "The authorization code is not valid",
+        "description": "Mã OTP không hợp lệ"
+    },
+    {
         "code": "1003",
         "message": "The account is not activated yet",
         "description": "Tài khoản chưa được kích hoạt"
