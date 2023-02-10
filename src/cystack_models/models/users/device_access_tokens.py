@@ -1,3 +1,6 @@
+import jwt
+
+from django.conf import settings
 from django.db import models
 
 from shared.constants.device_type import CLIENT_ID_MOBILE, CLIENT_ID_BROWSER, CLIENT_ID_DESKTOP
@@ -37,6 +40,9 @@ class DeviceAccessToken(models.Model):
             device=device, sso_token_id=sso_token_id
         )
         new_token.save()
+        # Generate jwt access token
+        new_token.access_token = new_token._gen_access_token_value(expired_time=expired_time)
+        new_token.save()
         # Delete all expired token
         cls.objects.filter(device__user=device.user, expired_time__lt=now()).delete()
         return new_token
@@ -46,3 +52,24 @@ class DeviceAccessToken(models.Model):
         if client_id in [CLIENT_ID_MOBILE, CLIENT_ID_BROWSER, CLIENT_ID_DESKTOP]:
             return 30 * 86400
         return 4 * 3600
+
+    def _gen_access_token_value(self, expired_time):
+        created_time = now()
+        payload = {
+            "nbf": created_time,
+            "exp": expired_time,
+            "iss": "https://locker.io",
+            "client_id": self.device.client_id,
+            "sub": self.device.user.internal_id,
+            "auth_time": created_time,
+            "idp": "cystack",
+            "email_verified": self.device.user.activated,
+            "scope": ["api", "offline_access"],
+            "jti": self.id,
+            "device": self.device.device_identifier,
+            "orgowner": "",
+            "iat": created_time,
+            "amr": ["Application"]
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+        return token

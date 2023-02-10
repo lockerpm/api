@@ -42,6 +42,11 @@ APP_CODE += [
         "description": "Đăng nhập thất bại"
     },
     {
+        "code": "1002",
+        "message": "The authorization code is not valid",
+        "description": "Mã OTP không hợp lệ"
+    },
+    {
         "code": "1003",
         "message": "The account is not activated yet",
         "description": "Tài khoản chưa được kích hoạt"
@@ -70,7 +75,7 @@ APP_CODE += [
     },
     {
         "code": "1008",
-        "message": "Login locked due to the team's policy",
+        "message": "Login locked due to the enterprise's policy",
         "description": "Bạn đéo thể đăng nhập vì đăng nhập quá số lần quy định của team policy"
     },
     {

@@ -52,7 +52,13 @@ class AppBasePermission(BasePermission):
     @staticmethod
     def _decode_token(token_value):
         # Remove `cs.` and decode
-        non_prefix_token = token_value[len(TOKEN_PREFIX):]
+        if not isinstance(token_value, str):
+            try:
+                non_prefix_token = getattr(token_value, "access_token")
+            except AttributeError:
+                return None
+        else:
+            non_prefix_token = token_value[len(TOKEN_PREFIX):]
         try:
             payload = jwt.decode(non_prefix_token, settings.SECRET_KEY, algorithms=['HS256'])
             return payload

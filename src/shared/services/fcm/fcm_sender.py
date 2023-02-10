@@ -1,6 +1,7 @@
 import json
 import traceback
 
+from django.conf import settings
 from firebase_admin import messaging
 
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
@@ -38,6 +39,9 @@ class FCMSenderService:
         :param fcm_message:
         :return: (tuple) success_fcm_ids, failed_fcm_ids
         """
+        if not settings.FCM_CRED_SERVICE_ACCOUNT:
+            CyLog.warning(**{"message": "The FCM Cred is not provided"})
+            return [], []
         if isinstance(fcm_message, FCMRequestEntity):
             fcm_message = fcm_message.to_json()
         fcm_ids = list(set(fcm_message.get("fcm_ids", [])))
