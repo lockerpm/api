@@ -75,7 +75,7 @@ APP_CODE += [
     },
     {
         "code": "1008",
-        "message": "Login locked due to the team's policy",
+        "message": "Login locked due to the enterprise's policy",
         "description": "Bạn đéo thể đăng nhập vì đăng nhập quá số lần quy định của team policy"
     },
     {
