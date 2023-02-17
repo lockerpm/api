@@ -68,7 +68,8 @@ class User(models.Model):
         })
         if is_created is True:
             from cystack_models.models.user_plans.pm_user_plan import PMUserPlan
-            return PMUserPlan.update_or_create(user)
+            PMUserPlan.update_or_create(user)
+            return user
         return user
 
     def save(self, *args, **kwargs):
