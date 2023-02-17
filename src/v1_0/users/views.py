@@ -642,7 +642,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
     def delete_multiple(self, request, *args, **kwargs):
         user_ids = request.data.get("user_ids", [])
         immediately = request.data.get("immediately", True)
-        users = User.objects.filter(user_id=user_ids)
+        users = User.objects.filter(user_id__in=user_ids)
         if immediately is True:
             BackgroundThread(task=self.__delete_multiple_locker_users, **{"users": users})
         elif immediately is False:
