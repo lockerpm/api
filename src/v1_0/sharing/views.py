@@ -177,7 +177,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "owner": primary_owner.user_id,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
-            "member_status": member_status
+            "member_status": member_status,
+            "share_type": shared_type_name
         })
 
     @action(methods=["put"], detail=False)
