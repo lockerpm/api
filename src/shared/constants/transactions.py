@@ -69,6 +69,8 @@ PLAN_TYPE_PM_FAMILY = "pm_family"
 
 PLAN_TYPE_PM_ENTERPRISE = "pm_enterprise"
 
+PLAN_TYPE_PM_LIFETIME = "pm_lifetime_premium"
+
 FAMILY_MAX_MEMBER = 6
 
 

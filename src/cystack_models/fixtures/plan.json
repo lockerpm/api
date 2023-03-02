@@ -66,6 +66,38 @@
   {
     "model": "cystack_models.PMPlan",
     "fields": {
+      "name": "Lifetime Premium",
+      "alias": "pm_lifetime_premium",
+      "price_usd": 0,
+      "price_vnd": 0,
+      "yearly_price_usd": 0,
+      "yearly_price_vnd": 0,
+      "half_yearly_price_usd": 0,
+      "half_yearly_price_vnd": 0,
+      "sync_device": null,
+      "limit_password": null,
+      "limit_secure_note": null,
+      "limit_identity": null,
+      "limit_payment_card": null,
+      "limit_crypto_asset": null,
+      "tools_password_reuse": true,
+      "tools_master_password_check": true,
+      "tools_data_breach": true,
+      "emergency_access": true,
+      "personal_share": true,
+      "is_family_plan": false,
+      "is_team_plan": false,
+      "max_number": 1,
+      "team_dashboard": false,
+      "team_policy": false,
+      "team_prevent_password": false,
+      "team_activity_log": false,
+      "plan_type": "Basic"
+    }
+  },
+  {
+    "model": "cystack_models.PMPlan",
+    "fields": {
       "name": "Family",
       "alias": "pm_family",
       "price_usd": 9.99,
