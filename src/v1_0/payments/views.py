@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -20,7 +21,8 @@ from cystack_models.models.user_plans.pm_plans import PMPlan
 from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
-    DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer
+    DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer, \
+    UpgradeLifetimeSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -41,6 +43,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = AdminUpgradePlanSerializer
         elif self.action == "upgrade_trial":
             self.serializer_class = UpgradeTrialSerializer
+        elif self.action == "upgrade_lifetime":
+            self.serializer_class = UpgradeLifetimeSerializer
         elif self.action == "cancel_plan":
             self.serializer_class = CancelPlanSerializer
         
@@ -266,6 +270,41 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         }
         token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
         return Response(status=200, data={"token": token})
+
+    @action(methods=["post"], detail=False)
+    def upgrade_lifetime(self, request, *args, **kwargs):
+        user = self.request.user
+        if user.enterprise_members.filter().exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        saas_code = validated_data.get("saas_code")
+        saas_code.remaining_times = F('remaining_times') - 1
+        saas_code.save()
+        if saas_code < 0:
+            raise ValidationError(detail={"code": ["This code is expired or not valid"]})
+
+        plan_obj = validated_data.get("plan_obj")
+        plan_metadata = {
+            "start_period": now(),
+            "end_period": None
+        }
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=plan_obj.get_alias(),
+            duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
+        # TODO: Send lifetime welcome mail
+        # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+        #     func_name="trial_successfully", **{
+        #         "user_id": user.user_id,
+        #         "scope": settings.SCOPE_PWD_MANAGER,
+        #         "plan": trial_plan_obj.get_alias(),
+        #         "payment_method": None,
+        #         "duration": TRIAL_PERSONAL_DURATION_TEXT
+        #     }
+        # )
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):

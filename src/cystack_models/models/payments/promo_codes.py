@@ -41,7 +41,8 @@ class PromoCode(models.Model):
     value = models.FloatField(default=0)                            # Number is decrease
     limit_value = models.FloatField(null=True)
     duration = models.IntegerField(default=1)  # Number of intervals for which the coupon repeatedly apply
-    specific_duration = models.CharField(max_length=128, null=True, default=None)  # Specific duration type
+    specific_duration = models.CharField(max_length=128, null=True, default=None)   # Specific duration type
+    is_saas_code = models.BooleanField(default=False)
     currency = models.CharField(max_length=8, default=CURRENCY_USD)
     description_en = models.TextField(default="", blank=True)
     description_vi = models.TextField(default="", blank=True)
@@ -90,7 +91,20 @@ class PromoCode(models.Model):
         try:
             promo_code = cls.objects.get(code=value, valid=True)
             # If promo code was expired or promo code was used by this user?
-            if promo_code.expired_time < now() or promo_code.remaining_times <= 0:
+            if promo_code.expired_time < now() or promo_code.remaining_times <= 0 or promo_code.is_saas_code:
+                return False
+            if current_user is not None and current_user.payments.filter(promo_code=promo_code).count() > 0:
+                return False
+            return promo_code
+        except cls.DoesNotExist:
+            return False
+
+    @classmethod
+    def check_saas_valid(cls, value, current_user):
+        try:
+            promo_code = cls.objects.get(code=value, valid=True)
+            # If promo code was expired or promo code was used by this user?
+            if promo_code.expired_time < now() or promo_code.remaining_times <= 0 or promo_code.is_saas_code is False:
                 return False
             if current_user is not None and current_user.payments.filter(promo_code=promo_code).count() > 0:
                 return False

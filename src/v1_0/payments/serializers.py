@@ -184,5 +184,20 @@ class UpgradeTrialSerializer(serializers.Serializer):
         return data
 
 
+class UpgradeLifetimeSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=16)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        # Check the saas code
+        code = data.get("code")
+        saas_code = PromoCode.check_saas_valid(value=code, current_user=user)
+        if not saas_code:
+            raise serializers.ValidationError(detail={"code": ["This code is expired or invalid"]})
+        data["saas_code"] = saas_code
+        data["plan_obj"] = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
+        return data
+
+
 class CancelPlanSerializer(serializers.Serializer):
     immediately = serializers.BooleanField(default=False)
