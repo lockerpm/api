@@ -282,6 +282,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         saas_code = validated_data.get("saas_code")
         saas_code.remaining_times = F('remaining_times') - 1
         saas_code.save()
+        # Avoid race conditions - Make sure that this code is still available
         if saas_code < 0:
             raise ValidationError(detail={"code": ["This code is expired or not valid"]})
 
@@ -347,8 +348,6 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "card": card,
             "number_members": number_members,
             "family_members": list(family_members),
-            # "key": validated_data.get("key"),
-            # "collection_name": validated_data.get("collection_name"),
         }
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         # Not allow upgrade the personal plan if the user is in Enterprise plan
