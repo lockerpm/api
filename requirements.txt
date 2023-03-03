@@ -1,5 +1,5 @@
 asgiref==3.3.2
-Django==3.2.16
+Django==3.2.18
 django-cors-headers==3.5.0
 django-redis==5.2.0
 django-rest-framework-mongoengine==3.3.1
