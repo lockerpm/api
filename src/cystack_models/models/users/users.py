@@ -52,6 +52,7 @@ class User(models.Model):
 
     # On boarding process
     onboarding_process = models.TextField(max_length=512, blank=True, default=DEFAULT_ONBOARDING_PROCESS)
+    saas_source = models.CharField(max_length=32, null=True, default=None)
 
     # Stores the raw password if set_password() is called so that it can
     # be passed to password_changed() after the model is saved.
@@ -194,3 +195,8 @@ class User(models.Model):
         if not self.onboarding_process:
             return DEFAULT_ONBOARDING_PROCESS
         return ast.literal_eval(str(self.onboarding_process))
+
+    def set_saas_source_by_code(self, code: str):
+        if code.startswith("LK-"):
+            self.saas_source = "appsumo"
+        self.save()
