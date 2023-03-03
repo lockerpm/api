@@ -295,6 +295,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             user=user, plan_type_alias=plan_obj.get_alias(),
             duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
+        user.set_saas_source_by_code(code=saas_code)
+
         # TODO: Send lifetime welcome mail
         # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
         #     func_name="trial_successfully", **{
