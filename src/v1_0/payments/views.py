@@ -282,6 +282,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         saas_code = validated_data.get("saas_code")
         saas_code.remaining_times = F('remaining_times') - 1
         saas_code.save()
+        saas_code.refresh_from_db()
         # Avoid race conditions - Make sure that this code is still available
         if saas_code.remaining_times < 0:
             raise ValidationError(detail={"code": ["This code is expired or not valid"]})

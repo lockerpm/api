@@ -234,11 +234,7 @@ class NotifyBackground(ILockerBackground):
     def notify_locker_mail(self, **data):
         url = API_NOTIFY_LOCKER + "/mail"
         try:
-            res = requester(
-                method="POST", url=url, headers=HEADERS, data_send=data,
-                retry=True, max_retries=3, timeout=5
-            )
-            print("Res:", res.status_code, res.text)
+            requester(method="POST", url=url, headers=HEADERS, data_send=data, retry=True, max_retries=3, timeout=5)
         except Exception:
             self.log_error(func_name="notify_locker_mail")
         finally:
