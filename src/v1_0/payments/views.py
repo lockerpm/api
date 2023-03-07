@@ -283,7 +283,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         saas_code.remaining_times = F('remaining_times') - 1
         saas_code.save()
         # Avoid race conditions - Make sure that this code is still available
-        if saas_code < 0:
+        if saas_code.remaining_times < 0:
             raise ValidationError(detail={"code": ["This code is expired or not valid"]})
 
         plan_obj = validated_data.get("plan_obj")
@@ -297,16 +297,16 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         user.set_saas_source_by_code(code=saas_code)
 
-        # TODO: Send lifetime welcome mail
-        # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-        #     func_name="trial_successfully", **{
-        #         "user_id": user.user_id,
-        #         "scope": settings.SCOPE_PWD_MANAGER,
-        #         "plan": trial_plan_obj.get_alias(),
-        #         "payment_method": None,
-        #         "duration": TRIAL_PERSONAL_DURATION_TEXT
-        #     }
-        # )
+        # Send lifetime welcome mail
+        user.refresh_from_db()
+        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+            func_name="notify_locker_mail", **{
+                "user_ids": [user.user_id],
+                "job": "upgraded_to_lifetime_from_code",
+                "scope": settings.SCOPE_PWD_MANAGER,
+                "service_name": user.saas_source,
+            }
+        )
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
