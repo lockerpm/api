@@ -287,6 +287,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if saas_code.remaining_times < 0:
             raise ValidationError(detail={"code": ["This code is expired or not valid"]})
 
+        # Cancel the current Free/Premium/Family
+
+
         plan_obj = validated_data.get("plan_obj")
         plan_metadata = {
             "start_period": now(),
