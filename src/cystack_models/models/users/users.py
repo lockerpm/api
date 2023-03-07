@@ -198,5 +198,5 @@ class User(models.Model):
 
     def set_saas_source_by_code(self, code: str):
         if code.startswith("LK-"):
-            self.saas_source = "appsumo"
+            self.saas_source = "AppSumo"
         self.save()

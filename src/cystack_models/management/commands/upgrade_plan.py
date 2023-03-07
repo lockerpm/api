@@ -13,7 +13,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         user = User.objects.get(user_id=6403)
-        plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_PREMIUM)
+        plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_ENTERPRISE)
         enterprise_name = "My Enterprise"
 
         end_period = now() + 13 * 86400
