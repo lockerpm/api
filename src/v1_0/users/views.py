@@ -123,10 +123,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
         user.delete_account_date = None
         user.save()
 
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         # Upgrade trial plan
         if trial_plan_obj and trial_plan_obj.get_alias() != PLAN_TYPE_PM_FREE:
-            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-
             if trial_plan_obj.is_team_plan is False:
                 if current_plan.is_personal_trial_applied() is False:
                     end_period = now() + TRIAL_PERSONAL_PLAN
@@ -189,6 +188,16 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.user_repository.enterprise_invitations_confirm(user=user)
         # Update enterprise share groups
         self.user_repository.enterprise_share_groups_confirm(user=user)
+        # Update lifetime mail
+        if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and user.saas_source:
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_locker_mail", **{
+                    "user_ids": [user.user_id],
+                    "job": "upgraded_to_lifetime_from_code",
+                    "scope": settings.SCOPE_PWD_MANAGER,
+                    "service_name": user.saas_source,
+                }
+            )
 
         return Response(status=200, data={"success": True})
 

@@ -306,14 +306,15 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         # Send lifetime welcome mail
         user.refresh_from_db()
-        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-            func_name="notify_locker_mail", **{
-                "user_ids": [user.user_id],
-                "job": "upgraded_to_lifetime_from_code",
-                "scope": settings.SCOPE_PWD_MANAGER,
-                "service_name": user.saas_source,
-            }
-        )
+        if user.activated:
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_locker_mail", **{
+                    "user_ids": [user.user_id],
+                    "job": "upgraded_to_lifetime_from_code",
+                    "scope": settings.SCOPE_PWD_MANAGER,
+                    "service_name": user.saas_source,
+                }
+            )
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
