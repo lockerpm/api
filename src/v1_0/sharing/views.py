@@ -113,6 +113,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
         shared_type_name = None
+        item_id = None
         # Accept this invitation
         if status == "accept":
             member = self.sharing_repository.accept_invitation(member=sharing_invitation)
@@ -123,12 +124,14 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 share_cipher = sharing_invitation.team.ciphers.first()
                 if share_cipher:
                     shared_type_name = share_cipher.type
+                    item_id = share_cipher.id
                     PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
             # Else, share a folder
             else:
                 share_collection = sharing_invitation.team.collections.first()
                 if share_collection:
                     shared_type_name = "folder"
+                    item_id = share_collection.id
                     PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
                         data={"id": share_collection.id}
                     )
@@ -138,8 +141,11 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             if sharing_invitation.team.collections.all().exists() is False:
                 share_cipher = sharing_invitation.team.ciphers.first()
                 shared_type_name = share_cipher.type if share_cipher else shared_type_name
+                item_id = share_cipher.id if share_cipher else item_id
             else:
                 shared_type_name = "folder"
+                share_collection = sharing_invitation.team.collections.first()
+                item_id = share_collection.id if share_collection else item_id
 
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             member_status = None
@@ -178,7 +184,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
             "member_status": member_status,
-            "share_type": shared_type_name
+            "share_type": shared_type_name,
+            "item_id": item_id
         })
 
     @action(methods=["put"], detail=False)

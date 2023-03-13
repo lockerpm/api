@@ -276,6 +276,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         if user.enterprise_members.filter().exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -288,7 +291,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             raise ValidationError(detail={"code": ["This code is expired or not valid"]})
 
         # Cancel the current Free/Premium/Family
-
+        self.user_repository.cancel_plan(user=user, immediately=True)
 
         plan_obj = validated_data.get("plan_obj")
         plan_metadata = {

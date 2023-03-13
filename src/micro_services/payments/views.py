@@ -139,8 +139,12 @@ class PaymentViewSet(MicroServiceViewSet):
         old_plan = current_plan.get_plan_type_name()
         current_plan.cancel_stripe_subscription()
 
-        # If this plan is canceled because the Personal Plan upgrade to Enterprise Plan => Not downgrade
+        # If this plan is cancelled because the Personal Plan upgrade to Enterprise Plan => Not downgrade
         if current_plan.is_update_personal_to_enterprise(new_plan_alias=request.data.get("plan")) is True:
+            return Response(status=200, data={"old_plan": old_plan})
+        # If this plan is cancelled because the Lifetime upgrade => Not downgrade
+        if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and \
+                request.data.get("plan") != PLAN_TYPE_PM_LIFETIME:
             return Response(status=200, data={"old_plan": old_plan})
 
         # if this plan is canceled because the user is added into family plan => Not notify

@@ -235,7 +235,12 @@ APP_CODE += [
     {
         "code": "7015",
         "message": "You are in an Enterprise. Please leave the enterprise to execute this operator",
-        "vi_message": "Bạn hiện tại đang ở trong một doanh nghiệp. Vui lòng rời doanh nghiệp để thục hiện hành động này."
+        "vi_message": "Bạn hiện tại đang ở trong một doanh nghiệp. Vui lòng rời doanh nghiệp để thực hiện hành động này."
+    },
+    {
+        "code": "7016",
+        "message": "You are in a Family plan. Please leave the family plan to execute this operator",
+        "vi_message": "Bạn hiện tại đang ở trong một gói Family. Vui lòng rời gói để thực hiện hành động này."
     }
 ]
 
