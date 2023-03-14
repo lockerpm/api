@@ -35,7 +35,7 @@ class User(models.Model):
     kdf = models.IntegerField(default=0)
     kdf_iterations = models.IntegerField(default=DEFAULT_KDF_ITERATIONS)
     api_key = models.CharField(max_length=32, null=True)
-    timeout = models.IntegerField(default=15)
+    timeout = models.IntegerField(default=20160)
     timeout_action = models.CharField(default="lock", max_length=16)
     is_leaked = models.BooleanField(default=False)
     use_relay_subdomain = models.BooleanField(default=False)

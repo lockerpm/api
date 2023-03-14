@@ -728,9 +728,10 @@ class UserRepository(IUserRepository):
         return user
 
     def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str, score: float = None,
-                                    login_method: str = None):
+                                    login_method: str = None, new_master_password_hint: str = None):
         user.set_master_password(new_master_password_hash)
         user.key = key
+        user.master_password_hint = new_master_password_hint or user.master_password_hint
         if score:
             user.master_password_score = score
         if login_method:
