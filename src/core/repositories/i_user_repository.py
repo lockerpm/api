@@ -127,5 +127,6 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str):
+    def change_master_password_hash(self, user: User, new_master_password_hash: str, key: str, score: float = None,
+                                    login_method: str = None, new_master_password_hint: str = None):
         pass

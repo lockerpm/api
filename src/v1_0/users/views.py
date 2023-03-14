@@ -531,6 +531,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         new_master_password_hash = validated_data.get("new_master_password_hash")
+        new_master_password_hint = validated_data.get("new_master_password_hint", user.master_password_hint)
         key = validated_data.get("key")
         score = validated_data.get("score", user.master_password_score)
         login_method = validated_data.get("login_method", user.login_method)
@@ -577,7 +578,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         self.user_repository.change_master_password_hash(
             user=user, new_master_password_hash=new_master_password_hash, key=key, score=score,
-            login_method=login_method
+            login_method=login_method, new_master_password_hint=new_master_password_hint
         )
         # Revoke all sessions
         exclude_sso_token_ids = None
