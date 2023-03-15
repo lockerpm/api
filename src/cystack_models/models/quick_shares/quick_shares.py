@@ -1,8 +1,10 @@
 import ast
+import secrets
 
 from django.db import models
 
 from cystack_models.models.ciphers.ciphers import Cipher
+from shared.utils.app import now
 
 
 class QuickShare(models.Model):
@@ -26,6 +28,35 @@ class QuickShare(models.Model):
 
     class Meta:
         db_table = 'cs_quick_shares'
+
+    @classmethod
+    def update_or_create(cls, cipher: Cipher, **data):
+        access_id = data.get("access_id") or cls.gen_access_id()
+        is_public = data.get("is_public", True)
+        quick_share, is_created = cls.objects.update_or_create(
+            cipher_id=cipher.id, defaults={
+                "access_id": access_id,
+                "creation_date": data.get("creation_date", now()),
+                "revision_date": data.get("revision_date", now()),
+                "data": data.get("data"),
+                "key": data.get("key"),
+                "password": data.get("password"),
+                "max_access_count": data.get("max_access_count"),
+                "expired_date": data.get("expired_date"),
+                "disabled": data.get("disabled", False),
+                "is_public": is_public,
+                "require_otp": data.get("require_otp", False)
+            }
+        )
+        # Create quick share emails
+        if is_public is False:
+            emails_data = data.get("emails") or []
+            quick_share.quick_share_emails.model.create_multiple(quick_share, emails_data)
+        return quick_share
+
+    @classmethod
+    def gen_access_id(cls):
+        return str(secrets.token_hex(16)).upper()
 
     def get_data(self):
         if not self.data:
