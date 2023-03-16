@@ -61,14 +61,14 @@ class CreateQuickShareSerializer(serializers.Serializer):
             validated_data = self.validated_plan(validated_data)
 
         cipher_type = validated_data.get("type")
-        detail = {
-            "edit": True,
-            "type": cipher_type,
-            "fields": validated_data.get("fields"),
-        }
+        # detail = {
+        #     "edit": True,
+        #     "type": cipher_type,
+        #     "fields": validated_data.get("fields"),
+        # }
+        # detail.update({"data": get_cipher_detail_data(validated_data)})
         # Cipher data
-        detail.update({"data": get_cipher_detail_data(validated_data)})
-
+        validated_data["data"] = get_cipher_detail_data(validated_data)
         return validated_data
 
     def validated_plan(self, data):
@@ -122,9 +122,6 @@ class CreateQuickShareSerializer(serializers.Serializer):
         # TODO: Check the plan of the user
         # if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
         #     raise serializers.ValidationError(detail={"non_field_errors": [gen_error("7002")]})
-
-
-
         return data
 
     def to_internal_value(self, data):

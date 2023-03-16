@@ -1,5 +1,6 @@
 import ast
 import secrets
+import uuid
 
 from django.db import models
 
@@ -8,9 +9,8 @@ from shared.utils.app import now
 
 
 class QuickShare(models.Model):
-    cipher = models.OneToOneField(
-        Cipher, to_field='id', primary_key=True, related_name="quick_share", on_delete=models.CASCADE
-    )
+    id = models.CharField(primary_key=True, max_length=128, default=uuid.uuid4)
+    cipher = models.ForeignKey(Cipher, on_delete=models.CASCADE, related_name="quick_shares")
     access_id = models.CharField(max_length=128, unique=True)
     creation_date = models.FloatField()
     revision_date = models.FloatField()
@@ -24,34 +24,31 @@ class QuickShare(models.Model):
     expired_date = models.FloatField(null=True)
     disabled = models.FloatField(default=False)
     is_public = models.FloatField(default=True)
-    require_otp = models.FloatField(default=False)
+    require_otp = models.FloatField(default=True)
 
     class Meta:
         db_table = 'cs_quick_shares'
 
     @classmethod
-    def update_or_create(cls, cipher: Cipher, **data):
+    def create(cls, **data):
         access_id = data.get("access_id") or cls.gen_access_id()
         is_public = data.get("is_public", True)
-        quick_share, is_created = cls.objects.update_or_create(
-            cipher_id=cipher.id, defaults={
-                "access_id": access_id,
-                "creation_date": data.get("creation_date", now()),
-                "revision_date": data.get("revision_date", now()),
-                "data": data.get("data"),
-                "key": data.get("key"),
-                "password": data.get("password"),
-                "max_access_count": data.get("max_access_count"),
-                "expired_date": data.get("expired_date"),
-                "disabled": data.get("disabled", False),
-                "is_public": is_public,
-                "require_otp": data.get("require_otp", False)
-            }
+        quick_share = cls(
+            access_id=access_id,
+            cipher_id=data.get("cipher_id"),
+            creation_date=data.get("creation_date") or now(),
+            revision_date=data.get("revision_date") or now(),
+            data=data.get("data"),
+            key=data.get("key"),
+            password=data.get("password"),
+            max_access_count=data.get("max_access_count"),
+            expired_date=data.get("expired_date"),
+            disabled=data.get("disabled", False),
+            is_public=is_public,
+            require_otp=data.get("require_otp", True)
         )
-        # Create quick share emails
-        if is_public is False:
-            emails_data = data.get("emails") or []
-            quick_share.quick_share_emails.model.create_multiple(quick_share, emails_data)
+        emails_data = data.get("emails") or []
+        quick_share.quick_share_emails.model.create_multiple(quick_share, emails_data)
         return quick_share
 
     @classmethod
