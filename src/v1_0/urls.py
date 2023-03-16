@@ -165,6 +165,15 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Quick Shares -------------------------- #
+urlpatterns += [
+    url(r'^quick_shares$', views.QuickSharePwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^quick_shares/(?P<pk>[0-9a-z-]+)$',
+        views.QuickSharePwdViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+    url(r'^quick_shares/(?P<pk>[0-9a-z-]+)/public$', views.QuickSharePwdViewSet.as_view({'post': 'public'})),
+]
+
+
 # -------------------------------- Folders ------------------------------- #
 urlpatterns += [
     url(r'^folders$', views.FolderPwdViewSet.as_view({'post': 'create'})),

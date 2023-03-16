@@ -56,29 +56,9 @@ class CreateQuickShareSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         validated_data = self.validated_data
-        check_plan = kwargs.get("check_plan", False)
-        if check_plan is True:
-            validated_data = self.validated_plan(validated_data)
-
-        cipher_type = validated_data.get("type")
-        # detail = {
-        #     "edit": True,
-        #     "type": cipher_type,
-        #     "fields": validated_data.get("fields"),
-        # }
-        # detail.update({"data": get_cipher_detail_data(validated_data)})
         # Cipher data
         validated_data["data"] = get_cipher_detail_data(validated_data)
         return validated_data
-
-    def validated_plan(self, data):
-        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        user = self.context["request"].user
-        current_plan = user_repository.get_current_plan(user=user)
-        # TODO: Check the plan of the user
-        # if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
-        #     raise serializers.ValidationError(detail={"non_field_errors": [gen_error("7002")]})
-        return data
 
     def to_internal_value(self, data):
         if not data.get("emails"):
@@ -89,54 +69,49 @@ class CreateQuickShareSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
 
-class CreateQuickShareSerializer(serializers.Serializer):
-    cipher_id = serializers.CharField(max_length=128)
-    data = serializers.CharField()
-    key = serializers.CharField()
-    password = serializers.CharField()
-    max_access_count = serializers.IntegerField(min_value=0, allow_null=True)
-    expired_date = serializers.FloatField(min_value=0, required=False, allow_null=True)
-    is_public = serializers.BooleanField(default=True)
-    require_otp = serializers.BooleanField(default=False)
-    emails = serializers.ListSerializer(
-        child=serializers.EmailField(), allow_empty=True, required=False
-    )
-
-    def validate(self, data):
-        emails = data.get("emails") or []
-        emails_data = [{"email": email} for email in emails]
-        data["emails"] = emails_data
-        return data
-
-    def save(self, **kwargs):
-        validated_data = self.validated_data
-        check_plan = kwargs.get("check_plan", False)
-        if check_plan is True:
-            validated_data = self.validated_plan(validated_data)
-        return validated_data
-
-    def validated_plan(self, data):
-        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
-        user = self.context["request"].user
-        current_plan = user_repository.get_current_plan(user=user)
-        # TODO: Check the plan of the user
-        # if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
-        #     raise serializers.ValidationError(detail={"non_field_errors": [gen_error("7002")]})
-        return data
-
-    def to_internal_value(self, data):
-        if not data.get("emails"):
-            data["emails"] = []
-        return super().to_internal_value(data)
-
-
 class ListQuickShareSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickShare
-        fields = ('access_id', 'creation_date', 'revision_date', 'deleted_date', 'data', 'key', 'password',
+        fields = ('access_id', 'creation_date', 'revision_date', 'deleted_date', 'key', 'password',
                   'max_access_count', 'access_count', 'expired_date', 'disable', 'is_public', 'require_otp', )
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["id"] = instance.cipher_id
-        return data
+        result = super().to_representation(instance)
+        instance = QuickShare.objects.get()
+        data = instance.get_data()
+        quick_share_data = data.copy()
+
+        quick_share_data.pop("name", None)
+        quick_share_data.pop("notes", None)
+        fields = quick_share_data.get("fields")
+        quick_share_data.pop("fields", None)
+
+        login = quick_share_data if instance.type in [CIPHER_TYPE_LOGIN, CIPHER_TYPE_MASTER_PASSWORD] else None
+        secure_note = quick_share_data if instance.type in [CIPHER_TYPE_NOTE, CIPHER_TYPE_TOTP] else None
+        card = quick_share_data if instance.type == CIPHER_TYPE_CARD else None
+        identity = quick_share_data if instance.type == CIPHER_TYPE_IDENTITY else None
+        crypto_account = quick_share_data if instance.type == CIPHER_TYPE_CRYPTO_ACCOUNT else None
+        crypto_wallet = quick_share_data if instance.type == CIPHER_TYPE_CRYPTO_WALLET else None
+    
+        result.update({
+            "object": "quickShare",
+            "id": instance.id,
+            "card": card,
+            "data": data,
+            "fields": fields,
+            "identity": identity,
+            "login": login,
+            "name": data.get("name"),
+            "notes": data.get("notes"),
+            "secure_note": secure_note,
+            "crypto_account": crypto_account,
+            "crypto_wallet": crypto_wallet,
+            "revision_date": instance.revision_date,
+            "type": instance.type,
+        })
+        return result
+
+
+class PublicQuickShareSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)
+    code = serializers.CharField(max_length=128, required=False)

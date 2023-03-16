@@ -2,6 +2,7 @@ import ast
 import secrets
 import uuid
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from cystack_models.models.ciphers.ciphers import Cipher
@@ -16,6 +17,7 @@ class QuickShare(models.Model):
     revision_date = models.FloatField()
     deleted_date = models.FloatField(null=True)
 
+    type = models.IntegerField()
     data = models.TextField(blank=True, null=True)
     key = models.TextField(null=True)
     password = models.CharField(max_length=512, null=True)
@@ -38,6 +40,7 @@ class QuickShare(models.Model):
             cipher_id=data.get("cipher_id"),
             creation_date=data.get("creation_date") or now(),
             revision_date=data.get("revision_date") or now(),
+            type=data.get("type"),
             data=data.get("data"),
             key=data.get("key"),
             password=data.get("password"),
@@ -60,4 +63,18 @@ class QuickShare(models.Model):
             return {}
         return ast.literal_eval(str(self.data))
 
-
+    def check_valid_access(self, email: str, code: str):
+        if self.disabled is True:
+            return False
+        if self.is_public is False:
+            try:
+                quick_share_email = self.quick_share_emails.get(email=email)
+                if quick_share_email.code != code or quick_share_email.code_expired_time < now():
+                    return False
+            except ObjectDoesNotExist:
+                return False
+        if self.max_access_count and self.access_count >= self.max_access_count:
+            return False
+        if self.expired_date and self.expired_date < now():
+            return False
+        return True

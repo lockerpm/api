@@ -1,15 +1,19 @@
 import json
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.quick_shares.quick_shares import QuickShare
 from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
+from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.quick_share_pwd_permission import QuickSharePwdPermission
-from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer
+from shared.utils.app import now, diff_list
+from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
+    PublicQuickShareSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -18,10 +22,12 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
     http_method_names = ["head", "options", "get", "post", "put", "delete"]
 
     def get_serializer_class(self):
-        if self.action == "create":
+        if self.action in ["create", "update"]:
             self.serializer_class = CreateQuickShareSerializer
         elif self.action in ["list", "retrieve"]:
             self.serializer_class = ListQuickShareSerializer
+        elif self.action == "public":
+            self.serializer_class = PublicQuickShareSerializer
         return super().get_serializer_class()
 
     def get_cipher(self, cipher_id):
@@ -69,7 +75,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        validated_data = serializer.save(**{"check_plan": True})
+        validated_data = serializer.save()
         validated_data = json.loads(json.dumps(validated_data))
         cipher_id = validated_data.get("cipher_id")
         self.get_cipher(cipher_id=cipher_id)
@@ -85,7 +91,58 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         return super().retrieve(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        pass
+        self.check_pwd_session_auth(request=request)
+        quick_share = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.save()
+        validated_data = json.loads(json.dumps(validated_data))
+        quick_share.revision_date = now()
+        quick_share.data = validated_data.get("data") or quick_share.data
+        quick_share.key = validated_data.get("key") or quick_share.key
+        quick_share.password = validated_data.get("password") or quick_share.password
+        quick_share.max_access_count = validated_data.get("max_access_count") or quick_share.max_access_count
+        quick_share.expired_date = validated_data.get("expired_date") or quick_share.expired_date
+        quick_share.is_public = validated_data.get("is_public") or quick_share.is_public
+        quick_share.disabled = validated_data.get("disabled") or quick_share.disabled
+        quick_share.require_otp = validated_data.get("require_otp") or quick_share.require_otp
+        quick_share.save()
+
+        quick_share_emails = list(quick_share.quick_share_emails.values_list('email', flat=True))
+        emails_data = validated_data.get("emails", [])
+        emails = [email_data.get("email") for email_data in emails_data]
+        removed_emails = diff_list(quick_share_emails, emails)
+        added_emails = diff_list(emails, quick_share_emails)
+        if removed_emails:
+            quick_share.quick_share_emails.filter(email__in=removed_emails).delete()
+        if added_emails:
+            added_emails_data = [{"email": e} for e in added_emails]
+            quick_share.quick_share_emails.model.create_multiple(quick_share, added_emails_data)
+
+        return Response(status=200, data={
+            "id": quick_share.id,
+            "cipher_id": quick_share.cipher_id,
+            "access_id": quick_share.access_id
+        })
 
     def destroy(self, request, *args, **kwargs):
+        self.check_pwd_session_auth(request=request)
         return super().destroy(request, *args, **kwargs)
+
+    @action(methods=["post"], detail=False)
+    def public(self, request, *args, **kwargs):
+        quick_share = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        email = validated_data.get("email")
+        code = validated_data.get("code")
+        if not quick_share.check_valid_access(email=email, code=code):
+            raise ValidationError({"non_field_errors": [gen_error("9000")]})
+        quick_share.access_count = F('access_count') + 1
+        quick_share.revision_date = now()
+        quick_share.save()
+        quick_share.refresh_from_db()
+        result = ListQuickShareSerializer(quick_share, many=False)
+        return Response(status=200, data=result.data)
+

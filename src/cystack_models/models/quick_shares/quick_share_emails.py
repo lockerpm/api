@@ -11,6 +11,7 @@ class QuickShareEmail(models.Model):
     creation_date = models.FloatField()
     email = models.EmailField(max_length=255)
     code = models.CharField(max_length=32, null=True)
+    code_expired_time = models.FloatField(null=True)
     quick_share = models.ForeignKey(QuickShare, on_delete=models.CASCADE, related_name="quick_share_emails")
 
     class Meta:
@@ -26,6 +27,7 @@ class QuickShareEmail(models.Model):
                     quick_share=quick_share,
                     email=email_data.get("email"),
                     code=email_data.get("code"),
+                    code_expired_time=email_data.get("code_expired_time"),
                     creation_date=email_data.get("creation_date", now())
                 )
             )
