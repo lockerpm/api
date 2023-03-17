@@ -13,7 +13,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.quick_share_pwd_permission import QuickSharePwdPermission
 from shared.utils.app import now, diff_list
 from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
-    PublicQuickShareSerializer
+    PublicQuickShareSerializer, CheckAccessQuickShareSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -28,6 +28,8 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             self.serializer_class = ListQuickShareSerializer
         elif self.action == "public":
             self.serializer_class = PublicQuickShareSerializer
+        elif self.action in ["access", "otp"]:
+            self.serializer_class = CheckAccessQuickShareSerializer
         return super().get_serializer_class()
 
     def get_cipher(self, cipher_id):
@@ -143,6 +145,38 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         quick_share.revision_date = now()
         quick_share.save()
         quick_share.refresh_from_db()
+        if email:
+            try:
+                quick_share_email = quick_share.quick_share_emails.get(email=email)
+                quick_share_email.clear_code()
+            except ObjectDoesNotExist:
+                pass
+
         result = ListQuickShareSerializer(quick_share, many=False)
         return Response(status=200, data=result.data)
 
+    @action(methods=["post"], detail=False)
+    def access(self, request, *args, **kwargs):
+        quick_share = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        email = validated_data.get("email")
+        if quick_share.is_public is True or quick_share.quick_share_emails.filter(email=email).exists():
+            return Response(status=200, data={"success": True})
+        raise ValidationError(detail={"email": ["The email is not valid"]})
+
+    @action(methods=["post"], detail=False)
+    def otp(self, request, *args, **kwargs):
+        quick_share = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        email = validated_data.get("email")
+        try:
+            quick_share_email = quick_share.quick_share_emails.get(email=email)
+
+        except ObjectDoesNotExist:
+            raise ValidationError(detail={"email": ["The email is not valid"]})
+        quick_share_email.set_random_code()
+        return Response(status=200, data={"code": quick_share_email.code})

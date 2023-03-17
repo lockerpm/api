@@ -5,7 +5,7 @@ class QuickSharePwdPermission(LockerPermission):
     scope = 'quick_share'
 
     def has_permission(self, request, view):
-        if view.action in ["public"]:
+        if view.action in ["public", "access", "otp"]:
             return True
         return self.is_auth(request) and request.user.activated
 

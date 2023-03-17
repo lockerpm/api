@@ -115,3 +115,7 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
 class PublicQuickShareSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     code = serializers.CharField(max_length=128, required=False)
+
+
+class CheckAccessQuickShareSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=False)

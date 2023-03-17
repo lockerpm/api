@@ -1,4 +1,6 @@
+import string
 import uuid
+import random
 
 from django.db import models
 
@@ -32,3 +34,15 @@ class QuickShareEmail(models.Model):
                 )
             )
         cls.objects.bulk_create(quick_share_emails_obj, ignore_conflicts=True, batch_size=50)
+
+    def clear_code(self):
+        self.code = None
+        self.code_expired_time = None
+        self.save()
+
+    def set_random_code(self):
+        code = ''.join([random.choice(string.digits) for _ in range(6)])
+        self.code = code
+        # The code will be expired after 10 minutes
+        self.code_expired_time = now() + 600
+        self.save()
