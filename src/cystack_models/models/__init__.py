@@ -41,6 +41,11 @@ from cystack_models.models.teams.collections_members import CollectionMember
 from cystack_models.models.policy.policy import Policy
 
 
+# ------------------------ Quick Shares --------------------------- #
+from cystack_models.models.quick_shares.quick_shares import QuickShare
+from cystack_models.models.quick_shares.quick_share_emails import QuickShareEmail
+
+
 # ------------------------ Permission Models ----------------------- #
 from cystack_models.models.permissions.permissions import Permission
 from cystack_models.models.permissions.role_permissions import RolePermission

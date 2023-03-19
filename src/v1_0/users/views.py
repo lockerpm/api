@@ -472,7 +472,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         if not device_existed:
             all_devices = self.device_repository.get_device_user(user=user)
             if limit_sync_device and all_devices.count() > limit_sync_device:
-                old_devices = all_devices[:limit_sync_device]
+                old_devices = all_devices[limit_sync_device:]
                 not_sync_sso_token_ids = list(
                     self.device_repository.get_devices_access_token(devices=old_devices).exclude(
                         sso_token_id__isnull=True

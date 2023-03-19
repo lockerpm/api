@@ -5,6 +5,7 @@ from v1_0.notification_settings.views import NotificationSettingPwdViewSet
 from v1_0.sync.views import SyncPwdViewSet
 from v1_0.ciphers.views import CipherPwdViewSet
 from v1_0.sharing.views import SharingPwdViewSet
+from v1_0.quick_shares.views import QuickSharePwdViewSet
 from v1_0.folders.views import FolderPwdViewSet
 from v1_0.import_data.views import ImportDataPwdViewSet
 from v1_0.payments.views import PaymentPwdViewSet

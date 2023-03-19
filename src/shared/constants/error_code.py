@@ -260,6 +260,16 @@ APP_CODE += [
 ]
 
 
+# ------------------------------- Quick Share ------------------------------------- #
+APP_CODE += [
+    {
+        "code": "9000",
+        "message": "The quick share is not valid because the email is not valid or the code is not valid",
+        "vi_message": "Số lượng địa chỉ relay đã đạt tối đa"
+    }
+]
+
+
 def get_app_code_content(code):
     try:
         return [content for content in APP_CODE if content["code"] == code][0]['message']
