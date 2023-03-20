@@ -24,7 +24,7 @@ class CreateQuickShareSerializer(serializers.Serializer):
     cryptoWallet = CryptoWalletSerializer(required=False, many=False, allow_null=True)
 
     key = serializers.CharField()
-    password = serializers.CharField()
+    password = serializers.CharField(allow_null=True, required=False)
     max_access_count = serializers.IntegerField(min_value=0, allow_null=True)
     expired_date = serializers.FloatField(min_value=0, required=False, allow_null=True)
     require_otp = serializers.BooleanField(default=True)
@@ -52,6 +52,13 @@ class CreateQuickShareSerializer(serializers.Serializer):
         if vault_type == CIPHER_TYPE_IDENTITY and not identity:
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
 
+        # Check the quick access is public or not
+        if not data.get("emails"):
+            data["emails"] = []
+            data["is_public"] = True
+        else:
+            data["is_public"] = False
+
         return data
 
     def save(self, **kwargs):
@@ -61,11 +68,6 @@ class CreateQuickShareSerializer(serializers.Serializer):
         return validated_data
 
     def to_internal_value(self, data):
-        if not data.get("emails"):
-            data["emails"] = []
-            data["is_public"] = True
-        else:
-            data["is_public"] = False
         return super().to_internal_value(data)
 
 
@@ -73,11 +75,10 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickShare
         fields = ('access_id', 'creation_date', 'revision_date', 'deleted_date', 'key', 'password',
-                  'max_access_count', 'access_count', 'expired_date', 'disable', 'is_public', 'require_otp', )
+                  'max_access_count', 'access_count', 'expired_date', 'disabled', 'is_public', 'require_otp', )
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
-        instance = QuickShare.objects.get()
         data = instance.get_data()
         quick_share_data = data.copy()
 

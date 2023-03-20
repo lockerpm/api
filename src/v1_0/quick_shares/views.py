@@ -52,6 +52,13 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
+    def get_quick_share_access_obj(self):
+        try:
+            quick_share = QuickShare.objects.get(id=self.kwargs.get("pk"))
+            return quick_share
+        except ObjectDoesNotExist:
+            raise NotFound
+
     def get_queryset(self):
         user = self.request.user
         exclude_types = []
@@ -60,11 +67,11 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         cipher_ids = self.cipher_repository.get_multiple_by_user(
             user=user, exclude_types=exclude_types, only_personal=True
         ).values_list('id', flat=True)
-        quick_share = QuickShare.objects.filter(cipher_id__in=list(cipher_ids))
+        quick_share = QuickShare.objects.filter(cipher_id__in=list(cipher_ids)).order_by('-creation_date')
         return quick_share
 
     def list(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request)
+        # self.check_pwd_session_auth(request)
         paging_param = self.request.query_params.get("paging", "1")
         page_size_param = self.check_int_param(self.request.query_params.get("size", 10))
         if paging_param == "0":
@@ -74,7 +81,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
+        # self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.save()
@@ -89,11 +96,11 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         })
 
     def retrieve(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
+        # self.check_pwd_session_auth(request=request)
         return super().retrieve(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
+        # self.check_pwd_session_auth(request=request)
         quick_share = self.get_object()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -133,7 +140,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def public(self, request, *args, **kwargs):
-        quick_share = self.get_object()
+        quick_share = self.get_quick_share_access_obj()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -157,7 +164,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def access(self, request, *args, **kwargs):
-        quick_share = self.get_object()
+        quick_share = self.get_quick_share_access_obj()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -168,7 +175,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def otp(self, request, *args, **kwargs):
-        quick_share = self.get_object()
+        quick_share = self.get_quick_share_access_obj()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
