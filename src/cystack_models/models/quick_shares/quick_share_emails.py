@@ -14,6 +14,8 @@ class QuickShareEmail(models.Model):
     email = models.EmailField(max_length=255)
     code = models.CharField(max_length=32, null=True)
     code_expired_time = models.FloatField(null=True)
+    max_access_count = models.PositiveIntegerField(null=True)
+    access_count = models.PositiveIntegerField(default=0)
     quick_share = models.ForeignKey(QuickShare, on_delete=models.CASCADE, related_name="quick_share_emails")
 
     class Meta:
@@ -30,7 +32,9 @@ class QuickShareEmail(models.Model):
                     email=email_data.get("email"),
                     code=email_data.get("code"),
                     code_expired_time=email_data.get("code_expired_time"),
-                    creation_date=email_data.get("creation_date", now())
+                    creation_date=email_data.get("creation_date", now()),
+                    max_access_count=email_data.get("max_access_count"),
+                    access_count=email_data.get("access_count", 0)
                 )
             )
         cls.objects.bulk_create(quick_share_emails_obj, ignore_conflicts=True, batch_size=50)
@@ -46,3 +50,8 @@ class QuickShareEmail(models.Model):
         # The code will be expired after 10 minutes
         self.code_expired_time = now() + 600
         self.save()
+
+    def check_access(self) -> bool:
+        if not self.max_access_count:
+            return True
+        return True if self.access_count < self.max_access_count else False

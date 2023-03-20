@@ -72,6 +72,9 @@ class QuickShare(models.Model):
                 quick_share_email = self.quick_share_emails.get(email=email)
                 if quick_share_email.code != code or quick_share_email.code_expired_time < now():
                     return False
+                if quick_share_email.max_access_count and \
+                        quick_share_email.access_count >= quick_share_email.max_access_count:
+                    return False
             except ObjectDoesNotExist:
                 return False
         if self.max_access_count and self.access_count >= self.max_access_count:

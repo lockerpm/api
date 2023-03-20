@@ -156,6 +156,8 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             try:
                 quick_share_email = quick_share.quick_share_emails.get(email=email)
                 quick_share_email.clear_code()
+                quick_share_email.access_count = F('access_count') + 1
+                quick_share_email.save()
             except ObjectDoesNotExist:
                 pass
 
@@ -169,7 +171,13 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         email = validated_data.get("email")
-        if quick_share.is_public is True or quick_share.quick_share_emails.filter(email=email).exists():
+        quick_share_email = None
+        if email:
+            try:
+                quick_share_email = quick_share.quick_share_emails.get(email=email)
+            except ObjectDoesNotExist:
+                pass
+        if quick_share.is_public is True or (quick_share_email and quick_share_email.check_access() is True):
             return Response(status=200, data={"success": True})
         raise ValidationError(detail={"email": ["The email is not valid"]})
 
@@ -182,8 +190,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         email = validated_data.get("email")
         try:
             quick_share_email = quick_share.quick_share_emails.get(email=email)
-
+            if quick_share_email.check_access() is False:
+                raise ValidationError(detail={"email": ["The email is not valid"]})
         except ObjectDoesNotExist:
             raise ValidationError(detail={"email": ["The email is not valid"]})
         quick_share_email.set_random_code()
-        return Response(status=200, data={"code": quick_share_email.code})
+        return Response(status=200, data={"code": quick_share_email.code, "email": email})
