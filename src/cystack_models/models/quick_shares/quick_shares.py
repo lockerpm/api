@@ -25,7 +25,7 @@ class QuickShare(models.Model):
     access_count = models.PositiveIntegerField(default=0)
     expired_date = models.FloatField(null=True)
     disabled = models.FloatField(default=False)
-    is_public = models.FloatField(default=True)
+    is_public = models.BooleanField(default=True)
     require_otp = models.FloatField(default=True)
 
     class Meta:
@@ -50,6 +50,7 @@ class QuickShare(models.Model):
             is_public=is_public,
             require_otp=data.get("require_otp", True)
         )
+        quick_share.save()
         emails_data = data.get("emails") or []
         quick_share.quick_share_emails.model.create_multiple(quick_share, emails_data)
         return quick_share
