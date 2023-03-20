@@ -111,6 +111,13 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
         return result
 
 
+class DetailQuickShareSerializer(ListQuickShareSerializer):
+    def to_representation(self, instance):
+        data = super(DetailQuickShareSerializer, self).to_representation(instance)
+        data["emails"] = instance.quick_share_emails.values('email', 'access_count', 'max_access_count')
+        return data
+
+
 class PublicQuickShareSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     code = serializers.CharField(max_length=128, required=False)

@@ -13,7 +13,7 @@ from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.quick_share_pwd_permission import QuickSharePwdPermission
 from shared.utils.app import now, diff_list
 from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
-    PublicQuickShareSerializer, CheckAccessQuickShareSerializer
+    PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -24,8 +24,10 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
     def get_serializer_class(self):
         if self.action in ["create", "update"]:
             self.serializer_class = CreateQuickShareSerializer
-        elif self.action in ["list", "retrieve"]:
+        elif self.action == "list":
             self.serializer_class = ListQuickShareSerializer
+        elif self.action == "retrieve":
+            self.serializer_class = DetailQuickShareSerializer
         elif self.action == "public":
             self.serializer_class = PublicQuickShareSerializer
         elif self.action in ["access", "otp"]:
