@@ -21,6 +21,7 @@ class QuickShare(models.Model):
     data = models.TextField(blank=True, null=True)
     key = models.TextField(null=True)
     password = models.CharField(max_length=512, null=True)
+    each_email_access_count = models.PositiveIntegerField(null=True)
     max_access_count = models.PositiveIntegerField(null=True)
     access_count = models.PositiveIntegerField(default=0)
     expired_date = models.FloatField(null=True)
@@ -44,6 +45,7 @@ class QuickShare(models.Model):
             data=data.get("data"),
             key=data.get("key"),
             password=data.get("password"),
+            each_email_access_count=data.get("each_email_access_count"),
             max_access_count=data.get("max_access_count"),
             expired_date=data.get("expired_date"),
             disabled=data.get("disabled", False),

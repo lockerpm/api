@@ -73,7 +73,8 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickShare
         fields = ('access_id', 'creation_date', 'revision_date', 'deleted_date', 'key', 'password',
-                  'max_access_count', 'access_count', 'expired_date', 'disabled', 'is_public', 'require_otp', )
+                  'max_access_count', 'access_count', 'each_email_access_count', 'expired_date', 'disabled',
+                  'is_public', 'require_otp', )
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
