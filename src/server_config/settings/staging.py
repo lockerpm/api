@@ -2,7 +2,7 @@ from server_config.settings.dev import *
 
 
 DEBUG = False
-ALLOWED_HOSTS = ["locker-api.staging.cystack.org", "staging-api.locker.io", "cystack-locker-api.locker-staging"]
+ALLOWED_HOSTS = ["locker-api.staging.cystack.org", "staging-api.locker.io", "cystack-locker-api.locker-staging", "localhost", "127.0.0.1"]
 
 
 # Cache DB
