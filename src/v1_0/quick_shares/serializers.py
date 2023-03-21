@@ -25,7 +25,8 @@ class CreateQuickShareSerializer(serializers.Serializer):
 
     key = serializers.CharField()
     password = serializers.CharField(allow_null=True, required=False)
-    max_access_count = serializers.IntegerField(min_value=0, allow_null=True)
+    max_access_count = serializers.IntegerField(min_value=0, allow_null=True, default=None)
+    each_email_access_count = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     expired_date = serializers.FloatField(min_value=0, required=False, allow_null=True)
     require_otp = serializers.BooleanField(default=True)
     emails = serializers.ListSerializer(
@@ -33,8 +34,9 @@ class CreateQuickShareSerializer(serializers.Serializer):
     )
 
     def validate(self, data):
+        each_email_access_count = data.get("each_email_access_count")
         emails = data.get("emails") or []
-        emails_data = [{"email": email} for email in emails]
+        emails_data = [{"email": email, "max_access_count": each_email_access_count} for email in emails]
         data["emails"] = emails_data
 
         # Validate vault data
@@ -53,11 +55,7 @@ class CreateQuickShareSerializer(serializers.Serializer):
             raise serializers.ValidationError(detail={"identity": ["This field is required"]})
 
         # Check the quick access is public or not
-        if not data.get("emails"):
-            data["emails"] = []
-            data["is_public"] = True
-        else:
-            data["is_public"] = False
+        data["is_public"] = True if not data.get("emails") else False
 
         return data
 
@@ -75,7 +73,8 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickShare
         fields = ('access_id', 'creation_date', 'revision_date', 'deleted_date', 'key', 'password',
-                  'max_access_count', 'access_count', 'expired_date', 'disabled', 'is_public', 'require_otp', )
+                  'max_access_count', 'access_count', 'each_email_access_count', 'expired_date', 'disabled',
+                  'is_public', 'require_otp', )
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
@@ -111,6 +110,13 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
             "type": instance.type,
         })
         return result
+
+
+class DetailQuickShareSerializer(ListQuickShareSerializer):
+    def to_representation(self, instance):
+        data = super(DetailQuickShareSerializer, self).to_representation(instance)
+        data["emails"] = instance.quick_share_emails.values('email', 'access_count', 'max_access_count')
+        return data
 
 
 class PublicQuickShareSerializer(serializers.Serializer):
