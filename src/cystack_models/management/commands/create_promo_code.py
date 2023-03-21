@@ -11,6 +11,10 @@ from shared.utils.app import now
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        self.create_saas_promo_code()
+
+    @staticmethod
+    def create_normal_promo_code():
         promo_type = PROMO_PERCENTAGE
         expired_time = now() + 12 * 30 * 86400  # 12 months
         code = "LKFAMILY50"
@@ -49,5 +53,32 @@ class Command(BaseCommand):
         # )
         # print("Coupon: ", coupon)
 
-    def campaign(self):
-        pass
+    def create_saas_promo_code(self):
+        codes = []
+        promo_type = PROMO_PERCENTAGE
+        promo_type_obj = PromoCodeType.objects.get(name=promo_type)
+        for code in codes:
+
+            expired_time = 1704041999
+            value = 100
+            limit_value = None
+            duration = 1
+            currency = "USD"
+            description_en = "StackCommerce Lifetime code"
+            description_vi = "StackCommerce Lifetime code"
+            new_promo_code = PromoCode.objects.create(
+                created_time=now(),
+                expired_time=expired_time,
+                remaining_times=1,
+                valid=True,
+                code=code,
+                value=value,
+                limit_value=limit_value,
+                duration=duration,
+                currency=currency,
+                description_en=description_en,
+                description_vi=description_vi,
+                type=promo_type_obj
+            )
+            print(new_promo_code.id)
+        print(len(codes))
