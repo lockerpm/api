@@ -92,7 +92,8 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
         identity = quick_share_data if instance.type == CIPHER_TYPE_IDENTITY else None
         crypto_account = quick_share_data if instance.type == CIPHER_TYPE_CRYPTO_ACCOUNT else None
         crypto_wallet = quick_share_data if instance.type == CIPHER_TYPE_CRYPTO_WALLET else None
-    
+
+        emails = instance.quick_share_emails.values('email', 'max_access_count', 'access_count', 'creation_date')
         result.update({
             "object": "quickShare",
             "id": instance.id,
@@ -108,7 +109,8 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
             "crypto_wallet": crypto_wallet,
             "revision_date": instance.revision_date,
             "type": instance.type,
-            "cipher_id": instance.cipher_id
+            "cipher_id": instance.cipher_id,
+            "emails": emails
         })
         return result
 

@@ -69,7 +69,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         cipher_ids = self.cipher_repository.get_multiple_by_user(
             user=user, exclude_types=exclude_types, only_personal=True
         ).values_list('id', flat=True)
-        quick_share = QuickShare.objects.filter(cipher_id__in=list(cipher_ids)).order_by('-creation_date')
+        quick_share = QuickShare.objects.filter(
+            cipher_id__in=list(cipher_ids)
+        ).order_by('-creation_date').prefetch_related('quick_share_emails')
         return quick_share
 
     def list(self, request, *args, **kwargs):

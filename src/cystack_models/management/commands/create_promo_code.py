@@ -78,7 +78,8 @@ class Command(BaseCommand):
                 currency=currency,
                 description_en=description_en,
                 description_vi=description_vi,
-                type=promo_type_obj
+                type=promo_type_obj,
+                is_saas_code=True
             )
             print(new_promo_code.id)
         print(len(codes))
