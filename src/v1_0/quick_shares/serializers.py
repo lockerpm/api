@@ -108,6 +108,7 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
             "crypto_wallet": crypto_wallet,
             "revision_date": instance.revision_date,
             "type": instance.type,
+            "cipher_id": instance.cipher_id
         })
         return result
 
