@@ -25,3 +25,5 @@ SYNC_EVENT_ORG_KEY = "sync_org_key"
 SYNC_SETTINGS = "sync_settings"
 
 SYNC_EMERGENCY_ACCESS = "emergency_access"
+
+SYNC_QUICK_SHARE = "quick_share"

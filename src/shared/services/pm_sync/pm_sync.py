@@ -2,6 +2,7 @@ import requests
 
 from django.conf import settings
 
+from shared.background.i_background import BackgroundThread, background_exception_wrapper
 from shared.constants.members import PM_MEMBER_STATUS_CONFIRMED
 from shared.external_request.requester import requester
 
@@ -21,7 +22,14 @@ class PwdSync:
         self.teams = teams
         self.add_all = add_all
 
-    def send(self, data=None):
+    def send(self, data=None, is_background=True):
+        if is_background:
+            BackgroundThread(task=self.real_send, **{"data": data})
+        else:
+            self.real_send(data)
+
+    @background_exception_wrapper
+    def real_send(self, data):
         user_ids = []
         if self.team:
             team_user_ids = list(self.team.team_members.values_list('user_id', flat=True))

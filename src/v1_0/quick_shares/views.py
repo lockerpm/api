@@ -12,6 +12,7 @@ from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.quick_share_pwd_permission import QuickSharePwdPermission
+from shared.services.pm_sync import PwdSync, SYNC_QUICK_SHARE
 from shared.utils.app import now, diff_list
 from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
     PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer
@@ -96,6 +97,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         cipher_id = validated_data.get("cipher_id")
         self.get_cipher(cipher_id=cipher_id)
         quick_share = QuickShare.create(**validated_data)
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+            data={"id": str(quick_share.id)}
+        )
         return Response(status=200, data={
             "id": quick_share.id,
             "cipher_id": quick_share.cipher_id,
