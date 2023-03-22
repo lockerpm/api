@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from core.settings import CORE_CONFIG
+from core.utils.data_helpers import convert_readable_date
 from cystack_models.models.quick_shares.quick_shares import QuickShare
 from shared.constants.ciphers import *
 from shared.constants.transactions import PLAN_TYPE_PM_FREE
@@ -137,8 +138,11 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
                 "crypto_account": crypto_account,
                 "crypto_wallet": crypto_wallet,
             },
-            "revision_date": instance.revision_date,
-            "emails": emails
+            "creation_date": convert_readable_date(instance.creation_date),
+            "revision_date": convert_readable_date(instance.revision_date),
+            "deleted_date": convert_readable_date(instance.deleted_date),
+            "expired_date": convert_readable_date(instance.expired_date),
+            "emails": emails,
         })
         return result
 
