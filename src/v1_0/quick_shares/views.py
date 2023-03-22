@@ -148,8 +148,11 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         })
 
     def destroy(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
-        return super().destroy(request, *args, **kwargs)
+        # self.check_pwd_session_auth(request=request)
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+            data={"id": str(kwargs.get("pk"))}
+        )
+        return super(QuickSharePwdViewSet, self).destroy(request, *args, **kwargs)
 
     @action(methods=["post"], detail=False)
     def public(self, request, *args, **kwargs):
@@ -176,7 +179,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
         result = ListQuickShareSerializer(quick_share, many=False).data
         result.pop("emails", None)
-        return Response(status=200, data=result)
+        return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
 
     @action(methods=["post"], detail=False)
     def access(self, request, *args, **kwargs):
