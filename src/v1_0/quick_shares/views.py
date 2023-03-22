@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from core.utils.data_helpers import camel_snake_data
 from cystack_models.models.quick_shares.quick_shares import QuickShare
 from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
@@ -82,7 +83,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             self.pagination_class = None
         else:
             self.pagination_class.page_size = page_size_param if page_size_param else 10
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        response.data = camel_snake_data(response.data, snake_to_camel=True)
+        return response
 
     def create(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request=request)
@@ -101,7 +104,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request=request)
-        return super().retrieve(request, *args, **kwargs)
+        response = super().retrieve(request, *args, **kwargs)
+        response.data = camel_snake_data(response.data, snake_to_camel=True)
+        return response
 
     def update(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request=request)
