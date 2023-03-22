@@ -165,8 +165,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             except ObjectDoesNotExist:
                 pass
 
-        result = ListQuickShareSerializer(quick_share, many=False)
-        return Response(status=200, data=result.data)
+        result = ListQuickShareSerializer(quick_share, many=False).data
+        result.pop("emails", None)
+        return Response(status=200, data=result)
 
     @action(methods=["post"], detail=False)
     def access(self, request, *args, **kwargs):
