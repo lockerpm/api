@@ -97,19 +97,21 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
         result.update({
             "object": "quickShare",
             "id": instance.id,
-            "card": card,
-            "data": data,
-            "fields": fields,
-            "identity": identity,
-            "login": login,
-            "name": data.get("name"),
-            "notes": data.get("notes"),
-            "secure_note": secure_note,
-            "crypto_account": crypto_account,
-            "crypto_wallet": crypto_wallet,
-            "revision_date": instance.revision_date,
-            "type": instance.type,
             "cipher_id": instance.cipher_id,
+            "cipher": {
+                "type": instance.type,
+                "card": card,
+                "data": data,
+                "fields": fields,
+                "identity": identity,
+                "login": login,
+                "name": data.get("name"),
+                "notes": data.get("notes"),
+                "secure_note": secure_note,
+                "crypto_account": crypto_account,
+                "crypto_wallet": crypto_wallet,
+            },
+            "revision_date": instance.revision_date,
             "emails": emails
         })
         return result
@@ -118,7 +120,6 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
 class DetailQuickShareSerializer(ListQuickShareSerializer):
     def to_representation(self, instance):
         data = super(DetailQuickShareSerializer, self).to_representation(instance)
-        data["emails"] = instance.quick_share_emails.values('email', 'access_count', 'max_access_count')
         return data
 
 
