@@ -10,8 +10,7 @@ from v1_0.ciphers.serializers import ItemFieldSerializer, LoginVaultSerializer, 
     CardVaultSerializer, IdentityVaultSerializer, CryptoAccountSerializer, CryptoWalletSerializer
 
 
-class CreateQuickShareSerializer(serializers.Serializer):
-    cipher_id = serializers.CharField(max_length=128)
+class CipherQuickShareSerializer(serializers.Serializer):
     fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
     name = serializers.CharField()
     notes = serializers.CharField(allow_blank=True, allow_null=True)
@@ -22,6 +21,48 @@ class CreateQuickShareSerializer(serializers.Serializer):
     identity = IdentityVaultSerializer(required=False, many=False, allow_null=True)
     cryptoAccount = CryptoAccountSerializer(required=False, many=False, allow_null=True)
     cryptoWallet = CryptoWalletSerializer(required=False, many=False, allow_null=True)
+
+    def validate(self, data):
+        # Validate vault data
+        vault_type = data.get("type")
+        login = data.get("login", {})
+        secure_note = data.get("secureNote")
+        card = data.get("card")
+        identity = data.get("identity")
+        if vault_type == CIPHER_TYPE_LOGIN and not login:
+            raise serializers.ValidationError(detail={"login": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_NOTE and not secure_note:
+            raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_CARD and not card:
+            raise serializers.ValidationError(detail={"card": ["This field is required"]})
+        if vault_type == CIPHER_TYPE_IDENTITY and not identity:
+            raise serializers.ValidationError(detail={"identity": ["This field is required"]})
+
+        return data
+
+    def save(self, **kwargs):
+        validated_data = self.validated_data
+        # Cipher data
+        validated_data["data"] = get_cipher_detail_data(validated_data)
+        return validated_data
+
+    def to_internal_value(self, data):
+        return super().to_internal_value(data)
+
+
+class CreateQuickShareSerializer(serializers.Serializer):
+    cipher_id = serializers.CharField(max_length=128)
+    cipher = CipherQuickShareSerializer(many=False, required=True)
+    # fields = ItemFieldSerializer(many=True, required=False, allow_null=True)
+    # name = serializers.CharField()
+    # notes = serializers.CharField(allow_blank=True, allow_null=True)
+    # type = serializers.ChoiceField(choices=LIST_CIPHER_TYPE)
+    # login = LoginVaultSerializer(required=False, many=False, allow_null=True)
+    # secureNote = SecurityNoteVaultSerializer(required=False, many=False, allow_null=True)
+    # card = CardVaultSerializer(required=False, many=False, allow_null=True)
+    # identity = IdentityVaultSerializer(required=False, many=False, allow_null=True)
+    # cryptoAccount = CryptoAccountSerializer(required=False, many=False, allow_null=True)
+    # cryptoWallet = CryptoWalletSerializer(required=False, many=False, allow_null=True)
 
     key = serializers.CharField()
     password = serializers.CharField(allow_null=True, required=False)
@@ -38,23 +79,6 @@ class CreateQuickShareSerializer(serializers.Serializer):
         emails = data.get("emails") or []
         emails_data = [{"email": email, "max_access_count": each_email_access_count} for email in emails]
         data["emails"] = emails_data
-
-        # Validate vault data
-        vault_type = data.get("type")
-        login = data.get("login", {})
-        secure_note = data.get("secureNote")
-        card = data.get("card")
-        identity = data.get("identity")
-        if vault_type == CIPHER_TYPE_LOGIN and not login:
-            raise serializers.ValidationError(detail={"login": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_NOTE and not secure_note:
-            raise serializers.ValidationError(detail={"secureNote": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_CARD and not card:
-            raise serializers.ValidationError(detail={"card": ["This field is required"]})
-        if vault_type == CIPHER_TYPE_IDENTITY and not identity:
-            raise serializers.ValidationError(detail={"identity": ["This field is required"]})
-
-        # Check the quick access is public or not
         data["is_public"] = True if not data.get("emails") else False
 
         return data
@@ -62,7 +86,9 @@ class CreateQuickShareSerializer(serializers.Serializer):
     def save(self, **kwargs):
         validated_data = self.validated_data
         # Cipher data
-        validated_data["data"] = get_cipher_detail_data(validated_data)
+        cipher = validated_data.get("cipher")
+        validated_data["data"] = get_cipher_detail_data(cipher)
+        validated_data["type"] = cipher.get("type")
         return validated_data
 
     def to_internal_value(self, data):
