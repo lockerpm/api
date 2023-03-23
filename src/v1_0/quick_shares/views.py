@@ -68,9 +68,10 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         exclude_types = []
         if user.login_method == LOGIN_METHOD_PASSWORDLESS:
             exclude_types = [CIPHER_TYPE_MASTER_PASSWORD]
-        cipher_ids = self.cipher_repository.get_multiple_by_user(
-            user=user, exclude_types=exclude_types, only_personal=True
-        ).values_list('id', flat=True)
+        cipher_ids = self.cipher_repository.get_ciphers_created_by_user(user=user).values_list('id', flat=True)
+        # cipher_ids = self.cipher_repository.get_multiple_by_user(
+        #     user=user, exclude_types=exclude_types, only_personal=True
+        # ).values_list('id', flat=True)
         quick_share = QuickShare.objects.filter(
             cipher_id__in=list(cipher_ids)
         ).order_by('-creation_date').prefetch_related('quick_share_emails')
