@@ -204,7 +204,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             raise ValidationError(detail={"email": ["The email is not valid"]})
 
         elif request.method == "GET":
-            if not quick_share.check_valid_access(email=None, code=None):
+            if quick_share.max_access_count and quick_share.access_count >= quick_share.max_access_count:
+                raise ValidationError({"non_field_errors": [gen_error("9000")]})
+            if quick_share.expired_date and quick_share.expired_date < now():
                 raise ValidationError({"non_field_errors": [gen_error("9000")]})
             result = PublicAccessQuichShareSerializer(quick_share, many=False).data
             if quick_share.is_public is True:
