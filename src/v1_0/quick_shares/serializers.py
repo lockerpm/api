@@ -153,6 +153,16 @@ class DetailQuickShareSerializer(ListQuickShareSerializer):
         return data
 
 
+class PublicAccessQuichShareSerializer(ListQuickShareSerializer):
+    def to_representation(self, instance):
+        data = super(PublicAccessQuichShareSerializer, self).to_representation(instance)
+        public_data = {
+            "id": data.get("id"),
+            "cipher": data.get("cipher")
+        }
+        return public_data
+
+
 class PublicQuickShareSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     code = serializers.CharField(max_length=128, required=False)

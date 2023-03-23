@@ -15,7 +15,8 @@ from shared.permissions.locker_permissions.quick_share_pwd_permission import Qui
 from shared.services.pm_sync import PwdSync, SYNC_QUICK_SHARE
 from shared.utils.app import now, diff_list
 from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
-    PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer
+    PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer, \
+    PublicAccessQuichShareSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -182,22 +183,34 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         result.pop("emails", None)
         return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
 
-    @action(methods=["post"], detail=False)
+    @action(methods=["get", "post"], detail=False)
     def access(self, request, *args, **kwargs):
         quick_share = self.get_quick_share_access_obj()
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
-        email = validated_data.get("email")
-        quick_share_email = None
-        if email:
-            try:
-                quick_share_email = quick_share.quick_share_emails.get(email=email)
-            except ObjectDoesNotExist:
-                pass
-        if quick_share.is_public is True or (quick_share_email and quick_share_email.check_access() is True):
-            return Response(status=200, data={"success": True})
-        raise ValidationError(detail={"email": ["The email is not valid"]})
+
+        if request.method == "POST":
+
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            email = validated_data.get("email")
+            quick_share_email = None
+            if email:
+                try:
+                    quick_share_email = quick_share.quick_share_emails.get(email=email)
+                except ObjectDoesNotExist:
+                    pass
+            if quick_share.is_public is True or (quick_share_email and quick_share_email.check_access() is True):
+                return Response(status=200, data={"success": True})
+            raise ValidationError(detail={"email": ["The email is not valid"]})
+
+        elif request.method == "GET":
+            if not quick_share.check_valid_access(email=None, code=None):
+                raise ValidationError({"non_field_errors": [gen_error("9000")]})
+            result = PublicAccessQuichShareSerializer(quick_share, many=False).data
+            if quick_share.is_public is True:
+                return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
+            else:
+                return Response(status=200, data={"require_otp": quick_share.require_otp})
 
     @action(methods=["post"], detail=False)
     def otp(self, request, *args, **kwargs):
