@@ -27,7 +27,7 @@ class QuickShare(models.Model):
     expired_date = models.FloatField(null=True)
     disabled = models.FloatField(default=False)
     is_public = models.BooleanField(default=True)
-    require_otp = models.FloatField(default=True)
+    require_otp = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'cs_quick_shares'
