@@ -6,14 +6,17 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from core.utils.data_helpers import camel_snake_data
 from cystack_models.models.quick_shares.quick_shares import QuickShare
 from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.quick_share_pwd_permission import QuickSharePwdPermission
+from shared.services.pm_sync import PwdSync, SYNC_QUICK_SHARE
 from shared.utils.app import now, diff_list
 from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
-    PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer
+    PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer, \
+    PublicAccessQuichShareSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -66,10 +69,13 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         exclude_types = []
         if user.login_method == LOGIN_METHOD_PASSWORDLESS:
             exclude_types = [CIPHER_TYPE_MASTER_PASSWORD]
-        cipher_ids = self.cipher_repository.get_multiple_by_user(
-            user=user, exclude_types=exclude_types, only_personal=True
-        ).values_list('id', flat=True)
-        quick_share = QuickShare.objects.filter(cipher_id__in=list(cipher_ids)).order_by('-creation_date')
+        cipher_ids = self.cipher_repository.get_ciphers_created_by_user(user=user).values_list('id', flat=True)
+        # cipher_ids = self.cipher_repository.get_multiple_by_user(
+        #     user=user, exclude_types=exclude_types, only_personal=True
+        # ).values_list('id', flat=True)
+        quick_share = QuickShare.objects.filter(
+            cipher_id__in=list(cipher_ids)
+        ).order_by('-creation_date').prefetch_related('quick_share_emails')
         return quick_share
 
     def list(self, request, *args, **kwargs):
@@ -80,7 +86,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             self.pagination_class = None
         else:
             self.pagination_class.page_size = page_size_param if page_size_param else 10
-        return super().list(request, *args, **kwargs)
+        response = super().list(request, *args, **kwargs)
+        response.data = camel_snake_data(response.data, snake_to_camel=True)
+        return response
 
     def create(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request=request)
@@ -91,6 +99,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         cipher_id = validated_data.get("cipher_id")
         self.get_cipher(cipher_id=cipher_id)
         quick_share = QuickShare.create(**validated_data)
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+            data={"id": str(quick_share.id)}
+        )
         return Response(status=200, data={
             "id": quick_share.id,
             "cipher_id": quick_share.cipher_id,
@@ -99,7 +110,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request=request)
-        return super().retrieve(request, *args, **kwargs)
+        response = super().retrieve(request, *args, **kwargs)
+        response.data = camel_snake_data(response.data, snake_to_camel=True)
+        return response
 
     def update(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request=request)
@@ -113,7 +126,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         quick_share.key = validated_data.get("key") or quick_share.key
         quick_share.password = validated_data.get("password") or quick_share.password
         quick_share.max_access_count = validated_data.get("max_access_count") or quick_share.max_access_count
-        quick_share.expired_date = validated_data.get("expired_date") or quick_share.expired_date
+        quick_share.expiration_date = validated_data.get("expiration_date") or quick_share.expiration_date
         quick_share.is_public = validated_data.get("is_public") or quick_share.is_public
         quick_share.disabled = validated_data.get("disabled") or quick_share.disabled
         quick_share.require_otp = validated_data.get("require_otp") or quick_share.require_otp
@@ -137,8 +150,11 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         })
 
     def destroy(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
-        return super().destroy(request, *args, **kwargs)
+        # self.check_pwd_session_auth(request=request)
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+            data={"id": str(kwargs.get("pk"))}
+        )
+        return super(QuickSharePwdViewSet, self).destroy(request, *args, **kwargs)
 
     @action(methods=["post"], detail=False)
     def public(self, request, *args, **kwargs):
@@ -163,25 +179,44 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
             except ObjectDoesNotExist:
                 pass
 
-        result = ListQuickShareSerializer(quick_share, many=False)
-        return Response(status=200, data=result.data)
+        result = ListQuickShareSerializer(quick_share, many=False).data
+        result.pop("emails", None)
+        return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
 
-    @action(methods=["post"], detail=False)
+    @action(methods=["get", "post"], detail=False)
     def access(self, request, *args, **kwargs):
         quick_share = self.get_quick_share_access_obj()
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
-        email = validated_data.get("email")
-        quick_share_email = None
-        if email:
-            try:
-                quick_share_email = quick_share.quick_share_emails.get(email=email)
-            except ObjectDoesNotExist:
-                pass
-        if quick_share.is_public is True or (quick_share_email and quick_share_email.check_access() is True):
-            return Response(status=200, data={"success": True})
-        raise ValidationError(detail={"email": ["The email is not valid"]})
+
+        if request.method == "POST":
+
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            email = validated_data.get("email")
+            quick_share_email = None
+            if email:
+                try:
+                    quick_share_email = quick_share.quick_share_emails.get(email=email)
+                except ObjectDoesNotExist:
+                    pass
+            if quick_share.is_public is True or (quick_share_email and quick_share_email.check_access() is True):
+                return Response(status=200, data={"success": True})
+            raise ValidationError(detail={"email": ["The email is not valid"]})
+
+        elif request.method == "GET":
+            if quick_share.max_access_count and quick_share.access_count >= quick_share.max_access_count:
+                raise ValidationError({"non_field_errors": [gen_error("9000")]})
+            if quick_share.expiration_date and quick_share.expiration_date < now():
+                raise ValidationError({"non_field_errors": [gen_error("9000")]})
+            if quick_share.is_public is True:
+                quick_share.access_count = F('access_count') + 1
+                quick_share.revision_date = now()
+                quick_share.save()
+                quick_share.refresh_from_db()
+                result = PublicAccessQuichShareSerializer(quick_share, many=False).data
+                return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
+            else:
+                return Response(status=200, data={"require_otp": quick_share.require_otp})
 
     @action(methods=["post"], detail=False)
     def otp(self, request, *args, **kwargs):

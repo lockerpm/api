@@ -24,10 +24,10 @@ class QuickShare(models.Model):
     each_email_access_count = models.PositiveIntegerField(null=True)
     max_access_count = models.PositiveIntegerField(null=True)
     access_count = models.PositiveIntegerField(default=0)
-    expired_date = models.FloatField(null=True)
+    expiration_date = models.FloatField(null=True)
     disabled = models.FloatField(default=False)
     is_public = models.BooleanField(default=True)
-    require_otp = models.FloatField(default=True)
+    require_otp = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'cs_quick_shares'
@@ -47,7 +47,7 @@ class QuickShare(models.Model):
             password=data.get("password"),
             each_email_access_count=data.get("each_email_access_count"),
             max_access_count=data.get("max_access_count"),
-            expired_date=data.get("expired_date"),
+            expiration_date=data.get("expiration_date"),
             disabled=data.get("disabled", False),
             is_public=is_public,
             require_otp=data.get("require_otp", True)
@@ -81,6 +81,6 @@ class QuickShare(models.Model):
                 return False
         if self.max_access_count and self.access_count >= self.max_access_count:
             return False
-        if self.expired_date and self.expired_date < now():
+        if self.expiration_date and self.expiration_date < now():
             return False
         return True
