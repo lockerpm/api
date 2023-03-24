@@ -201,4 +201,6 @@ class User(models.Model):
             self.saas_source = "AppSumo"
         elif code.startswith("SC-"):
             self.saas_source = "StackCommerce"
+        elif code.startswith("PG-"):
+            self.saas_source = "PitchGround"
         self.save()
