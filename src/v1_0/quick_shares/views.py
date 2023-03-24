@@ -208,8 +208,12 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 raise ValidationError({"non_field_errors": [gen_error("9000")]})
             if quick_share.expiration_date and quick_share.expiration_date < now():
                 raise ValidationError({"non_field_errors": [gen_error("9000")]})
-            result = PublicAccessQuichShareSerializer(quick_share, many=False).data
             if quick_share.is_public is True:
+                quick_share.access_count = F('access_count') + 1
+                quick_share.revision_date = now()
+                quick_share.save()
+                quick_share.refresh_from_db()
+                result = PublicAccessQuichShareSerializer(quick_share, many=False).data
                 return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
             else:
                 return Response(status=200, data={"require_otp": quick_share.require_otp})
