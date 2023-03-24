@@ -69,7 +69,7 @@ class CreateQuickShareSerializer(serializers.Serializer):
     password = serializers.CharField(allow_null=True, required=False)
     max_access_count = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     each_email_access_count = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    expired_date = serializers.FloatField(min_value=0, required=False, allow_null=True)
+    expiration_date = serializers.FloatField(min_value=0, required=False, allow_null=True)
     require_otp = serializers.BooleanField(default=True)
     emails = serializers.ListSerializer(
         child=serializers.EmailField(), allow_empty=True, required=False
@@ -100,7 +100,7 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickShare
         fields = ('access_id', 'creation_date', 'revision_date', 'deleted_date', 'key', 'password',
-                  'max_access_count', 'access_count', 'each_email_access_count', 'expired_date', 'disabled',
+                  'max_access_count', 'access_count', 'each_email_access_count', 'expiration_date', 'disabled',
                   'is_public', 'require_otp', )
 
     def to_representation(self, instance):
@@ -141,7 +141,7 @@ class ListQuickShareSerializer(serializers.ModelSerializer):
             "creation_date": convert_readable_date(instance.creation_date),
             "revision_date": convert_readable_date(instance.revision_date),
             "deleted_date": convert_readable_date(instance.deleted_date),
-            "expired_date": convert_readable_date(instance.expired_date),
+            "expiration_date": convert_readable_date(instance.expiration_date),
             "emails": emails,
         })
         return result

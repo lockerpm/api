@@ -126,7 +126,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         quick_share.key = validated_data.get("key") or quick_share.key
         quick_share.password = validated_data.get("password") or quick_share.password
         quick_share.max_access_count = validated_data.get("max_access_count") or quick_share.max_access_count
-        quick_share.expired_date = validated_data.get("expired_date") or quick_share.expired_date
+        quick_share.expiration_date = validated_data.get("expiration_date") or quick_share.expiration_date
         quick_share.is_public = validated_data.get("is_public") or quick_share.is_public
         quick_share.disabled = validated_data.get("disabled") or quick_share.disabled
         quick_share.require_otp = validated_data.get("require_otp") or quick_share.require_otp
@@ -206,7 +206,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         elif request.method == "GET":
             if quick_share.max_access_count and quick_share.access_count >= quick_share.max_access_count:
                 raise ValidationError({"non_field_errors": [gen_error("9000")]})
-            if quick_share.expired_date and quick_share.expired_date < now():
+            if quick_share.expiration_date and quick_share.expiration_date < now():
                 raise ValidationError({"non_field_errors": [gen_error("9000")]})
             result = PublicAccessQuichShareSerializer(quick_share, many=False).data
             if quick_share.is_public is True:
