@@ -57,11 +57,18 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
-    def get_quick_share_access_obj(self):
+    # def get_quick_share_access_obj(self):
+    #     try:
+    #         quick_share = QuickShare.objects.get(id=self.kwargs.get("pk"))
+    #         return quick_share
+    #     except ObjectDoesNotExist:
+    #         raise NotFound
+
+    def get_quick_share_by_access_id(self):
         try:
-            quick_share = QuickShare.objects.get(id=self.kwargs.get("pk"))
+            quick_share = QuickShare.objects.get(access_id=self.kwargs.get("pk"))
             return quick_share
-        except ObjectDoesNotExist:
+        except QuickShare.DoesNotExist:
             raise NotFound
 
     def get_queryset(self):
@@ -158,7 +165,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def public(self, request, *args, **kwargs):
-        quick_share = self.get_quick_share_access_obj()
+        quick_share = self.get_quick_share_by_access_id()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -185,7 +192,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["get", "post"], detail=False)
     def access(self, request, *args, **kwargs):
-        quick_share = self.get_quick_share_access_obj()
+        quick_share = self.get_quick_share_by_access_id()
 
         if request.method == "POST":
 
@@ -220,7 +227,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def otp(self, request, *args, **kwargs):
-        quick_share = self.get_quick_share_access_obj()
+        quick_share = self.get_quick_share_by_access_id()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
