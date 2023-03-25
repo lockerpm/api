@@ -185,7 +185,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share_email.save()
             except ObjectDoesNotExist:
                 pass
-
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+            data={"id": str(quick_share.id)}
+        )
         result = ListQuickShareSerializer(quick_share, many=False).data
         result.pop("emails", None)
         return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
@@ -221,6 +223,9 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share.save()
                 quick_share.refresh_from_db()
                 result = PublicAccessQuichShareSerializer(quick_share, many=False).data
+                PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+                    data={"id": str(quick_share.id)}
+                )
                 return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
             else:
                 return Response(status=200, data={"require_otp": quick_share.require_otp})
