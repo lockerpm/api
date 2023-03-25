@@ -57,11 +57,18 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
-    def get_quick_share_access_obj(self):
+    # def get_quick_share_access_obj(self):
+    #     try:
+    #         quick_share = QuickShare.objects.get(id=self.kwargs.get("pk"))
+    #         return quick_share
+    #     except ObjectDoesNotExist:
+    #         raise NotFound
+
+    def get_quick_share_by_access_id(self):
         try:
-            quick_share = QuickShare.objects.get(id=self.kwargs.get("pk"))
+            quick_share = QuickShare.objects.get(access_id=self.kwargs.get("pk"))
             return quick_share
-        except ObjectDoesNotExist:
+        except QuickShare.DoesNotExist:
             raise NotFound
 
     def get_queryset(self):
@@ -158,7 +165,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def public(self, request, *args, **kwargs):
-        quick_share = self.get_quick_share_access_obj()
+        quick_share = self.get_quick_share_by_access_id()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -178,14 +185,16 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share_email.save()
             except ObjectDoesNotExist:
                 pass
-
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+            data={"id": str(quick_share.id)}
+        )
         result = ListQuickShareSerializer(quick_share, many=False).data
         result.pop("emails", None)
         return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
 
     @action(methods=["get", "post"], detail=False)
     def access(self, request, *args, **kwargs):
-        quick_share = self.get_quick_share_access_obj()
+        quick_share = self.get_quick_share_by_access_id()
 
         if request.method == "POST":
 
@@ -214,13 +223,16 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share.save()
                 quick_share.refresh_from_db()
                 result = PublicAccessQuichShareSerializer(quick_share, many=False).data
+                PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+                    data={"id": str(quick_share.id)}
+                )
                 return Response(status=200, data=camel_snake_data(result, snake_to_camel=True))
             else:
                 return Response(status=200, data={"require_otp": quick_share.require_otp})
 
     @action(methods=["post"], detail=False)
     def otp(self, request, *args, **kwargs):
-        quick_share = self.get_quick_share_access_obj()
+        quick_share = self.get_quick_share_by_access_id()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
