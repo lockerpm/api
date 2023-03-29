@@ -60,15 +60,23 @@ class UserRepository(IUserRepository):
         return users
 
     def retrieve_or_create_by_id(self, user_id, creation_date=None) -> User:
-        try:
-            user = self.get_by_id(user_id=user_id)
-        except User.DoesNotExist:
-            creation_date = now() if not creation_date else float(creation_date)
-            user = User(user_id=user_id, creation_date=creation_date)
-            user.save()
-            # Create default plan for this user
+        creation_date = now() if not creation_date else float(creation_date)
+        user, is_created = User.objects.get_or_create(user_id=user_id, defaults={
+            "user_id": user_id,
+            "creation_date": creation_date
+        })
+        if is_created is True:
             self.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         return user
+        # try:
+        #     user = self.get_by_id(user_id=user_id)
+        # except User.DoesNotExist:
+        #
+        #     user = User(user_id=user_id, creation_date=creation_date)
+        #     user.save()
+        #     # Create default plan for this user
+        #     self.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        # return user
 
     def upgrade_member_family_plan(self, user: User):
         # Upgrade plan if the user is a family member
