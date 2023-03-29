@@ -153,9 +153,9 @@ class DetailQuickShareSerializer(ListQuickShareSerializer):
         return data
 
 
-class PublicAccessQuichShareSerializer(ListQuickShareSerializer):
+class PublicAccessQuickShareSerializer(ListQuickShareSerializer):
     def to_representation(self, instance):
-        data = super(PublicAccessQuichShareSerializer, self).to_representation(instance)
+        data = super(PublicAccessQuickShareSerializer, self).to_representation(instance)
         public_data = {
             "id": data.get("id"),
             "cipher": data.get("cipher")

@@ -16,7 +16,7 @@ from shared.services.pm_sync import PwdSync, SYNC_QUICK_SHARE
 from shared.utils.app import now, diff_list
 from v1_0.quick_shares.serializers import CreateQuickShareSerializer, ListQuickShareSerializer, \
     PublicQuickShareSerializer, CheckAccessQuickShareSerializer, DetailQuickShareSerializer, \
-    PublicAccessQuichShareSerializer
+    PublicAccessQuickShareSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -190,7 +190,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_QUICK_SHARE, user_ids=[quick_share.cipher.created_by.user_id]).send(
             data={"id": str(quick_share.id)}
         )
-        result = PublicAccessQuichShareSerializer(quick_share, many=False).data
+        result = PublicAccessQuickShareSerializer(quick_share, many=False).data
         result.pop("emails", None)
         if email and code and quick_share.is_public is False:
             token, expired_time = quick_share.generate_public_access_token(email)
@@ -227,7 +227,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share.revision_date = now()
                 quick_share.save()
                 quick_share.refresh_from_db()
-                result = PublicAccessQuichShareSerializer(quick_share, many=False).data
+                result = PublicAccessQuickShareSerializer(quick_share, many=False).data
                 PwdSync(event=SYNC_QUICK_SHARE, user_ids=[quick_share.cipher.created_by.user_id]).send(
                     data={"id": str(quick_share.id)}
                 )
