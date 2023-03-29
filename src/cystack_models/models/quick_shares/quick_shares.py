@@ -82,7 +82,7 @@ class QuickShare(models.Model):
                 return False
             if not code and not token:
                 return False
-            if code and quick_share_email.code != code or quick_share_email.code_expired_time < now():
+            if code and (quick_share_email.code != code or quick_share_email.code_expired_time < now()):
                 return False
             if token and self.validate_public_access_token(email=quick_share_email.email, token=token) is False:
                 return False
