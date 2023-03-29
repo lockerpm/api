@@ -166,6 +166,7 @@ class PublicAccessQuichShareSerializer(ListQuickShareSerializer):
 class PublicQuickShareSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     code = serializers.CharField(max_length=128, required=False)
+    token = serializers.CharField(max_length=512, required=False)
 
 
 class CheckAccessQuickShareSerializer(serializers.Serializer):
