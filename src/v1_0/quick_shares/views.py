@@ -190,7 +190,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_QUICK_SHARE, user_ids=[quick_share.cipher.created_by.user_id]).send(
             data={"id": str(quick_share.id)}
         )
-        result = ListQuickShareSerializer(quick_share, many=False).data
+        result = PublicAccessQuichShareSerializer(quick_share, many=False).data
         result.pop("emails", None)
         if email and code and quick_share.is_public is False:
             token, expired_time = quick_share.generate_public_access_token(email)
