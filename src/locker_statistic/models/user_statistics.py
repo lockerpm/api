@@ -25,6 +25,15 @@ class UserStatistic(models.Model):
     num_identity_items = models.IntegerField(default=0)
     num_crypto_backup_items = models.IntegerField(default=0)
     num_totp_items = models.IntegerField(default=0)
+    num_crypto_account_items = models.IntegerField(default=0)
+    num_driver_license_items = models.IntegerField(default=0)
+    num_citizen_id_items = models.IntegerField(default=0)
+    num_passport_items = models.IntegerField(default=0)
+    num_social_security_number_items = models.IntegerField(default=0)
+    num_wireless_router = models.IntegerField(default=0)
+    num_server_items = models.IntegerField(default=0)
+    num_api_items = models.IntegerField(default=0)
+    num_database_items = models.IntegerField(default=0)
     # Private email
     num_private_emails = models.IntegerField(default=0)
 
