@@ -7,7 +7,12 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from cystack_models.models import Enterprise
 from cystack_models.models.notifications.notification_settings import NotificationSetting
+from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.constants.ciphers import MAP_CIPHER_TYPE_STR
+from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
+from shared.constants.event import EVENT_ITEM_SHARE_CREATED
 from shared.constants.members import *
 from shared.constants.user_notification import NOTIFY_SHARING
 from shared.error_responses.error import gen_error
@@ -114,6 +119,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
         shared_type_name = None
         item_id = None
+        cipher_id = None
+        folder_id = None
         # Accept this invitation
         if status == "accept":
             member = self.sharing_repository.accept_invitation(member=sharing_invitation)
@@ -125,6 +132,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 if share_cipher:
                     shared_type_name = share_cipher.type
                     item_id = share_cipher.id
+                    cipher_id = item_id
                     PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
             # Else, share a folder
             else:
@@ -132,6 +140,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 if share_collection:
                     shared_type_name = "folder"
                     item_id = share_collection.id
+                    folder_id = item_id
                     PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
                         data={"id": share_collection.id}
                     )
@@ -142,10 +151,12 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 share_cipher = sharing_invitation.team.ciphers.first()
                 shared_type_name = share_cipher.type if share_cipher else shared_type_name
                 item_id = share_cipher.id if share_cipher else item_id
+                cipher_id = item_id
             else:
                 shared_type_name = "folder"
                 share_collection = sharing_invitation.team.collections.first()
                 item_id = share_collection.id if share_collection else item_id
+                folder_id = item_id
 
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             member_status = None
@@ -185,7 +196,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "notification_user_ids": notification_user_ids,
             "member_status": member_status,
             "share_type": shared_type_name,
-            "item_id": item_id
+            "item_id": item_id,
+            "folder_id": folder_id,
+            "cipher_id": cipher_id
         })
 
     @action(methods=["put"], detail=False)
@@ -205,6 +218,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         folder = validated_data.get("folder")
 
         shared_type_name = None
+        cipher_id = None
+        folder_id = None
         try:
             share_result = self.share_cipher_or_folder(
                 sharing_key=sharing_key, members=members, groups=groups,
@@ -219,13 +234,16 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
         if cipher:
             cipher_obj = new_sharing.ciphers.first()
-            shared_type_name = cipher_obj.type
             if cipher_obj:
+                shared_type_name = cipher_obj.type
+                cipher_id = cipher_obj.id
                 PwdSync(
                     event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=new_sharing, add_all=True
                 ).send(data={"id": cipher_obj.id})
         if folder:
             shared_type_name = "folder"
+            share_collection = new_sharing.collections.first()
+            folder_id = share_collection.id if share_collection else None
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=new_sharing, add_all=True).send()
 
         mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
@@ -248,9 +266,25 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         )
         FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
 
+        # Update activity logs:
+        user_enterprise_ids = list(Enterprise.objects.filter(
+            enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
+        ).values_list('id', flat=True))
+        if user_enterprise_ids:
+            ip = request.data.get("ip")
+            emails = [m.get("email") for m in members]
+            item_type = MAP_CIPHER_TYPE_STR.get(shared_type_name) if shared_type_name != 'folder' else shared_type_name
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_ITEM_SHARE_CREATED, "ip_address": ip, "cipher_id": cipher_id, "collection_id": folder_id,
+                "metadata": {"item_type": item_type, "emails": emails}
+            })
+
         return Response(status=200, data={
             "id": new_sharing.id,
             "shared_type_name": shared_type_name,
+            "folder_id": folder_id,
+            "cipher_id": cipher_id,
             "non_existed_member_users": non_existed_member_users,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
@@ -258,6 +292,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["put"], detail=False)
     def multiple_share(self, request, *args, **kwargs):
+        ip = request.data.get("ip")
         user = self.request.user
         self.check_pwd_session_auth(request)
         self.allow_personal_sharing(user=user)
@@ -271,17 +306,36 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
         existed_member_users = []
         non_existed_member_users = []
+        user_enterprise_ids = list(Enterprise.objects.filter(
+            enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
+        ).values_list('id', flat=True))
 
         if ciphers:
             for cipher_member in ciphers:
                 try:
+                    members = cipher_member.get("members") or []
+                    cipher = cipher_member.get("cipher")
                     share_result = self.share_cipher_or_folder(
                         sharing_key=sharing_key,
-                        members=cipher_member.get("members") or [],
+                        members=members,
                         groups=cipher_member.get("groups") or [],
-                        cipher=cipher_member.get("cipher"),
+                        cipher=cipher,
                         shared_cipher_data=cipher_member.get("shared_cipher_data"), folder=None
                     )
+                    # Create activity logs
+                    if user_enterprise_ids:
+                        emails = [m.get("email") for m in members]
+                        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(
+                            func_name="create_by_enterprise_ids", **{
+                                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id,
+                                "acting_user_id": user.user_id,
+                                "type": EVENT_ITEM_SHARE_CREATED, "ip_address": ip,
+                                "cipher_id": cipher.get("id"),
+                                "metadata": {
+                                    "item_type": MAP_CIPHER_TYPE_STR.get(cipher.get("type")),
+                                    "emails": emails
+                                }
+                            })
                 except ValidationError:
                     continue
                 existed_member_users += share_result.get("existed_member_users", [])
@@ -290,12 +344,23 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         if folders:
             for folder in folders:
                 try:
+                    members = folder.get("members") or []
                     share_result = self.share_cipher_or_folder(
                         sharing_key=sharing_key,
-                        members=folder.get("members") or [],
+                        members=members,
                         groups=folder.get("groups") or [],
                         cipher=None, shared_cipher_data=None, folder=folder
                     )
+                    # Create activity logs
+                    if user_enterprise_ids:
+                        emails = [m.get("email") for m in members]
+                        LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(
+                            func_name="create_by_enterprise_ids", **{
+                                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id,
+                                "acting_user_id": user.user_id,
+                                "type": EVENT_ITEM_SHARE_CREATED, "ip_address": ip,
+                                "metadata": {"item_type": "folder", "emails": emails}
+                            })
                 except ValidationError as e:
                     # raise e
                     continue

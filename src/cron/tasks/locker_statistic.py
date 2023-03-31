@@ -101,6 +101,33 @@ class LockerStatistic(Task):
             items_totp=Count(
                 Case(When(created_ciphers__type=CIPHER_TYPE_TOTP, then=1), output_field=IntegerField())
             ),
+            items_crypto_account=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_CRYPTO_ACCOUNT, then=1), output_field=IntegerField())
+            ),
+            items_driver_license=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_DRIVER_LICENSE, then=1), output_field=IntegerField())
+            ),
+            items_citizen_id=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_CITIZEN_ID, then=1), output_field=IntegerField())
+            ),
+            items_passport=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_PASSPORT,  then=1), output_field=IntegerField())
+            ),
+            items_social_security_number=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_SOCIAL_SECURITY_NUMBER, then=1), output_field=IntegerField())
+            ),
+            items_wireless_router=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_WIRELESS_ROUTER, then=1), output_field=IntegerField())
+            ),
+            items_server=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_SERVER, then=1), output_field=IntegerField())
+            ),
+            items_api=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_API, then=1), output_field=IntegerField())
+            ),
+            items_database=Count(
+                Case(When(created_ciphers__type=CIPHER_TYPE_DATABASE, then=1), output_field=IntegerField())
+            ),
             items=Count('created_ciphers'),
         )
 
@@ -184,6 +211,33 @@ class LockerStatistic(Task):
             ),
             items_totp=Subquery(
                 subquery_user_ciphers.values_list('items_totp', flat=True)
+            ),
+            items_crypto_account=Subquery(
+                subquery_user_ciphers.values_list('items_crypto_account', flat=True)
+            ),
+            items_driver_license=Subquery(
+                subquery_user_ciphers.values_list('items_driver_license', flat=True)
+            ),
+            items_citizen_id=Subquery(
+                subquery_user_ciphers.values_list('items_citizen_id', flat=True)
+            ),
+            items_passport=Subquery(
+                subquery_user_ciphers.values_list('items_passport', flat=True)
+            ),
+            items_social_security_number=Subquery(
+                subquery_user_ciphers.values_list('items_social_security_number', flat=True)
+            ),
+            items_wireless_router=Subquery(
+                subquery_user_ciphers.values_list('items_wireless_router', flat=True)
+            ),
+            items_server=Subquery(
+                subquery_user_ciphers.values_list('items_server', flat=True)
+            ),
+            items_api=Subquery(
+                subquery_user_ciphers.values_list('items_api', flat=True)
+            ),
+            items_database=Subquery(
+                subquery_user_ciphers.values_list('items_database', flat=True)
             ),
             items=Subquery(
                 subquery_user_ciphers.values_list('items', flat=True)
@@ -275,6 +329,15 @@ class LockerStatistic(Task):
                 "num_identity_items": user.items_identity,
                 "num_crypto_backup_items": user.items_crypto_backup,
                 "num_totp_items": user.items_totp,
+                "num_crypto_account_items": user.items_crypto_account,
+                "num_driver_license_items": user.items_driver_license,
+                "num_citizen_id_items": user.items_citizen_id,
+                "num_passport_items": user.items_passport,
+                "num_social_security_number_items": user.items_social_security_number,
+                "num_wireless_router": user.items_wireless_router,
+                "num_server_items": user.items_server,
+                "num_api_items": user.items_api,
+                "num_database_items": user.items_database,
                 "num_private_emails": user.private_emails,
                 "deleted_account": deleted_account,
                 "lk_plan": user.plan_name,

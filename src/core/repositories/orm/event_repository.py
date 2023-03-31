@@ -58,7 +58,7 @@ class EventRepository(IEventRepository):
             metadata = log.get("metadata", {})
             metadata.update({"user_email": user_data.get("email") if user_data else "Former user"})
             log["description"] = self.__get_description(log.get("type"), metadata, use_html=use_html)
-            log.pop("metadata", None)
+            # log.pop("metadata", None)
             logs.append(log)
         return logs
 

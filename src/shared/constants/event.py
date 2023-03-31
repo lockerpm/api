@@ -7,6 +7,9 @@ EVENT_USER_LOGIN_FAILED = 1005
 # EVENT_USER_EXPORT_VAULT = 1007
 EVENT_USER_BLOCK_LOGIN = 1008
 
+EVENT_ITEM_SHARE_CREATED = 1100
+EVENT_ITEM_QUICK_SHARE_CREATED = 1101
+
 
 # ---------------- New events code ids of the Enterprise ----------------- #
 EVENT_ENTERPRISE_CREATED = 1800
@@ -48,6 +51,20 @@ LOG_TYPES = {
         "vi_non_html": "User {user_email} đã bị khóa đăng nhập bởi chính sách của doanh nghiệp",
         "en": "User <b>{user_email}</b> is blocked login by the enterprise policy",
         "en_non_html": "User {user_email} is blocked login by the enterprise policy",
+    },
+
+    # Item events
+    EVENT_ITEM_SHARE_CREATED: {
+        "vi": "Đã chia sẻ một <b>{item_type}</b> với người dùng khác",
+        "vi_non_html": "Đã chia sẻ một {item_type} với người dùng khác",
+        "en": "shared a(n) <b>{item_type}<b> item with users",
+        "en_non_html": "shared a(n) {item_type} item with users"
+    },
+    EVENT_ITEM_QUICK_SHARE_CREATED: {
+        "vi": "Đã chia sẻ một <b>{item_type}</b> thông qua Quick Share",
+        "vi_non_html": "Đã chia sẻ một {item_type} thông qua Quick Share",
+        "en": "shared a(n) <b>{item_type}</b> item via Quick Share",
+        "en_non_html": "shared a(n) {item_type} item via Quick Share"
     },
 
     # Enterprise events
