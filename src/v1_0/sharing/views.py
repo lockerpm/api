@@ -114,6 +114,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         primary_owner = self.team_repository.get_primary_member(team=sharing_invitation.team)
         shared_type_name = None
         item_id = None
+        cipher_id = None
+        folder_id = None
         # Accept this invitation
         if status == "accept":
             member = self.sharing_repository.accept_invitation(member=sharing_invitation)
@@ -125,6 +127,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 if share_cipher:
                     shared_type_name = share_cipher.type
                     item_id = share_cipher.id
+                    cipher_id = item_id
                     PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
             # Else, share a folder
             else:
@@ -132,6 +135,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 if share_collection:
                     shared_type_name = "folder"
                     item_id = share_collection.id
+                    folder_id = item_id
                     PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
                         data={"id": share_collection.id}
                     )
@@ -142,10 +146,12 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 share_cipher = sharing_invitation.team.ciphers.first()
                 shared_type_name = share_cipher.type if share_cipher else shared_type_name
                 item_id = share_cipher.id if share_cipher else item_id
+                cipher_id = item_id
             else:
                 shared_type_name = "folder"
                 share_collection = sharing_invitation.team.collections.first()
                 item_id = share_collection.id if share_collection else item_id
+                folder_id = item_id
 
             self.sharing_repository.reject_invitation(member=sharing_invitation)
             member_status = None
@@ -185,7 +191,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             "notification_user_ids": notification_user_ids,
             "member_status": member_status,
             "share_type": shared_type_name,
-            "item_id": item_id
+            "item_id": item_id,
+            "folder_id": folder_id,
+            "cipher_id": cipher_id
         })
 
     @action(methods=["put"], detail=False)
@@ -205,6 +213,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         folder = validated_data.get("folder")
 
         shared_type_name = None
+        cipher_id = None
+        folder_id = None
         try:
             share_result = self.share_cipher_or_folder(
                 sharing_key=sharing_key, members=members, groups=groups,
@@ -219,13 +229,16 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
         if cipher:
             cipher_obj = new_sharing.ciphers.first()
-            shared_type_name = cipher_obj.type
             if cipher_obj:
+                shared_type_name = cipher_obj.type
+                cipher_id = cipher_obj.id
                 PwdSync(
                     event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=new_sharing, add_all=True
                 ).send(data={"id": cipher_obj.id})
         if folder:
             shared_type_name = "folder"
+            share_collection = new_sharing.collections.first()
+            folder_id = share_collection.id if share_collection else None
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=new_sharing, add_all=True).send()
 
         mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
@@ -251,6 +264,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={
             "id": new_sharing.id,
             "shared_type_name": shared_type_name,
+            "folder_id": folder_id,
+            "cipher_id": cipher_id,
             "non_existed_member_users": non_existed_member_users,
             "mail_user_ids": mail_user_ids,
             "notification_user_ids": notification_user_ids,
