@@ -55,9 +55,9 @@ LOG_TYPES = {
 
     # Item events
     EVENT_ITEM_SHARE_CREATED: {
-        "vi": "Đã chia sẻ một {item_type} với người dùng khác",
+        "vi": "Đã chia sẻ một <b>{item_type}</b> với người dùng khác",
         "vi_non_html": "Đã chia sẻ một {item_type} với người dùng khác",
-        "en": "shared a(n) {item_type} item with users",
+        "en": "shared a(n) <b>{item_type}<b> item with users",
         "en_non_html": "shared a(n) {item_type} item with users"
     },
     EVENT_ITEM_QUICK_SHARE_CREATED: {
