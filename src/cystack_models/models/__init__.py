@@ -64,6 +64,10 @@ from cystack_models.models.emergency_access.emergency_access import EmergencyAcc
 from cystack_models.models.form_submissions.affiliate_submissions import AffiliateSubmission
 
 
+# ------------------------- Releases ------------------------ #
+from cystack_models.models.releases.releases import Release
+
+
 # ------------------------- Enterprise Models -------------------------- #
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.payments.billing_contacts import EnterpriseBillingContact

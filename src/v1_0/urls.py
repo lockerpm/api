@@ -259,6 +259,12 @@ urlpatterns += [
 ]
 
 
+# -------------------------------- Releases  ------------------------------------- #
+urlpatterns += [
+    url(r'^releases/new$', views.ReleasePwdViewSet.as_view({'post': 'new'}))
+]
+
+
 # -------------------------------- ENTERPRISE (DEPRECATED) ------------------------------ #
 """ Teams Management """
 urlpatterns += [

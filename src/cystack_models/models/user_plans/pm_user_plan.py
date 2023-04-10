@@ -146,8 +146,12 @@ class PMUserPlan(UserPlan):
         :return:
         """
         # if this plan is not subscription plan => Return None
-        if self.get_plan_type_alias() in [PLAN_TYPE_PM_FREE]:
+        plan_alias = self.get_plan_type_alias()
+        if plan_alias in [PLAN_TYPE_PM_FREE]:
             return None
+        # If this plan is lifetime => return end_period (None)
+        if plan_alias in [PLAN_TYPE_PM_LIFETIME]:
+            return self.end_period
         # If subscription object is None => Get next billing time of this user plan
         stripe_subscription = self.get_stripe_subscription()
         if stripe_subscription:
