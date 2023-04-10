@@ -27,3 +27,5 @@ from v1_0.referrals.views import ReferralPwdViewSet
 from v1_0.form_submissions.affiliate_submissions.views import AffiliateSubmissionPwdViewSet
 
 from v1_0.passwordless.views import PasswordlessPwdViewSet
+
+from v1_0.releases.views import ReleasePwdViewSet
