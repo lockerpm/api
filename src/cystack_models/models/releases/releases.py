@@ -13,6 +13,7 @@ class Release(models.Model):
     description_en = models.CharField(max_length=512, blank=True, default="")
     description_vi = models.CharField(max_length=512, blank=True, default="")
     client_id = models.CharField(max_length=128)
+    environment = models.CharField(max_length=128, default="prod")
 
     class Meta:
         db_table = 'cs_releases'
@@ -26,7 +27,8 @@ class Release(models.Model):
             patch=data.get("patch", ""),
             build_number=data.get("build_number", ""),
             description_en=data.get("description_en", ""),
-            client_id=data.get("client_id")
+            client_id=data.get("client_id"),
+            environment=data.get("environment", "prod")
         )
         new_release.save()
         return new_release
