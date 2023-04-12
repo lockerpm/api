@@ -30,7 +30,7 @@ class ReleasePwdViewSet(PasswordManagerViewSet):
                 "build": success_build, "version": None, "environment": environment
             })
 
-        latest_release = Release.objects.filter(client_id=client_id).order_by('-id').first()
+        latest_release = Release.objects.filter(client_id=client_id, environment=environment).order_by('-id').first()
         if not latest_release:
             return Response(status=200, data={"version": "1.0.0", "environment": environment})
 
