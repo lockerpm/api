@@ -22,32 +22,40 @@ class ReleasePwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         success_build = validated_data.get("build")
-        client_id = request.data.get("client_id")
+        client_id = validated_data.get("client_id")
+        environment = validated_data.get("environment")
 
         if not success_build:
-            return Response(status=200, data={"build": success_build, "version": None})
+            return Response(status=200, data={
+                "build": success_build, "version": None, "environment": environment
+            })
 
         latest_release = Release.objects.filter(client_id=client_id).order_by('-id').first()
         if not latest_release:
-            return Response(status=200, data={"version": "1.0.0"})
+            return Response(status=200, data={"version": "1.0.0", "environment": environment})
 
         if not latest_release.patch:
             next_minor = int(latest_release.minor) + 1
-            new_release = Release.create(**{"major": latest_release.major, "minor": next_minor, "client_id": client_id})
-            return Response(status=200, data={"version": new_release.version})
+            new_release = Release.create(**{
+                "major": latest_release.major,
+                "minor": next_minor,
+                "client_id": client_id,
+                "environment": environment
+            })
+            return Response(status=200, data={"version": new_release.version, "environment": new_release.environment})
 
         if not latest_release.build_number:
             next_patch = int(latest_release.patch) + 1
             new_release = Release.create(**{
                 "major": latest_release.major, "minor": latest_release.minor, "patch": next_patch,
-                "client_id": client_id
+                "client_id": client_id, "environment": environment
             })
-            return Response(status=200, data={"version": new_release.version})
+            return Response(status=200, data={"version": new_release.version, "environment": new_release.environment})
 
         next_build_number = int(latest_release.build_number) + 1
         new_release = Release.create(**{
             "major": latest_release.major, "minor": latest_release.minor, "patch": latest_release.patch,
-            "build_number": next_build_number, "client_id": client_id
+            "build_number": next_build_number, "client_id": client_id, "environment": environment
         })
-        return Response(status=200, data={"version": new_release.version})
+        return Response(status=200, data={"version": new_release.version, "environment": new_release.environment})
 

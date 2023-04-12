@@ -7,9 +7,13 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from core.utils.data_helpers import camel_snake_data
+from cystack_models.models import Enterprise
 from cystack_models.models.quick_shares.quick_shares import QuickShare
+from shared.background import LockerBackgroundFactory, BG_EVENT
 from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
-from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
+from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD, MAP_CIPHER_TYPE_STR
+from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
+from shared.constants.event import EVENT_ITEM_QUICK_SHARE_CREATED
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.quick_share_pwd_permission import QuickSharePwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_QUICK_SHARE
@@ -98,6 +102,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         return response
 
     def create(self, request, *args, **kwargs):
+        user = self.request.user
         # self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -109,6 +114,20 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
             data={"id": str(quick_share.id)}
         )
+
+        # Update activity logs:
+        user_enterprise_ids = list(Enterprise.objects.filter(
+            enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
+        ).values_list('id', flat=True))
+        if user_enterprise_ids:
+            ip = request.data.get("ip")
+            emails = [m.get("email") for m in validated_data.get("emails")]
+            item_type = MAP_CIPHER_TYPE_STR.get(quick_share.cipher.type)
+            LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_ITEM_QUICK_SHARE_CREATED, "ip_address": ip, "cipher_id": cipher_id,
+                "metadata": {"item_type": item_type, "emails": emails}
+            })
         return Response(status=200, data={
             "id": quick_share.id,
             "cipher_id": quick_share.cipher_id,
