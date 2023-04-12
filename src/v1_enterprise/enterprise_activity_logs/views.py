@@ -100,6 +100,8 @@ class ActivityLogPwdViewSet(EnterpriseViewSet):
                 events = events.filter(type__in=[
                     EVENT_E_MEMBER_CONFIRMED, EVENT_E_MEMBER_REMOVED, EVENT_E_MEMBER_ENABLED, EVENT_E_MEMBER_DISABLED
                 ])
+            elif action_param == "share":
+                events = events.filter(type__in=[EVENT_ITEM_SHARE_CREATED, EVENT_ITEM_QUICK_SHARE_CREATED])
         return events
 
     def list(self, request, *args, **kwargs):
