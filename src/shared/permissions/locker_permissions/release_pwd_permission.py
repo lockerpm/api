@@ -5,7 +5,7 @@ from shared.permissions.locker_permissions.app import LockerPermission
 
 class ReleasePwdPermission(LockerPermission):
     def has_permission(self, request, view):
-        if view.action in ["new"]:
+        if view.action in ["new", "current"]:
             token = request.query_params.get("token")
             auth_header = request.META.get("HTTP_AUTHORIZATION")
             return token == settings.MANAGEMENT_COMMAND_TOKEN or \
