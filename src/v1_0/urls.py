@@ -261,6 +261,7 @@ urlpatterns += [
 
 # -------------------------------- Releases  ------------------------------------- #
 urlpatterns += [
+    url(r'^releases/current', views.ReleasePwdViewSet.as_view({'post': 'current'})),
     url(r'^releases/new$', views.ReleasePwdViewSet.as_view({'post': 'new'}))
 ]
 
