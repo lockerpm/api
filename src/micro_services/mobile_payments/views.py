@@ -116,7 +116,8 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         try:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             current_plan.set_default_payment_method(PAYMENT_METHOD_MOBILE)
-            if current_plan.is_personal_trial_applied() is False and is_trial_period is True:
+            # if current_plan.is_personal_trial_applied() is False and is_trial_period is True:
+            if is_trial_period is True:
                 current_plan.personal_trial_applied = True
                 current_plan.save()
                 send_trial_mail = True
