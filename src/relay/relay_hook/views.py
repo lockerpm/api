@@ -47,7 +47,11 @@ class RelayHookViewSet(RelayViewSet):
     def allow_relay_premium(self, user) -> bool:
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         plan_obj = current_plan.get_plan_obj()
-        return plan_obj.allow_relay_premium()
+        if plan_obj.allow_relay_premium():
+            return True
+        if user.is_active_enterprise_member():
+            return True
+        return False
 
     @staticmethod
     def get_relay_address_obj(email: str):
