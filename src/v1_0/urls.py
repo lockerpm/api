@@ -83,6 +83,12 @@ urlpatterns += [
 ]
 
 
+# ----------------------------------- User Reward missions ----------------- ------------ #
+urlpatterns += [
+    url(r'^reward/missions$', views.UserRewardMissionPwdViewSet.as_view({'get': 'list'})),
+]
+
+
 # ----------------------------------- Passwordless ----------------------------- #
 urlpatterns += [
     url(r'^passwordless/credential$',

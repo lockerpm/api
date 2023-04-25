@@ -4,6 +4,10 @@ from cystack_models.models.users.user_score import UserScore
 from cystack_models.models.users.devices import Device
 from cystack_models.models.users.device_access_tokens import DeviceAccessToken
 
+# ------------------------ User Missions ------------------------ #
+from cystack_models.models.user_rewards.missions import Mission
+from cystack_models.models.user_rewards.user_reward_missions import UserRewardMission
+
 
 # ------------------------- User Plan --------------------------- #
 from cystack_models.models.user_plans.plan_types import PlanType

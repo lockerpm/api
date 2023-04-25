@@ -29,3 +29,5 @@ from v1_0.form_submissions.affiliate_submissions.views import AffiliateSubmissio
 from v1_0.passwordless.views import PasswordlessPwdViewSet
 
 from v1_0.releases.views import ReleasePwdViewSet
+
+from v1_0.user_rewards.views import UserRewardMissionPwdViewSet
