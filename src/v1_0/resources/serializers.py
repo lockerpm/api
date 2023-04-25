@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from shared.constants.transactions import DURATION_MONTHLY, DURATION_YEARLY, DURATION_HALF_YEARLY
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from cystack_models.models.user_rewards.missions import Mission
 
 
 class PMPlanSerializer(serializers.ModelSerializer):
@@ -31,4 +32,19 @@ class PMPlanSerializer(serializers.ModelSerializer):
                 "duration": DURATION_YEARLY,
             }
         }
+        return data
+
+
+class RewardMissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mission
+        fields = ('id', 'title', 'created_time', 'mission_type', )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["description"] = {
+            "en": instance.description_en,
+            "vi": instance.description_vi
+        }
+        data["extra_requirements"] = instance.get_extra_requirements()
         return data
