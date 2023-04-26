@@ -156,6 +156,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
             "password_history": None,
             "reprompt": instance.reprompt,
             "revision_date": convert_readable_date(instance.revision_date),
+            "creation_date": convert_readable_date(instance.creation_date),
             "secure_note": secure_note,
             "type": instance.type,
             "view_password": view_password,
@@ -174,7 +175,8 @@ class SyncFolderSerializer(serializers.ModelSerializer):
             "object": "folder",
             "id": instance.id,
             "name": instance.name,
-            "revision_date": convert_readable_date(instance.revision_date)
+            "revision_date": convert_readable_date(instance.revision_date),
+            "creation_date": convert_readable_date(instance.creation_date),
         }
         return data
 
