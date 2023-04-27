@@ -4,14 +4,10 @@ from typing import Dict
 from bs4 import BeautifulSoup
 import requests
 
-from cystack_models.factory.user_reward_mission.mission import Mission
+from cystack_models.factory.user_reward_mission.mission import Mission, MAX_REVIEW_DURATION_TIME
 from shared.constants.device_type import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
-
-
-# The valid review must be in one day
-MAX_REVIEW_DURATION_TIME = 24 * 3600
 
 
 class ExtensionInstallationAndReviewMission(Mission):

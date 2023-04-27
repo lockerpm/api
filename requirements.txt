@@ -28,3 +28,6 @@ pika==1.3.0
 boto3==1.24.35
 XlsxWriter==3.0.3
 beautifulsoup4==4.12.2
+google-api-python-client==2.86.0
+google-auth-oauthlib==1.0.0
+oauth2client<4.0.0

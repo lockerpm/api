@@ -118,6 +118,9 @@ try:
     # Fcm
     FCM_CRED_SERVICE_ACCOUNT = os.getenv("FCM_CRED_SERVICE_ACCOUNT")
 
+    # Google Play service account
+    GOOGLE_PLAY_SERVICE_ACCOUNT = os.getenv("GOOGLE_PLAY_SERVICE_ACCOUNT")
+
     # Relay RabbitMQ
     RELAY_QUEUE = os.getenv("RELAY_QUEUE")
     RELAY_QUEUE_URL = os.getenv("RELAY_QUEUE_URL")
