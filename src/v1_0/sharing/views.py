@@ -18,7 +18,7 @@ from shared.constants.user_notification import NOTIFY_SHARING
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.sharing_pwd_permission import SharingPwdPermission
 from shared.services.fcm.constants import FCM_TYPE_NEW_SHARE, FCM_TYPE_CONFIRM_SHARE, FCM_TYPE_REJECT_SHARE, \
-    FCM_TYPE_ACCEPT_SHARE
+    FCM_TYPE_ACCEPT_SHARE, FCM_TYPE_NEW_SHARE_AFTER_OWNER_CONFIRMED
 from shared.services.fcm.fcm_request_entity import FCMRequestEntity
 from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.pm_sync import *
@@ -481,7 +481,54 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         self.sharing_repository.confirm_invitation(member=member, key=key)
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[member.user_id]).send()
         PwdSync(event=SYNC_EVENT_MEMBER_CONFIRMED, user_ids=[member.user_id, user.user_id]).send()
-        return Response(status=200, data={"success": True})
+
+        # Sending notification
+        shared_type_name = None
+        item_id = None
+        cipher_id = None
+        folder_id = None
+        if member.team.collections.exists() is False:
+            share_cipher = member.team.ciphers.first()
+            if share_cipher:
+                shared_type_name = share_cipher.type
+                item_id = share_cipher.id
+                cipher_id = item_id
+        # Else, share a folder
+        else:
+            share_collection = member.team.collections.first()
+            if share_collection:
+                shared_type_name = "folder"
+                item_id = share_collection.id
+                folder_id = item_id
+        mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=[member.user_id])
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_SHARING, user_ids=[member.user_id]
+        )
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
+        fcm_message = FCMRequestEntity(
+            fcm_ids=list(fcm_ids), priority="high",
+            data={
+                "event": FCM_TYPE_NEW_SHARE_AFTER_OWNER_CONFIRMED,
+                "data": {
+                    "id": member.team_id,
+                    "share_type": shared_type_name,
+                    "pwd_user_ids": [member.user_id],
+                    # "name": request.data.get("user_fullname"),
+                    # "recipient_name": request.data.get("user_fullname"),
+                }
+            }
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
+
+        return Response(status=200, data={
+            "success": True,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids,
+            "share_type": shared_type_name,
+            "item_id": item_id,
+            "folder_id": folder_id,
+            "cipher_id": cipher_id
+        })
 
     @action(methods=["put"], detail=False)
     def update_role(self, request, *args, **kwargs):
