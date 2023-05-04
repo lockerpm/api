@@ -121,6 +121,9 @@ try:
     # Google Play service account
     GOOGLE_PLAY_SERVICE_ACCOUNT = os.getenv("GOOGLE_PLAY_SERVICE_ACCOUNT")
 
+    # App Store auth
+    APPSTORE_KEY_PAIR = os.getenv("APPSTORE_KEY_PAIR")
+
     # Relay RabbitMQ
     RELAY_QUEUE = os.getenv("RELAY_QUEUE")
     RELAY_QUEUE_URL = os.getenv("RELAY_QUEUE_URL")

@@ -31,7 +31,7 @@ class ExtensionInstallationAndReviewMission(Mission):
         review_count = 0
         for extension_device in extension_devices:
             if map_extension_type_check.get(extension_device)(user_identifier) is True:
-                review_count +=1
+                review_count += 1
         return True if review_count >= 2 else False
 
     @staticmethod
