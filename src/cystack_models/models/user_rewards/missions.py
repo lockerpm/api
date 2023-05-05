@@ -3,6 +3,7 @@ from json import JSONDecodeError
 
 from django.db import models
 
+from shared.constants.missions import REWARD_TYPE_PROMO_CODE
 from shared.utils.app import now
 
 
@@ -14,7 +15,10 @@ class Mission(models.Model):
     created_time = models.IntegerField()
     mission_type = models.CharField(max_length=64)
     order_index = models.IntegerField()
+    available = models.BooleanField(default=True)
     extra_requirements = models.CharField(max_length=255, blank=True, null=True, default=None)
+    reward_type = models.CharField(max_length=64, default=REWARD_TYPE_PROMO_CODE)
+    reward_value = models.FloatField(default=0)
 
     class Meta:
         db_table = 'cs_missions'

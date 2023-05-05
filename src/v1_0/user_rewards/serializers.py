@@ -14,3 +14,7 @@ class UserRewardMissionSerializer(serializers.ModelSerializer):
         mission_serializer = RewardMissionSerializer(instance.mission, many=False)
         data["mission"] = mission_serializer.data
         return data
+
+
+class UserRewardCheckCompletedSerializer(serializers.Serializer):
+    user_identifier = serializers.CharField(max_length=255)

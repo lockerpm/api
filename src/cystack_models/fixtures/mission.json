@@ -9,7 +9,10 @@
       "created_time": 1682408045,
       "mission_type": "referral",
       "order_index": 1,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": true,
+      "reward_type": "premium",
+      "reward_value": 2592000
     }
   },
   {
@@ -22,7 +25,10 @@
       "created_time": 1682408046,
       "mission_type": "install",
       "order_index": 2,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": true,
+      "reward_type": "premium",
+      "reward_value": 2592000
     }
   },
   {
@@ -35,7 +41,10 @@
       "created_time": 1682408047,
       "mission_type": "install",
       "order_index": 3,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": true,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   },
   {
@@ -48,7 +57,10 @@
       "created_time": 1682408048,
       "mission_type": "review",
       "order_index": 4,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": true,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   },
   {
@@ -61,7 +73,10 @@
       "created_time": 1682408049,
       "mission_type": "review",
       "order_index": 5,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": true,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   },
   {
@@ -74,7 +89,10 @@
       "created_time": 1682408050,
       "mission_type": "review",
       "order_index": 6,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": true,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   },
   {
@@ -87,7 +105,10 @@
       "created_time": 1682408051,
       "mission_type": "review",
       "order_index": 7,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": false,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   },
   {
@@ -100,7 +121,10 @@
       "created_time": 1682408052,
       "mission_type": "review",
       "order_index": 8,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": false,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   },
   {
@@ -113,7 +137,10 @@
       "created_time": 1682408053,
       "mission_type": "review",
       "order_index": 9,
-      "extra_requirements": null
+      "extra_requirements": null,
+      "available": false,
+      "reward_type": "promo_code",
+      "reward_value": 5
     }
   }
 ]

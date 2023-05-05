@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from django.conf import settings
 
 from cystack_models.factory.user_reward_mission.mission import Mission, MAX_REVIEW_DURATION_TIME
+from shared.constants.missions import REWARD_TYPE_PROMO_CODE
 from shared.utils.app import now
 
 
@@ -13,6 +14,8 @@ class GooglePlayRatingAndReviewMission(Mission):
 
     def __init__(self, mission_type: str, extra_requirements=None):
         super().__init__(mission_type, extra_requirements)
+        self.reward_type = REWARD_TYPE_PROMO_CODE
+        self.reward_value = 5
         google_play_credentials = Credentials.from_service_account_info(
             ast.literal_eval(str(settings.GOOGLE_PLAY_SERVICE_ACCOUNT)),
             scopes=['https://www.googleapis.com/auth/androidpublisher']
