@@ -10,10 +10,18 @@ class Mission:
         # self.mission_id = mission_id
         self.mission_type = mission_type
         self.extra_requirements = extra_requirements
+        self.reward_type = None
+        self.reward_value = None
 
     @property
     def name(self):
         return self.__class__.__name__
+
+    def get_reward_type(self):
+        return self.reward_type
+
+    def get_reward_value(self):
+        return self.reward_value
 
     def check_mission_completion(self, input_data):
         raise NotImplementedError

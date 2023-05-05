@@ -6,11 +6,16 @@ import requests
 
 from cystack_models.factory.user_reward_mission.mission import Mission, MAX_REVIEW_DURATION_TIME
 from shared.constants.device_type import *
+from shared.constants.missions import REWARD_TYPE_PREMIUM
 from shared.log.cylog import CyLog
 from shared.utils.app import now
 
 
 class ExtensionInstallationAndReviewMission(Mission):
+    def __init__(self, mission_type: str, extra_requirements=None):
+        super().__init__(mission_type=mission_type, extra_requirements=extra_requirements)
+        self.reward_type = REWARD_TYPE_PREMIUM
+        self.reward_value = 30 * 86400       # 1 month
 
     def check_mission_completion(self, input_data: Dict):
         user = input_data.get("user")

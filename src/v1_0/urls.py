@@ -85,7 +85,11 @@ urlpatterns += [
 
 # ----------------------------------- User Reward missions ----------------- ------------ #
 urlpatterns += [
+    url(r'^reward/claim$', views.UserRewardMissionPwdViewSet.as_view({'get': 'claim'})),
+    url(r'^reward/claim/promo_code$', views.UserRewardMissionPwdViewSet.as_view({'post': 'claim_promo_code'})),
     url(r'^reward/missions$', views.UserRewardMissionPwdViewSet.as_view({'get': 'list'})),
+    url(r'^reward/missions/(?P<pk>[a-z0-9_]+)/completed$',
+        views.UserRewardMissionPwdViewSet.as_view({'post': 'completed'})),
 ]
 
 

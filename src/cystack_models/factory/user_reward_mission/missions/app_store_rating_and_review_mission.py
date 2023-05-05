@@ -5,12 +5,17 @@ from datetime import datetime
 from typing import Dict
 
 from cystack_models.factory.user_reward_mission.mission import Mission, MAX_REVIEW_DURATION_TIME
+from shared.constants.missions import REWARD_TYPE_PROMO_CODE
 from shared.external_request.requester import requester
 from shared.log.cylog import CyLog
 from shared.utils.app import now
 
 
 class AppStoreRatingAndReviewMission(Mission):
+    def __init__(self, mission_type: str, extra_requirements=None):
+        super().__init__(mission_type=mission_type, extra_requirements=extra_requirements)
+        self.reward_type = REWARD_TYPE_PROMO_CODE
+        self.reward_value = 5
 
     def check_mission_completion(self, input_data: Dict):
         user_identifier = input_data.get("user_identifier")
