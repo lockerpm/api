@@ -557,12 +557,12 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         ciphers_statistic = Cipher.objects.filter(created_by_id=user)
         ciphers_statistic_data = {
             "total": ciphers_statistic.count(),
-            "password": ciphers_statistic.filter(type=CIPHER_TYPE_LOGIN).count(),
-            "note": ciphers_statistic.filter(type=CIPHER_TYPE_NOTE).count(),
-            "identity": ciphers_statistic.filter(type=CIPHER_TYPE_IDENTITY).count(),
-            "card": ciphers_statistic.filter(type=CIPHER_TYPE_CARD).count(),
-            "totp": ciphers_statistic.filter(type=CIPHER_TYPE_TOTP).count(),
-            "crypto_backup": ciphers_statistic.filter(type=CIPHER_TYPE_CRYPTO_WALLET).count(),
+            CIPHER_TYPE_LOGIN: ciphers_statistic.filter(type=CIPHER_TYPE_LOGIN).count(),
+            CIPHER_TYPE_NOTE: ciphers_statistic.filter(type=CIPHER_TYPE_NOTE).count(),
+            CIPHER_TYPE_IDENTITY: ciphers_statistic.filter(type=CIPHER_TYPE_IDENTITY).count(),
+            CIPHER_TYPE_CARD: ciphers_statistic.filter(type=CIPHER_TYPE_CARD).count(),
+            CIPHER_TYPE_TOTP: ciphers_statistic.filter(type=CIPHER_TYPE_TOTP).count(),
+            CIPHER_TYPE_CRYPTO_WALLET: ciphers_statistic.filter(type=CIPHER_TYPE_CRYPTO_WALLET).count(),
         }
         relay_addresses_statistic_data = {
             "total": user.relay_addresses.count()
@@ -579,5 +579,5 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={
             "ciphers": ciphers_statistic_data,
             "relay_addresses": relay_addresses_statistic_data,
-            "plan": plan_limit
+            "plan_limit": plan_limit
         })
