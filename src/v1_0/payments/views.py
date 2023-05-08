@@ -10,7 +10,10 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
+from cystack_models.models import Cipher
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
+from shared.constants.ciphers import *
+from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN
 from shared.constants.token import TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE, TOKEN_TYPE_TRIAL_ENTERPRISE
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
@@ -545,3 +548,36 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         result["plan"] = PMPlanSerializer(plan, many=False).data
         return result
+
+    @action(methods=["get"], detail=False)
+    def plan_limit(self, request, *args, **kwargs):
+        user = self.request.user
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+
+        ciphers_statistic = Cipher.objects.filter(created_by_id=user)
+        ciphers_statistic_data = {
+            "total": ciphers_statistic.count(),
+            "password": ciphers_statistic.filter(type=CIPHER_TYPE_LOGIN).count(),
+            "note": ciphers_statistic.filter(type=CIPHER_TYPE_NOTE).count(),
+            "identity": ciphers_statistic.filter(type=CIPHER_TYPE_IDENTITY).count(),
+            "card": ciphers_statistic.filter(type=CIPHER_TYPE_CARD).count(),
+            "totp": ciphers_statistic.filter(type=CIPHER_TYPE_TOTP).count(),
+            "crypto_backup": ciphers_statistic.filter(type=CIPHER_TYPE_CRYPTO_WALLET).count(),
+        }
+        relay_addresses_statistic_data = {
+            "total": user.relay_addresses.count()
+        }
+        plan_limit = self.user_repository.get_max_allow_cipher_type(user=user)
+        plan_obj = current_plan.get_plan_obj()
+        if plan_obj.allow_relay_premium() or user.is_active_enterprise_member():
+            relay_addresses_limit = None
+        else:
+            relay_addresses_limit = MAX_FREE_RElAY_DOMAIN
+        plan_limit.update({
+            "relay_addresses": relay_addresses_limit
+        })
+        return Response(status=200, data={
+            "ciphers": ciphers_statistic_data,
+            "relay_addresses": relay_addresses_statistic_data,
+            "plan": plan_limit
+        })
