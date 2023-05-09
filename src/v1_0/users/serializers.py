@@ -195,6 +195,9 @@ class UpdateOnboardingProcessSerializer(serializers.Serializer):
     vault_to_dashboard = serializers.BooleanField(required=False)
     welcome = serializers.BooleanField(required=False)
     tutorial = serializers.BooleanField(required=False)
+    tutorial_process = serializers.ListField(
+        child=serializers.CharField(max_length=128), required=False, allow_empty=True, max_length=16
+    )
     enterprise_onboarding = serializers.ListField(
         child=serializers.IntegerField(), required=False, max_length=10
     )
