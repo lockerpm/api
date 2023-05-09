@@ -742,6 +742,9 @@ class UserPwdViewSet(PasswordManagerViewSet):
             )
             welcome = validated_data.get("welcome", onboarding_process.get(ONBOARDING_CATEGORY_WELCOME))
             tutorial = validated_data.get("tutorial", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL))
+            tutorial_process = validated_data.get(
+                "tutorial_process", onboarding_process.get(ONBOARDING_CATEGORY_TUTORIAL_PROCESS, [])
+            )
             enterprise_onboarding = validated_data.get(
                 "enterprise_onboarding", onboarding_process.get(ONBOARDING_CATEGORY_ENTERPRISE)
             )
@@ -752,6 +755,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 ONBOARDING_CATEGORY_TO_DASHBOARD: vault_to_dashboard,
                 ONBOARDING_CATEGORY_WELCOME: welcome,
                 ONBOARDING_CATEGORY_TUTORIAL: tutorial,
+                ONBOARDING_CATEGORY_TUTORIAL_PROCESS: tutorial_process,
                 ONBOARDING_CATEGORY_ENTERPRISE: enterprise_onboarding,
                 ONBOARDING_CATEGORY_ENTERPRISE_SKIP: enterprise_onboarding_skip,
             })
