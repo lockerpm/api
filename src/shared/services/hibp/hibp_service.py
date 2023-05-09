@@ -36,8 +36,9 @@ class HibpService:
                 return {}
             elif res.status_code == 429:
                 try:
-                    timeout = re.findall(r'\d+', res.json().get("message"))[0]
-                except (AttributeError, KeyError, IndexError):
+                    timeout = int(re.findall(r'\d+', res.json().get("message"))[0])
+                    timeout = min(timeout, 10)
+                except (AttributeError, KeyError, IndexError, ValueError):
                     timeout = 3
                 time.sleep(timeout)
             retry += 1
