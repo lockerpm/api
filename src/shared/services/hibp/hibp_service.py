@@ -1,3 +1,4 @@
+import re
 import time
 
 import requests
@@ -34,7 +35,11 @@ class HibpService:
             elif res.status_code == 404:
                 return {}
             elif res.status_code == 429:
-                time.sleep(2)
+                try:
+                    timeout = re.findall(r'\d+', res.json().get("message"))[0]
+                except (AttributeError, KeyError, IndexError):
+                    timeout = 3
+                time.sleep(timeout)
             retry += 1
             if retry >= self.retries_number:
                 break
