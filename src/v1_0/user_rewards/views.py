@@ -55,7 +55,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
 
     def list(self, request, *args, **kwargs):
         # self.check_pwd_session_auth(request)
-        paging_param = self.request.query_params.get("paging", "1")
+        paging_param = self.request.query_params.get("paging", "0")
         page_size_param = self.check_int_param(self.request.query_params.get("size", 50))
         if paging_param == "0":
             self.pagination_class = None
