@@ -10,7 +10,9 @@ from django.db.models import OuterRef, Count, IntegerField, When, Case, Sum, Val
 
 from cron.task import Task
 from cystack_models.models.users.users import User
+from cystack_models.models.user_plans.pm_user_plan_family import PMUserPlanFamily
 from locker_statistic.models.user_statistics import UserStatistic
+from locker_statistic.models.user_plan_family import UserPlanFamily
 from locker_statistic.models.user_statistics_date import UserStatisticDate
 from shared.constants.ciphers import *
 from shared.constants.transactions import PAYMENT_STATUS_PAID
@@ -55,11 +57,15 @@ class LockerStatistic(Task):
             batch_user_ids = user_ids[i:i + batch_size]
             self.list_users_statistic(user_ids=batch_user_ids)
 
+        # Update family members
+        self.update_plan_family_statistic()
+
         UserStatisticDate.objects.create(
             created_time=current_time, completed_time=now(), latest_user_id=users.first().user_id
         )
 
-    def list_users_statistic(self, user_ids):
+    @staticmethod
+    def list_users_statistic(user_ids):
         # Sub queries to count devices, items, private emails, etc...
         subquery_user_devices = User.objects.filter(user_id=OuterRef('user_id')).annotate(
             web_device_count=Count(
@@ -358,6 +364,26 @@ class LockerStatistic(Task):
             batch_size=200,
             ignore_conflicts=True
         )
+
+    @staticmethod
+    def update_plan_family_statistic():
+        pm_user_plans_family = list(PMUserPlanFamily.objects.order_by().values(
+            'id', 'created_time', 'email', 'user_id', 'root_user_plan_id'
+        ))
+        user_plan_family = []
+        for pm_user_plan_family in pm_user_plans_family:
+            user_plan_family.append(
+                UserPlanFamily(
+                    id=pm_user_plan_family.get("id"),
+                    created_time=pm_user_plan_family.get("created_time"),
+                    email=pm_user_plan_family.get("email"),
+                    user_id=pm_user_plan_family.get("user_id"),
+                    root_user_id=pm_user_plan_family.get("root_user_plan_id")
+                )
+            )
+        UserPlanFamily.objects.bulk_create(user_plan_family, ignore_conflicts=True, batch_size=100)
+        existed_ids = [p.get("id") for p in pm_user_plans_family]
+        UserPlanFamily.objects.exclude(id__in=existed_ids).delete()
 
     def scheduling(self):
         # Only PROD
