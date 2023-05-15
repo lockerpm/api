@@ -142,6 +142,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
                     )
                     current_plan.personal_trial_applied = True
+                    current_plan.personal_trial_web_applied = True
                     current_plan.save()
                     # Send trial mail
                     LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(

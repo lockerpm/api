@@ -119,6 +119,7 @@ class MobilePaymentViewSet(MicroServiceViewSet):
             # if current_plan.is_personal_trial_applied() is False and is_trial_period is True:
             if is_trial_period is True:
                 current_plan.personal_trial_applied = True
+                current_plan.personal_trial_mobile_applied = True
                 current_plan.save()
                 send_trial_mail = True
                 # Update payment -> trial

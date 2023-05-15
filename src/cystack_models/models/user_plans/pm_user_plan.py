@@ -20,6 +20,8 @@ class PMUserPlan(UserPlan):
     number_members = models.IntegerField(default=1)  # Number of member business
     personal_trial_applied = models.BooleanField(default=False)     # Did this user apply the personal trial plan?
     enterprise_trial_applied = models.BooleanField(default=False)   # Did this user apply the enterprise plan?
+    personal_trial_mobile_applied = models.BooleanField(default=False)
+    personal_trial_web_applied = models.BooleanField(default=False)
     pm_stripe_subscription = models.CharField(max_length=255, null=True)
     pm_stripe_subscription_created_time = models.IntegerField(null=True)
     pm_mobile_subscription = models.CharField(max_length=255, null=True, default=None)
