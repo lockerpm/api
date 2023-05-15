@@ -1,6 +1,7 @@
 import traceback
 from datetime import datetime
 
+import requests
 from django.conf import settings
 from django.db import close_old_connections, connection
 from django.db.models import Count, When, Case, IntegerField, Sum, F, FloatField, Value, Q
@@ -8,12 +9,16 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
-from cystack_models.models import User
+from cystack_models.models import User, NotificationSetting
 from shared.background.i_background import BackgroundThread
 from shared.constants.ciphers import *
 from shared.constants.transactions import PLAN_TYPE_PM_FREE, PAYMENT_STATUS_PAID
+from shared.constants.user_notification import NOTIFY_PWD_TIP_TRICK
 from shared.external_request.requester import requester, RequesterError
 from shared.log.cylog import CyLog
+from shared.services.fcm.constants import FCM_TYPE_PWD_TIP_TRICK
+from shared.services.fcm.fcm_request_entity import FCMRequestEntity
+from shared.services.fcm.fcm_sender import FCMSenderService
 from shared.services.spreadsheet.spreadsheet import LockerSpreadSheet
 from shared.utils.app import now
 from v1_0.general_view import PasswordManagerViewSet
@@ -295,3 +300,68 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
             return datetime.utcfromtimestamp(ts).strftime('%H:%M:%S %d-%m-%Y')
         except (AttributeError, TypeError, ValueError):
             return None
+
+    def notify_marketing(self, alias):
+        # Request to notion to get data
+        url = f"https://notion.cystack.workers.dev/v1/table/{settings.NOTION_MARKETING_TABLE_ID}"
+        try:
+            res = requester(method="GET", url=url)
+        except (requests.ConnectTimeout, requests.ConnectionError):
+            return {"success": False, "notification": False}
+        if res.status_code != 200:
+            return {"success": False, "notification": False}
+        notion_data = res.json()
+        notion_vi = [
+            d for d in notion_data if d.get("Language") == "Vietnamese" and d.get("Alias") == alias
+                                      and d.get("Status") == "Active"
+        ]
+        notion_en = [
+            d for d in notion_data if d.get("Language") == "English" and d.get("Alias") == alias
+                                      and d.get("Status") == "Active"
+        ]
+        try:
+            notification_vi_data = notion_vi[0]
+            notification_en_data = notion_en[0]
+        except IndexError:
+            return {"success": False, "notification": False}
+
+        user_ids = list(User.objects.filter(activated=True).values_list('user_id', flat=True))
+        mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_PWD_TIP_TRICK, user_ids=user_ids)
+        notification_user_ids = NotificationSetting.get_user_notification(
+            category_id=NOTIFY_PWD_TIP_TRICK, user_ids=user_ids
+        )
+
+        # Push mobile notification
+        notification_data = {
+            "title": {
+                "en": notification_en_data.get("Text"),
+                "vi": notification_vi_data.get("Text")
+            },
+            "metadata": {
+                "link": {
+                    "en": notification_en_data.get("Link"),
+                    "vi": notification_en_data.get("Link"),
+                }
+            }
+        }
+        fcm_ids = self.device_repository.get_fcm_ids_by_user_ids(user_ids=notification_user_ids)
+        fcm_message = FCMRequestEntity(
+            fcm_ids=fcm_ids, priority="high",
+            data={
+                "event": FCM_TYPE_PWD_TIP_TRICK,
+                "data": {
+                    "pwd_user_ids": notification_user_ids,
+                    "data": notification_data
+                }
+            }
+        )
+        FCMSenderService(is_background=True).run("send_message", **{"fcm_message": fcm_message})
+
+        return {
+            "success": True,
+            "notification": True,
+            "mail_user_ids": mail_user_ids,
+            "notification_user_ids": notification_user_ids,
+            "job": "password_tip_trick",
+            "notification_data": notification_data
+        }

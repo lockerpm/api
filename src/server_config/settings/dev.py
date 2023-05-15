@@ -148,6 +148,9 @@ try:
     AWS_S3_ACCESS_KEY = os.getenv("AWS_S3_ACCESS_KEY")
     AWS_S3_SECRET_KEY = os.getenv("AWS_S3_SECRET_KEY")
 
+    # Notion table
+    NOTION_MARKETING_TABLE_ID = os.getenv("NOTION_MARKETING_TABLE_ID")
+
     # Application definition
     INSTALLED_APPS = [
         'django.contrib.auth',
