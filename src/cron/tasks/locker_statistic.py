@@ -315,6 +315,15 @@ class LockerStatistic(Task):
                 paid_platforms.append("android")
             paid_platforms_str = ",".join(paid_platforms)
 
+            try:
+                personal_trial_web_applied = user.pm_user_plan.personal_trial_web_applied
+            except AttributeError:
+                personal_trial_web_applied = False
+            try:
+                personal_trial_mobile_applied = user.pm_user_plan.personal_trial_mobile_applied
+            except AttributeError:
+                personal_trial_mobile_applied = False
+
             user_statistic_data = {
                 "user_id": user.user_id,
                 "country": user_from_id_data.get("country"),
@@ -350,7 +359,9 @@ class LockerStatistic(Task):
                 "lk_referral_count": user_from_id_data.get("lk_referral_count") or 0,
                 "utm_source": user_from_id_data.get("utm_source"),
                 "paid_money": user.paid_money,
-                "paid_platforms": paid_platforms_str
+                "paid_platforms": paid_platforms_str,
+                "personal_trial_mobile_applied": personal_trial_mobile_applied,
+                "personal_trial_web_applied": personal_trial_web_applied
             }
             user_statistic_dict_data = user_statistic_data.copy()
             user_statistic_dict_data.pop('user_id', None)

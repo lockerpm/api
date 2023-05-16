@@ -43,6 +43,8 @@ class UserStatistic(models.Model):
     paid_money = models.FloatField(default=0)
     paid_platforms = models.CharField(max_length=128, blank=True, null=True, default=None)
     lk_referral_count = models.IntegerField(default=0)
+    personal_trial_mobile_applied = models.BooleanField(default=False)
+    personal_trial_web_applied = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'lk_user_statistics'

@@ -96,6 +96,7 @@ class InvoiceWebhookSerializer(serializers.Serializer):
                 pm_user_plan.pm_stripe_subscription_created_time = now()
                 if stripe_subscription_obj.status == "trialing":
                     pm_user_plan.personal_trial_applied = True
+                    pm_user_plan.personal_trial_web_applied = True
                 pm_user_plan.save()
 
                 start_period = stripe_subscription_obj.current_period_start
