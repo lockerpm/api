@@ -9,7 +9,7 @@ from shared.log.cylog import CyLog
 from shared.utils.app import now
 
 
-class CapterrayRatingAndReviewMission(Mission):
+class CapterraRatingAndReviewMission(Mission):
     def __init__(self, mission_type: str, extra_requirements=None):
         super().__init__(mission_type=mission_type, extra_requirements=extra_requirements)
         self.reward_type = REWARD_TYPE_PROMO_CODE

@@ -69,7 +69,7 @@ class PromoCode(models.Model):
         code = data['code']
         value = data['value']
         limit_value = data.get("limit_value")
-        currency = data['currency']
+        currency = data.get("currency", "USD")
         duration = data.get("duration", 1)
         specific_duration = data.get("specific_duration")
         description_en = data.get("description_en", "")
