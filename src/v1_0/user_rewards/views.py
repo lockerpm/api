@@ -1,19 +1,20 @@
 import stripe
 import stripe.error
 
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.decorators import action
 
 from cystack_models.models import UserRewardMission, Mission, PromoCode
 from shared.constants.missions import *
-from shared.constants.transactions import PROMO_PERCENTAGE
+from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_reward_mission_pwd_permission import UserRewardMissionPwdPermission
 from shared.utils.app import now, random_n_digit
 from shared.utils.factory import factory
-from v1_0.user_rewards.serializers import UserRewardMissionSerializer, UserRewardCheckCompletedSerializer
+from v1_0.user_rewards.serializers import UserRewardMissionSerializer, UserRewardCheckCompletedSerializer, \
+    ListRewardPromoCodeSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -26,6 +27,8 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UserRewardMissionSerializer
         elif self.action == "completed":
             self.serializer_class = UserRewardCheckCompletedSerializer
+        elif self.action == "list_promo_codes":
+            self.serializer_class = ListRewardPromoCodeSerializer
         return super().get_serializer_class()
 
     def get_object(self):
@@ -92,39 +95,86 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["get"], detail=False)
     def claim(self, request, *args, **kwargs):
+        user = self.request.user
         user_reward_missions = self.get_queryset()
         promo_code_reward_missions = user_reward_missions.filter(mission__reward_type=REWARD_TYPE_PROMO_CODE)
+
+        max_available_promo_code_value = promo_code_reward_missions.filter(
+            status=USER_MISSION_STATUS_COMPLETED,
+        ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
+        used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
+            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
+        ).aggregate(Sum('value')).get("value__sum") or 0
+
+        available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
+
         result = {
+            "total_promo_code_value": max_available_promo_code_value,
+            "used_promo_code_value": used_promo_code_value,
+            "available_promo_code_value": available_promo_code_value,
             "total_promo_code": promo_code_reward_missions.count(),
-            "claimed_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
-            "available_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_COMPLETED).count(),
-            "available_promo_code_value": promo_code_reward_missions.filter(
-                status=USER_MISSION_STATUS_COMPLETED,
-            ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
+            "completed_promo_code_missions": promo_code_reward_missions.filter(
+                status=USER_MISSION_STATUS_COMPLETED
+            ).count(),
+            # "claimed_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
+            # "available_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_COMPLETED).count(),
+            # "available_promo_code_value": promo_code_reward_missions.filter(
+            #     status=USER_MISSION_STATUS_COMPLETED,
+            # ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
         }
         return Response(status=200, data=result)
 
+    @action(methods=["get"], detail=False)
+    def list_promo_codes(self, request, *args, **kwargs):
+        user = self.request.user
+        promo_codes = user.only_promo_codes.filter(valid=True, remaining_times__gt=0).filter(
+            Q(expired_time__isnull=True) | Q(expired_time__gt=now())
+        ).order_by('-created_time')
+        serializer = self.get_serializer(promo_codes, many=True)
+        return Response(status=200, data=serializer.data)
+
     @action(methods=["post"], detail=False)
     def claim_promo_code(self, request, *args, **kwargs):
+        user = self.request.user
         user_reward_missions = self.get_queryset()
-        available_promo_code_value = user_reward_missions.filter(
+        max_available_promo_code_value = user_reward_missions.filter(
             mission__reward_type=REWARD_TYPE_PROMO_CODE,
             status=USER_MISSION_STATUS_COMPLETED,
         ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
+
+        used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
+            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
+        ).aggregate(Sum('value')).get("value__sum") or 0
+
+        available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
+
+        # available_promo_code_value = user_reward_missions.filter(
+        #     mission__reward_type=REWARD_TYPE_PROMO_CODE,
+        #     status=USER_MISSION_STATUS_COMPLETED,
+        # ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
         if available_promo_code_value <= 0:
             raise ValidationError(detail={"promo_code": ["The available promo code value is not valid"]})
-        code = f"LKMR-{random_n_digit(n=8)}".upper()
+        code = f"{MISSION_REWARD_PROMO_PREFIX}{random_n_digit(n=8)}".upper()
+        # This code is expired in a week
+        expired_time = int(now() + 7 * 86400)
         promo_code_data = {
             "promo_type": PROMO_PERCENTAGE,
-            "expired_time": now() + 365 * 86400,    # 1 year
+            "expired_time": expired_time,
             "code": code,
             "value": available_promo_code_value,
             "duration": 1,
             "number_code": 1,
             "description_en": "Locker PromoCode Reward",
             "description_vi": "Locker PromoCode Reward",
+            "only_user_id": user.user_id
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
+
+        # Delete all old promo codes
+        user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
+            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
+        ).exclude(id=promo_code_obj.id).update(is_valid=False)
+
         # Create on Stripe
         try:
             stripe.Coupon.create(
@@ -132,16 +182,19 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
                 duration_in_months=12,
                 id="{}_yearly".format(promo_code_obj.id),
                 percent_off=available_promo_code_value,
-                name=code
+                name=code,
+                redeem_by=expired_time
             )
         except stripe.error.StripeError:
             promo_code_obj.delete()
             raise ValidationError({"non_field_errors": [gen_error("0008")]})
+
+
         # Change the reward status
-        user_reward_missions.filter(
-            mission__reward_type=REWARD_TYPE_PROMO_CODE,
-            status=USER_MISSION_STATUS_COMPLETED,
-        ).update(status=USER_MISSION_STATUS_REWARD_SENT)
+        # user_reward_missions.filter(
+        #     mission__reward_type=REWARD_TYPE_PROMO_CODE,
+        #     status=USER_MISSION_STATUS_COMPLETED,
+        # ).update(status=USER_MISSION_STATUS_REWARD_SENT)
 
         return Response(status=200, data={
             "id": promo_code_obj.id,

@@ -62,6 +62,10 @@ PROMO_AMOUNT = "amount_off"
 PROMO_PERCENTAGE = "percentage_off"
 
 
+# ------------------- Promo code prefix ---------------------- #
+MISSION_REWARD_PROMO_PREFIX = "LKMR-"
+
+
 # ------------------- Plan type constants --------------------------- #
 PLAN_TYPE_PM_FREE = "pm_free"
 PLAN_TYPE_PM_PREMIUM = "pm_premium"

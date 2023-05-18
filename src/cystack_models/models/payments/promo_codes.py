@@ -6,6 +6,7 @@ from django.db import models
 from shared.constants.transactions import *
 from shared.utils.app import now
 from cystack_models.models.payments.promo_code_types import PromoCodeType
+from cystack_models.models.users.users import User
 
 
 class PromoCode(models.Model):
@@ -46,6 +47,7 @@ class PromoCode(models.Model):
     currency = models.CharField(max_length=8, default=CURRENCY_USD)
     description_en = models.TextField(default="", blank=True)
     description_vi = models.TextField(default="", blank=True)
+    only_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="only_promo_codes", null=True)
     type = models.ForeignKey(PromoCodeType, on_delete=models.CASCADE, related_name="promo_codes")
 
     class Meta:
@@ -70,12 +72,17 @@ class PromoCode(models.Model):
         currency = data['currency']
         duration = data.get("duration", 1)
         specific_duration = data.get("specific_duration")
+        description_en = data.get("description_en", "")
+        description_vi = data.get("description_vi", "")
+        only_user_id = data.get("only_user_id")
 
         new_promo_code = cls(
             created_time=now(), expired_time=expired_time, remaining_times=number_code, code=code,
             value=value, limit_value=limit_value, currency=currency,
             type=PromoCodeType.objects.get(name=promo_type),
-            duration=duration, specific_duration=specific_duration
+            duration=duration, specific_duration=specific_duration,
+            description_vi=description_vi, description_en=description_en,
+            only_user_id=only_user_id
         )
         new_promo_code.save()
         return new_promo_code
@@ -93,8 +100,11 @@ class PromoCode(models.Model):
             # If promo code was expired or promo code was used by this user?
             if promo_code.expired_time < now() or promo_code.remaining_times <= 0 or promo_code.is_saas_code:
                 return False
-            if current_user is not None and current_user.payments.filter(promo_code=promo_code).count() > 0:
-                return False
+            if current_user is not None:
+                if current_user.payments.filter(promo_code=promo_code).count() > 0:
+                    return False
+                if promo_code.only_user_id and promo_code.only_user_id != current_user.user_id:
+                    return False
             return promo_code
         except cls.DoesNotExist:
             return False
