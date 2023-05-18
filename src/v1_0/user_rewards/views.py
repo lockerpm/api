@@ -1,3 +1,5 @@
+import os
+
 import stripe
 import stripe.error
 
@@ -37,7 +39,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             user_reward_mission = UserRewardMission.objects.get(
                 user_id=user.user_id, mission_id=self.kwargs.get("pk"), mission__available=True
             )
-            self.check_object_permissions(obj=user_reward_mission, request=self.request)
+            # self.check_object_permissions(obj=user_reward_mission, request=self.request)
             return user_reward_mission
         except UserRewardMission.DoesNotExist:
             raise NotFound
@@ -80,12 +82,15 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
 
         mission_type = user_reward_mission.mission.mission_type
         extra_requirements = user_reward_mission.mission.get_extra_requirements()
-        module_name = f'src.cystack_models.factory.user_reward_mission.{user_reward_mission.mission_id}_mission'
+        module_name = f'cystack_models.factory.user_reward_mission.missions.{user_reward_mission.mission_id}_mission'
         mission_factory = factory(module_name, mission_type, extra_requirements)
         if not mission_factory:
             return Response(status=200, data={"claim": False})
         input_data = {"user": user, "user_identifier": user_identifier}
-        mission_check = mission_factory.check_mission_completion(input_data)
+        if os.getenv("PROD_ENV") in ["prod"]:
+            mission_check = mission_factory.check_mission_completion(input_data)
+        else:
+            mission_check = True
         if not mission_check:
             return Response(status=200, data={"claim": False})
         user_reward_mission.status = USER_MISSION_STATUS_COMPLETED
@@ -111,15 +116,22 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
 
+        generated_promo_codes = user.only_promo_codes.filter(valid=True, remaining_times__gt=0).filter(
+            Q(expired_time__isnull=True) | Q(expired_time__gt=now())
+        ).order_by('-created_time')
+        generated_promo_codes_srl = ListRewardPromoCodeSerializer(generated_promo_codes, many=True)
+
         result = {
             "total_promo_code": promo_code_reward_missions.count(),
+            "completed_promo_code_missions": promo_code_reward_missions.filter(
+                status=USER_MISSION_STATUS_COMPLETED
+            ).count(),
             "total_promo_code_value": total_promo_code_value,
             "max_available_promo_code_value": max_available_promo_code_value,
             "used_promo_code_value": used_promo_code_value,
             "available_promo_code_value": available_promo_code_value,
-            "completed_promo_code_missions": promo_code_reward_missions.filter(
-                status=USER_MISSION_STATUS_COMPLETED
-            ).count(),
+            "generated_available_promo_codes": generated_promo_codes_srl.data
+
             # "claimed_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
             # "available_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_COMPLETED).count(),
             # "available_promo_code_value": promo_code_reward_missions.filter(
@@ -157,7 +169,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         # This code is expired in a week
         expired_time = int(now() + 7 * 86400)
         promo_code_data = {
-            "promo_type": PROMO_PERCENTAGE,
+            "type": PROMO_PERCENTAGE,
             "expired_time": expired_time,
             "code": code,
             "value": available_promo_code_value,
@@ -171,23 +183,23 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
 
         # Delete all old promo codes
         user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
-        ).exclude(id=promo_code_obj.id).update(is_valid=False)
+            # Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times__lte=0)
+        ).exclude(id=promo_code_obj.id).update(valid=False)
 
         # Create on Stripe
-        try:
-            stripe.Coupon.create(
-                duration='repeating',
-                duration_in_months=12,
-                id="{}_yearly".format(promo_code_obj.id),
-                percent_off=available_promo_code_value,
-                name=code,
-                redeem_by=expired_time
-            )
-        except stripe.error.StripeError:
-            promo_code_obj.delete()
-            raise ValidationError({"non_field_errors": [gen_error("0008")]})
-
+        if os.getenv("PROD_ENV") in ["prod", "staging"]:
+            try:
+                stripe.Coupon.create(
+                    duration='repeating',
+                    duration_in_months=12,
+                    id="{}_yearly".format(promo_code_obj.id),
+                    percent_off=available_promo_code_value,
+                    name=code,
+                    redeem_by=expired_time
+                )
+            except stripe.error.StripeError:
+                promo_code_obj.delete()
+                raise ValidationError({"non_field_errors": [gen_error("0008")]})
 
         # Change the reward status
         # user_reward_missions.filter(
