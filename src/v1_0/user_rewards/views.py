@@ -98,6 +98,9 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         user_reward_missions = self.get_queryset()
         promo_code_reward_missions = user_reward_missions.filter(mission__reward_type=REWARD_TYPE_PROMO_CODE)
+        total_promo_code_value = promo_code_reward_missions.aggregate(
+            Sum('mission__reward_value')
+        ).get("mission__reward_value__sum") or 0
 
         max_available_promo_code_value = promo_code_reward_missions.filter(
             status=USER_MISSION_STATUS_COMPLETED,
@@ -109,10 +112,11 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
 
         result = {
-            "total_promo_code_value": max_available_promo_code_value,
+            "total_promo_code": promo_code_reward_missions.count(),
+            "total_promo_code_value": total_promo_code_value,
+            "max_available_promo_code_value": max_available_promo_code_value,
             "used_promo_code_value": used_promo_code_value,
             "available_promo_code_value": available_promo_code_value,
-            "total_promo_code": promo_code_reward_missions.count(),
             "completed_promo_code_missions": promo_code_reward_missions.filter(
                 status=USER_MISSION_STATUS_COMPLETED
             ).count(),
@@ -147,11 +151,6 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         ).aggregate(Sum('value')).get("value__sum") or 0
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
-
-        # available_promo_code_value = user_reward_missions.filter(
-        #     mission__reward_type=REWARD_TYPE_PROMO_CODE,
-        #     status=USER_MISSION_STATUS_COMPLETED,
-        # ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
         if available_promo_code_value <= 0:
             raise ValidationError(detail={"promo_code": ["The available promo code value is not valid"]})
         code = f"{MISSION_REWARD_PROMO_PREFIX}{random_n_digit(n=8)}".upper()
