@@ -92,8 +92,10 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         else:
             mission_check = True
         if not mission_check:
+            user_reward_mission.status = USER_MISSION_STATUS_UNDER_VERIFICATION
+            user_reward_mission.save()
             return Response(status=200, data={"claim": False})
-        user_reward_mission.status = USER_MISSION_STATUS_COMPLETED
+        user_reward_mission.status = USER_MISSION_STATUS_REWARD_SENT
         user_reward_mission.save()
 
         return Response(status=200, data={"claim": True})
@@ -108,7 +110,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         ).get("mission__reward_value__sum") or 0
 
         max_available_promo_code_value = promo_code_reward_missions.filter(
-            status=USER_MISSION_STATUS_COMPLETED,
+            status=USER_MISSION_STATUS_REWARD_SENT,
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
             Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
@@ -124,7 +126,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         result = {
             "total_promo_code": promo_code_reward_missions.count(),
             "completed_promo_code_missions": promo_code_reward_missions.filter(
-                status=USER_MISSION_STATUS_COMPLETED
+                status=USER_MISSION_STATUS_REWARD_SENT
             ).count(),
             "total_promo_code_value": total_promo_code_value,
             "max_available_promo_code_value": max_available_promo_code_value,
@@ -133,9 +135,9 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             "generated_available_promo_codes": generated_promo_codes_srl.data
 
             # "claimed_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
-            # "available_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_COMPLETED).count(),
+            # "available_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
             # "available_promo_code_value": promo_code_reward_missions.filter(
-            #     status=USER_MISSION_STATUS_COMPLETED,
+            #     status=USER_MISSION_STATUS_REWARD_SENT,
             # ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
         }
         return Response(status=200, data=result)
@@ -155,7 +157,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         user_reward_missions = self.get_queryset()
         max_available_promo_code_value = user_reward_missions.filter(
             mission__reward_type=REWARD_TYPE_PROMO_CODE,
-            status=USER_MISSION_STATUS_COMPLETED,
+            status=USER_MISSION_STATUS_REWARD_SENT,
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
 
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
@@ -204,7 +206,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         # Change the reward status
         # user_reward_missions.filter(
         #     mission__reward_type=REWARD_TYPE_PROMO_CODE,
-        #     status=USER_MISSION_STATUS_COMPLETED,
+        #     status=USER_MISSION_STATUS_REWARD_SENT,
         # ).update(status=USER_MISSION_STATUS_REWARD_SENT)
 
         return Response(status=200, data={
