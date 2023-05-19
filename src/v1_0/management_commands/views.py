@@ -311,14 +311,21 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
         if res.status_code != 200:
             return {"success": False, "notification": False}
         notion_data = res.json()
-        notion_vi = [
-            d for d in notion_data if d.get("Language") == "Vietnamese" and d.get("Alias") == alias
-                                      and d.get("Status") == "Active"
-        ]
-        notion_en = [
-            d for d in notion_data if d.get("Language") == "English" and d.get("Alias") == alias
-                                      and d.get("Status") == "Active"
-        ]
+        if alias:
+            notion_vi = [
+                d for d in notion_data
+                if d.get("Language") == "Vietnamese" and d.get("Alias") == alias and d.get("Status") == "Active"
+            ]
+            notion_en = [
+                d for d in notion_data
+                if d.get("Language") == "English" and d.get("Alias") == alias and d.get("Status") == "Active"
+            ]
+        else:
+            try:
+                notion_vi = [notion_data[-1]]
+                notion_en = [notion_data[-2]]
+            except IndexError:
+                return {"success": False, "notification": False}
         try:
             notification_vi_data = notion_vi[0]
             notification_en_data = notion_en[0]

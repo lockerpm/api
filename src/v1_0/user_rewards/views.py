@@ -16,7 +16,7 @@ from shared.permissions.locker_permissions.user_reward_mission_pwd_permission im
 from shared.utils.app import now, random_n_digit
 from shared.utils.factory import factory
 from v1_0.user_rewards.serializers import UserRewardMissionSerializer, UserRewardCheckCompletedSerializer, \
-    ListRewardPromoCodeSerializer
+    ListRewardPromoCodeSerializer, UserExtensionInstallCheckCompletedSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -75,10 +75,20 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         if user_reward_mission.status not in [USER_MISSION_STATUS_NOT_STARTED]:
             raise NotFound
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
-        user_identifier = validated_data.get("user_identifier")
+        if kwargs.get("pk") == "extension_installation_and_review":
+            self.serializer_class = UserExtensionInstallCheckCompletedSerializer
+            extension_user_identifier = []
+            for d in request.data:
+                serializer = self.get_serializer(data=d)
+                serializer.is_valid(raise_exception=True)
+                extension_user_identifier.append(serializer.validated_data)
+            user_identifier = extension_user_identifier
+        else:
+
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            validated_data = serializer.validated_data
+            user_identifier = validated_data.get("user_identifier")
 
         mission_type = user_reward_mission.mission.mission_type
         extra_requirements = user_reward_mission.mission.get_extra_requirements()
