@@ -26,16 +26,39 @@ class ExtensionInstallationAndReviewMission(Mission):
         if len(extension_devices) < 2:
             return False
         map_extension_type_check = {
-            DEVICE_TYPE_EXTENSION_CHROME: self.check_chrome_extension,
-            DEVICE_TYPE_EXTENSION_FIREFOX: self.check_firefox_extension,
-            DEVICE_TYPE_EXTENSION_EDGE: self.check_edge_extension,
-            DEVICE_TYPE_EXTENSION_SAFARI: self.check_safari_extension,
-            DEVICE_TYPE_EXTENSION_BRAVE: self.check_brave_extension,
-            DEVICE_TYPE_EXTENSION_OPERA: self.check_opera_extension,
+            DEVICE_TYPE_EXTENSION_CHROME: {
+                "id": "chrome",
+                "checker": self.check_chrome_extension,
+            },
+            DEVICE_TYPE_EXTENSION_FIREFOX: {
+                "id": "firefox",
+                "checker": self.check_firefox_extension,
+            },
+            DEVICE_TYPE_EXTENSION_EDGE: {
+                "id": "edge",
+                "checker": self.check_edge_extension,
+            },
+            DEVICE_TYPE_EXTENSION_SAFARI: {
+                "id": "safari",
+                "checker": self.check_safari_extension,
+            },
+            DEVICE_TYPE_EXTENSION_BRAVE: {
+                "id": "brave",
+                "checker": self.check_brave_extension,
+            },
+            DEVICE_TYPE_EXTENSION_OPERA: {
+                "id": "opera",
+                "checker": self.check_opera_extension,
+            }
         }
         review_count = 0
         for extension_device in extension_devices:
-            if map_extension_type_check.get(extension_device)(user_identifier) is True:
+            extension_id = map_extension_type_check.get(extension_device).get("id")
+            checker = map_extension_type_check.get(extension_device).get("checker")
+            user_identifier_el = next(
+                (i for i in user_identifier if i["browser"] == extension_id), {}
+            )
+            if checker(user_identifier_el.get("user_identifier")) is True:
                 review_count += 1
         return True if review_count >= 2 else False
 

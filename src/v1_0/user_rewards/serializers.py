@@ -21,6 +21,11 @@ class UserRewardCheckCompletedSerializer(serializers.Serializer):
     user_identifier = serializers.CharField(max_length=255)
 
 
+class UserExtensionInstallCheckCompletedSerializer(serializers.Serializer):
+    user_identifier = serializers.CharField(max_length=255)
+    browser = serializers.CharField(max_length=128)
+
+
 class ListRewardPromoCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromoCode
