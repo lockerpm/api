@@ -18,7 +18,7 @@ class CapterraRatingAndReviewMission(Mission):
     def check_mission_completion(self, input_data: Dict):
         user_identifier = input_data.get("user_identifier")
         product_id = "265084"
-        url = f"https://www.capterra.com/spotlight/rest/reviews?apiVersion=2&productId{product_id}=&from=0&sort=lastestReview&size=50"
+        url = f"https://www.capterra.com/spotlight/rest/reviews?apiVersion=2&productId={product_id}&from=0&sort=lastestReview&size=50"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0"
         }
@@ -26,7 +26,7 @@ class CapterraRatingAndReviewMission(Mission):
         try:
             res = requester(method="GET", url=url, headers=headers, timeout=10)
             if res.status_code != 200:
-                CyLog.warning(**{"message": "[!] CapterrayRatingAndReviewMission.check_mission_completion request error"
+                CyLog.warning(**{"message": "[!] CapterraRatingAndReviewMission.check_mission_completion request error"
                                             " {} {}".format(res.status_code, res.text)})
                 return False
         except (requests.exceptions.ConnectionError, requests.exceptions.ConnectTimeout,
