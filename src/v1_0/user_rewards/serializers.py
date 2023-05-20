@@ -18,7 +18,7 @@ class UserRewardMissionSerializer(serializers.ModelSerializer):
 
 
 class UserRewardCheckCompletedSerializer(serializers.Serializer):
-    user_identifier = serializers.CharField(max_length=255)
+    user_identifier = serializers.CharField(max_length=255, allow_null=True)
 
 
 class UserExtensionInstallCheckCompletedSerializer(serializers.Serializer):
