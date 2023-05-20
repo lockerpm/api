@@ -1,3 +1,5 @@
+import json
+
 from django.db import models
 
 from cystack_models.models.user_rewards.missions import Mission
@@ -11,6 +13,7 @@ class UserRewardMission(models.Model):
     status = models.CharField(max_length=64, default=USER_MISSION_STATUS_NOT_STARTED)
     is_claimed = models.BooleanField(default=False)
     completed_time = models.IntegerField(null=True)
+    answer = models.CharField(max_length=512, blank=True, null=True, default=None)
 
     class Meta:
         db_table = 'cs_user_reward_missions'
@@ -28,3 +31,11 @@ class UserRewardMission(models.Model):
                 completed_time=data.get("completed")
             ))
         cls.objects.bulk_create(user_reward_mission_objs, ignore_conflicts=True, batch_size=50)
+
+    def get_answer(self):
+        if not self.answer:
+            return {}
+        try:
+            return json.loads(str(self.answer))
+        except json.JSONDecodeError:
+            return self.answer

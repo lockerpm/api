@@ -1,5 +1,5 @@
+import json
 import os
-
 import stripe
 import stripe.error
 
@@ -28,7 +28,10 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         if self.action == "list":
             self.serializer_class = UserRewardMissionSerializer
         elif self.action == "completed":
-            self.serializer_class = UserRewardCheckCompletedSerializer
+            if self.kwargs.get("pk") == "extension_installation_and_review":
+                self.serializer_class = UserExtensionInstallCheckCompletedSerializer
+            else:
+                self.serializer_class = UserRewardCheckCompletedSerializer
         elif self.action == "list_promo_codes":
             self.serializer_class = ListRewardPromoCodeSerializer
         return super().get_serializer_class()
@@ -72,23 +75,23 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
     def completed(self, request, *args, **kwargs):
         user = self.request.user
         user_reward_mission = self.get_object()
-        if user_reward_mission.status not in [USER_MISSION_STATUS_NOT_STARTED]:
+        if user_reward_mission.status not in [USER_MISSION_STATUS_NOT_STARTED, USER_MISSION_STATUS_UNDER_VERIFICATION]:
             raise NotFound
 
         if kwargs.get("pk") == "extension_installation_and_review":
-            self.serializer_class = UserExtensionInstallCheckCompletedSerializer
             extension_user_identifier = []
             for d in request.data:
                 serializer = self.get_serializer(data=d)
                 serializer.is_valid(raise_exception=True)
                 extension_user_identifier.append(serializer.validated_data)
             user_identifier = extension_user_identifier
+            answer = user_identifier
         else:
-
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             validated_data = serializer.validated_data
             user_identifier = validated_data.get("user_identifier")
+            answer = validated_data
 
         mission_type = user_reward_mission.mission.mission_type
         extra_requirements = user_reward_mission.mission.get_extra_requirements()
@@ -101,6 +104,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             mission_check = mission_factory.check_mission_completion(input_data)
         else:
             mission_check = True
+        user_reward_mission.answer = json.dumps(answer)
         if not mission_check:
             user_reward_mission.status = USER_MISSION_STATUS_UNDER_VERIFICATION
             user_reward_mission.save()

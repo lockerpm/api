@@ -14,6 +14,7 @@ class UserRewardMissionSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         mission_serializer = RewardMissionSerializer(instance.mission, many=False)
         data["mission"] = mission_serializer.data
+        data["answer"] = instance.get_answer()
         return data
 
 
