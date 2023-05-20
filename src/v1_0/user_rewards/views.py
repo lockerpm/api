@@ -104,6 +104,8 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             mission_check = mission_factory.check_mission_completion(input_data)
         else:
             mission_check = True
+        # mission_check = mission_factory.check_mission_completion(input_data)
+
         user_reward_mission.answer = json.dumps(answer)
         if not mission_check:
             user_reward_mission.status = USER_MISSION_STATUS_UNDER_VERIFICATION
@@ -127,12 +129,14 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             status=USER_MISSION_STATUS_REWARD_SENT,
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
+            Q(expired_time__isnull=True) | Q(expired_time__lt=now()) | Q(remaining_times=0)
         ).aggregate(Sum('value')).get("value__sum") or 0
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
 
-        generated_promo_codes = user.only_promo_codes.filter(valid=True, remaining_times__gt=0).filter(
+        generated_promo_codes = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
+            valid=True, remaining_times__gt=0
+        ).filter(
             Q(expired_time__isnull=True) | Q(expired_time__gt=now())
         ).order_by('-created_time')
         generated_promo_codes_srl = ListRewardPromoCodeSerializer(generated_promo_codes, many=True)
