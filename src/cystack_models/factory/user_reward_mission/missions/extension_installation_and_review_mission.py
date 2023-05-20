@@ -98,7 +98,7 @@ class ExtensionInstallationAndReviewMission(Mission):
     @staticmethod
     def check_firefox_extension(user_identifier):
         # TODO: Change the extension addon id
-        addon_id = ""
+        addon_id = "locker-password-manager"
         url = f"https://addons.mozilla.org/api/v5/ratings/rating/?addon={addon_id}&lang=en-US&score=4,5&page_size=50"
         max_page = 2
         page = 1
