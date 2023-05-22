@@ -100,12 +100,11 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         if not mission_factory:
             return Response(status=200, data={"claim": False})
         input_data = {"user": user, "user_identifier": user_identifier}
-        if os.getenv("PROD_ENV") in ["prod"]:
-            mission_check = mission_factory.check_mission_completion(input_data)
-        else:
-            mission_check = True
-        # mission_check = mission_factory.check_mission_completion(input_data)
-
+        # if os.getenv("PROD_ENV") in ["prod"]:
+        #     mission_check = mission_factory.check_mission_completion(input_data)
+        # else:
+        #     mission_check = True
+        mission_check = mission_factory.check_mission_completion(input_data)
         user_reward_mission.answer = json.dumps(answer)
         if not mission_check:
             user_reward_mission.status = USER_MISSION_STATUS_UNDER_VERIFICATION
