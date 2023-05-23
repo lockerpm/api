@@ -36,7 +36,7 @@ class ExtensionInstallationAndReviewMission(Mission):
             },
             DEVICE_TYPE_EXTENSION_EDGE: {
                 "id": "edge",
-                "checker": self.check_edge_extension,
+                "checker": self.check_chrome_extension,
             },
             DEVICE_TYPE_EXTENSION_SAFARI: {
                 "id": "safari",
