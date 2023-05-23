@@ -23,7 +23,6 @@ class GooglePlayRatingAndReviewMission(Mission):
         self.google_play_service = build("androidpublisher", "v3", credentials=google_play_credentials)
 
     def check_mission_completion(self, input_data: Dict):
-
         user_identifier = input_data.get("user_identifier")
 
         # This function only returns reviews from last week
@@ -41,7 +40,10 @@ class GooglePlayRatingAndReviewMission(Mission):
             review_time = 0
             for comment in comments:
                 if comment.get("userComment"):
-                    review_time = int(comment.get("lastModified").get("seconds"))
+                    try:
+                        review_time = int(comment.get("userComment").get("lastModified").get("seconds"))
+                    except AttributeError:
+                        continue
             if review_time < now() - MAX_REVIEW_DURATION_TIME:
                 continue
             if name == user_identifier:
