@@ -395,7 +395,7 @@ class UserRepository(IUserRepository):
                     plan_type_alias=pm_user_plan.extra_plan or PLAN_TYPE_PM_PREMIUM,
                     **{
                         "start_period": now(),
-                        "end_period": now() + pm_user_plan.extra_time,
+                        "end_period": now() + extra_time,
                         "cancel_at_period_end": True
                     }
                 )

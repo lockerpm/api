@@ -24,7 +24,11 @@ class NotifyBackground(ILockerBackground):
             user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
             try:
                 user_plan = user_repository.get_current_plan(user=user_repository.get_by_id(user_id=user_id))
-                current_plan = "{} Plan".format(user_plan.get_plan_type_name())
+                current_plan_name = user_plan.get_plan_type_name()
+                current_plan = f"{current_plan_name} Plan"
+                # Don't notify if the current plan is the same old plan
+                if current_plan_name == old_plan or current_plan == old_plan:
+                    return
             except ObjectDoesNotExist:
                 current_plan = "Free Plan"
             url = API_NOTIFY_PAYMENT + "/notify_downgrade"
