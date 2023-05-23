@@ -70,6 +70,7 @@ urlpatterns += [
     url(r'^users/me/check_password$', views.UserPwdViewSet.as_view({'post': 'check_password'})),
     url(r'^users/me/fcm_id$', views.UserPwdViewSet.as_view({'post': 'fcm_id'})),
     url(r'^users/me/devices$', views.UserPwdViewSet.as_view({'get': 'devices'})),
+    url(r'^users/me/devices/(?P<pk>[a-zA-Z0-9_\-]+)$', views.UserPwdViewSet.as_view({'delete': 'device_destroy'})),
     url(r'^users/password_hint$', views.UserPwdViewSet.as_view({'post': 'password_hint'})),
     url(r'^users/register$', views.UserPwdViewSet.as_view({'post': 'register'})),
     url(r'^users/prelogin$', views.UserPwdViewSet.as_view({'post': 'prelogin'})),

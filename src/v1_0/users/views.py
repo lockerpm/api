@@ -818,6 +818,19 @@ class UserPwdViewSet(PasswordManagerViewSet):
         serializer = self.get_serializer(devices, many=True)
         return Response(status=200, data=serializer.data)
 
+    @action(methods=["delete"], detail=False)
+    def device_destroy(self, request, *args, **kwargs):
+        user = request.user
+        device_identifier = kwargs.get("pk")
+        self.check_pwd_session_auth(request)
+        try:
+            device = user.user_devices.get(device_identifier=device_identifier)
+        except ObjectDoesNotExist:
+            raise NotFound
+        sso_token_ids = list(device.device_access_tokens.values_list('sso_token_id', flat=True))
+        device.delete()
+        return Response(status=200, data={"sso_token_ids": sso_token_ids})
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         statistic_param = self.request.query_params.get("statistic", "0")
