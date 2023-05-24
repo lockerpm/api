@@ -1,8 +1,8 @@
 from shared.log.cylog import CyLog
 
 
-# The valid review must be in one day
-MAX_REVIEW_DURATION_TIME = 24 * 3600
+# The valid review must be in 2 days
+MAX_REVIEW_DURATION_TIME = 2 * 24 * 3600
 
 
 class Mission:
