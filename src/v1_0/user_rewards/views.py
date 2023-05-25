@@ -205,8 +205,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         if os.getenv("PROD_ENV") in ["prod", "staging"]:
             try:
                 stripe.Coupon.create(
-                    duration='repeating',
-                    duration_in_months=12,
+                    duration='once',
                     id="{}_yearly".format(promo_code_obj.id),
                     percent_off=available_promo_code_value,
                     name=code,
@@ -218,8 +217,12 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
 
         # Delete all old promo codes - Delete all valid tokens
         user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__gt=now()) | Q(remaining_times__gt=0)
+            expired_time__gt=now(), remaining_times__gt=0
         ).exclude(id=promo_code_obj.id).delete()
+
+        # user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
+        #     Q(expired_time__gt=now()) | Q(remaining_times__gt=0)
+        # ).exclude(id=promo_code_obj.id).delete()
 
         return Response(status=200, data={
             "id": promo_code_obj.id,
