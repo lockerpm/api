@@ -128,7 +128,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             status=USER_MISSION_STATUS_REWARD_SENT,
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__isnull=True) | Q(expired_time__lt=now()) | Q(remaining_times=0)
+            Q(expired_time__isnull=True) | Q(expired_time__lt=now()) | Q(remaining_times=0) | Q(valid=False)
         ).aggregate(Sum('value')).get("value__sum") or 0
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
@@ -178,7 +178,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
 
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0)
+            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0) | Q(valid=False)
         ).aggregate(Sum('value')).get("value__sum") or 0
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
