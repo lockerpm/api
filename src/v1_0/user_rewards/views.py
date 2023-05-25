@@ -201,11 +201,6 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
 
-        # Delete all old promo codes - Delete all valid tokens
-        user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__gt=now()) | Q(remaining_times__gt=0)
-        ).exclude(id=promo_code_obj.id).delete()
-
         # Create on Stripe
         if os.getenv("PROD_ENV") in ["prod", "staging"]:
             try:
@@ -221,11 +216,10 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
                 promo_code_obj.delete()
                 raise ValidationError({"non_field_errors": [gen_error("0008")]})
 
-        # Change the reward status
-        # user_reward_missions.filter(
-        #     mission__reward_type=REWARD_TYPE_PROMO_CODE,
-        #     status=USER_MISSION_STATUS_REWARD_SENT,
-        # ).update(status=USER_MISSION_STATUS_REWARD_SENT)
+        # Delete all old promo codes - Delete all valid tokens
+        user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
+            Q(expired_time__gt=now()) | Q(remaining_times__gt=0)
+        ).exclude(id=promo_code_obj.id).delete()
 
         return Response(status=200, data={
             "id": promo_code_obj.id,
