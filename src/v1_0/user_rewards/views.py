@@ -127,8 +127,9 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         max_available_promo_code_value = promo_code_reward_missions.filter(
             status=USER_MISSION_STATUS_REWARD_SENT,
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
+        # The used promo codes are expire codes or zero-remaining times
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__isnull=True) | Q(expired_time__lt=now()) | Q(remaining_times=0) | Q(valid=False)
+            Q(expired_time__isnull=True) | Q(expired_time__lt=now()) | Q(remaining_times=0)
         ).aggregate(Sum('value')).get("value__sum") or 0
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
@@ -178,7 +179,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         ).aggregate(Sum('mission__reward_value')).get("mission__reward_value__sum") or 0
 
         used_promo_code_value = user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times=0) | Q(valid=False)
+            Q(expired_time__isnull=True) | Q(expired_time__lt=now()) | Q(remaining_times=0)
         ).aggregate(Sum('value')).get("value__sum") or 0
 
         available_promo_code_value = max(max_available_promo_code_value - used_promo_code_value, 0)
@@ -200,10 +201,10 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
 
-        # Delete all old promo codes
+        # Delete all old promo codes - Delete all valid tokens
         user.only_promo_codes.filter(code__startswith=MISSION_REWARD_PROMO_PREFIX).filter(
-            # Q(expired_time__isnull=True) | Q(expired_time__gt=now()) | Q(remaining_times__lte=0)
-        ).exclude(id=promo_code_obj.id).update(valid=False)
+            Q(expired_time__gt=now()) | Q(remaining_times__gt=0)
+        ).exclude(id=promo_code_obj.id).delete()
 
         # Create on Stripe
         if os.getenv("PROD_ENV") in ["prod", "staging"]:
