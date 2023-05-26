@@ -10,7 +10,7 @@ from rest_framework.decorators import action
 
 from cystack_models.models import UserRewardMission, Mission, PromoCode
 from shared.constants.missions import *
-from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX
+from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX, DURATION_YEARLY
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_reward_mission_pwd_permission import UserRewardMissionPwdPermission
 from shared.utils.app import now, random_n_digit
@@ -207,6 +207,13 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
                 stripe.Coupon.create(
                     duration='once',
                     id="{}_yearly".format(promo_code_obj.id),
+                    percent_off=available_promo_code_value,
+                    name=code,
+                    redeem_by=expired_time
+                )
+                stripe.Coupon.create(
+                    duration='once',
+                    id="{}_monthly".format(promo_code_obj.id),
                     percent_off=available_promo_code_value,
                     name=code,
                     redeem_by=expired_time

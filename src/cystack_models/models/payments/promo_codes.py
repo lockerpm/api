@@ -48,6 +48,7 @@ class PromoCode(models.Model):
     description_en = models.TextField(default="", blank=True)
     description_vi = models.TextField(default="", blank=True)
     only_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="only_promo_codes", null=True)
+    only_period = models.CharField(max_length=128, null=True, default=None)
     type = models.ForeignKey(PromoCodeType, on_delete=models.CASCADE, related_name="promo_codes")
 
     class Meta:
@@ -75,6 +76,7 @@ class PromoCode(models.Model):
         description_en = data.get("description_en", "")
         description_vi = data.get("description_vi", "")
         only_user_id = data.get("only_user_id")
+        only_period = data.get("only_period")
 
         new_promo_code = cls(
             created_time=now(), expired_time=expired_time, remaining_times=number_code, code=code,
@@ -82,17 +84,19 @@ class PromoCode(models.Model):
             type=PromoCodeType.objects.get(name=promo_type),
             duration=duration, specific_duration=specific_duration,
             description_vi=description_vi, description_en=description_en,
-            only_user_id=only_user_id
+            only_user_id=only_user_id,
+            only_period=only_period
         )
         new_promo_code.save()
         return new_promo_code
 
     @classmethod
-    def check_valid(cls, value, current_user):
+    def check_valid(cls, value, current_user, new_duration: str = None):
         """
         Check a promo code value is valid
         :param value:
         :param current_user:
+        :param new_duration:
         :return:
         """
         try:
@@ -105,6 +109,8 @@ class PromoCode(models.Model):
                     return False
                 if promo_code.only_user_id and promo_code.only_user_id != current_user.user_id:
                     return False
+            if promo_code.only_period and new_duration and promo_code.only_period != new_duration:
+                return False
             return promo_code
         except cls.DoesNotExist:
             return False
