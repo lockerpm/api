@@ -197,8 +197,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             "number_code": 1,
             "description_en": "Locker PromoCode Reward",
             "description_vi": "Locker PromoCode Reward",
-            "only_user_id": user.user_id,
-            "only_period": DURATION_YEARLY
+            "only_user_id": user.user_id
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
 
@@ -208,6 +207,13 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
                 stripe.Coupon.create(
                     duration='once',
                     id="{}_yearly".format(promo_code_obj.id),
+                    percent_off=available_promo_code_value,
+                    name=code,
+                    redeem_by=expired_time
+                )
+                stripe.Coupon.create(
+                    duration='once',
+                    id="{}_monthly".format(promo_code_obj.id),
                     percent_off=available_promo_code_value,
                     name=code,
                     redeem_by=expired_time
