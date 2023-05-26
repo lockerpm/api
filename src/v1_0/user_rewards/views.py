@@ -10,7 +10,7 @@ from rest_framework.decorators import action
 
 from cystack_models.models import UserRewardMission, Mission, PromoCode
 from shared.constants.missions import *
-from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX
+from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX, DURATION_YEARLY
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_reward_mission_pwd_permission import UserRewardMissionPwdPermission
 from shared.utils.app import now, random_n_digit
@@ -197,7 +197,8 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             "number_code": 1,
             "description_en": "Locker PromoCode Reward",
             "description_vi": "Locker PromoCode Reward",
-            "only_user_id": user.user_id
+            "only_user_id": user.user_id,
+            "only_period": DURATION_YEARLY
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
 

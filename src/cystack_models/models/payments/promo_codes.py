@@ -76,6 +76,7 @@ class PromoCode(models.Model):
         description_en = data.get("description_en", "")
         description_vi = data.get("description_vi", "")
         only_user_id = data.get("only_user_id")
+        only_period = data.get("only_period")
 
         new_promo_code = cls(
             created_time=now(), expired_time=expired_time, remaining_times=number_code, code=code,
@@ -83,7 +84,8 @@ class PromoCode(models.Model):
             type=PromoCodeType.objects.get(name=promo_type),
             duration=duration, specific_duration=specific_duration,
             description_vi=description_vi, description_en=description_en,
-            only_user_id=only_user_id
+            only_user_id=only_user_id,
+            only_period=only_period
         )
         new_promo_code.save()
         return new_promo_code
