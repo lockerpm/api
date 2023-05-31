@@ -336,7 +336,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "payment_method": pm_current_plan.get_default_payment_method(),
             "number_members": pm_current_plan.get_current_number_members(),
             "is_family": user.pm_plan_family.exists(),
-            "personal_trial_applied": pm_current_plan.is_personal_trial_applied()
+            "personal_trial_applied": pm_current_plan.is_personal_trial_applied(),
+            "extra_time": pm_current_plan.extra_time,
+            "extra_plan": pm_current_plan.extra_plan or PLAN_TYPE_PM_PREMIUM if pm_current_plan.extra_time else None
         })
         return Response(status=200, data=result)
 
