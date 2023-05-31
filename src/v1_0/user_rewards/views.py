@@ -2,15 +2,17 @@ import json
 import os
 import stripe
 import stripe.error
+from django.conf import settings
 
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.decorators import action
 
 from cystack_models.models import UserRewardMission, Mission, PromoCode
 from shared.constants.missions import *
-from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX, DURATION_YEARLY
+from shared.constants.transactions import PROMO_PERCENTAGE, MISSION_REWARD_PROMO_PREFIX, DURATION_YEARLY, \
+    PLAN_TYPE_PM_PREMIUM, PLAN_TYPE_PM_FREE
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.user_reward_mission_pwd_permission import UserRewardMissionPwdPermission
 from shared.utils.app import now, random_n_digit
@@ -100,10 +102,6 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
         if not mission_factory:
             return Response(status=200, data={"claim": False})
         input_data = {"user": user, "user_identifier": user_identifier}
-        # if os.getenv("PROD_ENV") in ["prod"]:
-        #     mission_check = mission_factory.check_mission_completion(input_data)
-        # else:
-        #     mission_check = True
         mission_check = mission_factory.check_mission_completion(input_data)
         user_reward_mission.answer = json.dumps(answer)
         if not mission_check:
@@ -112,6 +110,22 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             return Response(status=200, data={"claim": False})
         user_reward_mission.status = USER_MISSION_STATUS_REWARD_SENT
         user_reward_mission.save()
+
+        # If the reward is premium time, upgrade the user plan immediately
+        if user_reward_mission.mission.reward_type == REWARD_TYPE_PREMIUM:
+            user_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            # Upgrade plan of the referred user if the plan is Free
+            if user_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
+                self.user_repository.update_plan(user=user_plan, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
+                    "start_period": now(),
+                    "end_period": now() + user_reward_mission.mission.reward_value,
+                })
+            # Else, update extra time
+            else:
+                user_plan.extra_time = F('extra_time') + user_reward_mission.mission.reward_value
+                if not user_plan.extra_plan:
+                    user_plan.extra_plan = user_plan.get_plan_type_alias()
+                user_plan.save()
 
         return Response(status=200, data={"claim": True})
 
