@@ -116,7 +116,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             user_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             # Upgrade plan of the referred user if the plan is Free
             if user_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
-                self.user_repository.update_plan(user=user_plan, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
+                self.user_repository.update_plan(user=user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, **{
                     "start_period": now(),
                     "end_period": now() + user_reward_mission.mission.reward_value,
                 })
