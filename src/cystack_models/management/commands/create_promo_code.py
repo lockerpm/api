@@ -57,6 +57,7 @@ class Command(BaseCommand):
         codes = []
         promo_type = PROMO_PERCENTAGE
         promo_type_obj = PromoCodeType.objects.get(name=promo_type)
+        promo_code_objs = []
         for code in codes:
 
             expired_time = 1704041999
@@ -66,7 +67,7 @@ class Command(BaseCommand):
             currency = "USD"
             description_en = "StackCommerce Lifetime code"
             description_vi = "StackCommerce Lifetime code"
-            new_promo_code = PromoCode.objects.create(
+            promo_code_objs.append(PromoCode(
                 created_time=now(),
                 expired_time=expired_time,
                 remaining_times=1,
@@ -80,6 +81,6 @@ class Command(BaseCommand):
                 description_vi=description_vi,
                 type=promo_type_obj,
                 is_saas_code=True
-            )
-            print(new_promo_code.id)
+            ))
+        PromoCode.objects.bulk_create(promo_code_objs, batch_size=200, ignore_conflicts=True)
         print(len(codes))

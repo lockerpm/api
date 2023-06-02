@@ -23,6 +23,7 @@ from cystack_models.models.notifications.notification_settings import Notificati
 
 # ------------------------- Payments --------------------------- #
 from cystack_models.models.payments.promo_code_types import PromoCodeType
+from cystack_models.models.payments.saas_market import SaasMarket
 from cystack_models.models.payments.promo_codes import PromoCode
 from cystack_models.models.payments.country import Country
 from cystack_models.models.payments.customers import Customer

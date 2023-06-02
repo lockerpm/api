@@ -204,3 +204,7 @@ class User(models.Model):
         elif code.startswith("PG-"):
             self.saas_source = "PitchGround"
         self.save()
+
+    def set_saas_source(self, saas_source: str):
+        self.saas_source = saas_source
+        self.save()
