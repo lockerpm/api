@@ -190,15 +190,26 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Update enterprise share groups
         self.user_repository.enterprise_share_groups_confirm(user=user)
         # Update lifetime mail
-        if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and user.saas_source:
-            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-                func_name="notify_locker_mail", **{
-                    "user_ids": [user.user_id],
-                    "job": "upgraded_to_lifetime_from_code",
-                    "scope": settings.SCOPE_PWD_MANAGER,
-                    "service_name": user.saas_source,
-                }
-            )
+        if user.saas_source:
+            if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME:
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                    func_name="notify_locker_mail", **{
+                        "user_ids": [user.user_id],
+                        "job": "upgraded_to_lifetime_from_code",
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "service_name": user.saas_source,
+                    }
+                )
+            else:
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                    func_name="notify_locker_mail", **{
+                        "user_ids": [user.user_id],
+                        "job": "upgraded_from_code_promo",
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "service_name": user.saas_source,
+                        "plan": current_plan.get_plan_type_name()
+                    }
+                )
 
         return Response(status=200, data={"success": True})
 
