@@ -186,7 +186,7 @@ class UpgradeTrialSerializer(serializers.Serializer):
 
 
 class UpgradeLifetimeSerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=16)
+    code = serializers.CharField(max_length=32)
 
     def validate(self, data):
         user = self.context['request'].user
