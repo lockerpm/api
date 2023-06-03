@@ -298,27 +298,38 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         self.user_repository.cancel_plan(user=user, immediately=True)
 
         plan_obj = validated_data.get("plan_obj")
+        if saas_code.saas_market.lifetime_duration is None:
+            saas_end_period = None
+        else:
+            if current_plan.personal_trial_applied is False:
+                saas_end_period = now() + saas_code.saas_market.lifetime_duration + TRIAL_PERSONAL_PLAN
+                current_plan.personal_trial_applied = True
+                current_plan.personal_trial_web_applied = True
+                current_plan.save()
+            else:
+                saas_end_period = now() + saas_code.saas_market.lifetime_duration
         plan_metadata = {
             "start_period": now(),
-            "end_period": None
+            "end_period": saas_end_period
         }
         self.user_repository.update_plan(
             user=user, plan_type_alias=plan_obj.get_alias(),
             duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
-        user.set_saas_source_by_code(code=saas_code.code)
+        user.set_saas_source(saas_source=saas_code.saas_market.name)
 
         # Send lifetime welcome mail
         user.refresh_from_db()
         if user.activated:
-            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-                func_name="notify_locker_mail", **{
-                    "user_ids": [user.user_id],
-                    "job": "upgraded_to_lifetime_from_code",
-                    "scope": settings.SCOPE_PWD_MANAGER,
-                    "service_name": user.saas_source,
-                }
-            )
+            if plan_obj.get_alias() == PLAN_TYPE_PM_LIFETIME:
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                    func_name="notify_locker_mail", **{
+                        "user_ids": [user.user_id],
+                        "job": "upgraded_to_lifetime_from_code",
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "service_name": user.saas_source,
+                    }
+                )
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)

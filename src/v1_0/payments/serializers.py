@@ -7,6 +7,7 @@ from cystack_models.models.user_plans.pm_plans import PMPlan
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.payments.promo_codes import PromoCode
 from shared.error_responses.error import gen_error
+from shared.log.cylog import CyLog
 from shared.utils.app import now
 
 
@@ -195,7 +196,12 @@ class UpgradeLifetimeSerializer(serializers.Serializer):
         if not saas_code:
             raise serializers.ValidationError(detail={"code": ["This code is expired or invalid"]})
         data["saas_code"] = saas_code
-        data["plan_obj"] = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
+        saas_plan_alias = saas_code.saas_plan or PLAN_TYPE_PM_LIFETIME
+        try:
+            data["plan_obj"] = PMPlan.objects.get(alias=saas_plan_alias)
+        except PMPlan.DoesNotExist:
+            CyLog.warning(**{"message": f"[!] Not found the saas plan of the {saas_code}"})
+            data["plan_obj"] = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
         return data
 
 

@@ -6,6 +6,7 @@ from django.db import models
 from shared.constants.transactions import *
 from shared.utils.app import now
 from cystack_models.models.payments.promo_code_types import PromoCodeType
+from cystack_models.models.payments.saas_market import SaasMarket
 from cystack_models.models.users.users import User
 
 
@@ -44,6 +45,8 @@ class PromoCode(models.Model):
     duration = models.IntegerField(default=1)  # Number of intervals for which the coupon repeatedly apply
     specific_duration = models.CharField(max_length=128, null=True, default=None)   # Specific duration type
     is_saas_code = models.BooleanField(default=False)
+    saas_market = models.ForeignKey(SaasMarket, on_delete=models.SET_NULL, related_name="promo_codes", null=True)
+    saas_plan = models.CharField(max_length=128, null=True, default=None)
     currency = models.CharField(max_length=8, default=CURRENCY_USD)
     description_en = models.TextField(default="", blank=True)
     description_vi = models.TextField(default="", blank=True)
@@ -77,6 +80,11 @@ class PromoCode(models.Model):
         description_vi = data.get("description_vi", "")
         only_user_id = data.get("only_user_id")
         only_period = data.get("only_period")
+        is_saas_code = data.get("is_saas_code", False)
+        saas_market_id = data.get("saas_market_id", None)
+        saas_plan = data.get("saas_plan")
+        if is_saas_code is True:
+            saas_plan = saas_plan or PLAN_TYPE_PM_LIFETIME
 
         new_promo_code = cls(
             created_time=now(), expired_time=expired_time, remaining_times=number_code, code=code,
@@ -85,7 +93,8 @@ class PromoCode(models.Model):
             duration=duration, specific_duration=specific_duration,
             description_vi=description_vi, description_en=description_en,
             only_user_id=only_user_id,
-            only_period=only_period
+            only_period=only_period,
+            is_saas_code=is_saas_code, saas_market_id=saas_market_id, saas_plan=saas_plan
         )
         new_promo_code.save()
         return new_promo_code
