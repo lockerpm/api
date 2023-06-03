@@ -301,7 +301,13 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if saas_code.saas_market.lifetime_duration is None:
             saas_end_period = None
         else:
-            saas_end_period = now() + saas_code.saas_market.lifetime_duration
+            if current_plan.personal_trial_applied is False:
+                saas_end_period = now() + saas_code.saas_market.lifetime_duration + TRIAL_PERSONAL_PLAN
+                current_plan.personal_trial_applied = True
+                current_plan.personal_trial_web_applied = True
+                current_plan.save()
+            else:
+                saas_end_period = now() + saas_code.saas_market.lifetime_duration
         plan_metadata = {
             "start_period": now(),
             "end_period": saas_end_period
