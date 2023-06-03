@@ -310,7 +310,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             user=user, plan_type_alias=plan_obj.get_alias(),
             duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
-        user.set_saas_source(code=saas_code.saas_market.name)
+        user.set_saas_source(saas_source=saas_code.saas_market.name)
 
         # Send lifetime welcome mail
         user.refresh_from_db()
