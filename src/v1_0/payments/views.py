@@ -330,6 +330,16 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                         "service_name": user.saas_source,
                     }
                 )
+            else:
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                    func_name="notify_locker_mail", **{
+                        "user_ids": [user.user_id],
+                        "job": "upgraded_from_code_promo",
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "service_name": user.saas_source,
+                        "plan": plan_obj.get_name()
+                    }
+                )
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
