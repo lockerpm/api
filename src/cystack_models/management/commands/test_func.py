@@ -37,14 +37,14 @@ class Command(BaseCommand):
             description_en = "DealFuel Premium code"
             description_vi = "DealFuel Premium code"
             code = ''.join([
-                random.choice(string.digits + string.ascii_lowercase + string.ascii_uppercase) for _ in range(8)
+                random.choice(string.digits + string.ascii_lowercase + string.ascii_uppercase) for _ in range(10)
             ])
             promo_code_objs.append(PromoCode(
                 created_time=now(),
                 expired_time=expired_time,
                 remaining_times=1,
                 valid=True,
-                code=f"DF-{code}",
+                code=f"DF-{code}-2023",
                 value=value,
                 limit_value=limit_value,
                 duration=duration,
@@ -65,14 +65,14 @@ class Command(BaseCommand):
             description_en = "DealFuel Family code"
             description_vi = "DealFuel Family code"
             code = ''.join([
-                random.choice(string.digits + string.ascii_lowercase + string.ascii_uppercase) for _ in range(8)
+                random.choice(string.digits + string.ascii_lowercase + string.ascii_uppercase) for _ in range(10)
             ])
             promo_code_objs.append(PromoCode(
                 created_time=now(),
                 expired_time=expired_time,
                 remaining_times=1,
                 valid=True,
-                code=f"DF-{code}",
+                code=f"DF-{code}-2023",
                 value=value,
                 limit_value=limit_value,
                 duration=duration,
