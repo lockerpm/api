@@ -300,6 +300,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         plan_obj = validated_data.get("plan_obj")
         if saas_code.saas_market.lifetime_duration is None:
             saas_end_period = None
+            upgrade_duration = DURATION_MONTHLY
         else:
             if current_plan.personal_trial_applied is False:
                 saas_end_period = now() + saas_code.saas_market.lifetime_duration + TRIAL_PERSONAL_PLAN
@@ -308,13 +309,14 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 current_plan.save()
             else:
                 saas_end_period = now() + saas_code.saas_market.lifetime_duration
+            upgrade_duration = DURATION_YEARLY
         plan_metadata = {
             "start_period": now(),
             "end_period": saas_end_period
         }
         self.user_repository.update_plan(
             user=user, plan_type_alias=plan_obj.get_alias(),
-            duration=DURATION_MONTHLY, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+            duration=upgrade_duration, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
         user.set_saas_source(saas_source=saas_code.saas_market.name)
 
