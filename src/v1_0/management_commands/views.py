@@ -322,8 +322,8 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
             ]
         else:
             try:
-                notion_vi = [notion_data[-1]]
-                notion_en = [notion_data[-2]]
+                notion_vi = [notion_data[1]]
+                notion_en = [notion_data[0]]
             except IndexError:
                 return {"success": False, "notification": False}
         try:
