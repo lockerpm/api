@@ -301,7 +301,7 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
         except (AttributeError, TypeError, ValueError):
             return None
 
-    def notify_marketing(self, alias):
+    def notify_marketing(self, alias, start_index=0):
         # Request to notion to get data
         url = f"https://notion.cystack.workers.dev/v1/table/{settings.NOTION_MARKETING_TABLE_ID}"
         try:
@@ -322,13 +322,13 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
             ]
         else:
             try:
-                notion_vi = [notion_data[1]]
-                notion_en = [notion_data[0]]
+                notion_en = [notion_data[start_index]]
+                notion_vi = [notion_data[start_index+1]]
             except IndexError:
                 return {"success": False, "notification": False}
         try:
-            notification_vi_data = notion_vi[0]
             notification_en_data = notion_en[0]
+            notification_vi_data = notion_vi[0]
         except IndexError:
             return {"success": False, "notification": False}
 
