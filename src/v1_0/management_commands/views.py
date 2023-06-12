@@ -301,7 +301,7 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
         except (AttributeError, TypeError, ValueError):
             return None
 
-    def notify_marketing(self, alias, start_index=0):
+    def notify_marketing(self, alias, start_index=0, user_ids=None):
         # Request to notion to get data
         url = f"https://notion.cystack.workers.dev/v1/table/{settings.NOTION_MARKETING_TABLE_ID}"
         try:
@@ -332,7 +332,8 @@ class ManagementCommandPwdViewSet(PasswordManagerViewSet):
         except IndexError:
             return {"success": False, "notification": False}
 
-        user_ids = list(User.objects.filter(activated=True).values_list('user_id', flat=True))
+        if user_ids is None:
+            user_ids = list(User.objects.filter(activated=True).values_list('user_id', flat=True))
         mail_user_ids = []
         # mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_PWD_TIP_TRICK, user_ids=user_ids)
         notification_user_ids = NotificationSetting.get_user_notification(
