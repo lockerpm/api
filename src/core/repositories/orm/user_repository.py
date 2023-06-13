@@ -688,6 +688,7 @@ class UserRepository(IUserRepository):
         user.user_devices.all().delete()
         user.folders.all().delete()
         user.ciphers.all().delete()
+        user.exclude_domains.all().delete()
         # user.delete()
 
         # We only soft-delete this user. The plan of user is still available (but it will be canceled at the end period)
