@@ -178,6 +178,16 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             notification_user_ids = NotificationSetting.get_user_notification(
                 category_id=NOTIFY_EMERGENCY_ACCESS, user_ids=[grantee_user_id]
             )
+            # Send mobile notification
+            self.send_mobile_notification(
+                notification_user_ids=notification_user_ids, event=FCM_TYPE_EMERGENCY_INVITE,
+                data={
+                    "id": emergency_access.id,
+                    "type": emergency_access.type,
+                    "grantor_name": request.data.get("grantor_fullname"),
+                    "is_grantee": True
+                }
+            )
 
         return Response(status=200, data={
             "id": emergency_access.id, "grantee_user_id": grantee_user_id, "grantee_email": emergency_access.email,
