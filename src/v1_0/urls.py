@@ -51,6 +51,13 @@ urlpatterns += [
 ]
 
 
+# ----------------------------------- Exclude domains ----------------------------- #
+urlpatterns += [
+    url(r'^exclude_domains$', views.ExcludeDomainPwdViewSet.as_view({'get': 'list', 'post': 'create'})),
+    url(r'^exclude_domains/(?P<pk>[a-z0-9\-]+)$',
+        views.ExcludeDomainPwdViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'})),
+]
+
 # ----------------------------------- Users ----------------------------- #
 urlpatterns += [
     url(r'^users/me$', views.UserPwdViewSet.as_view({'get': 'me', 'put': 'me'})),

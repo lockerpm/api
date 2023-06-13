@@ -9,6 +9,10 @@ from cystack_models.models.user_rewards.missions import Mission
 from cystack_models.models.user_rewards.user_reward_missions import UserRewardMission
 
 
+# ------------------------ Exclude Domains ------------------------ #
+from cystack_models.models.users.exclude_domains import ExcludeDomain
+
+
 # ------------------------- User Plan --------------------------- #
 from cystack_models.models.user_plans.plan_types import PlanType
 from cystack_models.models.user_plans.pm_plans import PMPlan
