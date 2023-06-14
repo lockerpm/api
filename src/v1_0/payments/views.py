@@ -368,7 +368,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "currency": CURRENCY_USD,
             "promo_code": promo_code_obj,
             "card": card,
-            "billing_cycle_anchor": now() + 3 * 30 * 86400      # Next 3 months
+            "billing_cycle_anchor": now() + 3 * 30 * 86400,     # Next 3 months
+            "billing_cycle_anchor_action": "set"
         }
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
