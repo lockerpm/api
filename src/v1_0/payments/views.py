@@ -25,7 +25,7 @@ from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer, \
-    UpgradeLifetimeSerializer
+    UpgradeLifetimeSerializer, UpgradeThreePromoSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -48,6 +48,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpgradeTrialSerializer
         elif self.action == "upgrade_lifetime":
             self.serializer_class = UpgradeLifetimeSerializer
+        elif self.action == "upgrade_three_promo":
+            self.serializer_class = UpgradeThreePromoSerializer
         elif self.action == "cancel_plan":
             self.serializer_class = CancelPlanSerializer
         
@@ -342,6 +344,63 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                         "plan": plan_obj.get_name()
                     }
                 )
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def upgrade_three_promo(self, request, *args, **kwargs):
+        user = self.request.user
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        if current_plan != PLAN_TYPE_PM_FREE:
+            raise ValidationError({"non_field_errors": [gen_error("7010")]})
+
+        card = request.data.get("card")
+        if not card:
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        if not card.get("id_card"):
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        promo_code_obj = validated_data.get("promo_code_obj", None)
+        duration = DURATION_MONTHLY
+        new_plan = PMPlan.objects.get(alias=PLAN_TYPE_PM_PREMIUM)
+        metadata = {
+            "currency": CURRENCY_USD,
+            "promo_code": promo_code_obj,
+            "card": card,
+            "billing_cycle_anchor": now() + 3 * 30 * 86400      # Next 3 months
+        }
+        # Calc payment price of new plan
+        promo_code_value = promo_code_obj.code if promo_code_obj else None
+        calc_payment = self._calc_payment(
+            new_plan, duration=DURATION_MONTHLY, currency=CURRENCY_USD, promo_code=promo_code_value
+        )
+        immediate_payment = calc_payment.get("immediate_payment")
+
+        payment = PaymentMethodFactory.get_method(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+        )
+        payment_result = payment.upgrade_recurring_subscription(
+            amount=immediate_payment, plan_type=new_plan.get_alias(), coupon=promo_code_obj, duration=duration,
+            **metadata
+        )
+
+        update_result = payment_result.get("success")
+        if update_result is False:
+            if payment_result.get("stripe_error"):
+                return Response(status=400, data={
+                    "code": "7009",
+                    "message": "Your card was declined (insufficient funds, etc...)",
+                    "details": payment_result.get("error_details")
+                })
+            raise ValidationError({"non_field_errors": [gen_error("7009")]})
+
+        # Set default payment method
+        try:
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
+        except ObjectDoesNotExist:
+            pass
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
