@@ -350,7 +350,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
     def upgrade_three_promo(self, request, *args, **kwargs):
         user = self.request.user
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        if current_plan != PLAN_TYPE_PM_FREE:
+        if current_plan.get_plan_type_alias() != PLAN_TYPE_PM_FREE:
             raise ValidationError({"non_field_errors": [gen_error("7010")]})
 
         card = request.data.get("card")
