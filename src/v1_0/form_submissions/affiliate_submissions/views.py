@@ -47,7 +47,14 @@ class AffiliateSubmissionPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         new_affiliate_submission = AffiliateSubmission(**validated_data)
         new_affiliate_submission.save()
-        return Response(status=201, data={"id": new_affiliate_submission.id})
+        return Response(status=201, data={
+            "id": new_affiliate_submission.id,
+            "full_name": new_affiliate_submission.full_name,
+            "email": new_affiliate_submission.email,
+            "phone": new_affiliate_submission.phone,
+            "company": new_affiliate_submission.company,
+            "country": new_affiliate_submission.country
+        })
 
     def update(self, request, *args, **kwargs):
         affiliate_submission = self.get_object()
