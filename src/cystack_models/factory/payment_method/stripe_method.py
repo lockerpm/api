@@ -116,7 +116,7 @@ class StripePaymentMethod(IPaymentMethod):
         # First, get current user plan
         current_plan = self.get_current_plan(**kwargs)
         stripe_subscription = current_plan.get_stripe_subscription()
-        # Create stripe subscription if does not exist
+        # Create stripe subscription if it does not exist
         if not stripe_subscription:
             return self.create_recurring_subscription(amount, plan_type, coupon, duration, **kwargs)
         # Upgrade existed plan

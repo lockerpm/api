@@ -47,7 +47,7 @@ class InvoiceWebhookSerializer(serializers.Serializer):
             stripe_subscription_obj = stripe.Subscription.retrieve(stripe_subscription_id)
             stripe_card_id = stripe_subscription_obj.default_payment_method
 
-        # If we dont have a payment with stripe_invoice_id => Create new one
+        # If we don't have a payment with stripe_invoice_id => Create new one
         if stripe_invoice_exist is False:
             user = user_repository.retrieve_or_create_by_id(user_id=validated_data["user_id"])
             validated_data["user"] = user

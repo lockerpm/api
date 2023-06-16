@@ -91,7 +91,6 @@ class UpgradePlanPublicSerializer(UpgradePlanSerializer):
     enterprise_postal_code = serializers.CharField(max_length=16, required=False, allow_blank=True)
 
 
-
 class BillingAddressSerializer(serializers.ModelSerializer):
     enterprise_name = serializers.CharField(max_length=128, required=False, allow_blank=True)
     enterprise_address1 = serializers.CharField(max_length=255, required=False, allow_blank=True)
