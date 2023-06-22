@@ -6,7 +6,7 @@ import schedule
 from django.conf import settings
 from django.db import close_old_connections
 from django.db.models import OuterRef, Count, IntegerField, When, Case, Sum, Value, F, FloatField, \
-    CharField, Subquery, Q
+    CharField, Subquery, Q, Min
 
 from cron.task import Task
 from cystack_models.models.users.users import User
@@ -150,6 +150,10 @@ class LockerStatistic(Task):
             )
         )
 
+        subquery_first_paid_date = User.objects.filter(user_id=OuterRef('user_id')).annotate(
+            first_paid_date=Min('payments__created_time', filter=Q(payments__total_price__gt=0, payments__discount=0))
+        )
+
         subquery_paid_platforms = User.objects.filter(user_id=OuterRef('user_id')).annotate(
             web_paid_count=Count(
                 Case(
@@ -257,6 +261,10 @@ class LockerStatistic(Task):
                 subquery_user_payments.values_list('paid_money', flat=True)
             )
         ).annotate(
+            first_payment_date=Subquery(
+                subquery_first_paid_date.values_list('first_paid_date', flat=True)
+            )
+        ).annotate(
             web_paid_count=Subquery(
                 subquery_paid_platforms.values_list('web_paid_count', flat=True)
             ),
@@ -359,6 +367,7 @@ class LockerStatistic(Task):
                 "lk_referral_count": user_from_id_data.get("lk_referral_count") or 0,
                 "utm_source": user_from_id_data.get("utm_source"),
                 "paid_money": user.paid_money,
+                "first_payment_date": datetime_from_ts(user.first_payment_date),
                 "paid_platforms": paid_platforms_str,
                 "personal_trial_mobile_applied": personal_trial_mobile_applied,
                 "personal_trial_web_applied": personal_trial_web_applied

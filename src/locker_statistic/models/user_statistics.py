@@ -41,6 +41,7 @@ class UserStatistic(models.Model):
     lk_plan = models.CharField(max_length=64, default=PLAN_TYPE_PM_FREE)
     utm_source = models.CharField(max_length=128, blank=True, null=True, default=None)
     paid_money = models.FloatField(default=0)
+    first_payment_date = models.DateTimeField(null=True)
     paid_platforms = models.CharField(max_length=128, blank=True, null=True, default=None)
     lk_referral_count = models.IntegerField(default=0)
     personal_trial_mobile_applied = models.BooleanField(default=False)
