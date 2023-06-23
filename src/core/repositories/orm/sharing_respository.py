@@ -304,9 +304,6 @@ class SharingRepository(ISharingRepository):
             new_sharing.revision_date = now()
             new_sharing.save()
 
-            from shared.log.cylog import CyLog
-            CyLog.debug(**{"message": f"[!] Create new sharing: {new_sharing.id} {new_sharing.name}"})
-
             # Save owner key for primary member
             primary_member = new_sharing.team_members.get(user=user)
             primary_member.key = sharing_key
