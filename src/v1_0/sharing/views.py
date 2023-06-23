@@ -227,6 +227,9 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             )
         except ValidationError as e:
             raise e
+
+        from shared.log.cylog import CyLog
+        CyLog.debug(**{"message": f"[+] Sharing results: {share_result}"})
         new_sharing = share_result.get("new_sharing")
         existed_member_users = share_result.get("existed_member_users")
         non_existed_member_users = share_result.get("non_existed_member_users")
