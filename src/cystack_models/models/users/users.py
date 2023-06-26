@@ -85,7 +85,7 @@ class User(models.Model):
 
     def check_master_password(self, raw_password):
         """
-        Return a boolean of whether the raw_password was correct. Handles
+        Return a bool of whether the raw_password was correct. Handles
         hashing formats behind the scenes.
         """
         def setter(raw):
@@ -93,6 +93,9 @@ class User(models.Model):
             # Password hash upgrades shouldn't be considered password changes.
             self._password = None
             self.save(update_fields=["master_password"])
+        # The account is not activated
+        if not self.master_password:
+            return False
         return check_password(raw_password, self.master_password, setter)
 
     def to_json_user_data(self, contain_user_id=False):
