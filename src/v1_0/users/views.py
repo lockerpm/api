@@ -238,14 +238,15 @@ class UserPwdViewSet(PasswordManagerViewSet):
     def me(self, request, *args, **kwargs):
         user = self.request.user
         if request.method == "GET":
-            utm_source = self.request.query_params.get("utm_source")
+            utm_source_param = self.request.query_params.get("utm_source")
+            show_key_param = self.request.query_params.get("show_key", "0")
             block_by_source = False
-            if utm_source in LIST_UTM_SOURCE_PROMOTIONS:
+            if utm_source_param in LIST_UTM_SOURCE_PROMOTIONS:
                 if user.payments.filter(status=PAYMENT_STATUS_PAID).exists() is False:
                     block_by_source = True
             user_type = self.user_repository.get_user_type(user_id=user.user_id)
             pm_current_plan = self.user_repository.get_current_plan(user=user).get_plan_type_alias()
-            return Response(status=200, data={
+            me_data = {
                 "timeout": user.timeout,
                 "timeout_action": user.timeout_action,
                 "is_pwd_manager": user.activated,
@@ -253,7 +254,14 @@ class UserPwdViewSet(PasswordManagerViewSet):
                 "pwd_user_id": str(user.user_id),
                 "pwd_user_type": user_type,
                 "pwd_plan": pm_current_plan
-            })
+            }
+            if show_key_param == "1":
+                me_data.update({
+                    "key": user.key,
+                    "public_key": user.public_key,
+                    "private_key": user.private_key
+                })
+            return Response(status=200, data=me_data)
 
         elif request.method == "PUT":
             timeout = request.data.get("timeout", user.timeout)
@@ -521,7 +529,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def fcm_id(self, request, *args, **kwargs):
-        self.check_pwd_session_auth(request=request)
+        # self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
