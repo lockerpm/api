@@ -10,6 +10,8 @@ class ReleasePwdPermission(LockerPermission):
             auth_header = request.META.get("HTTP_AUTHORIZATION")
             return token == settings.MANAGEMENT_COMMAND_TOKEN or \
                    auth_header == f"Token {settings.MANAGEMENT_COMMAND_TOKEN}"
+        elif view.action in ["current_version"]:
+            return True
         return self.is_auth(request) and request.user.activated
 
     def has_object_permission(self, request, view, obj):
