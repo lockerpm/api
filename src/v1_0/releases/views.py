@@ -19,7 +19,7 @@ class ReleasePwdViewSet(PasswordManagerViewSet):
             self.serializer_class = NextReleaseSerializer
         return super(ReleasePwdViewSet, self).get_serializer_class()
 
-    @action(methods=["post"], detail=False)
+    @action(methods=["get", "post"], detail=False)
     def current(self, request, *args, **kwargs):
         if request.method == "GET":
             client_id = self.request.query_params.get("client_id", CLIENT_ID_DESKTOP)
@@ -113,3 +113,16 @@ class ReleasePwdViewSet(PasswordManagerViewSet):
         })
         return Response(status=200, data={"version": new_release.version, "environment": new_release.environment})
 
+    @action(methods=["get"], detail=False)
+    def current_version(self, request, *args, **kwargs):
+        client_id = self.request.query_params.get("client_id", CLIENT_ID_DESKTOP)
+        environment = self.request.query_params.get("environment", "prod")
+        latest_release = Release.objects.filter(
+            client_id=client_id, environment=environment
+        ).order_by('-id').first()
+        if not latest_release:
+            return Response(status=200, data={"version": "1.0.0", "environment": environment})
+        return Response(status=200, data={
+            "version": latest_release.version,
+            "environment": latest_release.environment
+        })
