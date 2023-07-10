@@ -741,6 +741,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 raise ValidationError(detail={"folder": ["The folder does not exist"]})
             # Check the list folder_ciphers in the folder
             collection_ciphers_obj = collection_obj.collections_ciphers.values_list('cipher_id', flat=True)
+            if collection_ciphers_obj and not folder_ciphers:
+                raise ValidationError(detail={"folder": ["The ciphers is not allow empty"]})
             for folder_cipher in folder_ciphers:
                 if folder_cipher.get("id") not in list(collection_ciphers_obj):
                     raise ValidationError(detail={"folder": [
@@ -963,6 +965,8 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             raise ValidationError(detail={"folder": ["The folder does not exist"]})
         # Check the list folder_ciphers in the folder
         collection_ciphers_obj = collection_obj.collections_ciphers.values_list('cipher_id', flat=True)
+        if collection_ciphers_obj and not folder_ciphers:
+            raise ValidationError(detail={"folder": ["The ciphers is not allow empty"]})
         for folder_cipher in folder_ciphers:
             if folder_cipher.get("id") not in list(collection_ciphers_obj):
                 raise ValidationError(detail={"folder": [
