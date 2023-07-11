@@ -7,7 +7,7 @@ build_staging:
   script:
     - cystack-deployer
   tags:
-    - cs_responding
+    - cs_newgen
   only:
     - develop
     - tags
@@ -17,7 +17,7 @@ deploy_staging:
   script:
     - cystack-deployer
   tags:
-    - cs_responding
+    - cs_newgen
   only:
     - develop
     - tags
@@ -28,7 +28,7 @@ build:
     - pwd
     - cystack-deployer
   tags:
-    - cs_responding
+    - cs_newgen
   only:
     - main
     - tags
@@ -38,7 +38,7 @@ deploy:
   script:
     - cystack-deployer
   tags:
-    - cs_responding
+    - cs_newgen
   only:
     - main
     - tags
