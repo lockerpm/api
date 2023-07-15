@@ -352,10 +352,17 @@ class CipherRepository(ICipherRepository):
         )
         # Restore all cipher by setting deleted_date as null
         restored_cipher_ids = list(ciphers.values_list('id', flat=True))
+        user_folder_ids = list(user_restored.folders.values_list('id', flat=True))
         for cipher in ciphers:
             cipher.revision_date = current_time
             cipher.deleted_date = None
-        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_date'], batch_size=100)
+            folders = cipher.get_folders()
+            cipher_user_folder_id = folders.get(user_restored.user_id)
+            if cipher_user_folder_id and cipher_user_folder_id not in user_folder_ids:
+                folders[user_restored.user_id] = None
+                cipher.folders = folders
+
+        Cipher.objects.bulk_update(ciphers, ['revision_date', 'deleted_date', 'folders'], batch_size=100)
 
         # Bump revision date: teams and user
         teams = ciphers.exclude(team__isnull=True).values_list('team', flat=True)

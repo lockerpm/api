@@ -1,4 +1,5 @@
 import ast
+import json
 import uuid
 import requests
 
@@ -12,6 +13,7 @@ from shared.constants.account import DEFAULT_KDF_ITERATIONS, LOGIN_METHOD_PASSWO
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.policy import POLICY_TYPE_PASSWORDLESS
 from shared.external_request.requester import requester, RequesterError
+from shared.log.cylog import CyLog
 from shared.utils.app import now
 
 
@@ -169,10 +171,18 @@ class User(models.Model):
         """
         url = "{}/micro_services/users/{}".format(settings.GATEWAY_API, self.user_id)
         headers = {'Authorization': settings.MICRO_SERVICE_USER_AUTH}
-        res = requester(method="GET", url=url, headers=headers)
-        if res.status_code == 200:
-            return res.json()
-        return {}
+        try:
+            res = requester(method="GET", url=url, headers=headers)
+            if res.status_code == 200:
+                try:
+                    return res.json()
+                except json.JSONDecodeError:
+                    CyLog.error(**{"message": f"[!] User.get_from_cystack_id JSON Decode error: {res.url} {res.text}"})
+                    return {}
+            return {}
+        except (requests.RequestException, requests.ConnectTimeout):
+            return {}
+
 
     def is_active_enterprise_member(self):
         return self.enterprise_members.filter(
