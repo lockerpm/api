@@ -140,8 +140,9 @@ class MobilePaymentViewSet(MicroServiceViewSet):
                     "duration": TRIAL_PERSONAL_DURATION_TEXT
                 }
             )
+        payment_platform = "iOS" if "ios" in request.path else "Android"
         LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-            func_name="pay_successfully", **{"payment": new_payment}
+            func_name="pay_successfully", **{"payment": new_payment, "payment_platform": payment_platform}
         )
 
         return Response(status=200, data={
@@ -174,7 +175,7 @@ class MobilePaymentViewSet(MicroServiceViewSet):
         if mobile_invoice_id:
             mobile_invoice_exist = Payment.objects.filter(mobile_invoice_id=mobile_invoice_id).exists()
 
-        # If we done have any payment with mobile_invoice_id => Create new one
+        # If we don't have any payment with mobile_invoice_id => Create new one
         if mobile_invoice_exist is False:
             new_payment_data = {
                 "user": user,
@@ -231,7 +232,7 @@ class MobilePaymentViewSet(MicroServiceViewSet):
                 self.payment_repository.set_paid(payment=new_payment)
                 # Send mail
                 LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
-                    func_name="pay_successfully", **{"payment": new_payment}
+                    func_name="pay_successfully", **{"payment": new_payment, "payment_platform": platform.title()}
                 )
         elif status == PAYMENT_STATUS_PAST_DUE:
             self.payment_repository.set_past_due(payment=new_payment, failure_reason=failure_reason)

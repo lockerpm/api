@@ -18,8 +18,6 @@ class UpgradePlanSerializer(serializers.Serializer):
     paid = serializers.BooleanField(default=True)
     duration = serializers.ChoiceField(choices=LIST_DURATION, required=False, default=DURATION_MONTHLY)
     plan = serializers.CharField()
-    # total = serializers.FloatField(required=False)
-    # subtotal = serializers.FloatField(required=False)
     platform = serializers.ChoiceField(choices=["ios", "android"])
     mobile_invoice_id = serializers.CharField(required=False, allow_null=True)
     mobile_original_id = serializers.CharField(required=False, allow_null=True)
