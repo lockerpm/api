@@ -112,10 +112,11 @@ class NotifyBackground(ILockerBackground):
             if self.background:
                 connection.close()
 
-    def pay_successfully(self, payment):
+    def pay_successfully(self, payment, payment_platform="Stripe"):
         """
         Notify when a payment invoice was paid
         :param payment: (obj) Payment invoice
+        :param payment_platform: (str)
         :return:
         """
         url = API_NOTIFY_PAYMENT + "/notify_payment_success"
@@ -153,7 +154,8 @@ class NotifyBackground(ILockerBackground):
                 "plan": payment.plan,
                 "customer": payment.get_customer_dict(),
                 "payment_method": payment.payment_method,
-                "payment_data": payment_data
+                "payment_data": payment_data,
+                "payment_platform": payment_platform
             }
             requester(method="POST", url=url, headers=HEADERS, data_send=notification_data)
 
