@@ -39,7 +39,7 @@ class ToolPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         email = validated_data.get("email")
         # Request to https://haveibeenpwned.com/api/v3/breachedaccount
-        hibp_check = HibpService().check_breach(email=email)
+        hibp_check = HibpService(retries_number=1).check_breach(email=email)
         if not hibp_check:
             return Response(status=200, data=[])
         hibp_check = camel_snake_data(hibp_check, camel_to_snake=True)
@@ -51,7 +51,7 @@ class ToolPwdViewSet(PasswordManagerViewSet):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         email = validated_data.get("email")
-        hibp_check = HibpService().check_breach(email=email)
+        hibp_check = HibpService(retries_number=1).check_breach(email=email)
         if not hibp_check:
             return Response(status=200, data=[])
         hibp_check = camel_snake_data(hibp_check, camel_to_snake=True)

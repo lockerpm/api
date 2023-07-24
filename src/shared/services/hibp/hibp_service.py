@@ -10,7 +10,7 @@ from shared.log.cylog import CyLog
 
 HIBP_API = "https://haveibeenpwned.com/api/v3/breachedaccount/{}?truncateResponse=false&includeUnverified=false"
 HEADERS = {
-    'User-agent': 'CyStack Locker',
+    # 'User-agent': 'CyStack Locker',
     "hibp-api-key": settings.HIBP_API_KEY
 }
 
