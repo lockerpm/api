@@ -838,7 +838,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     ]})
             folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
-        removed_members_user_id = self.sharing_repository.stop_share_all_members(
+        removed_members_user_id, personal_folder_id = self.sharing_repository.stop_share_all_members(
             team=personal_share,
             cipher=cipher_obj, cipher_data=personal_cipher_data,
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
@@ -852,7 +852,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         if collection_obj:
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_members_user_id).send()
 
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={"success": True, "personal_folder_id": personal_folder_id})
 
     @action(methods=["post"], detail=False)
     def add_member(self, request, *args, **kwargs):
@@ -974,13 +974,13 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                 ]})
         folder_ciphers = json.loads(json.dumps(folder_ciphers))
 
-        removed_members_user_id = self.sharing_repository.stop_share_all_members(
+        removed_members_user_id, personal_folder_id = self.sharing_repository.stop_share_all_members(
             team=personal_share,
             collection=collection_obj, personal_folder_name=folder_name, personal_folder_ciphers=folder_ciphers
         )
         PwdSync(event=SYNC_EVENT_MEMBER_REMOVE, user_ids=[user.user_id] + removed_members_user_id).send()
         PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_members_user_id).send()
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={"success": True, "personal_folder_id": personal_folder_id})
 
     @action(methods=["post"], detail=False)
     def add_item_share_folder(self, request, *args, **kwargs):
