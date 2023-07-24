@@ -106,12 +106,14 @@ class SharingRepository(ISharingRepository):
         other_members = list(team.team_members.exclude(user=user_owner).values_list('user_id', flat=True))
 
         # If the team shared a folder
+        personal_folder_id = None
         if collection:
             # Create personal folder of the owner
             personal_folder = Folder(
                 name=personal_folder_name, user=user_owner, creation_date=now(), revision_date=now()
             )
             personal_folder.save()
+            personal_folder_id = personal_folder.id
             # Get all ciphers of the shared team
             shared_folder_cipher_ids = [cipher["id"] for cipher in personal_folder_ciphers]
             ciphers = team.ciphers.filter(id__in=shared_folder_cipher_ids)
@@ -140,7 +142,7 @@ class SharingRepository(ISharingRepository):
 
         # Update revision date of user
         bump_account_revision_date(user=user_owner)
-        return other_members
+        return other_members, personal_folder_id
 
     def stop_share(self, member: TeamMember = None, group: Group = None,
                    cipher=None, cipher_data=None,
