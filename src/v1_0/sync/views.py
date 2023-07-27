@@ -37,6 +37,17 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
+    def get_collection_obj(self):
+        user = self.request.user
+        try:
+            collections = self.collection_repository.get_multiple_user_collections(
+                user=user, exclude_team_ids=[]
+            ).select_related('team')
+            collection = collections.get(id=self.kwargs.get("pk"))
+            return collection
+        except ObjectDoesNotExist:
+            raise NotFound
+
     @action(methods=["get"], detail=False)
     def sync(self, request, *args, **kwargs):
         user = self.request.user
@@ -126,6 +137,15 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         self.check_pwd_session_auth(request=request)
         folder = self.get_folder_obj()
         serializer = SyncFolderSerializer(folder, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_collection_detail(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        collection = self.get_collection_obj()
+        serializer = SyncCollectionSerializer(collection, many=True, context={"user": user}).data
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         return Response(status=200, data=result)
 

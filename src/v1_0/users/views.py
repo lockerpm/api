@@ -358,10 +358,6 @@ class UserPwdViewSet(PasswordManagerViewSet):
             error_detail["wait"] = wait
             return Response(status=400, data=error_detail)
 
-        # user_teams = list(self.team_repository.get_multiple_team_by_user(
-        #     user=user, status=PM_MEMBER_STATUS_CONFIRMED, personal_share=False
-        # ).values_list('id', flat=True))
-
         user_enterprises = Enterprise.objects.filter(
             enterprise_members__user=user, enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
         )
