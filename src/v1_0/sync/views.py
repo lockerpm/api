@@ -145,7 +145,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
         collection = self.get_collection_obj()
-        serializer = SyncCollectionSerializer(collection, many=False, context={"user": user}).data
+        serializer = SyncCollectionSerializer(collection, many=False, context={"user": user})
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         return Response(status=200, data=result)
 
