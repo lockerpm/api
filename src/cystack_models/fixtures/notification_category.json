@@ -26,7 +26,7 @@
     "fields": {
       "id": "item_sharing",
       "name": "Item sharing",
-      "name_vi": "Chia sẻ item",
+      "name_vi": "Chia sẻ mục",
       "notification": true,
       "mail": true,
       "order_number": 4
