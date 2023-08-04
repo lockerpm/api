@@ -10,6 +10,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cystack_models.models import Enterprise
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.caching.sync_cache import delete_sync_cache_data
 from shared.constants.ciphers import MAP_CIPHER_TYPE_STR
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
 from shared.constants.event import EVENT_ITEM_SHARE_CREATED
@@ -133,6 +134,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     shared_type_name = share_cipher.type
                     item_id = share_cipher.id
                     cipher_id = item_id
+                    delete_sync_cache_data(user_id=user.user_id)
                     PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id]).send(data={"id": share_cipher.id})
             # Else, share a folder
             else:
@@ -141,6 +143,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
                     shared_type_name = "folder"
                     item_id = share_collection.id
                     folder_id = item_id
+                    delete_sync_cache_data(user_id=user.user_id)
                     PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(
                         data={"id": share_collection.id}
                     )
@@ -238,6 +241,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             if cipher_obj:
                 shared_type_name = cipher_obj.type
                 cipher_id = cipher_obj.id
+                delete_sync_cache_data(user_id=user.user_id)
                 PwdSync(
                     event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=new_sharing, add_all=True
                 ).send(data={"id": cipher_obj.id})
@@ -245,6 +249,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
             shared_type_name = "folder"
             share_collection = new_sharing.collections.first()
             folder_id = share_collection.id if share_collection else None
+            delete_sync_cache_data(user_id=user.user_id)
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id], team=new_sharing, add_all=True).send()
 
         mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
@@ -783,10 +788,12 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         # If share a cipher
         if team.collections.all().exists() is False:
             share_cipher = team.ciphers.first()
+            delete_sync_cache_data(user_id=member_user_id)
             PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[member_user_id]).send(data={"id": share_cipher.id})
         # Else, share a folder
         else:
             share_collection = team.collections.first()
+            delete_sync_cache_data(user_id=user.user_id)
             PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id]).send(data={"id": share_collection.id})
 
         return Response(status=200, data={"success": True})
@@ -897,7 +904,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         name = validated_data.get("name")
         collection = self.collection_repository.save_update_collection(collection=collection, name=name)
-
+        delete_sync_cache_data(user_id=user.user_id)
         PwdSync(event=SYNC_EVENT_COLLECTION_UPDATE, user_ids=[user.user_id], team=personal_share, add_all=True).send(
             data={"id": collection.id}
         )
@@ -1015,7 +1022,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         cipher = self.cipher_repository.save_share_cipher(cipher=cipher_obj, cipher_data=cipher_data)
         collection_obj.revision_date = now()
         collection_obj.save()
-
+        delete_sync_cache_data(user_id=user.user_id)
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[user.user_id],
@@ -1056,7 +1063,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         cipher = self.cipher_repository.save_share_cipher(cipher=cipher_obj, cipher_data=cipher_data)
         collection_obj.revision_date = now()
         collection_obj.save()
-
+        delete_sync_cache_data(user_id=user.user_id)
         PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=personal_share, add_all=True).send(
             data={"id": cipher.id}
         )

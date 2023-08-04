@@ -7,8 +7,8 @@ from rest_framework.exceptions import NotFound, ValidationError, PermissionDenie
 
 from core.utils.data_helpers import camel_snake_data
 from shared.background import LockerBackgroundFactory, BG_CIPHER
+from shared.caching.sync_cache import delete_sync_cache_data
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD, IMMUTABLE_CIPHER_TYPES
-from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
@@ -75,8 +75,10 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Then, we update revision date of user (personal or members of the organization)
         # If cipher belongs to the organization, we also update collections of the cipher.
         new_cipher = self.cipher_repository.save_new_cipher(cipher_data=cipher_detail)
+        # Clear sync data
+        delete_sync_cache_data(user_id=user.user_id)
         # Send sync message
-        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[request.user.user_id], team=team, add_all=True).send(
+        PwdSync(event=SYNC_EVENT_CIPHER_UPDATE, user_ids=[user.user_id], team=team, add_all=True).send(
             data={"id": str(new_cipher.id)}
         )
         # Create event
@@ -96,19 +98,13 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         cipher_ids = validated_data.get("ids")
 
+        # Clear sync data
+        delete_sync_cache_data(user_id=user.user_id)
+
         # Check permission of user and update deleted_date of the ciphers here
         LockerBackgroundFactory.get_background(bg_name=BG_CIPHER).run(func_name="multiple_delete", **{
             "cipher_ids": cipher_ids, "user": request.user
         })
-
-        # # Check permission of user and update deleted_date of the ciphers here
-        # deleted_cipher_ids = self.cipher_repository.delete_multiple_cipher(
-        #     cipher_ids=cipher_ids, user_deleted=request.user
-        # )
-        # # Sync event
-        # deleted_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=deleted_cipher_ids)
-        # teams = self.team_repository.get_multiple_team_by_ids(deleted_ciphers.values_list('team_id', flat=True))
-        # PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
 
         # Log: team's event
         # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
@@ -135,6 +131,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # Then delete all them and bump revision date of users
         # Finally, we send sync event to all relational users
         self.cipher_repository.delete_permanent_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
+        delete_sync_cache_data(user_id=user.user_id)
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
 
         # Log: Team's event
@@ -154,6 +151,8 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         cipher_ids = validated_data.get("ids")
 
+        # Clear sync data
+        delete_sync_cache_data(user_id=user.user_id)
         # We will check permission and set deleted_date of cipher to null
         # Then bump revision date of users and send sync event to all relational users
         LockerBackgroundFactory.get_background(bg_name=BG_CIPHER).run(func_name="multiple_restore", **{
@@ -209,6 +208,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         cipher_detail.pop("team", None)
         cipher_detail = json.loads(json.dumps(cipher_detail))
         cipher = self.cipher_repository.save_update_cipher(cipher=cipher, cipher_data=cipher_detail)
+        delete_sync_cache_data(user_id=request.user.user_id)
         PwdSync(
             event=SYNC_EVENT_CIPHER_UPDATE,
             user_ids=[request.user.user_id],
@@ -217,7 +217,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         ).send(data={"id": cipher.id})
         data = SyncCipherSerializer(cipher, many=False, context={"user": request.user}).data
         return Response(status=200, data=camel_snake_data(data, snake_to_camel=True))
-        return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
     def cipher_use(self, request, *args, **kwargs):
@@ -243,7 +242,6 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         ).send(data={"id": cipher.id})
         data = SyncCipherSerializer(cipher, many=False, context={"user": request.user}).data
         return Response(status=200, data=camel_snake_data(data, snake_to_camel=True))
-        return Response(status=200, data={"id": cipher.id})
 
     @action(methods=["put"], detail=False)
     def multiple_move(self, request, *args, **kwargs):
@@ -255,6 +253,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         folder_id = validated_data.get("folderId")
 
         self.cipher_repository.move_multiple_cipher(cipher_ids=cipher_ids, user_moved=request.user, folder_id=folder_id)
+        delete_sync_cache_data(user_id=request.user.user_id)
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
 
@@ -262,6 +261,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     def import_data(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
+        delete_sync_cache_data(user_id=user.user_id)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -279,6 +279,7 @@ class CipherPwdViewSet(PasswordManagerViewSet):
     def sync_offline(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
+        delete_sync_cache_data(user_id=user.user_id)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -288,35 +289,3 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         self.cipher_repository.sync_personal_cipher_offline(user, ciphers, folders, folder_relationships)
         PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
         return Response(status=200, data={"success": True})
-
-    # --------------- DEPRECATED ---------------- #
-    # @action(methods=["put"], detail=False)
-    # def share(self, request, *args, **kwargs):
-    #     user = self.request.user
-    #     ip = request.data.get("ip")
-    #     self.check_pwd_session_auth(request=request)
-    #     cipher = self.get_object()
-    #     if cipher.team_id:
-    #         raise ValidationError({"non_field_errors": [gen_error("5000")]})
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     team = serializer.validated_data.get("team")
-    #     cipher_detail = serializer.save()
-    #     cipher_detail.pop("team", None)
-    #     cipher_detail = json.loads(json.dumps(cipher_detail))
-    #     cipher = self.cipher_repository.save_share_cipher(cipher=cipher, cipher_data=cipher_detail)
-    #     PwdSync(
-    #         event=SYNC_EVENT_CIPHER_UPDATE,
-    #         user_ids=[request.user.user_id],
-    #         team=team,
-    #         add_all=True
-    #     ).send(data={"id": cipher.id})
-    #     return Response(status=200, data={"id": cipher.id})
-
-    # --------------- DEPRECATED ---------------- #
-    # @action(methods=["get"], detail=False)
-    # def share_members(self, request, *args, **kwargs):
-    #     self.check_pwd_session_auth(request=request)
-    #     cipher = self.get_object()
-    #     cipher_members = self.cipher_repository.get_cipher_members(cipher=cipher)
-    #     return Response(status=200, data=cipher_members)
