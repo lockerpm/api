@@ -121,6 +121,46 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=sync_data)
 
     @action(methods=["get"], detail=False)
+    def sync_count(self, request, *args, **kwargs):
+        user = self.request.user
+        self.check_pwd_session_auth(request=request)
+        # Check team policies
+        block_team_ids = []
+        # Check the login method to exclude
+        exclude_types = []
+        if user.login_method == LOGIN_METHOD_PASSWORDLESS:
+            exclude_types = [CIPHER_TYPE_MASTER_PASSWORD]
+
+        ciphers = self.cipher_repository.get_multiple_by_user(
+            user=user, exclude_team_ids=block_team_ids, exclude_types=exclude_types
+        ).order_by('-revision_date')
+        total_cipher = ciphers.count()
+        not_deleted_ciphers = ciphers.filter(deleted_date__isnull=True)
+        not_deleted_ciphers_statistic = not_deleted_ciphers.values('type').annotate(
+            count=Count('type')
+        ).order_by('-count')
+        not_deleted_ciphers_count = {item["type"]: item["count"] for item in list(not_deleted_ciphers_statistic)}
+        total_folders = self.folder_repository.get_multiple_by_user(user=user).count()
+        total_collections = self.collection_repository.get_multiple_user_collections(
+            user=user, exclude_team_ids=block_team_ids
+        ).count()
+
+        sync_count_data = {
+            "object": "sync_count",
+            "count": {
+                "ciphers": total_cipher,
+                "not_deleted_ciphers": {
+                    "total": not_deleted_ciphers.count(),
+                    "ciphers": not_deleted_ciphers_count
+                },
+                "folders": total_folders,
+                "collections": total_collections
+            }
+        }
+        sync_count_data = camel_snake_data(sync_count_data, snake_to_camel=True)
+        return Response(status=200, data=sync_count_data)
+
+    @action(methods=["get"], detail=False)
     def sync_cipher_detail(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
