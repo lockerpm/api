@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count
@@ -6,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from core.utils.data_helpers import camel_snake_data
+from shared.caching.sync_cache import get_sync_cache_key, SYNC_CACHE_TIMEOUT
 from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD
 from shared.permissions.locker_permissions.sync_pwd_permission import SyncPwdPermission
@@ -56,10 +58,12 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         paging_param = self.request.query_params.get("paging", "0")
         page_size_param = self.check_int_param(self.request.query_params.get("size", 50))
         page_param = self.check_int_param(self.request.query_params.get("page", 1))
-        # if paging_param == "0":
-        #     self.pagination_class = None
-        # else:
-        #     self.pagination_class.page_size = page_size_param if page_size_param else 50
+
+        # Get sync data from cache
+        cache_key = get_sync_cache_key(user_id=user.user_id, page=page_param, size=page_size_param)
+        response_cache_data = cache.get(cache_key)
+        if response_cache_data:
+            return Response(status=200, data=response_cache_data)
 
         policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('enterprise')
         # Check team policies
@@ -118,6 +122,7 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             "sends": []
         }
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)
+        cache.set(cache_key, sync_data, SYNC_CACHE_TIMEOUT)
         return Response(status=200, data=sync_data)
 
     @action(methods=["get"], detail=False)

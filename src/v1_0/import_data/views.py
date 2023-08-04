@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
+from shared.caching.sync_cache import delete_sync_cache_data
 from shared.permissions.locker_permissions.import_pwd_permission import ImportPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT
 from v1_0.import_data.serializers import ImportFolderSerializer, ImportCipherSerializer
@@ -27,7 +28,8 @@ class ImportDataPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         folders = validated_data.get("folders", [])
         folder_ids = self.folder_repository.import_multiple_folders(user=user, folders=folders)
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
+        delete_sync_cache_data(user_id=user.user_id)
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id]).send()
 
         return Response(status=200, data={"ids": folder_ids})
 
@@ -42,6 +44,7 @@ class ImportDataPwdViewSet(PasswordManagerViewSet):
         allow_cipher_type = self.user_repository.get_max_allow_cipher_type(user=user)
 
         self.cipher_repository.import_multiple_ciphers(user=user, ciphers=ciphers, allow_cipher_type=allow_cipher_type)
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id]).send()
+        delete_sync_cache_data(user_id=user.user_id)
+        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id]).send()
         return Response(status=200, data={"success": True})
 

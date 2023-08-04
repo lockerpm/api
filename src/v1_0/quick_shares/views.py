@@ -10,6 +10,7 @@ from core.utils.data_helpers import camel_snake_data
 from cystack_models.models import Enterprise
 from cystack_models.models.quick_shares.quick_shares import QuickShare
 from shared.background import LockerBackgroundFactory, BG_EVENT
+from shared.caching.sync_cache import delete_sync_cache_data
 from shared.constants.account import LOGIN_METHOD_PASSWORDLESS
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD, MAP_CIPHER_TYPE_STR
 from shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED
@@ -61,13 +62,6 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         except ObjectDoesNotExist:
             raise NotFound
 
-    # def get_quick_share_access_obj(self):
-    #     try:
-    #         quick_share = QuickShare.objects.get(id=self.kwargs.get("pk"))
-    #         return quick_share
-    #     except ObjectDoesNotExist:
-    #         raise NotFound
-
     def get_quick_share_by_access_id(self):
         try:
             quick_share = QuickShare.objects.get(access_id=self.kwargs.get("pk"))
@@ -81,9 +75,6 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         if user.login_method == LOGIN_METHOD_PASSWORDLESS:
             exclude_types = [CIPHER_TYPE_MASTER_PASSWORD]
         cipher_ids = self.cipher_repository.get_ciphers_created_by_user(user=user).values_list('id', flat=True)
-        # cipher_ids = self.cipher_repository.get_multiple_by_user(
-        #     user=user, exclude_types=exclude_types, only_personal=True
-        # ).values_list('id', flat=True)
         quick_share = QuickShare.objects.filter(
             cipher_id__in=list(cipher_ids)
         ).order_by('-creation_date').prefetch_related('quick_share_emails')
@@ -103,7 +94,6 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
 
     def create(self, request, *args, **kwargs):
         user = self.request.user
-        # self.check_pwd_session_auth(request=request)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.save()
@@ -111,7 +101,8 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         cipher_id = validated_data.get("cipher_id")
         self.get_cipher(cipher_id=cipher_id)
         quick_share = QuickShare.create(**validated_data)
-        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
+        delete_sync_cache_data(user_id=user.user_id)
+        PwdSync(event=SYNC_QUICK_SHARE, user_ids=[user.user_id]).send(
             data={"id": str(quick_share.id)}
         )
 
@@ -135,13 +126,11 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         })
 
     def retrieve(self, request, *args, **kwargs):
-        # self.check_pwd_session_auth(request=request)
         response = super().retrieve(request, *args, **kwargs)
         response.data = camel_snake_data(response.data, snake_to_camel=True)
         return response
 
     def update(self, request, *args, **kwargs):
-        # self.check_pwd_session_auth(request=request)
         quick_share = self.get_object()
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -176,7 +165,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
         })
 
     def destroy(self, request, *args, **kwargs):
-        # self.check_pwd_session_auth(request=request)
+        delete_sync_cache_data(user_id=request.user.user_id)
         PwdSync(event=SYNC_QUICK_SHARE, user_ids=[request.user.user_id]).send(
             data={"id": str(kwargs.get("pk"))}
         )
@@ -206,6 +195,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share_email.save()
             except ObjectDoesNotExist:
                 pass
+        delete_sync_cache_data(user_id=quick_share.cipher.created_by.user_id)
         PwdSync(event=SYNC_QUICK_SHARE, user_ids=[quick_share.cipher.created_by.user_id]).send(
             data={"id": str(quick_share.id)}
         )
@@ -247,6 +237,7 @@ class QuickSharePwdViewSet(PasswordManagerViewSet):
                 quick_share.save()
                 quick_share.refresh_from_db()
                 result = PublicAccessQuickShareSerializer(quick_share, many=False).data
+                delete_sync_cache_data(user_id=quick_share.cipher.created_by.user_id)
                 PwdSync(event=SYNC_QUICK_SHARE, user_ids=[quick_share.cipher.created_by.user_id]).send(
                     data={"id": str(quick_share.id)}
                 )

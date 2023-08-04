@@ -125,7 +125,7 @@ class SyncCipherSerializer(serializers.ModelSerializer):
         favorite = instance.get_favorites().get(user.user_id, False)
 
         collection_ids = []
-        if instance.collections_ciphers.exists() > 0:
+        if instance.collections_ciphers.exists():
             collection_ids = list(instance.collections_ciphers.values_list('collection_id', flat=True))
 
         try:

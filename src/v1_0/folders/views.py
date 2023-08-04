@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 
 from core.utils.data_helpers import camel_snake_data
+from shared.caching.sync_cache import delete_sync_cache_data
 from shared.permissions.locker_permissions.folder_pwd_permission import FolderPwdPermission
 from shared.services.pm_sync import PwdSync, SYNC_EVENT_FOLDER_UPDATE, SYNC_EVENT_FOLDER_DELETE
 from v1_0.folders.serializers import FolderSerializer, DetailFolderSerializer
@@ -37,7 +38,8 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         # We create new folder object from folder data
         # Then we update revision date of user
         new_folder = self.folder_repository.save_new_folder(user=user, name=name)
-        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[request.user.user_id]).send(data={"id": str(new_folder.id)})
+        delete_sync_cache_data(user_id=user.user_id)
+        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[user.user_id]).send(data={"id": str(new_folder.id)})
         return Response(status=200, data={"id": new_folder.id})
 
     def retrieve(self, request, *args, **kwargs):
@@ -56,7 +58,8 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         name = validated_data.get("name", folder.name)
         folder = self.folder_repository.save_update_folder(user=user, folder=folder, name=name)
-        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[request.user.user_id]).send(data={"id": str(folder.id)})
+        delete_sync_cache_data(user_id=user.user_id)
+        PwdSync(event=SYNC_EVENT_FOLDER_UPDATE, user_ids=[user.user_id]).send(data={"id": str(folder.id)})
         return Response(status=200, data={"id": folder.id})
 
     def destroy(self, request, *args, **kwargs):
@@ -81,6 +84,8 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         self.cipher_repository.delete_multiple_cipher(cipher_ids=soft_delete_cipher, user_deleted=user)
         # Delete this folder object
         folder.delete()
+        # Clear sync data
+        delete_sync_cache_data(user_id=user.user_id)
         # Sending sync event
-        PwdSync(event=SYNC_EVENT_FOLDER_DELETE, user_ids=[request.user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_FOLDER_DELETE, user_ids=[user.user_id]).send()
         return Response(status=204)
