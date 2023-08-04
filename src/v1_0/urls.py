@@ -124,6 +124,7 @@ urlpatterns += [
 # -------------------------------- Sync ----------------------------------- #
 urlpatterns += [
     url(r'^sync$', views.SyncPwdViewSet.as_view({'get': 'sync'})),
+    url(r'^sync/count$', views.SyncPwdViewSet.as_view({'get': 'sync_count'})),
     url(r'^sync/ciphers/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_cipher_detail'})),
     url(r'^sync/folders/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_folder_detail'})),
     url(r'^sync/collections/(?P<pk>[0-9a-z\-]+)$', views.SyncPwdViewSet.as_view({'get': 'sync_collection_detail'})),
