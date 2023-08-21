@@ -34,7 +34,9 @@ class UserRewardMission(models.Model):
 
     def get_answer(self):
         if not self.answer:
-            return []
+            if self.mission_id == "extension_installation_and_review":
+                return []
+            return {}
         try:
             return json.loads(str(self.answer))
         except json.JSONDecodeError:
