@@ -93,7 +93,7 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             serializer.is_valid(raise_exception=True)
             validated_data = serializer.validated_data
             user_identifier = validated_data.get("user_identifier")
-            answer = [{"user_identifier": user_identifier}]
+            answer = validated_data
 
         mission_type = user_reward_mission.mission.mission_type
         extra_requirements = user_reward_mission.mission.get_extra_requirements()
