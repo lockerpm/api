@@ -34,7 +34,7 @@ class UserRewardMission(models.Model):
 
     def get_answer(self):
         if not self.answer:
-            return {}
+            return []
         try:
             return json.loads(str(self.answer))
         except json.JSONDecodeError:
