@@ -25,7 +25,7 @@ from shared.utils.app import now
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer, \
-    UpgradeLifetimeSerializer, UpgradeThreePromoSerializer
+    UpgradeLifetimeSerializer, UpgradeThreePromoSerializer, UpgradeLifetimePublicSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -50,6 +50,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpgradeLifetimeSerializer
         elif self.action == "upgrade_three_promo":
             self.serializer_class = UpgradeThreePromoSerializer
+        elif self.action == "upgrade_lifetime_public":
+            self.serializer_class = UpgradeLifetimePublicSerializer
         elif self.action == "cancel_plan":
             self.serializer_class = CancelPlanSerializer
         
@@ -401,6 +403,80 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
         except ObjectDoesNotExist:
             pass
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def upgrade_lifetime_public(self, request, *args, **kwargs):
+        user = self.request.user
+        if user.enterprise_members.filter().exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        promo_code_obj = validated_data.get("promo_code_obj", None)
+        duration = validated_data.get("duration", DURATION_MONTHLY)
+        currency = validated_data.get("currency")
+        # Cancel the current Free/Premium/Family
+        self.user_repository.cancel_plan(user=user, immediately=True)
+
+        plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
+        plan_metadata = {
+            "start_period": now(),
+            "end_period": None
+        }
+
+        # Calc payment price of new plan
+        promo_code_value = promo_code_obj.code if promo_code_obj else None
+        calc_payment = self._calc_payment(
+            plan_obj, duration=duration, currency=currency, promo_code=promo_code_value
+        )
+        immediate_payment = calc_payment.get("immediate_payment")
+
+        payment = PaymentMethodFactory.get_method(
+            user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
+        )
+        payment_result = payment.onetime_payment(
+            amount=immediate_payment, plan_type=plan_obj.get_alias(), coupon=promo_code_obj, **plan_metadata
+
+        )
+        update_result = payment_result.get("success")
+        if update_result is False:
+            if payment_result.get("stripe_error"):
+                return Response(status=400, data={
+                    "code": "7009",
+                    "message": "Your card was declined (insufficient funds, etc...)",
+                    "details": payment_result.get("error_details")
+                })
+            raise ValidationError({"non_field_errors": [gen_error("7009")]})
+
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=plan_obj.get_alias(),
+            duration=duration, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
+        user.set_saas_source(saas_source="Locker")
+
+        # Set default payment method
+        try:
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            current_plan.set_default_payment_method(PAYMENT_METHOD_CARD)
+        except ObjectDoesNotExist:
+            pass
+
+        # Send lifetime welcome mail
+        user.refresh_from_db()
+        if user.activated:
+            # TODO: Sending mail upgrade to lifetime successfully
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_locker_mail", **{
+                    "user_ids": [user.user_id],
+                    "job": "upgraded_to_lifetime_from_code",
+                    "scope": settings.SCOPE_PWD_MANAGER,
+                    "service_name": user.saas_source,
+                }
+            )
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
