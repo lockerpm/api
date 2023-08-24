@@ -413,6 +413,11 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        card = request.data.get("card")
+        if not card:
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
+        if not card.get("id_card"):
+            raise ValidationError({"non_field_errors": [gen_error("7007")]})
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -425,7 +430,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
         plan_metadata = {
             "start_period": now(),
-            "end_period": None
+            "end_period": None,
+            "card": card,
         }
 
         # Calc payment price of new plan
@@ -434,7 +440,6 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             plan_obj, duration=duration, currency=currency, promo_code=promo_code_value
         )
         immediate_payment = calc_payment.get("immediate_payment")
-
         payment = PaymentMethodFactory.get_method(
             user=user, scope=settings.SCOPE_PWD_MANAGER, payment_method=PAYMENT_METHOD_CARD
         )

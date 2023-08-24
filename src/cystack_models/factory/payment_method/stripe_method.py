@@ -303,7 +303,7 @@ class StripePaymentMethod(IPaymentMethod):
                 "stripe_error": True,
                 "error_details": self.handle_error(e)
             }
-        new_payment.set_paid()
+        new_payment.status = PAYMENT_STATUS_PAID
         new_payment.stripe_invoice_id = stripe_invoice_id
         new_payment.save()
         return {
