@@ -474,16 +474,14 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         # Send lifetime welcome mail
         user.refresh_from_db()
-        if user.activated:
-            # TODO: Sending mail upgrade to lifetime successfully
-            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-                func_name="notify_locker_mail", **{
-                    "user_ids": [user.user_id],
-                    "job": "upgraded_to_lifetime_from_code",
-                    "scope": settings.SCOPE_PWD_MANAGER,
-                    "service_name": user.saas_source,
-                }
+        # Sending invoice mail if the payment successfully
+        try:
+            new_payment = Payment.objects.get(payment_id=payment_result.get("payment_id"))
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY, background=False).run(
+                func_name="pay_successfully", **{"payment": new_payment}
             )
+        except Payment.DoesNotExist:
+            pass
         return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
