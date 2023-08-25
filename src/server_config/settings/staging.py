@@ -7,6 +7,21 @@ ALLOWED_HOSTS = ["locker-api.staging.cystack.org", "staging-api.locker.io", "cys
 
 # Cache DB
 CACHE_REDIS_LOCATION = os.getenv("CACHE_REDIS_STAGING_LOCATION")
+CACHE_OPTIONS = {
+    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+    'IGNORE_EXCEPTIONS': True
+}
+if CACHE_REDIS_LOCATION and CACHE_REDIS_LOCATION.startswith("rediss://"):
+    CACHE_OPTIONS.update({
+        'CONNECTION_POOL_KWARGS': {'ssl_cert_reqs': None},
+    })
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': CACHE_REDIS_LOCATION,
+        'OPTIONS': CACHE_OPTIONS
+    }
+}
 
 DATABASES = {
     'default': {
