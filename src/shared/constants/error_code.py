@@ -241,6 +241,11 @@ APP_CODE += [
         "code": "7016",
         "message": "You are in a Family plan. Please leave the family plan to execute this operator",
         "vi_message": "Bạn hiện tại đang ở trong một gói Family. Vui lòng rời gói để thực hiện hành động này."
+    },
+    {
+        "code": "7017",
+        "message": "Your current plan is Lifetime Premium, so you can not execute this operator",
+        "vi_message": "Gói của bạn là Lifetime Premium nên bạn không thể thực hiện hành động này"
     }
 ]
 

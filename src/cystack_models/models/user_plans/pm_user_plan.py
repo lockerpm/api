@@ -211,7 +211,7 @@ class PMUserPlan(UserPlan):
         :return:
         """
 
-    def calc_update_price(self, new_plan, new_duration, new_quantity, currency, promo_code=None):
+    def calc_update_price(self, new_plan, new_duration, new_quantity, currency, promo_code=None, allow_trial=True):
         """
         Calc amount when user update plan (via upgrade plan or change quantity)
         :param new_plan: (obj) Plan object
@@ -219,6 +219,7 @@ class PMUserPlan(UserPlan):
         :param new_quantity: (int) New number of quantity
         :param currency: (str) Currency
         :param promo_code: (str) Promo code string value
+        :param allow_trial: (bool) If true, set immediate payment is 0 if the user is not still in trial plan
         :return:
         """
         current_time = now()
@@ -311,7 +312,7 @@ class PMUserPlan(UserPlan):
         }
 
         if new_plan.is_team_plan is False:
-            if self.is_personal_trial_applied() is False:
+            if self.is_personal_trial_applied() is False and allow_trial is True:
                 utm_source = self.user.get_from_cystack_id().get("utm_source")
                 if utm_source in LIST_UTM_SOURCE_PROMOTIONS:
                     result["next_billing_time"] = next_billing_time + TRIAL_PERSONAL_PLAN

@@ -413,6 +413,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        if current_plan.get_plan_type_alias() in [PLAN_TYPE_PM_LIFETIME]:
+            raise ValidationError(detail={"non_field_errors": [gen_error("7017")]})
         card = request.data.get("card")
         if not card:
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
@@ -437,7 +439,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
         calc_payment = self._calc_payment(
-            plan_obj, duration=duration, currency=currency, promo_code=promo_code_value
+            plan_obj, duration=duration, currency=currency, promo_code=promo_code_value, allow_trial=False
         )
         immediate_payment = calc_payment.get("immediate_payment")
         payment = PaymentMethodFactory.get_method(
@@ -698,7 +700,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # self.payment_repository.pending_cancel(payment=invoice)
         # return Response(status=200, data={"success": True})
 
-    def _calc_payment(self, plan, duration=DURATION_MONTHLY, currency=CURRENCY_USD, number_members=1, promo_code=None):
+    def _calc_payment(self, plan, duration=DURATION_MONTHLY, currency=CURRENCY_USD, number_members=1, promo_code=None,
+                      allow_trial=True):
         """
         Calc total payment
         :param plan: (obj) PMPlan object
@@ -706,11 +709,13 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         :param currency: (str) Currency: VND/USD
         :param number_members: (str)
         :param promo_code: (str) promo value
+        :param allow_trial: (bool)
         :return:
         """
         current_plan = self.user_repository.get_current_plan(user=self.request.user, scope=settings.SCOPE_PWD_MANAGER)
         result = current_plan.calc_update_price(
-            new_plan=plan, new_duration=duration, new_quantity=number_members, currency=currency, promo_code=promo_code
+            new_plan=plan, new_duration=duration, new_quantity=number_members, currency=currency, promo_code=promo_code,
+            allow_trial=allow_trial
         )
         result["plan"] = PMPlanSerializer(plan, many=False).data
         return result
