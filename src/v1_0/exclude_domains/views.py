@@ -20,7 +20,7 @@ class ExcludeDomainPwdViewSet(PasswordManagerViewSet):
         exclude_domains = user.exclude_domains.all().order_by('-created_time')
         q_param = self.request.query_params.get("q")
         if q_param:
-            exclude_domains = exclude_domains.filter(q__icontains=q_param)
+            exclude_domains = exclude_domains.filter(domain__icontains=q_param)
         return exclude_domains
 
     def get_object(self):

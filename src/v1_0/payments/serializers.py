@@ -223,5 +223,21 @@ class UpgradeThreePromoSerializer(serializers.Serializer):
         return data
 
 
+class UpgradeLifetimePublicSerializer(serializers.Serializer):
+    promo_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    def validate(self, data):
+        current_user = self.context["request"].user
+        promo_code = data.get("promo_code")
+        if promo_code:
+            promo_code_obj = PromoCode.check_valid(value=promo_code, current_user=current_user)
+            if not promo_code_obj:
+                raise serializers.ValidationError(detail={"promo_code": ["This coupon is expired or invalid"]})
+            data["promo_code_obj"] = promo_code_obj
+
+        data["currency"] = CURRENCY_USD
+        return data
+
+
 class CancelPlanSerializer(serializers.Serializer):
     immediately = serializers.BooleanField(default=False)

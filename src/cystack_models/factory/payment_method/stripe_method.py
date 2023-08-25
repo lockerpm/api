@@ -3,6 +3,8 @@ import traceback
 import stripe
 import stripe.error
 
+from core.settings import CORE_CONFIG
+from cystack_models.models import Payment
 from shared.constants.transactions import *
 from shared.log.cylog import CyLog
 from shared.utils.app import now
@@ -244,6 +246,70 @@ class StripePaymentMethod(IPaymentMethod):
         :param kwargs: (dict) Metadata: card, bank_id
         :return:
         """
+        card = kwargs.get("card")
+        if not card or isinstance(card, dict) is False or not card.get("stripe_customer_id"):
+            return {"success": False}
+        stripe_customer_id = card.get("stripe_customer_id")
+
+        # Crete new billing history
+        try:
+            promo_code_str = coupon.id if coupon else None
+        except AttributeError:
+            promo_code_str = None
+        user_repository = CORE_CONFIG["repositories"]["IUserRepository"]()
+        new_payment = Payment.create(**{
+            "user": self.user,
+            "plan": plan_type,
+            "description": "Upgrade plan onetime payment",
+            "payment_method": PAYMENT_METHOD_CARD,
+            "duration": "onetime",
+            "currency": CURRENCY_USD,
+            "promo_code": promo_code_str,
+            "customer": user_repository.get_customer_data(user=self.user, id_card=card.get("id_card")),
+            "scope": self.scope,
+            "metadata": kwargs
+        })
+        # Create new invoice item
+        stripe.InvoiceItem.create(
+            customer=stripe_customer_id,
+            description="Upgrade plan onetime payment",
+            unit_amount=int(amount * 100),
+            currency="USD",
+            metadata={
+                "scope": self.scope,
+                "user_id": self.user.user_id,
+                "plan": plan_type
+            }
+        )
+        # Then, create onetime invoice for the user
+        new_stripe_invoice = stripe.Invoice.create(
+            customer=stripe_customer_id,
+            default_payment_method=card.get("id_card"),
+            metadata={
+                "scope": self.scope,
+                "user_id": self.user.user_id,
+                "payment_id": new_payment.payment_id,
+            }
+        )
+        # Finalize new stripe invoice
+        stripe_invoice_id = new_stripe_invoice.get("id")
+        stripe.Invoice.finalize_invoice(stripe_invoice_id)
+        try:
+            paid_invoice = stripe.Invoice.pay(stripe_invoice_id)
+            print(paid_invoice)
+        except stripe.error.CardError as e:
+            return {
+                "success": False,
+                "stripe_error": True,
+                "error_details": self.handle_error(e)
+            }
+        new_payment.status = PAYMENT_STATUS_PAID
+        new_payment.stripe_invoice_id = stripe_invoice_id
+        new_payment.save()
+        return {
+            "success": True,
+            "payment_id": new_payment.payment_id
+        }
 
     def update_quantity_subscription(self, new_quantity: int = None, amount: int = None):
         current_plan = self.get_current_plan()

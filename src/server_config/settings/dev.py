@@ -28,16 +28,20 @@ try:
     TEST_DOMAINS = ["dev.cystack.org"]
 
     # Cache DB
+    CACHE_REDIS_LOCATION = os.getenv("CACHE_REDIS_LOCATION")
+    CACHE_OPTIONS = {
+        'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        'IGNORE_EXCEPTIONS': True
+    }
+    if CACHE_REDIS_LOCATION and CACHE_REDIS_LOCATION.startswith("rediss://"):
+        CACHE_OPTIONS.update({
+            'CONNECTION_POOL_KWARGS': {'ssl_cert_reqs': None},
+        })
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': os.getenv("CACHE_REDIS_LOCATION"),
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                # 'SOCKET_CONNECT_TIMEOUT': 360,
-                # 'SOCKET_TIMEOUT': 360,
-                'IGNORE_EXCEPTIONS': True
-            }
+            'LOCATION': CACHE_REDIS_LOCATION,
+            'OPTIONS': CACHE_OPTIONS
         }
     }
     DJANGO_REDIS_IGNORE_EXCEPTIONS = True
