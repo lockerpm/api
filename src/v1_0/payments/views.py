@@ -463,7 +463,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             user=user, plan_type_alias=plan_obj.get_alias(),
             duration=duration, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
-        user.set_saas_source(saas_source="Locker")
+        # user.set_saas_source(saas_source="Locker")
 
         # Set default payment method
         try:
