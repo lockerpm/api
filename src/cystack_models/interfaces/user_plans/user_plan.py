@@ -81,7 +81,7 @@ class UserPlan(models.Model):
         :return:
         """
 
-    def calc_update_price(self, new_plan, new_duration, new_quantity, currency, promo_code=None):
+    def calc_update_price(self, new_plan, new_duration, new_quantity, currency, promo_code=None, allow_trial=True):
         """
         Calc amount when user update plan (via upgrade plan or change quantity)
         :param new_plan: (obj) Plan object

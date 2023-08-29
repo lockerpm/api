@@ -64,6 +64,7 @@ PROMO_PERCENTAGE = "percentage_off"
 
 # ------------------- Promo code prefix ---------------------- #
 MISSION_REWARD_PROMO_PREFIX = "LKMR-"
+EDUCATION_PROMO_PREFIX = "EDU-"
 
 
 # ------------------- Plan type constants --------------------------- #

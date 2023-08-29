@@ -3,6 +3,7 @@ from cystack_models.models.users.users import User
 from cystack_models.models.users.user_score import UserScore
 from cystack_models.models.users.devices import Device
 from cystack_models.models.users.device_access_tokens import DeviceAccessToken
+from cystack_models.models.users.education_emails import EducationEmail
 
 # ------------------------ User Missions ------------------------ #
 from cystack_models.models.user_rewards.missions import Mission

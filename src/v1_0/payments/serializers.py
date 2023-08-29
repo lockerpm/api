@@ -239,5 +239,18 @@ class UpgradeLifetimePublicSerializer(serializers.Serializer):
         return data
 
 
+class UpgradeEducationPublicSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=128)
+    education_email = serializers.EmailField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    university = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+
+    def to_internal_value(self, data):
+        if data.get("education_email") is None:
+            data["education_email"] = ""
+        if data.get("university") is None:
+            data["university"] = ""
+        return super().to_internal_value(data)
+
+
 class CancelPlanSerializer(serializers.Serializer):
     immediately = serializers.BooleanField(default=False)

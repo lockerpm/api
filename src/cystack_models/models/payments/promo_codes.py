@@ -1,10 +1,13 @@
 import math
+import os
 import uuid
+import stripe
+import stripe.error
 
 from django.db import models
 
 from shared.constants.transactions import *
-from shared.utils.app import now
+from shared.utils.app import now, random_n_digit
 from cystack_models.models.payments.promo_code_types import PromoCodeType
 from cystack_models.models.payments.saas_market import SaasMarket
 from cystack_models.models.users.users import User
@@ -136,6 +139,42 @@ class PromoCode(models.Model):
             return promo_code
         except cls.DoesNotExist:
             return False
+
+    @classmethod
+    def create_education_promo_code(cls, **data):
+        # The promo code will be expired in one year
+        expired_time = int(now() + 365 * 86400)
+        value = 100
+        code = f"{EDUCATION_PROMO_PREFIX}{random_n_digit(n=12)}".upper()
+        only_user_id = data.get("user_id")
+        promo_code_data = {
+            "type": PROMO_PERCENTAGE,
+            "expired_time": expired_time,
+            "code": code,
+            "value": value,
+            "duration": 1,
+            "number_code": 1,
+            "description_en": "Locker PromoCode Reward",
+            "description_vi": "Locker PromoCode Reward",
+            "only_user_id": only_user_id,
+            "only_period": DURATION_YEARLY
+        }
+        promo_code_obj = PromoCode.create(**promo_code_data)
+
+        # Create on Stripe
+        if os.getenv("PROD_ENV") in ["prod", "staging"]:
+            try:
+                stripe.Coupon.create(
+                    duration='once',
+                    id="{}_yearly".format(promo_code_obj.id),
+                    percent_off=value,
+                    name=code,
+                    redeem_by=expired_time
+                )
+            except stripe.error.StripeError:
+                promo_code_obj.delete()
+                return None
+        return promo_code_obj
 
     def get_discount(self, total_price, duration=DURATION_MONTHLY):
         discount = 0
