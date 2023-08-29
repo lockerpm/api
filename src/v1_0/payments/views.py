@@ -10,7 +10,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
-from cystack_models.models import Cipher
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.ciphers import *
 from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN
@@ -21,11 +20,14 @@ from shared.permissions.locker_permissions.payment_pwd_permission import Payment
 from cystack_models.models.payments.payments import Payment
 from cystack_models.models.users.users import User
 from cystack_models.models.user_plans.pm_plans import PMPlan
+from cystack_models.models import Cipher, PromoCode, EducationEmail
 from shared.utils.app import now
+from shared.utils.student_email import is_academic
 from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer, \
-    UpgradeLifetimeSerializer, UpgradeThreePromoSerializer, UpgradeLifetimePublicSerializer
+    UpgradeLifetimeSerializer, UpgradeThreePromoSerializer, UpgradeLifetimePublicSerializer, \
+    UpgradeEducationPublicSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -52,6 +54,8 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpgradeThreePromoSerializer
         elif self.action == "upgrade_lifetime_public":
             self.serializer_class = UpgradeLifetimePublicSerializer
+        elif self.action == "upgrade_education_public":
+            self.serializer_class = UpgradeEducationPublicSerializer
         elif self.action == "cancel_plan":
             self.serializer_class = CancelPlanSerializer
         
@@ -483,6 +487,76 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         except Payment.DoesNotExist:
             pass
         return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def upgrade_education_public(self, request, *args, **kwargs):
+        user = self.request.user
+        if user.enterprise_members.filter().exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
+        current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+        if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        if current_plan.get_plan_type_alias() in [PLAN_TYPE_PM_LIFETIME]:
+            raise ValidationError(detail={"non_field_errors": [gen_error("7017")]})
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        email = validated_data.get("email")
+        education_email = validated_data.get("education_email") or ""
+        university = validated_data.get("university") or ""
+        # If the user claimed or the education email claimed
+        if EducationEmail.objects.filter(email__in=[email, education_email], verified=True).exists():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7019")]})
+
+        # The user has a Locker account
+        promo_code = None
+        if is_academic(email):
+            promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
+            if not promo_code:
+                raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
+            user.education_emails.mode.retrieve_or_create(user.user_id, **{
+                "email": email,
+                "university": university,
+                "verified": True,
+                "promo_code": promo_code.value
+            })
+
+        elif is_academic(education_email):
+            promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
+            if not promo_code:
+                raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
+            user.education_emails.mode.retrieve_or_create(user.user_id, **{
+                "email": education_email,
+                "university": university,
+                "verified": True,
+                "promo_code": promo_code.value
+            })
+        if promo_code:
+            if user.activated:
+                # TODO: Sending mail to Education email to notify that Education Pack is claimed successfully
+                # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                #     func_name="notify_locker_mail", **{
+                #         "user_ids": [user.user_id],
+                #         "job": "",
+                #         "scope": settings.SCOPE_PWD_MANAGER,
+                #         "code": promo_code.code,
+                #     }
+                # )
+                pass
+            return Response(status=200, data={"success": True})
+        if user.activated:
+            # TODO: Sending mail to notify that user email is not valid
+            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+            #     func_name="notify_locker_mail", **{
+            #         "user_ids": [user.user_id],
+            #         "job": "",
+            #         "scope": settings.SCOPE_PWD_MANAGER,
+            #         "code": promo_code.code,
+            #     }
+            # )
+            pass
+        raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):

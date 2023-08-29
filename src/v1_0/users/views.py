@@ -210,6 +210,19 @@ class UserPwdViewSet(PasswordManagerViewSet):
                         "plan": current_plan.get_plan_type_name()
                     }
                 )
+        # Sending education pack claim
+        education_email = user.education_emails.filter(verified=True).first()
+        if education_email:
+            # TODO: Sending mail to Education email to notify that Education Pack is claimed successfully
+            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+            #     func_name="notify_locker_mail", **{
+            #         "user_ids": [user.user_id],
+            #         "job": "",
+            #         "scope": settings.SCOPE_PWD_MANAGER,
+            #         "code": education_email.promo_code,
+            #     }
+            # )
+            pass
 
         return Response(status=200, data={"success": True})
 

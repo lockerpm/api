@@ -246,6 +246,16 @@ APP_CODE += [
         "code": "7017",
         "message": "Your current plan is Lifetime Premium, so you can not execute this operator",
         "vi_message": "Gói của bạn là Lifetime Premium nên bạn không thể thực hiện hành động này"
+    },
+    {
+        "code": "7018",
+        "message": "The email you provided was not a valid school email",
+        "vi_message": "Email bạn cung cấp không phải là email sinh viên"
+    },
+    {
+        "code": "7019",
+        "message": "The school email was claimed",
+        "vi_message": "Email sinh viên này đã được nhận gói ưu đãi"
     }
 ]
 
