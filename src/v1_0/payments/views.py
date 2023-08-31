@@ -504,6 +504,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         validated_data = serializer.validated_data
         email = validated_data.get("email")
         education_email = validated_data.get("education_email") or ""
+        education_type = validated_data.get("education_type")
         university = validated_data.get("university") or ""
         # If the user claimed or the education email claimed
         if EducationEmail.objects.filter(email__in=[email, education_email], verified=True).exists():
