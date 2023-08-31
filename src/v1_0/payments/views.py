@@ -559,15 +559,15 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 )
             return Response(status=200, data={"success": True})
         if user.activated:
-            # TODO: Sending mail to notify that user email is not valid
-            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-                func_name="notify_locker_mail", **{
-                    "user_ids": [user.user_id],
-                    "job": "education_pack_teacher_rejected" if education_type == "teacher" else "education_pack_student_rejected",
-                    "scope": settings.SCOPE_PWD_MANAGER,
-                    "username": education_email or email,
-                }
-            )
+            # # Sending mail to notify that user email is not valid
+            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+            #     func_name="notify_locker_mail", **{
+            #         "user_ids": [user.user_id],
+            #         "job": "education_pack_teacher_rejected" if education_type == "teacher" else "education_pack_student_rejected",
+            #         "scope": settings.SCOPE_PWD_MANAGER,
+            #         "username": education_email or email,
+            #     }
+            # )
             pass
         raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
 
