@@ -242,6 +242,7 @@ class UpgradeLifetimePublicSerializer(serializers.Serializer):
 class UpgradeEducationPublicSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=128)
     education_email = serializers.EmailField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    education_type = serializers.ChoiceField(choices=["teacher", "student"], default="student")
     university = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
 
     def to_internal_value(self, data):

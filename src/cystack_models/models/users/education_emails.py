@@ -8,6 +8,7 @@ class EducationEmail(models.Model):
     id = models.AutoField(primary_key=True)
     created_time = models.FloatField()
     email = models.EmailField(max_length=255, db_index=True)
+    education_type = models.CharField(max_length=64, default="student")
     university = models.CharField(max_length=255, blank=True)
     verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=255)
@@ -27,6 +28,7 @@ class EducationEmail(models.Model):
                 "email": email,
                 "created_time": now(),
                 "verified": data.get("verified", False),
+                "education_type": data.get("education_type", "student"),
                 "university": data.get("university"),
                 "promo_code": data.get("promo_code")
             }
