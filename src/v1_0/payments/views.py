@@ -518,7 +518,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
             if not promo_code:
                 raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-            user.education_emails.mode.retrieve_or_create(user.user_id, **{
+            user.education_emails.model.retrieve_or_create(user.user_id, **{
                 "email": email,
                 "education_type": education_type,
                 "university": university,
@@ -531,7 +531,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
             if not promo_code:
                 raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-            user.education_emails.mode.retrieve_or_create(user.user_id, **{
+            user.education_emails.model.retrieve_or_create(user.user_id, **{
                 "email": education_email,
                 "education_type": education_type,
                 "university": university,
