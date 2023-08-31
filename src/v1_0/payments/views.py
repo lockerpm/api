@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 
+from core.utils.data_helpers import convert_readable_date
 from cystack_models.factory.payment_method.payment_method_factory import PaymentMethodFactory
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.ciphers import *
@@ -512,16 +513,19 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         # The user has a Locker account
         promo_code = None
+        claimed_email = None
         if is_academic(email):
             promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
             if not promo_code:
                 raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
             user.education_emails.mode.retrieve_or_create(user.user_id, **{
                 "email": email,
+                "education_type": education_type,
                 "university": university,
                 "verified": True,
                 "promo_code": promo_code.value
             })
+            claimed_email = email
 
         elif is_academic(education_email):
             promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
@@ -529,33 +533,41 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
             user.education_emails.mode.retrieve_or_create(user.user_id, **{
                 "email": education_email,
+                "education_type": education_type,
                 "university": university,
                 "verified": True,
                 "promo_code": promo_code.value
             })
+            claimed_email = education_email
         if promo_code:
             if user.activated:
-                # TODO: Sending mail to Education email to notify that Education Pack is claimed successfully
-                # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-                #     func_name="notify_locker_mail", **{
-                #         "user_ids": [user.user_id],
-                #         "job": "",
-                #         "scope": settings.SCOPE_PWD_MANAGER,
-                #         "code": promo_code.code,
-                #     }
-                # )
-                pass
+                # Sending mail to Education email to notify that Education Pack is claimed successfully
+                if promo_code.expired_time:
+                    expired_date = convert_readable_date(promo_code.expired_time, datetime_format="%d %b, %Y")
+                else:
+                    expired_date = None
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                    func_name="notify_locker_mail", **{
+                        "user_ids": [user.user_id],
+                        "job": "education_pack_teacher_accepted" if education_type == "teacher" else "education_pack_student_accepted",
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "username": claimed_email,
+                        "code": promo_code.code,
+                        "expired_date": expired_date,
+                        "redeem_url": f"{settings.LOCKER_WEB_URL}/manage-plans"
+                    }
+                )
             return Response(status=200, data={"success": True})
         if user.activated:
             # TODO: Sending mail to notify that user email is not valid
-            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-            #     func_name="notify_locker_mail", **{
-            #         "user_ids": [user.user_id],
-            #         "job": "",
-            #         "scope": settings.SCOPE_PWD_MANAGER,
-            #         "code": promo_code.code,
-            #     }
-            # )
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_locker_mail", **{
+                    "user_ids": [user.user_id],
+                    "job": "education_pack_teacher_rejected" if education_type == "teacher" else "education_pack_student_rejected",
+                    "scope": settings.SCOPE_PWD_MANAGER,
+                    "username": education_email or email,
+                }
+            )
             pass
         raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
 
