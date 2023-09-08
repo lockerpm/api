@@ -14,7 +14,8 @@ from cystack_models.factory.payment_method.payment_method_factory import Payment
 from shared.background import LockerBackgroundFactory, BG_NOTIFY
 from shared.constants.ciphers import *
 from shared.constants.relay_address import MAX_FREE_RElAY_DOMAIN
-from shared.constants.token import TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE, TOKEN_TYPE_TRIAL_ENTERPRISE
+from shared.constants.token import TOKEN_EXPIRED_TIME_TRIAL_ENTERPRISE, TOKEN_TYPE_TRIAL_ENTERPRISE, \
+    TOKEN_TYPE_EDUCATION_CLAIM
 from shared.constants.transactions import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.payment_pwd_permission import PaymentPwdPermission
@@ -511,37 +512,33 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if EducationEmail.objects.filter(email__in=[email, education_email], verified=True).exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7019")]})
 
-        # The user has a Locker account
-        promo_code = None
-        claimed_email = None
         if is_academic(email):
-            promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
-            if not promo_code:
-                raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-            user.education_emails.model.retrieve_or_create(user.user_id, **{
+            user_education_email = user.education_emails.model.update_or_create(user.user_id, **{
                 "email": email,
                 "education_type": education_type,
                 "university": university,
-                "verified": True,
-                "promo_code": promo_code.value
+                "verified": False
             })
-            claimed_email = email
 
         elif is_academic(education_email):
-            promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
-            if not promo_code:
-                raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-            user.education_emails.model.retrieve_or_create(user.user_id, **{
+            user_education_email = user.education_emails.model.update_or_create(user.user_id, **{
                 "email": education_email,
                 "education_type": education_type,
                 "university": university,
-                "verified": True,
-                "promo_code": promo_code.value
+                "verified": False
             })
-            claimed_email = education_email
-        if promo_code:
+        else:
+            raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
+
+        if user_education_email.email == email:
+            promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
+            if not promo_code:
+                raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
+            user_education_email.promo_code = promo_code.value
+            user_education_email.verified = True
+            user_education_email.verification_token = None
+            user_education_email.save()
             if user.activated:
-                # Sending mail to Education email to notify that Education Pack is claimed successfully
                 if promo_code.expired_time:
                     expired_date = convert_readable_date(promo_code.expired_time, datetime_format="%d %b, %Y")
                 else:
@@ -551,25 +548,58 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                         "user_ids": [user.user_id],
                         "job": "education_pack_teacher_accepted" if education_type == "teacher" else "education_pack_student_accepted",
                         "scope": settings.SCOPE_PWD_MANAGER,
-                        "username": claimed_email,
+                        "username": email,
                         "code": promo_code.code,
                         "expired_date": expired_date,
                         "redeem_url": f"{settings.LOCKER_WEB_URL}/manage-plans"
                     }
                 )
-            return Response(status=200, data={"success": True})
-        if user.activated:
-            # # Sending mail to notify that user email is not valid
-            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-            #     func_name="notify_locker_mail", **{
-            #         "user_ids": [user.user_id],
-            #         "job": "education_pack_teacher_rejected" if education_type == "teacher" else "education_pack_student_rejected",
-            #         "scope": settings.SCOPE_PWD_MANAGER,
-            #         "username": education_email or email,
-            #     }
-            # )
-            pass
-        raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
+
+        else:
+            new_user = request.data.get("new_user")
+            if new_user is False:
+                # TODO: Sending notification to verify the Education email
+                pass
+            else:
+                promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
+                if not promo_code:
+                    raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
+                user_education_email.promo_code = promo_code.value
+                user_education_email.verified = True
+                user_education_email.verification_token = None
+                user_education_email.save()
+
+        return Response(status=200, data={"success": True})
+
+    @action(methods=["post"], detail=False)
+    def verify_education_email(self, request, *args, **kwargs):
+        token = self.request.data.get("token")
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+        except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidAlgorithmError, ValueError):
+            raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
+        token_type = payload.get('token_type', None)
+        user_id = payload.get('user_id', None)
+        education_email = payload.get('education_email')
+        expired_time = payload.get("expired_time")
+        if token_type != TOKEN_TYPE_EDUCATION_CLAIM or expired_time < now():
+            raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
+        try:
+            user_education_email = EducationEmail.objects.get(user_id=user_id, email=education_email)
+        except EducationEmail.DoesNotExist:
+            raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
+        if user_education_email.verification_token != token:
+            raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
+
+        user = user_education_email.user
+        promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
+        if not promo_code:
+            raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
+        user_education_email.promo_code = promo_code.value
+        user_education_email.verified = True
+        user_education_email.verification_token = None
+        user_education_email.save()
+        return Response(status=200, data={"success": True})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):
