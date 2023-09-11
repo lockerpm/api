@@ -1,5 +1,7 @@
 SYNC_EVENT_CIPHER_UPDATE = "cipher_update"
 SYNC_EVENT_CIPHER = "cipher"
+SYNC_EVENT_CIPHER_DELETE = "cipher_delete"
+SYNC_EVENT_CIPHER_DELETE_PERMANENT = "cipher_delete_permanent"
 
 SYNC_EVENT_FOLDER_UPDATE = "folder_update"
 SYNC_EVENT_FOLDER_DELETE = "folder_delete"

@@ -10,7 +10,8 @@ from shared.background import LockerBackgroundFactory, BG_CIPHER
 from shared.caching.sync_cache import delete_sync_cache_data
 from shared.constants.ciphers import CIPHER_TYPE_MASTER_PASSWORD, IMMUTABLE_CIPHER_TYPES
 from shared.permissions.locker_permissions.cipher_pwd_permission import CipherPwdPermission
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_UPDATE, SYNC_EVENT_VAULT, \
+    SYNC_EVENT_CIPHER_DELETE_PERMANENT
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer, \
     MutipleItemIdsSerializer, MultipleMoveSerializer, ShareVaultItemSerializer, ImportCipherSerializer, \
     SyncOfflineCipherSerializer, DetailCipherSerializer, UpdateCipherUseSerializer
@@ -130,9 +131,13 @@ class CipherPwdViewSet(PasswordManagerViewSet):
         # We will get list ciphers of user (personal ciphers and managed ciphers)
         # Then delete all them and bump revision date of users
         # Finally, we send sync event to all relational users
-        self.cipher_repository.delete_permanent_multiple_cipher(cipher_ids=cipher_ids, user_deleted=request.user)
+        deleted_cipher_ids = self.cipher_repository.delete_permanent_multiple_cipher(
+            cipher_ids=cipher_ids, user_deleted=request.user
+        )
         delete_sync_cache_data(user_id=user.user_id)
-        PwdSync(event=SYNC_EVENT_VAULT, user_ids=[request.user.user_id], teams=teams, add_all=True).send()
+        PwdSync(
+            event=SYNC_EVENT_CIPHER_DELETE_PERMANENT, user_ids=[request.user.user_id], teams=teams, add_all=True
+        ).send(data={"ids": deleted_cipher_ids})
 
         # Log: Team's event
         # LockerBackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_ciphers", **{
