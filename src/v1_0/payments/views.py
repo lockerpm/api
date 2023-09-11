@@ -616,6 +616,24 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         user_education_email.verified = True
         user_education_email.verification_token = None
         user_education_email.save()
+        job = "education_pack_student_accepted"
+        if user_education_email.education_type == "teacher":
+            job = "education_pack_teacher_accepted"
+        if promo_code.expired_time:
+            expired_date = convert_readable_date(promo_code.expired_time, datetime_format="%d %b, %Y")
+        else:
+            expired_date = None
+        LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+            func_name="notify_locker_mail", **{
+                "user_ids": [user.user_id],
+                "job": job,
+                "scope": settings.SCOPE_PWD_MANAGER,
+                "username": education_email,
+                "code": promo_code.code,
+                "expired_date": expired_date,
+                "redeem_url": f"{settings.LOCKER_WEB_URL}/manage-plans"
+            }
+        )
         return Response(status=200, data={"success": True, "linked_email": user_education_email.email})
 
     @action(methods=["get"], detail=False)
