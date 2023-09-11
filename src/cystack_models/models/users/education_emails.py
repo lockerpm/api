@@ -15,7 +15,7 @@ class EducationEmail(models.Model):
     education_type = models.CharField(max_length=64, default="student")
     university = models.CharField(max_length=255, blank=True)
     verified = models.BooleanField(default=False)
-    verification_token = models.CharField(max_length=512)
+    verification_token = models.CharField(max_length=512, null=True)
     promo_code = models.CharField(max_length=100, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="education_emails")
 
