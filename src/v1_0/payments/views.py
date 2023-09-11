@@ -539,6 +539,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             user_education_email.verification_token = None
             user_education_email.save()
             if user.activated:
+                job = "education_pack_student_accepted"
+                if education_type == "teacher":
+                    job = "education_pack_teacher_accepted"
                 if promo_code.expired_time:
                     expired_date = convert_readable_date(promo_code.expired_time, datetime_format="%d %b, %Y")
                 else:
@@ -546,7 +549,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
                     func_name="notify_locker_mail", **{
                         "user_ids": [user.user_id],
-                        "job": "education_pack_teacher_accepted" if education_type == "teacher" else "education_pack_student_accepted",
+                        "job": job,
                         "scope": settings.SCOPE_PWD_MANAGER,
                         "username": email,
                         "code": promo_code.code,
@@ -558,8 +561,22 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         else:
             new_user = request.data.get("new_user")
             if new_user is False:
-                # TODO: Sending notification to verify the Education email
-                pass
+                # Sending notification to verify the Education email
+                job = "education_pack_student_email_confirmation"
+                if education_type == "teacher":
+                    job = "education_pack_teacher_email_confirmation"
+                LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                    func_name="notify_locker_mail", **{
+                        "user_ids": [user.user_id],
+                        "job": job,
+                        "scope": settings.SCOPE_PWD_MANAGER,
+                        "username": email,
+                        "locker_email": email,
+                        "confirm_url": f"{settings.LOCKER_ID_WEB_URL}/confirmation/education-email/"
+                                       f"{user_education_email.verification_token}",
+
+                    }
+                )
             else:
                 promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
                 if not promo_code:
@@ -599,7 +616,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         user_education_email.verified = True
         user_education_email.verification_token = None
         user_education_email.save()
-        return Response(status=200, data={"success": True})
+        return Response(status=200, data={"success": True, "linked_email": user_education_email.email})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):

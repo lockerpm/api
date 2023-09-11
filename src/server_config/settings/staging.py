@@ -44,6 +44,7 @@ DATABASE_ROUTERS = []
 
 
 LOCKER_WEB_URL = "https://staging.locker.io"
+LOCKER_ID_WEB_URL = os.getenv("LOCKER_ID_WEB_URL", "https://id-staging.locker.io")
 
 GATEWAY_API = "https://api.cystack.org"
 MICRO_SERVICE_USER_AUTH = os.getenv("MICRO_SERVICE_USER_AUTH")
