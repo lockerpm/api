@@ -567,10 +567,15 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                     job = "education_pack_teacher_email_confirmation"
                 LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
                     func_name="notify_locker_mail", **{
+                        "destinations": [{
+                            "email": user_education_email.email,
+                            "name": request.data.get("full_name") or "there",
+                            "language": request.data.get("language") or "en"
+                        }],
                         "user_ids": [user.user_id],
                         "job": job,
                         "scope": settings.SCOPE_PWD_MANAGER,
-                        "username": email,
+                        "username": request.data.get("username") or email,
                         "locker_email": email,
                         "confirm_url": f"{settings.LOCKER_ID_WEB_URL}/confirmation/education-email/"
                                        f"{user_education_email.verification_token}",
