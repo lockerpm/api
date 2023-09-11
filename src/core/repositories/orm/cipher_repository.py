@@ -320,12 +320,14 @@ class CipherRepository(ICipherRepository):
         ).exclude(type__in=IMMUTABLE_CIPHER_TYPES)
         team_ids = ciphers.exclude(team__isnull=True).values_list('team_id', flat=True)
         # Delete ciphers objects
+        deleted_cipher_ids = list(ciphers.values_list('id', flat=True))
         ciphers.delete()
         # Bump revision date: teams and user
         teams = Team.objects.filter(id__in=team_ids)
         for team in teams:
             bump_account_revision_date(team=team)
         bump_account_revision_date(user=user_deleted)
+        return deleted_cipher_ids
 
     def delete_permanent_multiple_cipher_by_teams(self, team_ids):
         """

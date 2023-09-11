@@ -87,5 +87,5 @@ class FolderPwdViewSet(PasswordManagerViewSet):
         # Clear sync data
         delete_sync_cache_data(user_id=user.user_id)
         # Sending sync event
-        PwdSync(event=SYNC_EVENT_FOLDER_DELETE, user_ids=[user.user_id]).send()
+        PwdSync(event=SYNC_EVENT_FOLDER_DELETE, user_ids=[user.user_id]).send(data={"ids": [str(folder_id)]})
         return Response(status=204)
