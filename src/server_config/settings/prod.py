@@ -6,6 +6,7 @@ ALLOWED_HOSTS = ["locker-api.staging.cystack.org", "cystack-locker-api", "api.lo
 
 # Web url
 LOCKER_WEB_URL = "https://locker.io"
+LOCKER_ID_WEB_URL = os.getenv("LOCKER_ID_WEB_URL", "https://id.locker.io")
 
 # Gateway API
 GATEWAY_API = "https://api.cystack.net"

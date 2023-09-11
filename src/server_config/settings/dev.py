@@ -20,6 +20,7 @@ try:
     SCOPE_PWD_MANAGER = "pwdmanager"
     # Web url
     LOCKER_WEB_URL = "https://demo.cystack.net:3011"
+    LOCKER_ID_WEB_URL = os.getenv("LOCKER_ID_WEB_URL", "https://id.locker.io")
     # Gateway api
     GATEWAY_API = "http://127.0.0.1:8000"
     MICRO_SERVICE_USER_AUTH = os.getenv("MICRO_SERVICE_USER_AUTH")
