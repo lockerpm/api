@@ -43,6 +43,10 @@ class Payment(models.Model):
 
     class Meta:
         db_table = 'cs_payments'
+        indexes = [
+            models.Index(fields=['created_time', ]),
+            models.Index(fields=['status', ]),
+        ]
 
     @classmethod
     def create(cls, **data):
