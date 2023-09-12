@@ -614,6 +614,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             raise ValidationError(detail={"non_field_errors": [gen_error("7018")]})
 
         user = user_education_email.user
+        email = user.get_from_cystack_id().get("email")
         promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
         if not promo_code:
             raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
@@ -639,7 +640,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 "redeem_url": f"{settings.LOCKER_WEB_URL}/manage-plans"
             }
         )
-        return Response(status=200, data={"success": True, "linked_email": user_education_email.email})
+        return Response(status=200, data={"success": True, "linked_email": email})
 
     @action(methods=["get"], detail=False)
     def current_plan(self, request, *args, **kwargs):
