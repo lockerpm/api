@@ -11,9 +11,9 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.decorators import action
 
-from core.utils.data_helpers import camel_snake_data
+from core.utils.data_helpers import camel_snake_data, convert_readable_date
 from core.utils.core_helpers import secure_random_string
-from cystack_models.models import Event, User
+from cystack_models.models import Event, User, PromoCode
 from cystack_models.models.notifications.notification_settings import NotificationSetting
 from cystack_models.models.enterprises.enterprises import Enterprise
 from cystack_models.models.enterprises.members.enterprise_members import EnterpriseMember
@@ -213,16 +213,26 @@ class UserPwdViewSet(PasswordManagerViewSet):
         # Sending education pack claim
         education_email = user.education_emails.filter(verified=True).first()
         if education_email:
-            # TODO: Sending mail to Education email to notify that Education Pack is claimed successfully
-            # LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
-            #     func_name="notify_locker_mail", **{
-            #         "user_ids": [user.user_id],
-            #         "job": "",
-            #         "scope": settings.SCOPE_PWD_MANAGER,
-            #         "code": education_email.promo_code,
-            #     }
-            # )
-            pass
+            # Sending mail to Education email to notify that Education Pack is claimed successfully
+            job = "education_pack_student_accepted"
+            if education_email.education_type == "teacher":
+                job = "education_pack_teacher_accepted"
+            promo_code = PromoCode.objects.get(value=education_email.promo_code)
+            if promo_code.expired_time:
+                expired_date = convert_readable_date(promo_code.expired_time, datetime_format="%d %b, %Y")
+            else:
+                expired_date = None
+            LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_locker_mail", **{
+                    "user_ids": [user.user_id],
+                    "job": job,
+                    "scope": settings.SCOPE_PWD_MANAGER,
+                    "username": user.get_from_cystack_id().get("email"),
+                    "code": promo_code.code,
+                    "expired_date": expired_date,
+                    "redeem_url": f"{settings.LOCKER_WEB_URL}/manage-plans"
+                }
+            )
 
         return Response(status=200, data={"success": True})
 
