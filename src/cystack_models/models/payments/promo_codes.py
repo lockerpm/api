@@ -55,6 +55,7 @@ class PromoCode(models.Model):
     description_vi = models.TextField(default="", blank=True)
     only_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="only_promo_codes", null=True)
     only_period = models.CharField(max_length=128, null=True, default=None)
+    only_plan = models.CharField(max_length=128, null=True, default=None)
     type = models.ForeignKey(PromoCodeType, on_delete=models.CASCADE, related_name="promo_codes")
 
     class Meta:
@@ -83,6 +84,7 @@ class PromoCode(models.Model):
         description_vi = data.get("description_vi", "")
         only_user_id = data.get("only_user_id")
         only_period = data.get("only_period")
+        only_plan = data.get("only_plan")
         is_saas_code = data.get("is_saas_code", False)
         saas_market_id = data.get("saas_market_id", None)
         saas_plan = data.get("saas_plan")
@@ -97,18 +99,20 @@ class PromoCode(models.Model):
             description_vi=description_vi, description_en=description_en,
             only_user_id=only_user_id,
             only_period=only_period,
+            only_plan=only_plan,
             is_saas_code=is_saas_code, saas_market_id=saas_market_id, saas_plan=saas_plan
         )
         new_promo_code.save()
         return new_promo_code
 
     @classmethod
-    def check_valid(cls, value, current_user, new_duration: str = None):
+    def check_valid(cls, value, current_user, new_duration: str = None, new_plan: str = None):
         """
         Check a promo code value is valid
         :param value:
         :param current_user:
         :param new_duration:
+        :param new_plan
         :return:
         """
         try:
@@ -122,6 +126,8 @@ class PromoCode(models.Model):
                 if promo_code.only_user_id and promo_code.only_user_id != current_user.user_id:
                     return False
             if promo_code.only_period and new_duration and promo_code.only_period != new_duration:
+                return False
+            if promo_code.only_plan and new_plan and promo_code.only_plan != new_plan:
                 return False
             return promo_code
         except cls.DoesNotExist:
@@ -157,7 +163,8 @@ class PromoCode(models.Model):
             "description_en": "Locker PromoCode Reward",
             "description_vi": "Locker PromoCode Reward",
             "only_user_id": only_user_id,
-            "only_period": DURATION_YEARLY
+            "only_period": DURATION_YEARLY,
+            "only_plan": PLAN_TYPE_PM_PREMIUM,
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
 
