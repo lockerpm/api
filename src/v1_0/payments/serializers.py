@@ -93,7 +93,9 @@ class UpgradePlanSerializer(serializers.Serializer):
         promo_code = data.get("promo_code")
         duration = data.get("duration")
         if promo_code:
-            promo_code_obj = PromoCode.check_valid(value=promo_code, current_user=current_user, new_duration=duration)
+            promo_code_obj = PromoCode.check_valid(
+                value=promo_code, current_user=current_user, new_duration=duration, new_plan=plan.get_alias()
+            )
             if not promo_code_obj:
                 raise serializers.ValidationError(detail={"promo_code": ["This coupon is expired or invalid"]})
             data["promo_code_obj"] = promo_code_obj

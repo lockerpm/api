@@ -233,7 +233,9 @@ class PMUserPlan(UserPlan):
         promo_description_en = None
         promo_description_vi = None
         if promo_code is not None and promo_code != "":
-            promo_code_obj = PromoCode.check_valid(value=promo_code, current_user=self.user, new_duration=new_duration)
+            promo_code_obj = PromoCode.check_valid(
+                value=promo_code, current_user=self.user, new_duration=new_duration, new_plan=new_plan.get_alias()
+            )
             if not promo_code_obj:
                 error_promo = {"promo_code": ["This coupon is expired or incorrect"]}
             else:
