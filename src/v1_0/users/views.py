@@ -217,7 +217,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
             job = "education_pack_student_accepted"
             if education_email.education_type == "teacher":
                 job = "education_pack_teacher_accepted"
-            promo_code = PromoCode.objects.get(value=education_email.promo_code)
+            promo_code = PromoCode.objects.get(code=education_email.promo_code)
             if promo_code.expired_time:
                 expired_date = convert_readable_date(promo_code.expired_time, datetime_format="%d %b, %Y")
             else:

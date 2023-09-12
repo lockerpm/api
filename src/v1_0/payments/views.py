@@ -534,7 +534,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
             if not promo_code:
                 raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-            user_education_email.promo_code = promo_code.value
+            user_education_email.promo_code = promo_code.code
             user_education_email.verified = True
             user_education_email.verification_token = None
             user_education_email.save()
@@ -586,7 +586,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
                 if not promo_code:
                     raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-                user_education_email.promo_code = promo_code.value
+                user_education_email.promo_code = promo_code.code
                 user_education_email.verified = True
                 user_education_email.verification_token = None
                 user_education_email.save()
@@ -618,7 +618,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         promo_code = PromoCode.create_education_promo_code(**{"user_id": user.user_id})
         if not promo_code:
             raise ValidationError(detail={"non_field_errors": [gen_error("0008")]})
-        user_education_email.promo_code = promo_code.value
+        user_education_email.promo_code = promo_code.code
         user_education_email.verified = True
         user_education_email.verification_token = None
         user_education_email.save()
