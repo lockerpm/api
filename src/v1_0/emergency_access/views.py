@@ -377,7 +377,7 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if emergency_access.type != EMERGENCY_ACCESS_TYPE_VIEW or emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         ciphers = self.cipher_repository.get_multiple_by_user(
-            user=emergency_access.grantor, only_personal=True
+            user=emergency_access.grantor, # only_personal=True
         ).prefetch_related('collections_ciphers')
         key_encrypted = emergency_access.key_encrypted
 
