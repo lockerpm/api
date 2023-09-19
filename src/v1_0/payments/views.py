@@ -333,7 +333,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # Send lifetime welcome mail
         user.refresh_from_db()
         if user.activated:
-            if plan_obj.get_alias() == PLAN_TYPE_PM_LIFETIME:
+            if plan_obj.get_alias() in [PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY]:
                 LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
                     func_name="notify_locker_mail", **{
                         "user_ids": [user.user_id],

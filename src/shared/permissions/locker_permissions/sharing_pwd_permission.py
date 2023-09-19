@@ -23,7 +23,7 @@ class SharingPwdPermission(LockerPermission):
             return role.name in [MEMBER_ROLE_OWNER]
 
         elif view.action in ["update_share_folder"]:
-            return role.name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]\
+            return role.name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN]
 
         elif view.action in ["invitation_group_confirm"]:
             return role.name in [MEMBER_ROLE_OWNER, MEMBER_ROLE_ADMIN, MEMBER_ROLE_MANAGER, MEMBER_ROLE_MEMBER]

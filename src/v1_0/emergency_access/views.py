@@ -19,7 +19,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS, SYNC_EVENT_C
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
-    InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
+    InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer, ViewOrgSerializer
 from v1_0.sync.serializers import SyncCipherSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
@@ -381,9 +381,17 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         ).prefetch_related('collections_ciphers')
         key_encrypted = emergency_access.key_encrypted
 
+        team_members = emergency_access.grantor.team_members.filter(
+            status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False
+        )
+        organizations = []
+        for team_member in team_members:
+            organizations.append(ViewOrgSerializer(team_member, many=False).data)
+
         return Response(status=200, data={
             "object": "emergencyAccessView",
             "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": emergency_access.grantor}).data,
+            "organizations": organizations,
             "key_encrypted": key_encrypted
         })
 

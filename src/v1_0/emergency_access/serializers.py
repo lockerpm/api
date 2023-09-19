@@ -74,3 +74,11 @@ class PasswordEmergencyAccessSerializer(serializers.Serializer):
     key = serializers.CharField()
     new_master_password_hash = serializers.CharField()
 
+
+class ViewOrgSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        data = {
+            "id": instance.team_id,
+            "key": instance.key,
+        }
+        return data
