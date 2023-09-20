@@ -392,7 +392,8 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
             "object": "emergencyAccessView",
             "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": emergency_access.grantor}).data,
             "organizations": organizations,
-            "key_encrypted": key_encrypted
+            "key_encrypted": key_encrypted,
+            "private_key": emergency_access.grantor.private_key
         })
 
     @action(methods=["post"], detail=True)
