@@ -134,13 +134,20 @@ class PromoCode(models.Model):
             return False
 
     @classmethod
-    def check_saas_valid(cls, value, current_user):
+    def check_saas_valid(cls, value, current_user, new_duration: str = None, new_plan: str = None):
         try:
             promo_code = cls.objects.get(code=value, valid=True)
             # If promo code was expired or promo code was used by this user?
             if promo_code.expired_time < now() or promo_code.remaining_times <= 0 or promo_code.is_saas_code is False:
                 return False
-            if current_user is not None and current_user.payments.filter(promo_code=promo_code).count() > 0:
+            if current_user is not None:
+                if current_user.payments.filter(promo_code=promo_code).count() > 0:
+                    return False
+                if promo_code.only_user_id and promo_code.only_user_id != current_user.user_id:
+                    return False
+            if promo_code.only_period and new_duration and promo_code.only_period != new_duration:
+                return False
+            if promo_code.only_plan and new_plan and promo_code.only_plan != new_plan:
                 return False
             return promo_code
         except cls.DoesNotExist:
