@@ -352,7 +352,7 @@ class UserRepository(IUserRepository):
                 end_period = 365 * 86400 + start_period
             else:
                 end_period = 30 * 86400 + start_period
-        if plan_type_alias == PLAN_TYPE_PM_LIFETIME:
+        if plan_type_alias in [PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY]:
             end_period = None
         pm_user_plan = self.get_current_plan(user=user, scope=scope)
         pm_user_plan.pm_plan = PMPlan.objects.get(alias=plan_type_alias)
