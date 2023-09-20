@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.decorators import action
 
-from shared.constants.transactions import *
+from shared.constants.transactions import PLAN_TYPE_PM_FREE
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.family_pwd_permission import FamilyPwdPermission
 from v1_0.family.serializers import UserPlanFamilySerializer, CreateUserPlanFamilySeriaizer
@@ -25,22 +25,20 @@ class FamilyPwdViewSet(PasswordManagerViewSet):
     def get_object(self):
         user = self.request.user
         pm_current_plan = self.user_repository.get_current_plan(user=user)
-        current_plan_alias = pm_current_plan.get_plan_type_alias()
         # Check permission here
         if self.action == "member_list":
-            if current_plan_alias != PLAN_TYPE_PM_FAMILY and user.pm_plan_family.exists() is False:
+            if not pm_current_plan.pm_plan.is_family_plan and user.pm_plan_family.exists() is False:
                 raise PermissionDenied
         else:
-            if current_plan_alias != PLAN_TYPE_PM_FAMILY:
+            if not pm_current_plan.pm_plan.is_family_plan:
                 raise PermissionDenied
         return pm_current_plan
 
     @action(methods=["get"], detail=False)
     def member_list(self, request, *args, **kwargs):
         pm_current_plan = self.get_object()
-        pm_current_plan_alias = pm_current_plan.get_plan_type_alias()
         # The retrieving user is owner of the family plan
-        if pm_current_plan_alias == PLAN_TYPE_PM_FAMILY:
+        if pm_current_plan.pm_plan.is_family_plan:
             owner = request.user
             family_members = pm_current_plan.pm_plan_family.all().order_by('-user_id', '-created_time')
         # Else, user is a member
