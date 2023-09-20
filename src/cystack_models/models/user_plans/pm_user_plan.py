@@ -152,7 +152,7 @@ class PMUserPlan(UserPlan):
         if plan_alias in [PLAN_TYPE_PM_FREE]:
             return None
         # If this plan is lifetime => return end_period (None)
-        if plan_alias in [PLAN_TYPE_PM_LIFETIME]:
+        if plan_alias in [PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY]:
             return self.end_period
         # If subscription object is None => Get next billing time of this user plan
         stripe_subscription = self.get_stripe_subscription()
