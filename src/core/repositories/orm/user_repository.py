@@ -352,7 +352,7 @@ class UserRepository(IUserRepository):
                 end_period = 365 * 86400 + start_period
             else:
                 end_period = 30 * 86400 + start_period
-        if plan_type_alias == PLAN_TYPE_PM_LIFETIME:
+        if plan_type_alias in [PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY]:
             end_period = None
         pm_user_plan = self.get_current_plan(user=user, scope=scope)
         pm_user_plan.pm_plan = PMPlan.objects.get(alias=plan_type_alias)
@@ -491,8 +491,11 @@ class UserRepository(IUserRepository):
                 # Add to family plan
                 family_user_plan.pm_plan_family.model.create(family_user_plan, family_member_user, None)
                 # Then upgrade to Premium
+                family_member_plan = PLAN_TYPE_PM_PREMIUM
+                if family_user_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME_FAMILY:
+                    family_member_plan = PLAN_TYPE_PM_LIFETIME
                 self.update_plan(
-                    user=family_member_user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=family_user_plan.duration,
+                    user=family_member_user, plan_type_alias=family_member_plan, duration=family_user_plan.duration,
                     scope=settings.SCOPE_PWD_MANAGER, **{
                         "start_period": family_user_plan.start_period,
                         "end_period": family_user_plan.end_period,

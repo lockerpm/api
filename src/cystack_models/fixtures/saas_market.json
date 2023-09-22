@@ -22,5 +22,13 @@
       "name": "DealFuel",
       "lifetime_duration": 31536000
     }
+  },
+  {
+    "model": "cystack_models.SaasMarket",
+    "fields": {
+      "id": 4,
+      "name": "DealMirror",
+      "lifetime_duration": null
+    }
   }
 ]

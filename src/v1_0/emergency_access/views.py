@@ -19,7 +19,7 @@ from shared.services.pm_sync import PwdSync, SYNC_EMERGENCY_ACCESS, SYNC_EVENT_C
 from cystack_models.models.emergency_access.emergency_access import EmergencyAccess
 from v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer
 from v1_0.emergency_access.serializers import EmergencyAccessGranteeSerializer, EmergencyAccessGrantorSerializer, \
-    InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer
+    InviteEmergencyAccessSerializer, PasswordEmergencyAccessSerializer, ViewOrgSerializer
 from v1_0.sync.serializers import SyncCipherSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
@@ -377,14 +377,23 @@ class EmergencyAccessPwdViewSet(PasswordManagerViewSet):
         if emergency_access.type != EMERGENCY_ACCESS_TYPE_VIEW or emergency_access.status != EMERGENCY_ACCESS_STATUS_RECOVERY_APPROVED:
             raise NotFound
         ciphers = self.cipher_repository.get_multiple_by_user(
-            user=emergency_access.grantor, only_personal=True
+            user=emergency_access.grantor, # only_personal=True
         ).prefetch_related('collections_ciphers')
         key_encrypted = emergency_access.key_encrypted
+
+        team_members = emergency_access.grantor.team_members.filter(
+            status=PM_MEMBER_STATUS_CONFIRMED, team__key__isnull=False
+        )
+        organizations = []
+        for team_member in team_members:
+            organizations.append(ViewOrgSerializer(team_member, many=False).data)
 
         return Response(status=200, data={
             "object": "emergencyAccessView",
             "ciphers": SyncCipherSerializer(ciphers, many=True, context={"user": emergency_access.grantor}).data,
-            "key_encrypted": key_encrypted
+            "organizations": organizations,
+            "key_encrypted": key_encrypted,
+            "private_key": emergency_access.grantor.private_key
         })
 
     @action(methods=["post"], detail=True)

@@ -191,7 +191,7 @@ class UserPwdViewSet(PasswordManagerViewSet):
         self.user_repository.enterprise_share_groups_confirm(user=user)
         # Update lifetime mail
         if user.saas_source:
-            if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME:
+            if current_plan.get_plan_type_alias() in [PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY]:
                 LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
                     func_name="notify_locker_mail", **{
                         "user_ids": [user.user_id],

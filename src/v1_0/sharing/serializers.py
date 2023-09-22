@@ -32,7 +32,7 @@ class MemberShareSerializer(serializers.Serializer):
         return data
 
 
-class GroupMemberShareSeralizer(serializers.Serializer):
+class GroupMemberShareSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(allow_null=True, required=False)
     email = serializers.EmailField(allow_null=True, required=False)
     key = serializers.CharField(allow_null=True, required=False)
@@ -51,7 +51,7 @@ class GroupMemberShareSeralizer(serializers.Serializer):
 class GroupShareSerializer(serializers.Serializer):
     id = serializers.CharField(max_length=128)
     role = serializers.ChoiceField(choices=[MEMBER_ROLE_ADMIN, MEMBER_ROLE_MEMBER])
-    members = GroupMemberShareSeralizer(many=True)
+    members = GroupMemberShareSerializer(many=True)
 
     def validate(self, data):
         group_id = data.get("id")
@@ -412,4 +412,4 @@ class AddItemShareFolderSerializer(serializers.Serializer):
 
 
 class GroupMemberConfirmSerializer(serializers.Serializer):
-    members = GroupMemberShareSeralizer(many=True)
+    members = GroupMemberShareSerializer(many=True)

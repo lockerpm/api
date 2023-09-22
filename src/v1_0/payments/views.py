@@ -291,11 +291,17 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if user.enterprise_members.filter().exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
-            raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
+        plan_obj = validated_data.get("plan_obj")
+
+        if plan_obj.get_alias() == PLAN_TYPE_PM_LIFETIME_FAMILY:
+            if user.pm_plan_family.exists():
+                raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        else:
+            if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+                raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         saas_code = validated_data.get("saas_code")
         saas_code.remaining_times = F('remaining_times') - 1
         saas_code.save()
@@ -307,7 +313,6 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # Cancel the current Free/Premium/Family
         self.user_repository.cancel_plan(user=user, immediately=True)
 
-        plan_obj = validated_data.get("plan_obj")
         if saas_code.saas_market.lifetime_duration is None:
             saas_end_period = None
             upgrade_duration = DURATION_MONTHLY
@@ -330,10 +335,26 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         )
         user.set_saas_source(saas_source=saas_code.saas_market.name)
 
+        # Upgrade family members plan
+        if plan_obj.get_alias() == PLAN_TYPE_PM_LIFETIME_FAMILY:
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            family_members = current_plan.pm_plan_family.all()
+            for family_member in family_members:
+                # Update period for the family members
+                if family_member.user:
+                    self.user_repository.update_plan(
+                        user=family_member.user, plan_type_alias=PLAN_TYPE_PM_LIFETIME, duration=current_plan.duration,
+                        scope=settings.SCOPE_PWD_MANAGER, **{
+                            "start_period": current_plan.start_period,
+                            "end_period": current_plan.end_period,
+                            "number_members": 1
+                        }
+                    )
+
         # Send lifetime welcome mail
         user.refresh_from_db()
         if user.activated:
-            if plan_obj.get_alias() == PLAN_TYPE_PM_LIFETIME:
+            if plan_obj.get_alias() in [PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY]:
                 LockerBackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
                     func_name="notify_locker_mail", **{
                         "user_ids": [user.user_id],
@@ -656,7 +677,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             "cancel_at_period_end": pm_current_plan.is_cancel_at_period_end(),
             "payment_method": pm_current_plan.get_default_payment_method(),
             "number_members": pm_current_plan.get_current_number_members(),
-            "is_family": user.pm_plan_family.exists(),
+            "is_family": user.pm_plan_family.exists() or pm_current_plan.pm_plan.is_family_plan,
             "personal_trial_applied": pm_current_plan.is_personal_trial_applied(),
             "extra_time": pm_current_plan.extra_time,
             "extra_plan": pm_current_plan.extra_plan or PLAN_TYPE_PM_PREMIUM if pm_current_plan.extra_time else None

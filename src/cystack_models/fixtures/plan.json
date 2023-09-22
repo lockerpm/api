@@ -28,6 +28,7 @@
       "team_policy": false,
       "team_prevent_password": false,
       "team_activity_log": false,
+      "relay_premium": false,
       "plan_type": "Basic"
     }
   },
@@ -60,6 +61,7 @@
       "team_policy": false,
       "team_prevent_password": false,
       "team_activity_log": false,
+      "relay_premium": true,
       "plan_type": "Basic"
     }
   },
@@ -92,6 +94,7 @@
       "team_policy": false,
       "team_prevent_password": false,
       "team_activity_log": false,
+      "relay_premium": true,
       "plan_type": "Basic"
     }
   },
@@ -124,6 +127,7 @@
       "team_policy": false,
       "team_prevent_password": false,
       "team_activity_log": false,
+      "relay_premium": true,
       "plan_type": "Basic"
     }
   },
@@ -156,6 +160,40 @@
       "team_policy": true,
       "team_prevent_password": true,
       "team_activity_log": true,
+      "relay_premium": true,
+      "plan_type": "Basic"
+    }
+  },
+  {
+    "model": "cystack_models.PMPlan",
+    "fields": {
+      "name": "Lifetime Family",
+      "alias": "pm_lifetime_family",
+      "price_usd": 349.99,
+      "price_vnd": 0,
+      "yearly_price_usd": 349.99,
+      "yearly_price_vnd": 0,
+      "half_yearly_price_usd": 349.99,
+      "half_yearly_price_vnd": 0,
+      "sync_device": null,
+      "limit_password": null,
+      "limit_secure_note": null,
+      "limit_identity": null,
+      "limit_payment_card": null,
+      "limit_crypto_asset": null,
+      "tools_password_reuse": true,
+      "tools_master_password_check": true,
+      "tools_data_breach": true,
+      "emergency_access": true,
+      "personal_share": true,
+      "is_family_plan": true,
+      "is_team_plan": false,
+      "max_number": 1,
+      "team_dashboard": false,
+      "team_policy": false,
+      "team_prevent_password": false,
+      "team_activity_log": false,
+      "relay_premium": true,
       "plan_type": "Basic"
     }
   }
