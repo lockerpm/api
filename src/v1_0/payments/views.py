@@ -311,7 +311,12 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             raise ValidationError(detail={"code": ["This code is expired or not valid"]})
 
         # Cancel the current Free/Premium/Family
-        self.user_repository.cancel_plan(user=user, immediately=True)
+        # If new plan is family lifetime => Only cancel stripe subscription
+        if plan_obj.get_alias() == PLAN_TYPE_PM_LIFETIME_FAMILY:
+            if current_plan.pm_stripe_subscription:
+                self.user_repository.cancel_plan(user=user, immediately=True)
+        else:
+            self.user_repository.cancel_plan(user=user, immediately=True)
 
         if saas_code.saas_market.lifetime_duration is None:
             saas_end_period = None
