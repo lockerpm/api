@@ -146,6 +146,10 @@ class PaymentViewSet(MicroServiceViewSet):
         if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and \
                 request.data.get("plan") != PLAN_TYPE_PM_LIFETIME:
             return Response(status=200, data={"old_plan": old_plan})
+        # If this plan is cancelled because the Family Lifetime upgrade => Not downgrade
+        if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME_FAMILY and \
+                request.data.get("plan") != PLAN_TYPE_PM_LIFETIME_FAMILY:
+            return Response(status=200, data={"old_plan": old_plan})
 
         # if this plan is canceled because the user is added into family plan => Not notify
         if not current_plan.user.pm_plan_family.exists():
