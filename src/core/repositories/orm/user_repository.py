@@ -538,8 +538,10 @@ class UserRepository(IUserRepository):
             for family_member in family_members:
                 # Update period for the family members
                 if family_member.user:
+                    plan_type_alias = PLAN_TYPE_PM_LIFETIME if plan_obj.alias == PLAN_TYPE_PM_LIFETIME_FAMILY else \
+                        PLAN_TYPE_PM_PREMIUM
                     self.update_plan(
-                        user=family_member.user, plan_type_alias=PLAN_TYPE_PM_PREMIUM, duration=pm_user_plan.duration,
+                        user=family_member.user, plan_type_alias=plan_type_alias, duration=pm_user_plan.duration,
                         scope=settings.SCOPE_PWD_MANAGER, **{
                             "start_period": pm_user_plan.start_period,
                             "end_period": pm_user_plan.end_period,
