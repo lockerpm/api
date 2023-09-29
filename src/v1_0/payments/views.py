@@ -673,6 +673,14 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         })
         return Response(status=200, data=result)
 
+    @action(methods=["get"], detail=False)
+    def next_attempt(self, request, *args, **kwargs):
+        user = self.request.user
+        current_plan = self.user_repository.get_current_plan(user=user)
+        return Response(status=200, data={
+            "next_payment_attempt": current_plan.get_next_retry_payment_date(),
+        })
+
     @action(methods=["post"], detail=False)
     def upgrade_plan(self, request, *args, **kwargs):
         user = self.request.user

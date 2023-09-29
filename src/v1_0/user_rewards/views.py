@@ -165,12 +165,6 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             "used_promo_code_value": used_promo_code_value,
             "available_promo_code_value": available_promo_code_value,
             "generated_available_promo_codes": generated_promo_codes_srl.data
-
-            # "claimed_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
-            # "available_promo_code": promo_code_reward_missions.filter(status=USER_MISSION_STATUS_REWARD_SENT).count(),
-            # "available_promo_code_value": promo_code_reward_missions.filter(
-            #     status=USER_MISSION_STATUS_REWARD_SENT,
-            # ).aggregate(Sum('mission__reward_value'))['mission__reward_value__sum']
         }
         return Response(status=200, data=result)
 
