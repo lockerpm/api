@@ -227,6 +227,10 @@ class UpgradeThreePromoSerializer(serializers.Serializer):
 
 class UpgradeLifetimePublicSerializer(serializers.Serializer):
     promo_code = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    plan_alias = serializers.ChoiceField(
+        choices=[PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY], default=PLAN_TYPE_PM_LIFETIME,
+        required=False
+    )
 
     def validate(self, data):
         current_user = self.context["request"].user
@@ -238,6 +242,7 @@ class UpgradeLifetimePublicSerializer(serializers.Serializer):
             data["promo_code_obj"] = promo_code_obj
 
         data["currency"] = CURRENCY_USD
+        data["plan_alias"] = data.get("plan_alias") or PLAN_TYPE_PM_LIFETIME
         return data
 
 

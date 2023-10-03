@@ -424,28 +424,34 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
     @action(methods=["post"], detail=False)
     def upgrade_lifetime_public(self, request, *args, **kwargs):
         user = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        promo_code_obj = validated_data.get("promo_code_obj", None)
+        plan_alias = validated_data.get("plan_alias", PLAN_TYPE_PM_LIFETIME)
+        duration = validated_data.get("duration", DURATION_MONTHLY)
+        currency = validated_data.get("currency")
+
         if user.enterprise_members.filter().exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
-            raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
-        if current_plan.get_plan_type_alias() in [PLAN_TYPE_PM_LIFETIME]:
+        if current_plan.get_plan_type_alias() == plan_alias:
             raise ValidationError(detail={"non_field_errors": [gen_error("7017")]})
+        if plan_alias == PLAN_TYPE_PM_LIFETIME_FAMILY:
+            if user.pm_plan_family.exists():
+                raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+            else:
+                if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+                    raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         card = request.data.get("card")
         if not card:
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
         if not card.get("id_card"):
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
-        promo_code_obj = validated_data.get("promo_code_obj", None)
-        duration = validated_data.get("duration", DURATION_MONTHLY)
-        currency = validated_data.get("currency")
         # Cancel the current Free/Premium/Family
         self.user_repository.cancel_plan(user=user, immediately=True)
 
-        plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
+        plan_obj = PMPlan.objects.get(alias=plan_alias)
         plan_metadata = {
             "start_period": now(),
             "end_period": None,
