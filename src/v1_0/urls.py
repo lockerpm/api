@@ -253,6 +253,8 @@ urlpatterns += [
     })),
     url(r'^payments/lifetime$', views.PaymentPwdViewSet.as_view({'post': 'upgrade_lifetime'})),
     url(r'^payments/three_promo$', views.PaymentPwdViewSet.as_view({'post': 'upgrade_three_promo'})),
+
+    url(r'^lifetime/payments/calc$', views.PaymentPwdViewSet.as_view({'post': 'calc_lifetime_public'})),
     url(r'^lifetime/payments/plan$', views.PaymentPwdViewSet.as_view({'post': 'upgrade_lifetime_public'})),
     url(r'^education/payments/plan$', views.PaymentPwdViewSet.as_view({'post': 'upgrade_education_public'})),
     url(r'^education/verify$', views.PaymentPwdViewSet.as_view({'post': 'verify_education_email'})),
