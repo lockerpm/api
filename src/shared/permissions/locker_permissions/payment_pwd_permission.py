@@ -5,7 +5,7 @@ class PaymentPwdPermission(LockerPermission):
     def has_permission(self, request, view):
         if view.action in ["webhook_create", "webhook_set_status",
                            "webhook_unpaid_subscription", "webhook_cancel_subscription",
-                           "upgrade_trial_enterprise_by_code"]:
+                           "upgrade_trial_enterprise_by_code", "calc_lifetime_public"]:
             return True
         elif view.action in ["list", "set_invoice_status", "user_invoices", "admin_upgrade_plan"]:
             return self.is_admin(request)

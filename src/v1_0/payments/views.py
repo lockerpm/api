@@ -29,7 +29,7 @@ from v1_0.resources.serializers import PMPlanSerializer
 from v1_0.payments.serializers import CalcSerializer, UpgradePlanSerializer, ListInvoiceSerializer, \
     DetailInvoiceSerializer, AdminUpgradePlanSerializer, UpgradeTrialSerializer, CancelPlanSerializer, \
     UpgradeLifetimeSerializer, UpgradeThreePromoSerializer, UpgradeLifetimePublicSerializer, \
-    UpgradeEducationPublicSerializer
+    UpgradeEducationPublicSerializer, CalcLifetimePublicSerializer
 from v1_0.general_view import PasswordManagerViewSet
 
 
@@ -56,6 +56,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             self.serializer_class = UpgradeThreePromoSerializer
         elif self.action == "upgrade_lifetime_public":
             self.serializer_class = UpgradeLifetimePublicSerializer
+        elif self.action == "calc_lifetime_public":
+            self.serializer_class = CalcLifetimePublicSerializer
+
         elif self.action == "upgrade_education_public":
             self.serializer_class = UpgradeEducationPublicSerializer
         elif self.action == "cancel_plan":
@@ -422,30 +425,50 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
+    def calc_lifetime_public(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        promo_code = validated_data.get("promo_code")
+        plan_alias = validated_data.get("plan_alias")
+        currency = validated_data.get("currency", CURRENCY_USD)
+        # Calc payment
+        result = self._calc_lifetime_payment_public(
+            plan=plan_alias, currency=currency, promo_code=promo_code
+        )
+        return Response(status=200, data=result)
+
+    @action(methods=["post"], detail=False)
     def upgrade_lifetime_public(self, request, *args, **kwargs):
         user = self.request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        promo_code_obj = validated_data.get("promo_code_obj", None)
+        plan_alias = validated_data.get("plan_alias", PLAN_TYPE_PM_LIFETIME)
+        duration = validated_data.get("duration", DURATION_MONTHLY)
+        currency = validated_data.get("currency")
+
         if user.enterprise_members.filter().exists():
             raise ValidationError(detail={"non_field_errors": [gen_error("7015")]})
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
-        if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
-            raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
-        if current_plan.get_plan_type_alias() in [PLAN_TYPE_PM_LIFETIME]:
+        if current_plan.get_plan_type_alias() == plan_alias:
             raise ValidationError(detail={"non_field_errors": [gen_error("7017")]})
+        if plan_alias == PLAN_TYPE_PM_LIFETIME_FAMILY:
+            if user.pm_plan_family.exists():
+                raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+            else:
+                if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+                    raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         card = request.data.get("card")
         if not card:
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
         if not card.get("id_card"):
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
-        promo_code_obj = validated_data.get("promo_code_obj", None)
-        duration = validated_data.get("duration", DURATION_MONTHLY)
-        currency = validated_data.get("currency")
         # Cancel the current Free/Premium/Family
         self.user_repository.cancel_plan(user=user, immediately=True)
 
-        plan_obj = PMPlan.objects.get(alias=PLAN_TYPE_PM_LIFETIME)
+        plan_obj = PMPlan.objects.get(alias=plan_alias)
         plan_metadata = {
             "start_period": now(),
             "end_period": None,
@@ -673,6 +696,14 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         })
         return Response(status=200, data=result)
 
+    @action(methods=["get"], detail=False)
+    def next_attempt(self, request, *args, **kwargs):
+        user = self.request.user
+        current_plan = self.user_repository.get_current_plan(user=user)
+        return Response(status=200, data={
+            "next_payment_attempt": current_plan.get_next_retry_payment_date(),
+        })
+
     @action(methods=["post"], detail=False)
     def upgrade_plan(self, request, *args, **kwargs):
         user = self.request.user
@@ -884,6 +915,53 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             allow_trial=allow_trial
         )
         result["plan"] = PMPlanSerializer(plan, many=False).data
+        return result
+
+    @staticmethod
+    def _calc_lifetime_payment_public(plan: str, currency=CURRENCY_USD, promo_code=None):
+        plan = PMPlan.objects.get(alias=plan)
+        # Get new plan price
+        new_plan_price = plan.get_price(currency=currency)
+        # Calc discount
+        error_promo = None
+        promo_code_obj = None
+        promo_description_en = None
+        promo_description_vi = None
+        if promo_code is not None and promo_code != "":
+            promo_code_obj = PromoCode.check_valid(
+                value=promo_code, current_user=None, new_plan=plan.get_alias()
+            )
+            if not promo_code_obj:
+                error_promo = {"promo_code": ["This coupon is expired or incorrect"]}
+            else:
+                promo_description_en = promo_code_obj.description_en
+                promo_description_vi = promo_code_obj.description_vi
+
+        total_amount = new_plan_price
+        next_billing_time = None
+
+        # Discount and immediate payment
+        total_amount = max(total_amount, 0)
+        discount = promo_code_obj.get_discount(total_amount) if promo_code_obj else 0.0
+        immediate_amount = max(round(total_amount - discount, 2), 0)
+
+        result = {
+            "alias": plan.get_alias(),
+            "price": round(new_plan_price, 2),
+            "total_price": total_amount,
+            "discount": discount,
+            "duration": "lifetime",
+            "currency": currency,
+            "immediate_payment": immediate_amount,
+            "next_billing_time": next_billing_time,
+            "promo_description": {
+                "en": promo_description_en,
+                "vi": promo_description_vi
+            },
+            "error_promo": error_promo,
+            "quantity": 1,
+            "plan": PMPlanSerializer(plan, many=False).data
+        }
         return result
 
     @action(methods=["get"], detail=False)
