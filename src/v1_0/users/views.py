@@ -125,7 +125,8 @@ class UserPwdViewSet(PasswordManagerViewSet):
 
         current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
         # Upgrade trial plan
-        if trial_plan_obj and trial_plan_obj.get_alias() != PLAN_TYPE_PM_FREE:
+        if trial_plan_obj and trial_plan_obj.get_alias() != PLAN_TYPE_PM_FREE and \
+                current_plan.get_plan_type_alias() == PLAN_TYPE_PM_FREE:
             if trial_plan_obj.is_team_plan is False:
                 if current_plan.is_personal_trial_applied() is False:
                     end_period = now() + TRIAL_PERSONAL_PLAN
