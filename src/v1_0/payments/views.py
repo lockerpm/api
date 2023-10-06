@@ -457,9 +457,9 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if plan_alias == PLAN_TYPE_PM_LIFETIME_FAMILY:
             if user.pm_plan_family.exists():
                 raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
-            else:
-                if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
-                    raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        else:
+            if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+                raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         card = request.data.get("card")
         if not card:
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
