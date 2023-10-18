@@ -507,6 +507,12 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # Cancel the current Stripe subscription: Free/Premium/Family
         self.user_repository.cancel_plan(user=user, immediately=True)
 
+        # Make sure upgrade
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=plan_obj.get_alias(),
+            duration=duration, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
+
         # Set default payment method
         try:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
