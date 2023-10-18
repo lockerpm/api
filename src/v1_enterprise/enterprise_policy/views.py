@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cystack_models.models.enterprises.enterprises import Enterprise
+from shared.background.i_background import BackgroundThread, background_exception_wrapper
+from shared.caching.sync_cache import delete_sync_cache_data
 from shared.constants.policy import *
 from shared.error_responses.error import gen_error
 from shared.permissions.locker_permissions.enterprise.policy_permission import PolicyPwdPermission
@@ -73,4 +75,11 @@ class PolicyPwdViewSet(EnterpriseViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(**{"config_obj": config_obj})
+        BackgroundThread(task=self.delete_cache_enterprise_members, **{"enterprise": policy.enterprise})
         return Response(status=200, data={"success": True})
+
+    @background_exception_wrapper
+    def delete_cache_enterprise_members(self, enterprise):
+        user_ids = list(enterprise.enterprise_members.exclude(user_id__isnull=True).values_list('user_id', flat=True))
+        for user_id in user_ids:
+            delete_sync_cache_data(user_id=user_id)
