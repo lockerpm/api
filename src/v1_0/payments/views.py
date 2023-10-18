@@ -457,16 +457,14 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if plan_alias == PLAN_TYPE_PM_LIFETIME_FAMILY:
             if user.pm_plan_family.exists():
                 raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
-            else:
-                if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
-                    raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
+        else:
+            if current_plan.get_plan_obj().is_family_plan or user.pm_plan_family.exists():
+                raise ValidationError(detail={"non_field_errors": [gen_error("7016")]})
         card = request.data.get("card")
         if not card:
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
         if not card.get("id_card"):
             raise ValidationError({"non_field_errors": [gen_error("7007")]})
-        # Cancel the current Free/Premium/Family
-        self.user_repository.cancel_plan(user=user, immediately=True)
 
         plan_obj = PMPlan.objects.get(alias=plan_alias)
         plan_metadata = {
@@ -498,11 +496,22 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
                 })
             raise ValidationError({"non_field_errors": [gen_error("7009")]})
 
+        current_plan.extra_plan = None
+        current_plan.extra_time = 0
+        current_plan.save()
         self.user_repository.update_plan(
             user=user, plan_type_alias=plan_obj.get_alias(),
             duration=duration, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
         )
-        # user.set_saas_source(saas_source="Locker")
+
+        # Cancel the current Stripe subscription: Free/Premium/Family
+        self.user_repository.cancel_plan(user=user, immediately=True)
+
+        # Make sure upgrade
+        self.user_repository.update_plan(
+            user=user, plan_type_alias=plan_obj.get_alias(),
+            duration=duration, scope=settings.SCOPE_PWD_MANAGER, **plan_metadata
+        )
 
         # Set default payment method
         try:
