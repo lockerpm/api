@@ -2,7 +2,7 @@ from django.db import connection
 
 from core.settings import CORE_CONFIG
 from shared.background.i_background import ILockerBackground
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_CIPHER_DELETE
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_RESTORE
 
 
 class CipherBackground(ILockerBackground):
@@ -34,7 +34,9 @@ class CipherBackground(ILockerBackground):
             # Sync event
             restored_ciphers = self.cipher_repository.get_multiple_by_ids(cipher_ids=restored_cipher_ids)
             teams = self.team_repository.get_multiple_team_by_ids(list(restored_ciphers.values_list('team_id', flat=True)))
-            PwdSync(event=SYNC_EVENT_VAULT, user_ids=[user.user_id], teams=teams, add_all=True).send()
+            PwdSync(event=SYNC_EVENT_CIPHER_RESTORE, user_ids=[user.user_id], teams=teams, add_all=True).send(
+                data={"ids": list(restored_cipher_ids)}
+            )
         except Exception as e:
             self.log_error(func_name="multiple_restore")
         finally:
