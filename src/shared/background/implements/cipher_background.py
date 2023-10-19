@@ -2,7 +2,7 @@ from django.db import connection
 
 from core.settings import CORE_CONFIG
 from shared.background.i_background import ILockerBackground
-from shared.services.pm_sync import PwdSync, SYNC_EVENT_VAULT, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_RESTORE
+from shared.services.pm_sync import PwdSync, SYNC_EVENT_CIPHER_DELETE, SYNC_EVENT_CIPHER_RESTORE
 
 
 class CipherBackground(ILockerBackground):
