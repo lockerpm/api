@@ -178,10 +178,30 @@ class SyncPwdViewSet(PasswordManagerViewSet):
         return Response(status=200, data=result)
 
     @action(methods=["get"], detail=False)
+    def sync_folders(self, request, *args, **kwargs):
+        user = self.request.user
+        folders = self.folder_repository.get_multiple_by_user(user=user)
+        serializer = SyncFolderSerializer(folders, many=True).data
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
     def sync_folder_detail(self, request, *args, **kwargs):
         self.check_pwd_session_auth(request=request)
         folder = self.get_folder_obj()
         serializer = SyncFolderSerializer(folder, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_collections(self, request, *args, **kwargs):
+        # Check team policies
+        block_team_ids = []
+        user = self.request.user
+        collections = self.collection_repository.get_multiple_user_collections(
+            user=user, exclude_team_ids=block_team_ids
+        ).select_related('team')
+        serializer = SyncCollectionSerializer(collections, many=True, context={"user": user})
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         return Response(status=200, data=result)
 
@@ -212,5 +232,13 @@ class SyncPwdViewSet(PasswordManagerViewSet):
             raise NotFound
 
         serializer = SyncOrgDetailSerializer(team_member, many=False)
+        result = camel_snake_data(serializer.data, snake_to_camel=True)
+        return Response(status=200, data=result)
+
+    @action(methods=["get"], detail=False)
+    def sync_policies(self, request, *args, **kwargs):
+        user = self.request.user
+        policies = self.team_repository.get_multiple_policy_by_user(user=user).select_related('enterprise')
+        serializer = SyncEnterprisePolicySerializer(policies, many=True)
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         return Response(status=200, data=result)
