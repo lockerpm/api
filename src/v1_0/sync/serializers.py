@@ -194,6 +194,7 @@ class SyncCollectionSerializer(serializers.ModelSerializer):
             "object": "collectionDetails",
             "id": instance.id,
             "name": instance.name,
+            "creation_date": convert_readable_date(instance.creation_date),
             "revision_date": convert_readable_date(instance.revision_date),
             "organization_id": instance.team_id,
             "hide_passwords": instance.hide_passwords,
