@@ -769,6 +769,10 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         if collection_obj:
             PwdSync(event=SYNC_EVENT_CIPHER, user_ids=[user.user_id] + removed_member_user_ids).send()
 
+        # Delete cached data
+        for u_id in [user.user_id] + removed_member_user_ids:
+            delete_sync_cache_data(user_id=u_id)
+
         return Response(status=200, data={"success": True})
 
     @action(methods=["post"], detail=False)
