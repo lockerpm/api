@@ -863,6 +863,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
 
     @action(methods=["post"], detail=False)
     def add_member(self, request, *args, **kwargs):
+        user = self.request.user
         self.check_pwd_session_auth(request)
         personal_share = self.get_personal_share(kwargs.get("pk"))
         share_folder = personal_share.collections.first()
@@ -877,6 +878,7 @@ class SharingPwdViewSet(PasswordManagerViewSet):
         existed_member_users, non_existed_member_users = self.sharing_repository.add_members(
             team=personal_share, shared_collection=share_folder, members=members, groups=groups
         )
+        PwdSync(event=SYNC_EVENT_MEMBER_INVITATION, user_ids=existed_member_users + [user.user_id]).send()
         mail_user_ids = NotificationSetting.get_user_mail(category_id=NOTIFY_SHARING, user_ids=existed_member_users)
         notification_user_ids = NotificationSetting.get_user_notification(
             category_id=NOTIFY_SHARING, user_ids=existed_member_users
