@@ -232,6 +232,7 @@ class CalcLifetimePublicSerializer(serializers.Serializer):
         choices=[PLAN_TYPE_PM_LIFETIME, PLAN_TYPE_PM_LIFETIME_FAMILY], default=PLAN_TYPE_PM_LIFETIME,
         required=False
     )
+    user_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class UpgradeLifetimePublicSerializer(serializers.Serializer):

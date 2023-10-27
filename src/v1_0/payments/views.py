@@ -432,9 +432,14 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         promo_code = validated_data.get("promo_code")
         plan_alias = validated_data.get("plan_alias")
         currency = validated_data.get("currency", CURRENCY_USD)
+        user_id = validated_data.get("user_id")
+        try:
+            user = self.user_repository.get_by_id(user_id=user_id)
+        except User.DoesNotExist:
+            user = None
         # Calc payment
         result = self._calc_lifetime_payment_public(
-            plan=plan_alias, currency=currency, promo_code=promo_code
+            plan=plan_alias, currency=currency, promo_code=promo_code, user=user
         )
         return Response(status=200, data=result)
 
@@ -475,8 +480,11 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
 
         # Calc payment price of new plan
         promo_code_value = promo_code_obj.code if promo_code_obj else None
-        calc_payment = self._calc_payment(
-            plan_obj, duration=duration, currency=currency, promo_code=promo_code_value, allow_trial=False
+        # calc_payment = self._calc_payment(
+        #     plan_obj, duration=duration, currency=currency, promo_code=promo_code_value, allow_trial=False
+        # )
+        calc_payment = self._calc_lifetime_payment_public(
+            plan_obj, currency=currency, promo_code=promo_code_value, user=user
         )
         immediate_payment = calc_payment.get("immediate_payment")
         payment = PaymentMethodFactory.get_method(
@@ -926,11 +934,15 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         result["plan"] = PMPlanSerializer(plan, many=False).data
         return result
 
-    @staticmethod
-    def _calc_lifetime_payment_public(plan: str, currency=CURRENCY_USD, promo_code=None):
+    def _calc_lifetime_payment_public(self, plan: str, currency=CURRENCY_USD, promo_code=None, user=None):
         plan = PMPlan.objects.get(alias=plan)
         # Get new plan price
         new_plan_price = plan.get_price(currency=currency)
+        if user:
+            current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
+            if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and plan == PLAN_TYPE_PM_LIFETIME_FAMILY:
+                new_plan_price = new_plan_price - current_plan.pm_plan.get_price(currency=currency)
+
         # Calc discount
         error_promo = None
         promo_code_obj = None
