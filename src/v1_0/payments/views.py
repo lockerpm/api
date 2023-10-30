@@ -942,7 +942,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         if user:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and plan == PLAN_TYPE_PM_LIFETIME_FAMILY:
-                old_plan_discount = round(new_plan_price - current_plan.pm_plan.get_price(currency=currency), 0)
+                old_plan_discount = round(current_plan.pm_plan.get_price(currency=currency), 0)
 
         # Calc discount
         error_promo = None
