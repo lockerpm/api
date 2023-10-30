@@ -938,10 +938,11 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         plan = PMPlan.objects.get(alias=plan)
         # Get new plan price
         new_plan_price = plan.get_price(currency=currency)
+        old_plan_discount = 0
         if user:
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and plan == PLAN_TYPE_PM_LIFETIME_FAMILY:
-                new_plan_price = new_plan_price - current_plan.pm_plan.get_price(currency=currency)
+                old_plan_discount = round(new_plan_price - current_plan.pm_plan.get_price(currency=currency), 0)
 
         # Calc discount
         error_promo = None
@@ -964,6 +965,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         # Discount and immediate payment
         total_amount = max(total_amount, 0)
         discount = promo_code_obj.get_discount(total_amount) if promo_code_obj else 0.0
+        discount = discount + old_plan_discount
         immediate_amount = max(round(total_amount - discount, 2), 0)
 
         result = {
