@@ -1,4 +1,6 @@
 import json
+import math
+
 import jwt
 from datetime import datetime
 
@@ -943,7 +945,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
             current_plan = self.user_repository.get_current_plan(user=user, scope=settings.SCOPE_PWD_MANAGER)
             if current_plan.get_plan_type_alias() == PLAN_TYPE_PM_LIFETIME and \
                     plan.get_alias() == PLAN_TYPE_PM_LIFETIME_FAMILY:
-                old_plan_discount = round(current_plan.pm_plan.get_price(currency=currency), 0)
+                old_plan_discount = math.floor(current_plan.pm_plan.get_price(currency=currency))
 
         # Calc discount
         error_promo = None
