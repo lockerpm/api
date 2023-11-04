@@ -486,7 +486,7 @@ class PaymentPwdViewSet(PasswordManagerViewSet):
         #     plan_obj, duration=duration, currency=currency, promo_code=promo_code_value, allow_trial=False
         # )
         calc_payment = self._calc_lifetime_payment_public(
-            plan_obj, currency=currency, promo_code=promo_code_value, user=user
+            plan_alias, currency=currency, promo_code=promo_code_value, user=user
         )
         immediate_payment = calc_payment.get("immediate_payment")
         payment = PaymentMethodFactory.get_method(
