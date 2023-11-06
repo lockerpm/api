@@ -205,7 +205,8 @@ class UserRewardMissionPwdViewSet(PasswordManagerViewSet):
             "number_code": 1,
             "description_en": "Locker PromoCode Reward",
             "description_vi": "Locker PromoCode Reward",
-            "only_user_id": user.user_id
+            "only_user_id": user.user_id,
+            "only_period": DURATION_YEARLY
         }
         promo_code_obj = PromoCode.create(**promo_code_data)
 
