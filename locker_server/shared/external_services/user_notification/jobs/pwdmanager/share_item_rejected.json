@@ -1,0 +1,27 @@
+{
+  "job": "share_item_rejected",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "share_item_rejected",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "recipient_name": "{recipient_name}"
+        }
+      }
+    },
+    "web": {
+      "type": "item_sharing",
+      "title": {
+        "vi": "{recipient_name} đã từ chối item bạn chia sẻ",
+        "en": "{recipient_name} has rejected  the item you share"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

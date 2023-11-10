@@ -1,0 +1,22 @@
+{
+  "job": "confirm_invitation",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "confirm_invitation",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "member_email": "{member_email}",
+          "member_name": "{member_name}",
+          "team_name": "{team_name}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

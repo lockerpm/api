@@ -1,0 +1,29 @@
+{
+  "job": "new_emergency_request",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "new_emergency_request",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "grantee_email": "{grantee_email}",
+          "grantee_name": "{grantee_name}",
+          "request": "{request}"
+        }
+      }
+    },
+    "web": {
+      "type": "emergency_access",
+      "title": {
+        "vi": "User {grantee_name} ({grantee_email}) vừa yêu cầu quyền {request} vault của bạn",
+        "en": "User {grantee_name} ({grantee_email}) has requested to {request} your vault items"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "job": "new_share_item",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "new_share_item",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "cipher_type": "{cipher_type}",
+          "owner_name": "{owner_name}"
+        }
+      }
+    },
+    "web": {
+      "type": "item_sharing",
+      "title": {
+        "vi": "{owner_name} vừa chia sẻ một {cipher_type} với bạn",
+        "en": "{owner_name} has shared a {cipher_type} with you"
+      },
+      "metadata": {}
+
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

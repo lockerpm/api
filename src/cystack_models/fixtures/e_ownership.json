@@ -1,8 +1,0 @@
-[
-  {
-    "model": "cystack_models.Ownership",
-    "fields": {
-      "id": "dns_txt"
-    }
-  }
-]

@@ -1,0 +1,21 @@
+{
+  "job": "upgraded_from_code_promo",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "upgraded_from_code_promo",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "service_name": "{service_name}",
+          "plan": "{plan}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

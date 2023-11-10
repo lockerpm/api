@@ -1,0 +1,21 @@
+{
+  "job": "join_your_organization",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "join_your_organization",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "org_name": "{org_name}",
+          "email": "{email}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

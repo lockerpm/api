@@ -1,8 +1,0 @@
-[
-  {
-    "model": "cystack_models.RelayDomain",
-    "fields": {
-      "id": "maily.org"
-    }
-  }
-]

@@ -1,0 +1,14 @@
+[
+  {
+    "model": "api_orm.PlanType",
+    "fields": {
+      "name": "Basic"
+    }
+  },
+  {
+    "model": "api_orm.PlanType",
+    "fields": {
+      "name": "Custom"
+    }
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "job": "confirm_share_item",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "confirm_share_item",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {}
+      }
+    },
+    "web": {
+      "type": "item_sharing",
+      "title": {
+        "vi": "Một user vừa đăng ký tài khoản quả yêu cầu chia sẻ của bạn. Vui lòng xác nhận lại để họ có thể sử dụng item",
+        "en": "A user has registered a Locker account via your sharing request. Please confirm your sharing request"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

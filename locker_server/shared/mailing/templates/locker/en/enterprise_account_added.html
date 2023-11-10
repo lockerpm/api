@@ -1,0 +1,96 @@
+<div
+        class="block"
+        style="
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 30px;
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+  "
+>
+    <table
+            style="
+      box-sizing: border-box;
+      width: 100%;
+      border-spacing: 0;
+      mso-table-rspace: 0pt;
+      mso-table-lspace: 0pt;
+      border-collapse: separate !important;
+    "
+            width="100%"
+    >
+        <tr>
+            <td
+                    class="wrapper"
+                    style="
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+            Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+            'Segoe UI Symbol';
+          font-size: 16px;
+          vertical-align: top;
+          padding: 30px;
+        "
+                    valign="top"
+            >
+                <table
+                        style="
+            box-sizing: border-box;
+            width: 100%;
+            border-spacing: 0;
+            mso-table-rspace: 0pt;
+            mso-table-lspace: 0pt;
+            border-collapse: separate !important;
+          "
+                        width="100%"
+                >
+                    <tr>
+                        <td
+                                style="
+                box-sizing: border-box;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                  Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+                  'Segoe UI Emoji', 'Segoe UI Symbol';
+                font-size: 16px;
+                vertical-align: top;
+                color: #294661;
+                font-weight: 300;
+              "
+                                valign="top"
+                        >
+                            <p>
+                                You are invited to join {{ enterprise_name }}’s workspace. An
+                                account has been created for you to access the enterprise.
+                            </p>
+                            <p>
+
+                                Account details:<br>
+                                Email: {{ user_email }}
+                            </p>
+                            <p>
+                                Please click the button below to log in to your account and create a new password.
+                            </p>
+                            <p style="text-align: center">
+                                <button type="button" class="button center-block"
+                                        style="width: 20%;height:50px;background-color: #268334;border:None;text-align: center ">
+                                    <a href={{ login_url }} style="text-decoration:None;color:white!important;text-align:center">
+                                        Log in
+                                    </a>
+                                </button>
+                            </p>
+                            <p>
+                                If the button doesn’t work, please click this link:
+                                <a href={{ login_url }}
+                                           style="text-decoration:None">
+                                    {{ login_url }}
+                                </a>
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>

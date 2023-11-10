@@ -1,0 +1,250 @@
+{
+  "email_verification": {
+    "en": "Verify your email",
+    "vi": "Xác nhận email của bạn"
+  },
+  "welcome": {
+    "en": "Welcome to Locker!",
+    "vi": "Chào mừng bạn đến với Locker!"
+  },
+  "download_locker": {
+    "en": "Access passwords on any device",
+    "vi": "Truy cập passwords trên mọi thiết bị"
+  },
+  "hint_for_master_password": {
+    "en": "Hint for Master Password!",
+    "vi": "[Hint for Master Password] Cụm từ gợi nhớ mật khẩu chính"
+  },
+  "no_master_password_hint": {
+    "en": "Hint for Master Password is not set",
+    "vi": "Cụm từ gợi nhớ mật khẩu chính chưa được đặt"
+  },
+  "login_using_faceid_or_touchid": {
+    "en": "Log in using FaceID or TouchID",
+    "vi": "Đăng nhập bằng FaceID hoặc TouchID"
+  },
+  "invitation_successful": {
+    "en": "Invitation successful!",
+    "vi": "Mời thành công!"
+  },
+  "join_invitation": {
+    "en": "Join {{team}} on Locker",
+    "vi": "Tham gia {{team}} trên Locker"
+  },
+  "master_password_changed": {
+    "en": "Your master password has been changed",
+    "vi": "Mật khẩu chính của bạn đã thay đổi"
+  },
+  "payment_successful": {
+    "en": "Your payment to Locker was successful",
+    "vi": "Bạn đã thanh toán thành công Locker"
+  },
+  "bank_transfer_acccount_expiration_reminder": {
+    "en": "Your Locker {{plan}} account is about to expire",
+    "vi": "Tài khoản {{plan}} của bạn sắp hết hạn!"
+  },
+  "account_downgraded": {
+    "en": "Couldn't proceed payment, account downgraded",
+    "vi": "Thanh toán không thành công, tài khoản bị hạ cấp"
+  },
+  "credit_card_account_payment_failed": {
+    "en": "Couldn't proceed payment, please check your balance",
+    "vi": "Không thể thanh toán, vui lòng kiểm tra số dư của bạn "
+  },
+  "join_emergency_access": {
+    "en": "You are invited as an Emergency Contact",
+    "vi": "Bạn được mời làm Liên Hệ Khẩn Cấp"
+  },
+  "emergency_access_invitation_accepted": {
+    "en": "{{grantee_email}} has accepted your Emergency Contact invitation",
+    "vi": "{{grantee_email}} đã đồng ý trở thành Liên Hệ Khẩn Cấp của bạn"
+  },
+  "emergency_access_invitation_declined": {
+    "en": "{{grantee_email}} has declined your Emergency Contact invitation",
+    "vi": "{{grantee_email}} đã từ chối trở thành Liên Hệ Khẩn Cấp của bạn"
+  },
+  "confirm_emergency_access": {
+    "en": "Please confirm your Emergency Contact",
+    "vi": "[Locker] Vui lòng xác nhận Liên Hệ Khẩn Cấp mới của bạn"
+  },
+  "emergency_access_granted": {
+    "en": "You are now Emergency Contact of {{grantor_email}}",
+    "vi": "Bạn đã trở thành Liên Hệ Khẩn Cấp của {{grantor_email}}"
+  },
+  "new_emergency_request": {
+    "en": "You have a new Emergency Request",
+    "vi": "Bạn có một Yêu Cầu Khẩn Cấp cần được phản hồi"
+  },
+  "emergency_request_accepted": {
+    "en": "Your Emergency Request has been accepted!",
+    "vi": "Yêu Cầu Khẩn Cấp của bạn đã được chấp thuận!"
+  },
+  "emergency_request_declined": {
+    "en": "Your Emergency Request has been declined!",
+    "vi": "Yêu Cầu Khẩn Cấp của bạn đã bị từ chối!"
+  },
+  "confirm_invitation": {
+    "en": "A user has accepted your team's invitation",
+    "vi": "Một người dùng đã chấp nhận lời mời vào nhóm của bạn"
+  },
+  "member_login_locked": {
+    "en": "A user has been locked out from logging in to Locker",
+    "vi": "Một người dùng đã bị khóa đăng nhập Locker"
+  },
+  "new_share_item": {
+    "en": "You have a new share item",
+    "vi": "Bạn có một mục chia sẻ mới"
+  },
+  "confirm_share_item": {
+    "en": "Please confirm your sharing request",
+    "vi": "Vui lòng xác nhận yêu cầu chia sẻ của bạn"
+  },
+  "family_invitation": {
+    "en": "You are invited to Locker Premium (Family Plan)",
+    "vi": "Bạn đã được mời vào Locker Premium (Family Plan)"
+  },
+  "family_removed": {
+    "en": "Your account has been downgraded to Free Plan",
+    "vi": "Tài khoản Locker của bạn trở về gói Miễn Phí"
+  },
+  "friend_invitation": {
+    "en": "You are rewarded with 1 month of Locker Premium!",
+    "vi": "Chúc mừng bạn đã nhận được 1 tháng miễn phí Locker Premium!"
+  },
+  "friend_invitation_accepted": {
+    "en": "A friend has joined Locker from your invitation",
+    "vi": "Một người bạn đã tạo tài khoản Locker sử dụng liên kết của bạn"
+  },
+  "share_item_accepted": {
+    "en": "Your shared item has been accepted",
+    "vi": "Người nhận đã chấp nhận mục chia sẻ của bạn"
+  },
+  "share_item_rejected": {
+    "en": "Your shared item has been rejected",
+    "vi": "Người nhận đã từ chối mục chia sẻ của bạn"
+  },
+  "welcome_to_trial": {
+    "en": "Welcome to Locker {% if plan == 'pm_family' %}Family{% else %}Premium{% endif %} trial",
+    "vi": "Dùng thử Locker {% if plan == 'pm_family' %}Family{% else %}Premium{% endif %} miễn phí"
+  },
+  "domain_verification_success": {
+    "en": "Domain verification success",
+    "vi": "Xác thực tên miền thành công"
+  },
+  "domain_verification_failed": {
+    "en": "Domain verification failed",
+    "vi": "Xác thực tên miền thất bại"
+  },
+  "join_your_organization": {
+    "en": "Join Your Organization",
+    "vi": "Tham gia doanh nghiệp của bạn"
+  },
+  "account_deleted": {
+    "en": "Your Locker account has been deleted",
+    "vi": "Tài khoản Locker của bạn đã bị xóa"
+  },
+  "welcome_to_enterprise_trial": {
+    "en": "Welcome to Locker Enterprise trial",
+    "vi": "Dùng thử Locker Enterprise miễn phí"
+  },
+  "confirm_enterprise_trial": {
+    "en": "Please confirm your Locker Enterprise trial",
+    "vi": "Vui lòng xác nhận yêu cầu dùng thử Locker Enterprise"
+  },
+  "new_join_organization_request": {
+    "en": "A user has requested to join your organization",
+    "vi": "Một người dùng đã yêu cầu tham gia doanh nghiệp của bạn"
+  },
+  "join_organization_request_accepted": {
+    "en": "Your request to join {{org_name}} has been accepted!",
+    "vi": "Yêu cầu tham gia {{org_name}} của bạn đã được chấp nhận"
+  },
+  "join_organization_request_declined": {
+    "en": "Your request to join {{org_name}} has been declined!",
+    "vi": "Yêu cầu tham gia {{org_name}} của bạn đã bị từ chối"
+  },
+  "auto_create_premium_account_success": {
+    "en": "Locker - Registration Details",
+    "vi": "Locker - Thông tin đăng ký"
+  },
+  "tutorial_day_3_add_items": {
+    "en": "An easy way to get started",
+    "vi": "Bắt đầu xây dựng kho dữ liệu của riêng bạn"
+  },
+  "tutorial_day_5_download": {
+    "en": "Keep passwords at your fingertips",
+    "vi": "{{user_fullname}} ơi, bạn đã tải Locker trên mọi thiết bị chưa?"
+  },
+  "tutorial_day_7_autofill": {
+    "en": "See the magic of autofill",
+    "vi": "Tiết kiệm thời gian, nâng cao năng suất với tính năng Tự động điền"
+  },
+  "tutorial_day_13_trial_end": {
+    "en": "Your Locker Premium Free Trial Is Ending Soon!",
+    "vi": "Thời hạn dùng thử Locker Premium miễn phí sắp hết!"
+  },
+  "tutorial_day_20_refer_friend": {
+    "en": "More friends, more rewards, more safety",
+    "vi": "Mời càng nhiều bạn, ưu đãi càng đậm sâu"
+  },
+  "enterprise_next_payment_cycle_price": {
+    "en": "Locker Business plan summary & cost projection",
+    "vi": "Tóm tắt gói cước Locker Business chu kỳ tiếp theo"
+  },
+  "enterprise_activity_log": {
+    "en": "Locker Business activity logs",
+    "vi": "Nhật ký hoạt động của Locker Business"
+  },
+  "enterprise_account_disabled": {
+    "en": "Your Locker account has been disabled",
+    "vi": "Tài khoản Locker của bạn đã bị vô hiệu hoá"
+  },
+  "enterprise_account_enabled": {
+    "en": "Your Locker account has been enabled",
+    "vi": "Tài khoản Locker của bạn đã được kích hoạt"
+  },
+  "upgraded_to_lifetime_from_code": {
+    "en": "Your Locker account has been upgraded to Lifetime Package",
+    "vi": "Tài khoản Locker của bạn đã được nâng cấp lên gói Lifetime"
+  },
+  "upgraded_from_code_promo": {
+    "en": "Your Locker account has been upgraded to {{plan}} Plan",
+    "vi": "Tài khoản Locker của bạn đã được nâng cấp lên gói {{plan}}"
+  },
+  "otp_for_quick_share": {
+    "en": "Verify your email address to view the shared item",
+    "vi": "Xác minh địa chỉ email của bạn để xem mục được chia sẻ"
+  },
+  "new_share_item_after_owner_confirmed": {
+    "en": "You have a new shared item",
+    "vi": "Bạn có một mục chia sẻ mới"
+  },
+  "a_user_want_to_affiliate": {
+    "en": "A user just submitted a Locker Affiliate form",
+    "vi": "A user just submitted a Locker Affiliate form"
+  },
+  "education_pack_student_accepted": {
+    "en": "You are qualified for the offer of Locker Student/Teacher Pack",
+    "vi": "Bạn đủ điều kiện để nhận ưu đãi Gói sinh viên Locker"
+  },
+  "education_pack_student_email_confirmation": {
+    "en": "Confirm your email for Locker Student/Teacher Pack",
+    "vi": "Xác nhận email của bạn cho Gói sinh viên Locker"
+  },
+  "education_pack_teacher_accepted": {
+    "en": "You are qualified for the offer of Locker Teacher Pack",
+    "vi": "Bạn đủ điều kiện nhận ưu đãi Gói nhà giáo Locker"
+  },
+  "education_pack_teacher_email_confirmation": {
+    "en": "Confirm your email for Locker Teacher Pack",
+    "vi": "Xác nhận email của bạn cho Gói nhà giáo Locker"
+  },
+  "asking_for_feedback_after_subscription": {
+    "en": "How was your experience?",
+    "vi": "Trải nghiệm của bạn thế nào?"
+  },
+  "enterprise_account_added": {
+    "en": "You are invited to {{ enterprise_name }}’s Workspace",
+    "vi": "Bạn đã được mời vao {{ enterprise_name }}'s Workspace"
+  }
+}

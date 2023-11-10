@@ -1,0 +1,20 @@
+{
+  "job": "otp_for_quick_share",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "otp_for_quick_share",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "code": "{code}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

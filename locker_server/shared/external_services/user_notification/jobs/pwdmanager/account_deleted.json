@@ -1,0 +1,20 @@
+{
+  "job": "account_deleted",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "account_deleted",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "email": "{email}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

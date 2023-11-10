@@ -1,0 +1,28 @@
+{
+  "job": "emergency_access_granted",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "emergency_access_granted",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "grantor_email": "{grantor_email}",
+          "grantor_name": "{grantor_name}"
+        }
+      }
+    },
+    "web": {
+      "type": "emergency_access",
+      "title": {
+        "vi": "Bạn đã trở thành Liên hệ khẩn cấp của user {grantor_name} ({grantor_email})",
+        "en": "You are now Emergency Contact of the user {grantor_name} ({grantor_email})"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

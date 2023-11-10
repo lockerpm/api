@@ -1,0 +1,22 @@
+{
+  "job": "confirm_share_group_member_added",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {},
+    "web": {
+      "type": "member_to_group_share",
+      "title": {
+        "vi": "{member_joined_text_vi} nhóm {group_name} mà bạn đã chia sẻ item. Vui lòng xác nhận để họ có thể sử dụng item được chia sẻ.",
+        "en": "{member_joined_text_en} group {group_name} that you shared your items with. Click to confirm sharing so they can see shared items."
+      },
+      "metadata": {
+        "sharing_id": "{sharing_id}",
+        "emails": "{emails}",
+        "group_id": "{group_id}",
+        "group_name": "{group_name}"
+      }
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

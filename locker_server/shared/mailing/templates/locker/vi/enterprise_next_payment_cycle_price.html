@@ -1,0 +1,125 @@
+<div
+  class="block"
+  style="
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 30px;
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+  "
+>
+  <table
+    style="
+      box-sizing: border-box;
+      width: 100%;
+      border-spacing: 0;
+      mso-table-rspace: 0pt;
+      mso-table-lspace: 0pt;
+      border-collapse: separate !important;
+    "
+    width="100%"
+  >
+    <tr>
+      <td
+        class="wrapper"
+        style="
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+            Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+            'Segoe UI Symbol';
+          font-size: 16px;
+          vertical-align: top;
+          padding: 30px;
+        "
+        valign="top"
+      >
+        <table
+          style="
+            box-sizing: border-box;
+            width: 100%;
+            border-spacing: 0;
+            mso-table-rspace: 0pt;
+            mso-table-lspace: 0pt;
+            border-collapse: separate !important;
+          "
+          width="100%"
+        >
+          <tr>
+            <td
+              style="
+                box-sizing: border-box;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                  Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+                  'Segoe UI Emoji', 'Segoe UI Symbol';
+                font-size: 16px;
+                vertical-align: top;
+                color: #294661;
+              "
+              valign="top"
+            >
+              <p>Chào {{user_fullname}},</p>
+              <p>
+                Dưới đây là tóm tắt gói cước Locker Business của bạn và dự toán
+                chi phí cho chu kỳ tiếp theo.
+              </p>
+              <p>
+                <strong
+                  >1. Tóm tắt gói cước Locker Business từ ngày {{date_1}} tới
+                  ngày {{date_2}}</strong
+                >
+              </p>
+              <ul>
+                <li>
+                  Số lượng thành viên hoạt động tại thời điểm đầu chu kỳ (1):
+                  {{active_member_count_first_date}}
+                </li>
+                <li>
+                  Số lượng thành viên đã được thêm mới hoặc kích hoạt trong chu
+                  kỳ (2): {{added_member_count}}
+                </li>
+                <li>
+                  Số lượng thành viên ngừng hoạt động hoặc gỡ bỏ (3):
+                  {{removed_member_count}}
+                </li>
+                <li>
+                  Số lượng thành viên tính phí cho chu kỳ tiếp theo (4):
+                  {{billed_member_count_next_cycle}} (*)
+                </li>
+              </ul>
+              <p>
+                <strong
+                  >2. Dự toán chi phí từ {{date_2}} tới ngày {{date_3}}</strong
+                >
+              </p>
+              <ul>
+                <li>Chi phí (5): {{next_cycle_cost}} (**)</li>
+              </ul>
+              <p style="font-style: italic">
+                (*) (4) = (1) + (2) <br />
+                (**) (5) = (4) x đơn giá mỗi thành viên
+              </p>
+
+              <p>
+                Chi phí sẽ được tự động khấu trừ qua thẻ thanh toán
+                <strong>kết thúc bằng ***{{card_ending}}</strong> trong 5 ngày
+                tới. Bạn sẽ nhận được email khi thanh toán thành công hoặc thất
+                bại.
+              </p>
+
+              <p>
+                Bạn có thể thay đổi phương thức thanh toán tại Bảng điều khiển
+                dành cho quản trị viên Locker.
+              </p>
+
+              <p>
+                Stay safe, <br />
+                Locker Team.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>

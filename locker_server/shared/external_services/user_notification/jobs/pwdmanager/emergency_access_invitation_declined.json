@@ -1,0 +1,28 @@
+{
+  "job": "emergency_access_invitation_declined",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "emergency_access_invitation_declined",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "grantee_email": "{grantee_email}",
+          "grantee_name": "{grantee_name}"
+        }
+      }
+    },
+    "web": {
+      "type": "emergency_access",
+      "title": {
+        "vi": "Người dùng {grantee_name} ({grantee_email}) đã từ chối trở thành Liên hệ khẩn cấp của bạn",
+        "en": "User {grantee_name} ({grantee_email}) has declined your Emergency Contact invitation"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "job": "domain_verification_success",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "domain_verification_success",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "domain": "{domain}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

@@ -1,3 +1,0 @@
-from locker_statistic.models.user_statistics import UserStatistic
-from locker_statistic.models.user_statistics_date import UserStatisticDate
-from locker_statistic.models.user_plan_family import UserPlanFamily

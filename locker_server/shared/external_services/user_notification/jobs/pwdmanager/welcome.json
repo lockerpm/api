@@ -1,0 +1,18 @@
+{
+  "job": "welcome",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "welcome",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {}
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

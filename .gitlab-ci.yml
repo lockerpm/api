@@ -2,30 +2,10 @@ stages:
   - build
   - deploy
 
-build_staging:
-  stage: build
-  script:
-    - cystack-deployer
-  tags:
-    - cs_newgen
-  only:
-    - develop
-    - tags
-
-deploy_staging:
-  stage: deploy
-  script:
-    - cystack-deployer
-  tags:
-    - cs_newgen
-  only:
-    - develop
-    - tags
 
 build:
   stage: build
   script:
-    - pwd
     - cystack-deployer
   tags:
     - cs_newgen
@@ -42,3 +22,4 @@ deploy:
   only:
     - main
     - tags
+

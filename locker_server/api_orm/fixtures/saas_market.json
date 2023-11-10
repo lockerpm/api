@@ -1,0 +1,26 @@
+[
+  {
+    "model": "api_orm.SaasMarket",
+    "fields": {
+      "id": 1,
+      "name": "StackCommerce",
+      "lifetime_duration": null
+    }
+  },
+  {
+    "model": "api_orm.SaasMarket",
+    "fields": {
+      "id": 2,
+      "name": "PitchGround",
+      "lifetime_duration": null
+    }
+  },
+  {
+    "model": "api_orm.SaasMarket",
+    "fields": {
+      "id": 3,
+      "name": "DealFuel",
+      "lifetime_duration": 31536000
+    }
+  }
+]

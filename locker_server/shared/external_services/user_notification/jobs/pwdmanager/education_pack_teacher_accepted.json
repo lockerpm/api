@@ -1,0 +1,23 @@
+{
+  "job": "education_pack_teacher_accepted",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "education_pack_teacher_accepted",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "username": "{username}",
+          "code": "{code}",
+          "expired_date": "{expired_date}",
+          "redeem_url": "{redeem_url}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

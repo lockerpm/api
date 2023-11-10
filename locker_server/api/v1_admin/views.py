@@ -1,0 +1,4 @@
+from locker_server.api.v1_admin.mail_configurations.views import AdminMailConfigurationViewSet
+from locker_server.api.v1_admin.sso_configurations.views import AdminSSOConfigurationViewSet
+from locker_server.api.v1_admin.enterprises.views import AdminEnterpriseViewSet
+from locker_server.api.v1_admin.enterprise_members.views import AdminEnterpriseMemberViewSet

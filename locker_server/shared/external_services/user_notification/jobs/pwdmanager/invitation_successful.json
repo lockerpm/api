@@ -1,0 +1,21 @@
+{
+  "job": "invitation_successful",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "invitation_successful",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "email": "{email}",
+          "redeem_url": "{redeem_url}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

@@ -1,12 +1,17 @@
 # Python
 *.pyc
 projectenv/
+venv/
 env/
+.idea/
 src/.idea/
 *.iml
 *.conf
 *.log
 *.env
+
+# Media
+media/
 
 # User-specific stuff:
 .idea/**/workspace.xml

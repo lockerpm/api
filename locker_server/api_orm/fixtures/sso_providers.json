@@ -1,0 +1,10 @@
+[
+  {
+    "model": "api_orm.SSOProviderORM",
+    "fields": {
+      "id": "oauth2",
+      "name": "OAuth2",
+      "order_index": 1
+    }
+  }
+]

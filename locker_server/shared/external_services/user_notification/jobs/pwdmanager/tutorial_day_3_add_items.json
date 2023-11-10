@@ -1,0 +1,18 @@
+{
+  "job": "tutorial_day_3_add_items",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "tutorial_day_3_add_items",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {}
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

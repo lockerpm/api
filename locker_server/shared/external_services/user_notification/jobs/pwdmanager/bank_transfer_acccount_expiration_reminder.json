@@ -1,0 +1,25 @@
+{
+  "job": "bank_transfer_acccount_expiration_reminder",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "bank_transfer_acccount_expiration_reminder",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "plan": "{plan}",
+          "email": "{email}",
+          "start_date": "{start_date}",
+          "expire_date": "{expire_date}",
+          "payment_method": "{payment_method}",
+          "payment_url": "{payment_url}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

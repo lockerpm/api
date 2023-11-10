@@ -1,0 +1,17 @@
+{
+  "job": "delete_share_item",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {},
+    "web": {
+      "type": "item_sharing",
+      "title": {
+        "vi": "{owner} vừa xóa item {cipher_id} được chia sẻ với bạn",
+        "en": "{owner} has removed {cipher_id} which was shared with you"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

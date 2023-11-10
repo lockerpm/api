@@ -1,0 +1,23 @@
+{
+  "job": "enterprise_activity_log",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "enterprise_activity_log",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "attachments": [],
+        "data": {
+          "org_name": "{org_name}",
+          "start_date": "{start_date}",
+          "end_date": "{end_date}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

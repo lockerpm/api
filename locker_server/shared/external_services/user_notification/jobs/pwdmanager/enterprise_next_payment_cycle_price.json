@@ -1,0 +1,28 @@
+{
+  "job": "enterprise_next_payment_cycle_price",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "enterprise_next_payment_cycle_price",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "date_1": "{date_1}",
+          "date_2": "{date_2}",
+          "date_3": "{date_3}",
+          "active_member_count_first_date": "{active_member_count_first_date}",
+          "added_member_count": "{added_member_count}",
+          "removed_member_count": "{removed_member_count}",
+          "billed_member_count_next_cycle": "{billed_member_count_next_cycle}",
+          "next_cycle_cost": "{next_cycle_cost}",
+          "card_ending": "{card_ending}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

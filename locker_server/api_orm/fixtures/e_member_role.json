@@ -1,0 +1,20 @@
+[
+  {
+    "model": "api_orm.EnterpriseMemberRoleORM",
+    "fields": {
+      "name": "primary_admin"
+    }
+  },
+  {
+    "model": "api_orm.EnterpriseMemberRoleORM",
+    "fields": {
+      "name": "admin"
+    }
+  },
+  {
+    "model": "api_orm.EnterpriseMemberRoleORM",
+    "fields": {
+      "name": "member"
+    }
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "job": "tutorial_day_7_autofill",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "tutorial_day_7_autofill",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {}
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

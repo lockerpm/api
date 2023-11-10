@@ -1,0 +1,24 @@
+{
+  "job": "member_login_locked",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "member_login_locked",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "member_email": "{member_email}",
+          "member_name": "{member_name}",
+          "lock_time": "{lock_time}",
+          "unlock_time": "{unlock_time}",
+          "ip": "{ip}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

@@ -1,0 +1,124 @@
+<div
+  class="block"
+  style="
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 30px;
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+  "
+>
+  <table
+    style="
+      box-sizing: border-box;
+      width: 100%;
+      border-spacing: 0;
+      mso-table-rspace: 0pt;
+      mso-table-lspace: 0pt;
+      border-collapse: separate !important;
+    "
+    width="100%"
+  >
+    <tr>
+      <td
+        class="wrapper"
+        style="
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+            Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+            'Segoe UI Symbol';
+          font-size: 16px;
+          vertical-align: top;
+          padding: 30px;
+        "
+        valign="top"
+      >
+        <table
+          style="
+            box-sizing: border-box;
+            width: 100%;
+            border-spacing: 0;
+            mso-table-rspace: 0pt;
+            mso-table-lspace: 0pt;
+            border-collapse: separate !important;
+          "
+          width="100%"
+        >
+          <tr>
+            <td
+              style="
+                box-sizing: border-box;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                  Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+                  'Segoe UI Emoji', 'Segoe UI Symbol';
+                font-size: 16px;
+                vertical-align: top;
+                color: #294661;
+              "
+              valign="top"
+            >
+              <p>Hi {{user_fullname}},</p>
+              <p>
+                Here is your Locker Business plan summary & cost projection for
+                the next cycle.
+              </p>
+              <p>
+                <strong
+                  >1. Locker Business plan summary from {{date_1}} to
+                  {{date_2}}</strong
+                >
+              </p>
+              <ul>
+                <li>
+                  Number of active members at the first date of the cycle (1):
+                  {{active_member_count_first_date}}
+                </li>
+                <li>
+                  Number of members that were added or enabled during the cycle
+                  (2): {{added_member_count}}
+                </li>
+                <li>
+                  Number of disabled or removed members during the cycle (3):
+                  {{removed_member_count}}
+                </li>
+                <li>
+                  Number of billed members for the next cycle (4):
+                  {{billed_member_count_next_cycle}} (*)
+                </li>
+              </ul>
+              <p>
+                <strong
+                  >2. Cost projection from {{date_2}} to {{date_3}}</strong
+                >
+              </p>
+              <ul>
+                <li>Cost (5): {{next_cycle_cost}} (**)</li>
+              </ul>
+              <p style="font-style: italic">
+                (*) (4) = (1) + (2) <br />
+                (**) (5) = (4) x unit price
+              </p>
+
+              <p>
+                Above amount will be deducted from your card
+                <strong>ending ***{{card_ending}}</strong> in the next 5 days.
+                You will be notified by emails after the billing process gone
+                through.
+              </p>
+
+              <p>
+                You can change your payment method at Locker Admin Dashboard.
+              </p>
+
+              <p>
+                Stay safe, <br />
+                Locker Team.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>

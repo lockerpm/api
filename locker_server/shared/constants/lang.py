@@ -1,0 +1,2 @@
+LANG_VIETNAM = "vi"
+LANG_ENGLISH = "en"

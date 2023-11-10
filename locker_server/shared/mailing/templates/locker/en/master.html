@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Locker</title>
+    <style media="all">
+      code {
+        white-space: normal;
+      }
+      p,
+      a,
+      li {
+        font-weight: 300;
+      }
+      a {
+        color: #268334 !important;
+        text-decoration: none !important;
+      }
+      strong {
+        font-weight: 600;
+      }
+      @media only screen and (max-width: 480px) {
+        table[class="body"] h1 {
+          font-size: 24px !important;
+        }
+
+        table[class="body"] h2 {
+          font-size: 20px !important;
+        }
+
+        table[class="body"] h3 {
+          font-size: 14px !important;
+        }
+
+        table[class="body"] .content,
+        table[class="body"] .wrapper {
+          padding: 15px !important;
+        }
+
+        table[class="body"] .container {
+          width: 100% !important;
+          padding: 0 !important;
+        }
+
+        table[class="body"] .column {
+          width: 100% !important;
+        }
+
+        table[class="body"] .stats .column {
+          width: 50% !important;
+        }
+
+        table[class="body"] .hero-image,
+        table[class="body"] .thumb {
+          width: 100% !important;
+          height: auto !important;
+        }
+
+        table[class="body"] .btn table,
+        table[class="body"] .btn a {
+          width: 100% !important;
+        }
+
+        table[class="body"] .credits table {
+          table-layout: auto !important;
+        }
+
+        table[class="body"] .credits .label {
+          font-size: 11px !important;
+        }
+      }
+    </style>
+    <style>
+      @font-face {
+        font-family: "Open Sans";
+        font-style: normal;
+        font-weight: 300;
+        src: local("Open Sans Light"), local("OpenSans-Light"),
+          url(https://fonts.gstatic.com/s/opensans/v13/DXI1ORHCpsQm3Vp6mXoaTYnF5uFdDttMLvmWuJdhhgs.ttf)
+            format("truetype");
+      }
+
+      @font-face {
+        font-family: "Open Sans";
+        font-style: normal;
+        font-weight: 400;
+        src: local("Open Sans"), local("OpenSans"),
+          url(https://fonts.gstatic.com/s/opensans/v13/cJZKeOuBrn4kERxqtaUH3aCWcynf_cDxXwCLxiixG1c.ttf)
+            format("truetype");
+      }
+
+      @font-face {
+        font-family: "Open Sans";
+        font-style: normal;
+        font-weight: 600;
+        src: local("Open Sans Semibold"), local("OpenSans-Semibold"),
+          url(https://fonts.gstatic.com/s/opensans/v13/MTP_ySUJH_bn48VBG8sNSonF5uFdDttMLvmWuJdhhgs.ttf)
+            format("truetype");
+      }
+    </style>
+    <!--[if mso]>
+      <style>
+        h1,
+        h2,
+        h3,
+        h4,
+        p,
+        ol,
+        ul {
+          font-family: Arial, sans-serif !important;
+        }
+      </style>
+    <![endif]-->
+  </head>
+  <body
+    style="
+      font-size: 16px;
+      background-color: #fdfdfd;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+        Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol';
+      -webkit-text-size-adjust: 100%;
+      line-height: 1.5;
+      -ms-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+      height: 100% !important;
+      width: 100% !important;
+    "
+  >
+    <table
+      class="body"
+      style="
+        box-sizing: border-box;
+        border-spacing: 0;
+        mso-table-rspace: 0pt;
+        mso-table-lspace: 0pt;
+        width: 100%;
+        background-color: #fdfdfd;
+        border-collapse: separate !important;
+      "
+      width="100%"
+      bgcolor="#fdfdfd"
+    >
+      <tr>
+        <td
+          style="
+            box-sizing: border-box;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+              Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+              'Segoe UI Emoji', 'Segoe UI Symbol';
+            font-size: 16px;
+            vertical-align: top;
+          "
+          valign="top"
+        ></td>
+        <td
+          class="container"
+          style="
+            box-sizing: border-box;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+              Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+              'Segoe UI Emoji', 'Segoe UI Symbol';
+            font-size: 16px;
+            vertical-align: top;
+            display: block;
+            width: 600px;
+            max-width: 600px;
+            margin: 0 auto !important;
+          "
+          width="600"
+          valign="top"
+        >
+          <div
+            class="content"
+            style="
+              box-sizing: border-box;
+              display: block;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 10px;
+            "
+          >
+            <div
+              class="header"
+              style="
+                box-sizing: border-box;
+                width: 100%;
+                margin-bottom: 30px;
+                margin-top: 15px;
+              "
+            >
+              <table
+                style="
+                  box-sizing: border-box;
+                  width: 100%;
+                  border-spacing: 0;
+                  mso-table-rspace: 0pt;
+                  mso-table-lspace: 0pt;
+                  border-collapse: separate !important;
+                "
+                width="100%"
+              >
+                <tr>
+                  <td
+                    class="align-left"
+                    style="
+                      box-sizing: border-box;
+                      padding: 0;
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                        Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+                        'Segoe UI Emoji', 'Segoe UI Symbol';
+                      font-size: 16px;
+                      vertical-align: top;
+                      text-align: left;
+                    "
+                    valign="top"
+                    align="left"
+                  >
+                    <img
+                      src="https://s.cystack.net/resource/home/content/06122138/locker-logo.png"
+                      width="120"
+                      style="
+                        border-style: none;
+                        -ms-interpolation-mode: bicubic;
+                      "
+                    />
+                  </td>
+                </tr>
+              </table>
+            </div>
+            {{cs_content_holder}}
+            <div
+              class="footer"
+              style="box-sizing: border-box; clear: both; width: 100%"
+            >
+              <table
+                style="
+                  box-sizing: border-box;
+                  width: 100%;
+                  border-spacing: 0;
+                  mso-table-rspace: 0pt;
+                  mso-table-lspace: 0pt;
+                  border-collapse: separate !important;
+                "
+                width="100%"
+              >
+                <tr>
+                  <td
+                    class="align-center"
+                    style="
+                      box-sizing: border-box;
+                      vertical-align: top;
+                      text-align: center;
+                      padding: 20px 0;
+                    "
+                    valign="top"
+                    align="center"
+                  >
+                    <a
+                      href="https://locker.io"
+                      style="
+                        box-sizing: border-box;
+                        color: #268334;
+                        font-weight: 400;
+                        text-decoration: none;
+                        font-size: 12px;
+                      "
+                      ><img
+                        src="https://s.cystack.net/resource/home/content/06122138/locker-logo.png"
+                        height="16"
+                        style="
+                          border-style: none;
+                          -ms-interpolation-mode: bicubic;
+                          font-size: 12px;
+                        "
+                    /></a>
+                    <p
+                      class="tagline"
+                      style="
+                        font-family: -apple-system, BlinkMacSystemFont,
+                          'Segoe UI', Helvetica, Arial, sans-serif,
+                          'Apple Color Emoji', 'Segoe UI Emoji',
+                          'Segoe UI Symbol';
+                        color: #294661;
+                        font-size: 12px;
+                        font-weight: 400;
+                        margin-bottom: 5px;
+                        margin: 10px 0 20px;
+                      "
+                    >
+                      Enjoy A Secure and Seamless Internet Experience
+                    </p>
+                    <p>
+                      <a
+                        href="https://www.facebook.com/lockerpm"
+                        style="margin: 0 6px"
+                        ><img
+                          src="https://s.cystack.net/resource/home/content/06171446/Facebook.png"
+                          alt="Facebook"
+                          height="32"
+                          width="32"
+                        />
+                      </a>
+                      <a
+                        href="https://twitter.com/lockerpm"
+                        style="margin: 0 6px"
+                        ><img
+                          src="https://s.cystack.net/resource/home/content/06171447/Twitter.png"
+                          alt="Twitter"
+                          height="32"
+                          width="32"
+                        />
+                      </a>
+                      <a
+                        href="https://www.youtube.com/@lockerpm"
+                        style="margin: 0 6px"
+                        ><img
+                          src="https://s.cystack.net/resource/home/content/06171447/YouTube.png"
+                          alt="Youtube"
+                          height="32"
+                          width="32"
+                        />
+                      </a>
+                      <a
+                        href="https://www.linkedin.com/showcase/lockerpm"
+                        style="margin: 0 6px"
+                        ><img
+                          src="https://s.cystack.net/resource/home/content/06171448/LinkedIn.png"
+                          alt="LinkedIn"
+                          height="32"
+                          width="32"
+                        />
+                      </a>
+                      <a
+                        href="https://www.instagram.com/lockerpasswordmanager/"
+                        style="margin: 0 6px"
+                        ><img
+                          src="https://s.cystack.net/resource/home/content/08142152/kindpng_1851468-1.png"
+                          alt="Instagram"
+                          height="32"
+                          width="32"
+                        />
+                      </a>
+                      <a href="https://forum.locker.io/" style="margin: 0 6px"
+                        ><img
+                          src="https://s.cystack.net/resource/home/content/06122906/locker-community-logo.png"
+                          alt="Locker Forum"
+                          height="32"
+                          width="32"
+                        />
+                      </a>
+                    </p>
+                    <p
+                      style="
+                        margin: 0;
+                        font-weight: 300;
+                        color: #294661;
+                        margin-bottom: 5px;
+                        font-size: 12px;
+                      "
+                    >
+                      Locker, A product of &copy; CyStack., JSC. Tan Hong Ha
+                      Complex, 317 Truong Chinh Street, Thanh Xuan District,
+                      Hanoi, Vietnam
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </td>
+        <td
+          style="
+            box-sizing: border-box;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+              Helvetica, Arial, sans-serif, 'Apple Color Emoji',
+              'Segoe UI Emoji', 'Segoe UI Symbol';
+            font-size: 16px;
+            vertical-align: top;
+          "
+          valign="top"
+        ></td>
+      </tr>
+    </table>
+  </body>
+</html>

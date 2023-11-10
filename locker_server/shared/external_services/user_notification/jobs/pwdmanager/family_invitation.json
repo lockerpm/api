@@ -1,0 +1,21 @@
+{
+  "job": "family_invitation",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "family_invitation",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "owner_email": "{owner_email}",
+          "invited_email": "{invited_email}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

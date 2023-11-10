@@ -1,0 +1,28 @@
+{
+  "job": "confirm_emergency_access",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "confirm_emergency_access",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "grantee_email": "{grantee_email}",
+          "grantee_name": "{grantee_name}"
+        }
+      }
+    },
+    "web": {
+      "type": "emergency_access",
+      "title": {
+        "vi": "User {grantee_name} ({grantee_email}) vừa chấp nhận lời mời của bạn. Vui lòng xác nhận lại danh tính Liên hệ khẩn cấp của bạn",
+        "en": "The user {grantee_name} ({grantee_email}) has accepted your invitation. Please confirm his/her identity as your new Emergency Access"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

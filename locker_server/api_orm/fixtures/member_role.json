@@ -1,0 +1,26 @@
+[
+  {
+    "model": "api_orm.MemberRole",
+    "fields": {
+      "name": "owner"
+    }
+  },
+  {
+    "model": "api_orm.MemberRole",
+    "fields": {
+      "name": "admin"
+    }
+  },
+  {
+    "model": "api_orm.MemberRole",
+    "fields": {
+      "name": "manager"
+    }
+  },
+  {
+    "model": "api_orm.MemberRole",
+    "fields": {
+      "name": "member"
+    }
+  }
+]

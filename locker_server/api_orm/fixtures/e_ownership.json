@@ -1,0 +1,8 @@
+[
+  {
+    "model": "api_orm.Ownership",
+    "fields": {
+      "id": "dns_txt"
+    }
+  }
+]

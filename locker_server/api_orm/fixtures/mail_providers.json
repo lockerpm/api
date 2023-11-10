@@ -1,0 +1,38 @@
+[
+  {
+    "model": "api_orm.MailProviderORM",
+    "fields": {
+      "id": "smtp",
+      "name": "SMTP",
+      "order_index": 1,
+      "available": true
+    }
+  },
+  {
+    "model": "api_orm.MailProviderORM",
+    "fields": {
+      "id": "amazon_ses",
+      "name": "Amazon SES",
+      "order_index": 2,
+      "available": false
+    }
+  },
+  {
+    "model": "api_orm.MailProviderORM",
+    "fields": {
+      "id": "sendgrid",
+      "name": "Sendgrid",
+      "order_index": 3,
+      "available": true
+    }
+  },
+  {
+    "model": "api_orm.MailProviderORM",
+    "fields": {
+      "id": "sendinblue",
+      "name": "Sendinblue",
+      "order_index": 4,
+      "available": false
+    }
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "job": "payment_successful",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "payment_successful",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "payment_id": "{payment_id}",
+          "account": "{account}"
+        }
+      }
+    },
+    "web": {
+      "type": "payment",
+      "title": {
+        "vi": "Your invoice {payment_id} was paid successfully",
+        "en": "Hóa đơn {payment_id} đã được thanh toán thành công"
+      },
+      "metadata": {
+        "team_id": "{team_id}",
+        "payment_id": "{payment_id}"
+      }
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

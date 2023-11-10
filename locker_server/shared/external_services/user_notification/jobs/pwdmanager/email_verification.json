@@ -1,0 +1,20 @@
+{
+  "job": "email_verification",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "email_verification",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "confirmation_url": "{confirmation_url}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

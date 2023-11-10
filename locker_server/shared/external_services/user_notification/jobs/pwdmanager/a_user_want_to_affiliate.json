@@ -1,0 +1,24 @@
+{
+  "job": "a_user_want_to_affiliate",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "a_user_want_to_affiliate",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "full_name": "{full_name}",
+          "email": "{email}",
+          "phone": "{phone}",
+          "company": "{company}",
+          "country": "{country}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

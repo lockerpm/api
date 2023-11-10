@@ -1,0 +1,23 @@
+{
+  "job": "credit_card_account_payment_failed",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "credit_card_account_payment_failed",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "check_time": "{check_time}",
+          "email": "{email}",
+          "next_attempt": "{next_attempt}",
+          "current_attempt": "{current_attempt}"
+        }
+      }
+    },
+    "web": {},
+    "integration": {},
+    "platform_alert": {}
+  }
+}

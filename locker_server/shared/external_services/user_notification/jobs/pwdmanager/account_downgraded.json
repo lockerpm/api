@@ -1,0 +1,33 @@
+{
+  "job": "account_downgraded",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "account_downgraded",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "downgrade_time": "{downgrade_time}",
+          "email": "{email}",
+          "prior_plan": "{prior_plan}",
+          "current_plan": "{current_plan}"
+        }
+      }
+    },
+    "web": {
+      "type": "payment",
+      "title": {
+        "vi": "Locker couldn't proceed payment on your account. Your account was downgraded",
+        "en": "Locker không thể tiến hành thanh toán. Tài khoản của bạn đã bị hạ cấp gói"
+      },
+      "metadata": {
+        "team_id": "{team_id}",
+        "payment_id": "{payment_id}"
+      }
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

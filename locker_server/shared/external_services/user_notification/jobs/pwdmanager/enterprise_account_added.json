@@ -1,0 +1,17 @@
+{
+  "job": "enterprise_account_added",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "enterprise_account_added",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {}
+      }
+    },
+    "web": {},
+    "integration": {}
+  }
+}

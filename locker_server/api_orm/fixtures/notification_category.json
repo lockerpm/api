@@ -1,0 +1,90 @@
+[
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "change_master_password",
+      "name": "Master Password Change",
+      "name_vi": "Thay đổi Mật khẩu chính",
+      "notification": false,
+      "mail": true,
+      "order_number": 2
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "login_new_device",
+      "name": "Login with new device",
+      "name_vi": "Đăng nhập trên thiết bị mới",
+      "notification": false,
+      "mail": true,
+      "order_number": 3
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "item_sharing",
+      "name": "Item sharing",
+      "name_vi": "Chia sẻ item",
+      "notification": true,
+      "mail": true,
+      "order_number": 4
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "emergency_access",
+      "name": "Emergency Access",
+      "name_vi": "Truy cập khẩn cấp",
+      "notification": true,
+      "mail": true,
+      "order_number": 5
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "data_breach",
+      "name": "Data Breach",
+      "name_vi": "Cảnh báo rò rỉ dữ liệu",
+      "notification": true,
+      "mail": true,
+      "order_number": 6
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "password_tip_trick",
+      "name": "Password tips & tricks",
+      "name_vi": "Mẹo và thủ thật mật khẩu",
+      "notification": true,
+      "mail": true,
+      "order_number": 7
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "marketing",
+      "name": "Marketing & Promotion",
+      "name_vi": "Tiếp thị & Khuyến mại",
+      "notification": true,
+      "mail": true,
+      "order_number": 8
+    }
+  },
+  {
+    "model": "api_orm.NotificationCategory",
+    "fields": {
+      "id": "other",
+      "name": "Other",
+      "name_vi": "Khác",
+      "notification": true,
+      "mail": true,
+      "order_number": 9
+    }
+  }
+]
