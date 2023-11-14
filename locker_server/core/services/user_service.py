@@ -145,6 +145,7 @@ class UserService:
         else:
             user = self.retrieve_or_create_by_email(email=user_id)
         is_supper_admin = True if default_plan == PLAN_TYPE_PM_ENTERPRISE else False
+        master_password_score = kwargs.get("score") or kwargs.get("master_password_score") or user.master_password_score
         user_new_creation_data = {
             "kdf": kwargs.get("kdf", 0),
             "kdf_iterations": kwargs.get("kdf_iterations", 100000),
@@ -153,7 +154,7 @@ class UserService:
             "private_key": keys.get("encrypted_private_key"),
             "master_password_hash": master_password_hash,
             "master_password_hint": kwargs.get("master_password_hint", ""),
-            "master_password_score": kwargs.get("score") or kwargs.get("master_password_score"),
+            "master_password_score": master_password_score,
             "api_key": secure_random_string(length=30),
             "activated": True,
             "activated_date": now(),
