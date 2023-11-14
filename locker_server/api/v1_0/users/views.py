@@ -24,6 +24,7 @@ from locker_server.core.exceptions.user_exception import UserDoesNotExistExcepti
     UserResetPasswordTokenInvalidException
 from locker_server.settings import locker_server_settings
 from locker_server.shared.constants.account import *
+from locker_server.shared.constants.transactions import PLAN_TYPE_PM_ENTERPRISE
 from locker_server.shared.error_responses.error import refer_error, gen_error
 from locker_server.api.v1_0.ciphers.serializers import VaultItemSerializer, UpdateVaultItemSerializer
 from locker_server.shared.external_services.locker_background.background_factory import BackgroundFactory
@@ -618,7 +619,7 @@ class UserPwdViewSet(APIBaseViewSet):
         return Response(status=status.HTTP_200_OK, data={"sso_token_ids": sso_token_ids})
 
     @action(methods=["get"], detail=False)
-    def check_exist(self, request, *args, **kwargs):
+    def exist(self, request, *args, **kwargs):
         exist = self.user_service.check_exist()
         return Response(status=status.HTTP_200_OK, data={"exist": exist})
 

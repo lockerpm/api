@@ -102,8 +102,8 @@ class QuickShareService:
             token, expired_time = self.quick_share_repository.generate_public_access_token(
                 quick_share=quick_share, email=email
             )
-
-        self.user_repository.delete_sync_cache_data(user_id=quick_share.cipher.created_by.user_id)
+        if quick_share.cipher.created_by:
+            self.user_repository.delete_sync_cache_data(user_id=quick_share.cipher.created_by.user_id)
         PwdSync(event=SYNC_QUICK_SHARE, user_ids=[quick_share.cipher.created_by.user_id]).send(
             data={"id": str(quick_share.quick_share_id)}
         )

@@ -3,10 +3,12 @@ from datetime import timedelta, datetime
 from typing import Dict
 
 from django.conf import settings
+from locker_server.settings import locker_server_settings
+
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
 from locker_server.api.api_base_view import APIBaseViewSet
 from locker_server.api.permissions.locker_permissions.enterprise_permissions.enterprise_pwd_permission import \
@@ -19,7 +21,7 @@ from locker_server.core.exceptions.enterprise_member_exception import Enterprise
 from locker_server.shared.constants.enterprise_members import E_MEMBER_STATUS_CONFIRMED, E_MEMBER_STATUS_REQUESTED, \
     E_MEMBER_STATUS_INVITED
 from locker_server.shared.constants.event import EVENT_ENTERPRISE_UPDATED
-from locker_server.shared.constants.transactions import TRIAL_TEAM_PLAN
+from locker_server.shared.constants.transactions import TRIAL_TEAM_PLAN, PLAN_TYPE_PM_ENTERPRISE
 from locker_server.shared.error_responses.error import gen_error
 from locker_server.shared.external_services.locker_background.background_factory import BackgroundFactory
 from locker_server.shared.external_services.locker_background.constants import BG_EVENT
@@ -41,6 +43,8 @@ class EnterprisePwdViewSet(APIBaseViewSet):
             self.serializer_class = DetailEnterpriseSerializer
         elif self.action in ["update"]:
             self.serializer_class = UpdateEnterpriseSerializer
+        elif self.action == "add_members":
+            self.serializer_class = CreateMultipleMemberSerializer
         return super().get_serializer_class()
 
     def get_object(self):
@@ -226,8 +230,15 @@ class EnterprisePwdViewSet(APIBaseViewSet):
 
     @action(methods=['post'], detail=True)
     def add_members(self, request, *args, **kwargs):
+        default_plan = locker_server_settings.DEFAULT_PLAN
+        if default_plan != PLAN_TYPE_PM_ENTERPRISE:
+            raise PermissionDenied
+
         enterprise = self.get_object()
-        members = request.data.get("members")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        members = validated_data.get("members")
         if not isinstance(members, list):
             raise ValidationError(detail={"members": ["Members are not valid. This field must be an array"]})
 

@@ -41,6 +41,7 @@ class NotificationViewSet(APIBaseViewSet):
             notification = self.notification_service.get_notification_by_id(notification_id=self.kwargs.get("id"))
             if notification.user.user_id != user.user_id:
                 raise NotFound
+            return notification
         except NotificationDoesNotExistException:
             raise NotFound
 
