@@ -55,7 +55,7 @@ def load_fixtures(apps, schema_editor):
         if fixture_filename == "relay_domain.json":
             try:
                 if settings.RELAY_DOMAIN:
-                    objs = [{
+                    data = [{
                         "model": "api_orm.RelayDomainORM",
                         "fields": {
                             "id": settings.RELAY_DOMAIN

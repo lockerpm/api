@@ -14,7 +14,7 @@ from channels.routing import get_default_application
 
 
 valid_env = ['prod', 'env', 'staging']
-env = os.getenv("ENVIRONMENT")
+env = os.getenv("PROD_ENV")
 env = 'dev' if env not in valid_env else env
 
 setting = "server_config.settings.%s" % env

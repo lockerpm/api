@@ -32,7 +32,7 @@ class PwdSyncConsumer(AppGeneralWebsocketConsumer):
         except Exception:
             from locker_server.shared.log.config import logging_config
             logging.config.dictConfig(logging_config)
-            logger = logging.getLogger('customer_service')
+            logger = logging.getLogger('stdout_service')
             tb = traceback.format_exc()
             logger.critical("Connect PWDSyncConsumer Errors:\n{}".format(tb))
 
@@ -54,7 +54,7 @@ class PwdSyncConsumer(AppGeneralWebsocketConsumer):
         except Exception:
             from locker_server.shared.log.config import logging_config
             logging.config.dictConfig(logging_config)
-            logger = logging.getLogger('customer_service')
+            logger = logging.getLogger('stdout_service')
             tb = traceback.format_exc()
             logger.critical(
                 "Disconnect PWDSyncConsumer Errors: {} - {}\n{}".format(self.group_name, self.channel_name, tb)
