@@ -9,4 +9,7 @@ def get_sync_cache_key(user_id, page, size=100):
 
 
 def delete_sync_cache_data(user_id):
-    return cache.delete_many(keys=cache.keys(f"sync:{user_id}:*"))
+    keys = cache.keys(f"sync:{user_id}:*")
+    if not keys:
+        return
+    return cache.delete_many(keys=keys)
