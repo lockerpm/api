@@ -39,6 +39,7 @@ class ServiceFactory(containers.DeclarativeContainer):
         enterprise_member_repository=RepositoryFactory.enterprise_member_repository,
         enterprise_policy_repository=RepositoryFactory.enterprise_policy_repository,
         notification_setting_repository=RepositoryFactory.notification_setting_repository,
+        factor2_method_repository=RepositoryFactory.factor2_method_repository,
     )
     device_service = providers.Factory(
         DeviceService,

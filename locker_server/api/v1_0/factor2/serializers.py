@@ -4,7 +4,7 @@ from locker_server.shared.constants.factor2 import LIST_FA2_METHOD
 
 
 class Factor2MailOTPSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True, allow_blank=False)
+    email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, allow_blank=False)
 
 

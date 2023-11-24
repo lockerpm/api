@@ -160,7 +160,7 @@ class CipherService:
                 raise OnlyAllowOwnerUpdateException
 
         # Validate collection ids
-        if team and team.team_id == cipher.team.team_id:
+        if team and cipher.team and team.team_id == cipher.team.team_id:
             team_member = self.team_member_repository.get_user_team_member(user_id=user_id, team_id=cipher.team.team_id)
             if not team_member:
                 raise TeamDoesNotExistException

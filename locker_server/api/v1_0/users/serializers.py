@@ -3,6 +3,8 @@ from rest_framework import serializers
 from locker_server.shared.constants.account import LOGIN_METHOD_PASSWORD, LOGIN_METHOD_PASSWORDLESS
 from locker_server.shared.constants.ciphers import KDF_TYPE
 from locker_server.shared.constants.device_type import LIST_CLIENT_ID, LIST_DEVICE_TYPE
+from locker_server.shared.constants.factor2 import LIST_FA2_METHOD
+from locker_server.shared.constants.lang import LANG_ENGLISH, LANG_VIETNAM
 from locker_server.shared.constants.transactions import *
 
 
@@ -15,6 +17,10 @@ class UserMeSerializer(serializers.Serializer):
             "timeout_action": instance.timeout_action,
             "is_pwd_manager": instance.activated,
             "pwd_user_id": str(instance.user_id),
+            "language": instance.language,
+            "is_passwordless": self.context.get("is_passwordless_func")(instance.user_id),
+            "avatar": instance.get_avatar()
+
         }
         show_key_param = self.context["request"].query_params.get("show_key", "0")
         if show_key_param == "1":
@@ -41,6 +47,16 @@ class UserUpdateMeSerializer(serializers.Serializer):
     timeout = serializers.IntegerField(allow_null=True, min_value=-1, required=False)
     timeout_action = serializers.ChoiceField(choices=["lock", "logOut"], required=False)
     scores = UserScoreUpdateSerializer(allow_null=True, required=False, many=False)
+    language = serializers.ChoiceField(choices=[LANG_ENGLISH, LANG_VIETNAM], required=False)
+    name = serializers.CharField(required=False, max_length=512, allow_blank=False)
+
+    def to_internal_value(self, data):
+        name = data.get("name")
+        if name:
+            data.update({
+                "full_name": name
+            })
+        return data
 
 
 class EncryptedPairKey(serializers.Serializer):
@@ -85,6 +101,23 @@ class UserSessionSerializer(serializers.Serializer):
     device_identifier = serializers.CharField()
     device_name = serializers.CharField(required=False, allow_blank=True)
     device_type = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        device_type = data.get("device_type")
+        if device_type and device_type not in LIST_DEVICE_TYPE:
+            raise serializers.ValidationError(detail={"device_type": ["The device type is not valid"]})
+        return data
+
+
+class UserSessionByOtpSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+    password = serializers.CharField()
+    client_id = serializers.ChoiceField(choices=LIST_CLIENT_ID)
+    device_identifier = serializers.CharField()
+    device_name = serializers.CharField(required=False, allow_blank=True)
+    device_type = serializers.IntegerField(required=False)
+    otp = serializers.CharField(required=True)
+    method = serializers.ChoiceField(choices=LIST_FA2_METHOD)
 
     def validate(self, data):
         device_type = data.get("device_type")

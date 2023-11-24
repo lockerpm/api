@@ -27,6 +27,7 @@ PWD_INVITATION_SUCCESSFUL = "invitation_successful"
 
 PWD_SHARE_ITEM_ACCEPTED = "share_item_accepted"
 PWD_SHARE_ITEM_REJECTED = "share_item_rejected"
+PWD_SHARE_ITEM_LEFT = "share_item_left"
 
 PWD_NEW_SHARE_ITEM = "new_share_item"
 PWD_CONFIRM_SHARE_ITEM = "confirm_share_item"

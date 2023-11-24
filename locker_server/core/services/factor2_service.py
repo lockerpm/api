@@ -33,6 +33,12 @@ class Factor2Service:
         self.auth_repository = auth_repository
         self.factor2_method_repository = factor2_method_repository
 
+    def list_user_factor2_methods(self, user_id: int, **filters) -> List[Factor2Method]:
+        return self.factor2_method_repository.list_user_factor2_methods(
+            user_id=user_id,
+            **filters
+        )
+
     def auth_otp_mail(self, email: str, raw_password: str, device_info: Dict, ip_address: str):
         user = self.user_repository.get_user_by_email(
             email=email
@@ -92,7 +98,7 @@ class Factor2Service:
         factor2_methods = self.factor2_method_repository.list_user_factor2_methods(
             user_id=user.user_id
         )
-        if len(factor2_methods) < len(LIST_FA2_METHOD):
+        if factor2_methods is None or len(factor2_methods) < len(LIST_FA2_METHOD):
             factor2_methods = self.create_default_user_factor2(user_id=user_id)
         smart_otp = None
         mail_otp = None
@@ -141,6 +147,7 @@ class Factor2Service:
 
     def update_factor2(self, user_id: int, method: str, user_otp: str, device) -> User:
         user = self.user_repository.get_user_by_id(user_id=user_id)
+        old_factor2 = user.is_factor2
         if not user:
             raise UserDoesNotExistException
         if method not in LIST_FA2_METHOD:
@@ -207,12 +214,14 @@ class Factor2Service:
             else:
                 raise Factor2CodeInvalidException
         if smart_otp.is_activate or mail_otp.is_activate:
-            self.user_repository.update_user_factor2(is_factor2=True)
+            self.user_repository.update_user_factor2(user_id=user_id, is_factor2=True)
             self.user_repository.revoke_all_sessions(user=user, exclude_sso_token_ids=[device.sso_token_id])
             is_factor2 = True
         else:
             is_factor2 = False
-        self.user_repository.update_user_factor2(user_id=user_id, is_factor2=is_factor2)
+        if is_factor2 != old_factor2:
+            self.user_repository.revoke_all_sessions(user=user)
+        user = self.user_repository.update_user_factor2(user_id=user_id, is_factor2=is_factor2)
         return user
 
     def create_mail_activate_code(self, user_id: int, method: str) -> Factor2Method:

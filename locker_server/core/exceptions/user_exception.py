@@ -111,3 +111,15 @@ class User2FARequireException(UserException):
     """
     The enterprise policy requires 2FA
     """
+
+
+class UserFactor2IsNotActiveException(UserException):
+    """
+    The method has been disable
+    """
+
+
+class UserFactor2IsNotValidException(UserException):
+    """
+    The otp code is not valid
+    """

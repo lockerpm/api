@@ -2,6 +2,7 @@ from typing import Optional, List, Dict
 from abc import ABC, abstractmethod
 
 from locker_server.core.entities.factor2.factor2_method import Factor2Method
+from locker_server.core.entities.user.user import User
 
 
 class Factor2MethodRepository(ABC):
@@ -17,6 +18,10 @@ class Factor2MethodRepository(ABC):
 
     @abstractmethod
     def get_factor2_method_by_method(self, user_id: int, method: str) -> Factor2Method:
+        pass
+
+    @abstractmethod
+    def check_otp(self, user_id: int, method: str, otp_code: str) -> bool:
         pass
 
     # ------------------------ Create Factor2Method resource --------------------- #

@@ -49,7 +49,8 @@ class PaymentRepository(ABC):
         pass
 
     @abstractmethod
-    def check_promo_code(self, user_id: int, code: str, new_duration: str = None, new_plan: str = None) -> Optional[PromoCode]:
+    def check_promo_code(self, user_id: int, code: str, new_duration: str = None,
+                         new_plan: str = None) -> Optional[PromoCode]:
         pass
 
     @abstractmethod

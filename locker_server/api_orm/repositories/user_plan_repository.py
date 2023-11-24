@@ -11,6 +11,7 @@ from locker_server.api_orm.models import PMUserPlanFamilyORM
 from locker_server.api_orm.models.wrapper import get_user_model, get_user_plan_model, get_plan_model, \
     get_enterprise_member_model, get_enterprise_model, get_enterprise_member_role_model, get_promo_code_model
 from locker_server.core.entities.enterprise.enterprise import Enterprise
+from locker_server.core.entities.payment.promo_code import PromoCode
 from locker_server.core.entities.user.user import User
 from locker_server.core.entities.user_plan.pm_plan import PMPlan
 from locker_server.core.entities.user_plan.pm_user_plan import PMUserPlan
@@ -288,7 +289,9 @@ class UserPlanORMRepository(UserPlanRepository):
         promo_description_en = None
         promo_description_vi = None
         if promo_code is not None and promo_code != "":
-            promo_code_orm = PromoCodeORM.check_valid(value=promo_code, current_user=current_plan_orm.user)
+            promo_code_orm = PromoCodeORM.check_valid(
+                value=promo_code, current_user=current_plan_orm.user, new_duration=new_duration, new_plan=new_plan.alias
+            )
             if not promo_code_orm:
                 error_promo = {"promo_code": ["This coupon is expired or incorrect"]}
             else:
@@ -530,7 +533,10 @@ class UserPlanORMRepository(UserPlanRepository):
         user_plan_orm.start_period = start_period
         user_plan_orm.end_period = end_period
         user_plan_orm.number_members = number_members
-        user_plan_orm.promo_code = promo_code
+        if isinstance(promo_code, PromoCode):
+            user_plan_orm.promo_code_id = promo_code.promo_code_id
+        else:
+            user_plan_orm.promo_code = promo_code
         user_plan_orm.cancel_at_period_end = cancel_at_period_end
         if extra_time and extra_time > 0:
             user_plan_orm.extra_time += extra_time

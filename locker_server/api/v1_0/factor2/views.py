@@ -15,7 +15,7 @@ from locker_server.api.permissions.locker_permissions.factor2_pwd_permission imp
 
 class Factor2ViewSet(APIBaseViewSet):
     http_method_names = ["head", "options", "get", "post"]
-    permission_classes = (Factor2PwdPermission)
+    permission_classes = (Factor2PwdPermission,)
 
     def check_captcha_permission(self):
         # TODO: Check the captcha
@@ -39,12 +39,12 @@ class Factor2ViewSet(APIBaseViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
-        username = validated_data.get('username')
+        email = validated_data.get('email')
         password = validated_data.get('password')
         try:
             self.factor2_service.auth_otp_mail(
-                username=username,
-                raw_passwowrd=password,
+                email=email,
+                raw_password=password,
                 device_info=detect_device(ua_string=self.get_client_agent()),
                 ip_address=get_ip_by_request(request)
             )
@@ -73,12 +73,12 @@ class Factor2ViewSet(APIBaseViewSet):
         if request.method == "POST":
             _serializer = self.get_serializer(data=request.data)
             _serializer.is_valid(raise_exception=True)
-            _validated_data = _serializer.save()
+            _validated_data = _serializer.validated_data
             user_otp = _validated_data.get("otp")
             method = _validated_data.get("method")
             device = request.auth
             try:
-                user = self.factor2_service.update_factor(
+                user = self.factor2_service.update_factor2(
                     user_id=user.user_id,
                     method=method,
                     user_otp=user_otp,

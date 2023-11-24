@@ -330,7 +330,9 @@ class PaymentService:
 
         promo_code_obj = None
         if promo_code:
-            promo_code_obj = self.payment_repository.check_promo_code(user_id=user_id, code=promo_code)
+            promo_code_obj = self.payment_repository.check_promo_code(
+                user_id=user_id, code=promo_code, new_plan=plan_alias
+            )
             if not promo_code_obj:
                 raise PaymentPromoCodeInvalidException
         current_plan = self.user_plan_repository.get_user_plan(user_id=user_id)

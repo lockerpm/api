@@ -1,0 +1,27 @@
+{
+  "job": "share_item_left",
+  "scope": "pwdmanager",
+  "sender": {
+    "mail": {
+      "message": {
+        "job": "share_item_left",
+        "service": "locker",
+        "destination_type": "email",
+        "destinations": [],
+        "data": {
+          "user_leave": "{user_leave}"
+        }
+      }
+    },
+    "web": {
+      "type": "item_sharing_left",
+      "title": {
+        "vi": "{user_leave} đã rời khỏi item bạn chia sẻ",
+        "en": "{user_leave} has left the item you share"
+      },
+      "metadata": {}
+    },
+    "integration": {},
+    "platform_alert": {}
+  }
+}

@@ -154,8 +154,8 @@ class PaymentORMRepository(PaymentRepository):
             return None
         return ModelParser.payment_parser().parse_promo_code(promo_code_orm=promo_code_orm)
 
-    def check_promo_code(self, user_id: int, code: str, new_duration: str = None, new_plan: str = None) -> Optional[
-        PromoCode]:
+    def check_promo_code(self, user_id: int, code: str, new_duration: str = None,
+                         new_plan: str = None) -> Optional[PromoCode]:
         user_orm = self._get_user_orm(user_id=user_id)
         if not user_orm:
             return None

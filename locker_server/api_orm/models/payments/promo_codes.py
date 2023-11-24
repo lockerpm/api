@@ -85,7 +85,7 @@ class PromoCodeORM(AbstractPromoCodeORM):
                     return False
             if promo_code.only_period and new_duration and promo_code.only_period != new_duration:
                 return False
-            if promo_code.only_plan and new_plan and promo_code.only_plan != new_plan:
+            if promo_code.only_plan and new_plan and new_plan not in list(promo_code.only_plan.split(",")):
                 return False
             return promo_code
         except cls.DoesNotExist:

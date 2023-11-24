@@ -18,7 +18,7 @@ from locker_server.shared.error_responses.error import gen_error
 from locker_server.shared.external_services.locker_background.background_factory import BackgroundFactory
 from locker_server.shared.external_services.locker_background.constants import BG_NOTIFY
 from locker_server.shared.external_services.user_notification.list_jobs import PWD_CONFIRM_SHARE_ITEM, \
-    PWD_SHARE_ITEM_REJECTED, PWD_SHARE_ITEM_ACCEPTED, PWD_NEW_SHARE_ITEM
+    PWD_SHARE_ITEM_REJECTED, PWD_SHARE_ITEM_ACCEPTED, PWD_NEW_SHARE_ITEM, PWD_SHARE_ITEM_LEFT
 from locker_server.shared.external_services.user_notification.notification_sender import SENDING_SERVICE_MAIL, \
     SENDING_SERVICE_WEB_NOTIFICATION
 from locker_server.shared.utils.avatar import check_email
@@ -552,6 +552,26 @@ class SharingPwdViewSet(APIBaseViewSet):
             self.sharing_service.leave_sharing_team(user=user, sharing=personal_share)
         except TeamMemberDoesNotExistException:
             raise NotFound
+        if settings.SELF_HOSTED:
+            primary_member = self.team_member_service.get_primary_member(team_id=personal_share.team_id)
+            user_ids = [primary_member.user.user_id]
+            job = PWD_SHARE_ITEM_LEFT
+            BackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_sending", **{
+                    "user_ids": user_ids,
+                    "job": job,
+                    "user_leave": user.full_name,
+
+                }
+            )
+            BackgroundFactory.get_background(bg_name=BG_NOTIFY).run(
+                func_name="notify_sending", **{
+                    "services": [SENDING_SERVICE_WEB_NOTIFICATION],
+                    "user_ids": user_ids,
+                    "job": job,
+                    "user_leave": user.full_name,
+                }
+            )
         return Response(status=status.HTTP_200_OK, data={"success": True})
 
     @action(methods=["post"], detail=False)

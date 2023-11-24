@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from locker_server.core.entities.user.device import Device
 from locker_server.core.entities.user.device_access_token import DeviceAccessToken
+from locker_server.core.exceptions.device_exception import DeviceDoesNotExistException
 from locker_server.core.repositories.device_access_token_repository import DeviceAccessTokenRepository
 from locker_server.core.repositories.device_repository import DeviceRepository
 
@@ -10,6 +11,7 @@ class DeviceService:
     """
     This class represents Use Cases related Device
     """
+
     def __init__(self, device_repository: DeviceRepository,
                  device_access_token_repository: DeviceAccessTokenRepository):
         self.device_repository = device_repository
@@ -27,3 +29,12 @@ class DeviceService:
             device=device, renewal=True, sso_token_id=sso_token_id
         )
         return access_token
+
+    def get_device_by_identifier(self, user_id: int, device_identifier: str) -> Optional[Device]:
+        device = self.device_repository.get_device_by_identifier(
+            user_id=user_id,
+            device_identifier=device_identifier
+        )
+        if not device:
+            raise DeviceDoesNotExistException
+        return device

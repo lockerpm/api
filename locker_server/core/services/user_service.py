@@ -19,6 +19,7 @@ from locker_server.core.repositories.device_repository import DeviceRepository
 from locker_server.core.repositories.enterprise_member_repository import EnterpriseMemberRepository
 from locker_server.core.repositories.enterprise_policy_repository import EnterprisePolicyRepository
 from locker_server.core.repositories.enterprise_repository import EnterpriseRepository
+from locker_server.core.repositories.factor2_method_repository import Factor2MethodRepository
 from locker_server.core.repositories.notification_setting_repository import NotificationSettingRepository
 from locker_server.core.repositories.payment_repository import PaymentRepository
 from locker_server.core.repositories.plan_repository import PlanRepository
@@ -30,6 +31,7 @@ from locker_server.shared.caching.sync_cache import delete_sync_cache_data, get_
 from locker_server.shared.constants.account import LOGIN_METHOD_PASSWORD
 from locker_server.shared.constants.enterprise_members import *
 from locker_server.shared.constants.event import EVENT_USER_LOGIN_FAILED, EVENT_USER_LOGIN, EVENT_USER_BLOCK_LOGIN
+from locker_server.shared.constants.factor2 import FA2_METHOD_MAIL_OTP
 from locker_server.shared.constants.members import PM_MEMBER_STATUS_INVITED, PM_MEMBER_STATUS_ACCEPTED
 from locker_server.shared.constants.token import TOKEN_EXPIRED_TIME_INVITE_MEMBER, TOKEN_TYPE_RESET_PASSWORD, \
     TOKEN_PREFIX
@@ -60,7 +62,9 @@ class UserService:
                  enterprise_repository: EnterpriseRepository,
                  enterprise_member_repository: EnterpriseMemberRepository,
                  enterprise_policy_repository: EnterprisePolicyRepository,
-                 notification_setting_repository: NotificationSettingRepository):
+                 notification_setting_repository: NotificationSettingRepository,
+                 factor2_method_repository: Factor2MethodRepository
+                 ):
         self.user_repository = user_repository
         self.auth_repository = auth_repository
         self.device_repository = device_repository
@@ -75,6 +79,7 @@ class UserService:
         self.enterprise_member_repository = enterprise_member_repository
         self.enterprise_policy_repository = enterprise_policy_repository
         self.notification_setting_repository = notification_setting_repository
+        self.factor2_method_repository = factor2_method_repository
 
     def get_current_plan(self, user: User) -> PMUserPlan:
         return self.user_plan_repository.get_user_plan(user_id=user.user_id)
@@ -445,7 +450,8 @@ class UserService:
             "kdf": user.kdf,
             "kdf_iterations": user.kdf_iterations,
             "not_sync": not_sync_sso_token_ids,
-            "has_no_master_pw_item": not self.user_repository.has_master_pw_item(user_id=user.user_id)
+            "has_no_master_pw_item": not self.user_repository.has_master_pw_item(user_id=user.user_id),
+            "is_super_admin": user.is_supper_admin
         }
         # Create event login successfully
         if user_enterprise_ids:
@@ -675,3 +681,174 @@ class UserService:
         self.enterprise_member_repository.update_enterprise_member(**{
             "token_invitation": ""
         })
+
+    def user_session_by_otp(self, user: User, password: str, method: str, otp_code: str, client_id: str = None,
+                            device_identifier: str = None,
+                            device_name: str = None, device_type: int = None, is_factor2: bool = False,
+                            token_auth_value: str = None, secret: str = None,
+                            ip: str = None, ua: str = None):
+        # Check login block
+        if user.login_block_until and user.login_block_until > now():
+            wait = user.login_block_until - now()
+            raise UserAuthBlockingEnterprisePolicyException(wait=wait)
+
+        user_enterprises = self.enterprise_repository.list_user_enterprises(
+            user_id=user.user_id, **{"status": E_MEMBER_STATUS_CONFIRMED}
+        )
+        user_enterprise_ids = [enterprise.enterprise_id for enterprise in user_enterprises]
+
+        # Login failed
+        if self.auth_repository.check_master_password(user=user, raw_password=password) is False:
+            if user_enterprise_ids:
+                BackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                    "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
+                    "type": EVENT_USER_LOGIN_FAILED, "ip_address": ip
+                })
+                block_failed_login_policy = self.enterprise_policy_repository.get_block_failed_login_policy(
+                    user_id=user.user_id
+                )
+                if block_failed_login_policy:
+                    failed_login_attempts = block_failed_login_policy.failed_login_attempts
+                    failed_login_duration = block_failed_login_policy.failed_login_duration
+                    failed_login_block_time = block_failed_login_policy.failed_login_block_time
+                    latest_request_login = user.last_request_login
+
+                    user = self.user_repository.update_login_time_user(
+                        user_id=user.user_id,
+                        update_data={
+                            "login_failed_attempts": user.login_failed_attempts + 1,
+                            "last_request_login": now()
+                        }
+                    )
+                    if user.login_failed_attempts >= failed_login_attempts and \
+                            latest_request_login and now() - latest_request_login < failed_login_duration:
+                        # Lock login of this member
+                        user = self.user_repository.update_login_time_user(
+                            user_id=user.user_id,
+                            update_data={
+                                "login_block_until": now() + failed_login_block_time
+                            }
+                        )
+                        # Create block failed login event
+                        BackgroundFactory.get_background(bg_name=BG_EVENT).run(
+                            func_name="create_by_enterprise_ids", **{
+                                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id,
+                                "type": EVENT_USER_BLOCK_LOGIN, "ip_address": ip
+                            }
+                        )
+                        owner = self.enterprise_member_repository.get_primary_member(
+                            enterprise_id=block_failed_login_policy.enterprise.enterprise_id
+                        ).user.user_id
+                        raise UserAuthBlockedEnterprisePolicyException(
+                            failed_login_owner_email=block_failed_login_policy.failed_login_owner_email,
+                            owner=owner,
+                            lock_time="{} (UTC+00)".format(
+                                datetime.utcfromtimestamp(now()).strftime('%H:%M:%S %d-%m-%Y')
+                            ),
+                            unlock_time="{} (UTC+00)".format(
+                                datetime.utcfromtimestamp(user.login_block_until).strftime('%H:%M:%S %d-%m-%Y')
+                            ),
+                            ip=ip
+                        )
+            raise UserAuthFailedException
+
+        if self.enterprise_repository.list_user_enterprises(user_id=user.user_id, **{"is_activated": False}):
+            raise UserIsLockedByEnterpriseException
+        if self.enterprise_member_repository.lock_login_account_belong_enterprise(user_id=user.user_id) is True:
+            raise UserBelongEnterpriseException
+        if [e for e in user_enterprises if e.locked is True]:
+            raise UserEnterprisePlanExpiredException
+        factor2_method = self.factor2_method_repository.get_factor2_method_by_method(
+            user_id=user.user_id,
+            method=method
+        )
+        if not factor2_method or not factor2_method.is_activate:
+            raise UserFactor2IsNotActiveException
+
+        # Check valid otp
+        if self.factor2_method_repository.check_otp(user_id=user.user_id, method=method, otp_code=otp_code) is False:
+            raise UserFactor2IsNotValidException
+        else:
+            # Update otp code
+            if method == FA2_METHOD_MAIL_OTP:
+                factor2_update_data = {
+                    "activate_code": ""
+                }
+                self.factor2_method_repository.update_factor2_method(
+                    factor2_method_id=factor2_method.factor2_method_id,
+                    factor2_method_update_data=factor2_update_data
+                )
+        # Unblock login
+        user = self.user_repository.update_login_time_user(user_id=user.user_id, update_data={
+            "last_request_login": now(),
+            "login_failed_attempts": 0,
+            "login_block_until": now()
+        })
+
+        # Get sso token id from authentication token
+        try:
+            decoded_token = self.auth_repository.decode_token(token_auth_value, secret=secret)
+        except AttributeError:
+            decoded_token = None
+        sso_token_id = decoded_token.get("sso_token_id") if decoded_token else None
+
+        # Get current user plan, the sync device limit
+        current_plan = self.get_current_plan(user=user)
+        limit_sync_device = None if user_enterprise_ids else current_plan.pm_plan.sync_device
+        # The list stores sso token id which will not be synchronized
+        not_sync_sso_token_ids = []
+
+        # First, check the device exists
+        device_existed = self.device_repository.get_device_by_identifier(
+            user_id=user.user_id, device_identifier=device_identifier
+        )
+        device_info = detect_device(ua_string=ua)
+        device_obj = self.device_repository.retrieve_or_create(user_id=user.user_id, **{
+            "client_id": client_id,
+            "device_name": device_name,
+            "device_type": device_type,
+            "device_identifier": device_identifier,
+            "os": device_info.get("os"),
+            "browser": device_info.get("browser"),
+            "scope": "api offline_access",
+            "token_type": "Bearer",
+            "refresh_token": secure_random_string(length=64, lower=False)
+        })
+        # If the device does not exist => New device => Create new one
+        if not device_existed:
+            all_devices = self.device_repository.list_user_devices(user_id=user.user_id)
+            if limit_sync_device and len(all_devices) > limit_sync_device:
+                old_devices = all_devices[limit_sync_device:]
+                old_devices_ids = [old_device.device_id for old_device in old_devices]
+                not_sync_sso_token_ids = self.device_access_token_repository.list_sso_token_ids(
+                    device_ids=old_devices_ids
+                )
+                self.device_access_token_repository.remove_devices_access_tokens(device_ids=old_devices_ids)
+
+        # Set last login
+        device_obj = self.device_repository.set_last_login(device_id=device_obj.device_id, last_login=now())
+        # Retrieve or create new access token
+        access_token = self.device_access_token_repository.fetch_device_access_token(
+            device=device_obj, renewal=True, sso_token_id=sso_token_id
+        )
+        result = {
+            "refresh_token": device_obj.refresh_token,
+            "access_token": access_token.access_token,
+            "token_type": device_obj.token_type,
+            "public_key": user.public_key,
+            "private_key": user.private_key,
+            "key": user.key,
+            "kdf": user.kdf,
+            "kdf_iterations": user.kdf_iterations,
+            "not_sync": not_sync_sso_token_ids,
+            "has_no_master_pw_item": not self.user_repository.has_master_pw_item(user_id=user.user_id),
+            "is_super_admin": user.is_supper_admin
+        }
+        # Create event login successfully
+        if user_enterprise_ids:
+            BackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
+                "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
+                "type": EVENT_USER_LOGIN, "ip_address": ip
+            })
+
+        return result

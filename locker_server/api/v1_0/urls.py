@@ -58,7 +58,7 @@ urlpatterns += [
     url(r'^users/password_hint$', views.UserPwdViewSet.as_view({'post': 'password_hint'})),
     url(r'^users/register$', views.UserPwdViewSet.as_view({'post': 'register'})),
     url(r'^users/session$', views.UserPwdViewSet.as_view({'post': 'session'})),
-    url(r'^users/session/otp$', views.UserPwdViewSet.as_view({'post': 'session_otp'})),
+    url(r'^users/session/otp$', views.UserPwdViewSet.as_view({'post': 'session_by_otp'})),
     url(r'^users/session/revoke_all$', views.UserPwdViewSet.as_view({'post': 'revoke_all_sessions'})),
     url(r'^users/invitations/confirmation$', views.UserPwdViewSet.as_view({'get': 'invitation_confirmation'})),
     url(r'^users/invitations$', views.UserPwdViewSet.as_view({'get': 'invitations'})),
