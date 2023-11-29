@@ -6,6 +6,7 @@ from django.conf import settings
 
 from locker_server.core.entities.enterprise.enterprise import Enterprise
 from locker_server.core.entities.enterprise.member.enterprise_member import EnterpriseMember
+from locker_server.core.entities.user.backup_credential import BackupCredential
 from locker_server.core.entities.user.device import Device
 from locker_server.core.entities.user.user import User
 from locker_server.core.entities.user_plan.pm_user_plan import PMUserPlan
@@ -149,7 +150,8 @@ class UserService:
             user = self.retrieve_or_create_by_id(user_id=user_id)
         else:
             user = self.retrieve_or_create_by_email(email=user_id)
-        is_supper_admin = True if default_plan == PLAN_TYPE_PM_ENTERPRISE else False
+        is_super_admin = True if default_plan == PLAN_TYPE_PM_ENTERPRISE else False
+        is_password_changed = True if default_plan == PLAN_TYPE_PM_ENTERPRISE else False
         master_password_score = kwargs.get("score") or kwargs.get("master_password_score") or user.master_password_score
         user_new_creation_data = {
             "kdf": kwargs.get("kdf", 0),
@@ -165,7 +167,8 @@ class UserService:
             "activated_date": now(),
             "revision_date": now(),
             "delete_account_date": None,
-            "is_supper_admin": is_supper_admin,
+            "is_super_admin": is_super_admin,
+            "is_password_changed": is_password_changed,
             "full_name": kwargs.get("full_name") or user_id,
         }
         user = self.user_repository.update_user(user_id=user.user_id, user_update_data=user_new_creation_data)
@@ -304,9 +307,9 @@ class UserService:
             user_id=user.user_id, **{"status": E_MEMBER_STATUS_CONFIRMED}
         )
         user_enterprise_ids = [enterprise.enterprise_id for enterprise in user_enterprises]
-
+        check_master_password = self.auth_repository.check_master_password(user=user, raw_password=password)
         # Login failed
-        if self.auth_repository.check_master_password(user=user, raw_password=password) is False:
+        if check_master_password is False:
             if user_enterprise_ids:
                 BackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
                     "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
@@ -433,25 +436,31 @@ class UserService:
                     device_ids=old_devices_ids
                 )
                 self.device_access_token_repository.remove_devices_access_tokens(device_ids=old_devices_ids)
-
+        # Get current credential_backup
+        if isinstance(check_master_password, BackupCredential):
+            credential_backup = check_master_password
+        else:
+            credential_backup = None
         # Set last login
         device_obj = self.device_repository.set_last_login(device_id=device_obj.device_id, last_login=now())
         # Retrieve or create new access token
         access_token = self.device_access_token_repository.fetch_device_access_token(
-            device=device_obj, renewal=True, sso_token_id=sso_token_id
+            device=device_obj, renewal=True, sso_token_id=sso_token_id,
+            credential_key=user.key if credential_backup is None else credential_backup.key
         )
+
         result = {
             "refresh_token": device_obj.refresh_token,
             "access_token": access_token.access_token,
             "token_type": device_obj.token_type,
             "public_key": user.public_key,
             "private_key": user.private_key,
-            "key": user.key,
-            "kdf": user.kdf,
-            "kdf_iterations": user.kdf_iterations,
+            "key": user.key if credential_backup is None else credential_backup.key,
+            "kdf": user.kdf if credential_backup is None else credential_backup.kdf,
+            "kdf_iterations": user.kdf_iterations if credential_backup is None else credential_backup.kdf_iterations,
             "not_sync": not_sync_sso_token_ids,
             "has_no_master_pw_item": not self.user_repository.has_master_pw_item(user_id=user.user_id),
-            "is_super_admin": user.is_supper_admin
+            "is_super_admin": user.is_super_admin
         }
         # Create event login successfully
         if user_enterprise_ids:
@@ -696,9 +705,9 @@ class UserService:
             user_id=user.user_id, **{"status": E_MEMBER_STATUS_CONFIRMED}
         )
         user_enterprise_ids = [enterprise.enterprise_id for enterprise in user_enterprises]
-
+        check_master_password = self.auth_repository.check_master_password(user=user, raw_password=password)
         # Login failed
-        if self.auth_repository.check_master_password(user=user, raw_password=password) is False:
+        if check_master_password is False:
             if user_enterprise_ids:
                 BackgroundFactory.get_background(bg_name=BG_EVENT).run(func_name="create_by_enterprise_ids", **{
                     "enterprise_ids": user_enterprise_ids, "user_id": user.user_id, "acting_user_id": user.user_id,
@@ -825,24 +834,31 @@ class UserService:
                 )
                 self.device_access_token_repository.remove_devices_access_tokens(device_ids=old_devices_ids)
 
+        # Get current credential_backup
+        if isinstance(check_master_password, BackupCredential):
+            credential_backup = check_master_password
+        else:
+            credential_backup = None
         # Set last login
         device_obj = self.device_repository.set_last_login(device_id=device_obj.device_id, last_login=now())
         # Retrieve or create new access token
         access_token = self.device_access_token_repository.fetch_device_access_token(
-            device=device_obj, renewal=True, sso_token_id=sso_token_id
+            device=device_obj, renewal=True, sso_token_id=sso_token_id,
+            credential_key=user.key if credential_backup is None else credential_backup.key
         )
+
         result = {
             "refresh_token": device_obj.refresh_token,
             "access_token": access_token.access_token,
             "token_type": device_obj.token_type,
             "public_key": user.public_key,
             "private_key": user.private_key,
-            "key": user.key,
-            "kdf": user.kdf,
-            "kdf_iterations": user.kdf_iterations,
+            "key": user.key if credential_backup is None else credential_backup.key,
+            "kdf": user.kdf if credential_backup is None else credential_backup.kdf,
+            "kdf_iterations": user.kdf_iterations if credential_backup is None else credential_backup.kdf_iterations,
             "not_sync": not_sync_sso_token_ids,
             "has_no_master_pw_item": not self.user_repository.has_master_pw_item(user_id=user.user_id),
-            "is_super_admin": user.is_supper_admin
+            "is_super_admin": user.is_super_admin
         }
         # Create event login successfully
         if user_enterprise_ids:

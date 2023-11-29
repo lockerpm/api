@@ -62,6 +62,7 @@ class AbstractUserORM(models.Model):
 
     def set_master_password(self, raw_password):
         self.master_password = make_password(raw_password)
+        self.is_password_changed = True
         self._password = raw_password
 
     def check_master_password(self, raw_password):
@@ -69,11 +70,13 @@ class AbstractUserORM(models.Model):
         Return a bool of whether the raw_password was correct. Handles
         hashing formats behind the scenes.
         """
+
         def setter(raw):
             self.set_master_password(raw)
             # Password hash upgrades shouldn't be considered password changes.
             self._password = None
             self.save(update_fields=["master_password"])
+
         # The account is not activated
         if not self.master_password:
             return False
@@ -83,4 +86,3 @@ class AbstractUserORM(models.Model):
         if not self.onboarding_process:
             return DEFAULT_ONBOARDING_PROCESS
         return ast.literal_eval(str(self.onboarding_process))
-

@@ -62,13 +62,12 @@ class EnterprisePwdViewSet(APIBaseViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        enterprises = self.enterprise_service.list_user_enterprises(
-            user_id=user.user_id,
-            **{
-                "status": E_MEMBER_STATUS_CONFIRMED
-            }
-        )
-        return enterprises
+        user_memberships = self.enterprise_member_service.list_enterprise_members(**{
+            "user_id": user.user_id,
+            "status": E_MEMBER_STATUS_CONFIRMED
+        })
+
+        return user_memberships
 
     def list(self, request, *args, **kwargs):
         user = request.user

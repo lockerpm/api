@@ -9,11 +9,11 @@ from locker_server.containers.containers import enterprise_member_service
 class AdminEnterprisePermission(APIPermission):
 
     def has_permission(self, request, view):
-        return self.is_auth(request) and request.user.is_supper_admin
+        return self.is_auth(request) and request.user.is_super_admin
 
     def has_object_permission(self, request, view, obj):
         if view.action in ["retrieve"]:
-            return request.user.is_supper_admin
+            return request.user.is_super_admin
         return super().has_object_permission(request, view, obj)
 
     @staticmethod

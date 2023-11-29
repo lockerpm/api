@@ -40,6 +40,8 @@ class AuthORMRepository(AuthRepository):
             )
             for backup_credential_orm in user_backup_credentials_orm:
                 if backup_credential_orm.check_master_password(raw_password=raw_password):
-                    return True
+                    return ModelParser.user_parser().parse_backup_credential(
+                        backup_credential_orm=backup_credential_orm
+                    )
             return False
         return valid

@@ -39,7 +39,7 @@ class DeviceAccessTokenORMRepository(DeviceAccessTokenRepository):
         return ModelParser.user_parser().parse_device_access_token(device_access_token_orm=device_access_token_orm)
 
     # ------------------------ Create DeviceAccessToken resource --------------------- #
-    def fetch_device_access_token(self, device: Device, renewal: bool = False,
+    def fetch_device_access_token(self, device: Device, credential_key: str, renewal: bool = False,
                                   sso_token_id: str = None) -> DeviceAccessToken:
         valid_access_token_orm = DeviceAccessTokenORM.objects.filter(
             device_id=device.device_id, expired_time__gte=now()
@@ -52,7 +52,8 @@ class DeviceAccessTokenORMRepository(DeviceAccessTokenRepository):
                 "access_token": "access_token",
                 "grant_type": "refresh_token",
                 "expires_in": DeviceAccessTokenORM.get_token_duration(client_id=device_orm.client_id),
-                "sso_token_id": sso_token_id
+                "sso_token_id": sso_token_id,
+                "credential_key": credential_key
             })
         return ModelParser.user_parser().parse_device_access_token(device_access_token_orm=valid_access_token_orm)
 

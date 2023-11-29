@@ -23,7 +23,7 @@ class DeviceAccessTokenRepository(ABC):
 
     # ------------------------ Create DeviceAccessToken resource --------------------- #
     @abstractmethod
-    def fetch_device_access_token(self, device: Device, renewal: bool = False,
+    def fetch_device_access_token(self, device: Device, credential_key: str, renewal: bool = False,
                                   sso_token_id: str = None) -> DeviceAccessToken:
         pass
 
@@ -33,4 +33,3 @@ class DeviceAccessTokenRepository(ABC):
     @abstractmethod
     def remove_devices_access_tokens(self, device_ids: List):
         pass
-

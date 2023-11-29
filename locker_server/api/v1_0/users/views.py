@@ -454,7 +454,8 @@ class UserPwdViewSet(APIBaseViewSet):
         if settings.SELF_HOSTED:
             device_access_token = request.auth
             new_device_access_token = self.device_service.fetch_device_access_token(
-                device=device_access_token.device, renewal=True, sso_token_id=True
+                device=device_access_token.device, renewal=True, sso_token_id=True,
+                credential_key=user.key
             )
             access_token = new_device_access_token.access_token
 
@@ -727,6 +728,7 @@ class UserPwdViewSet(APIBaseViewSet):
                     "name": user.full_name or user.username,
                     "avatar": user.get_avatar(),
                     "activated": user.activated,
+                    "sync_all_platforms": user.sync_all_platforms,
                     "set_up_passwordless": True if user.fd_credential_id else False,
                     "login_method": login_method,
                     "require_passwordless": require_passwordless,

@@ -13,7 +13,7 @@ from .serializers import PasswordlessCredentialSerializer
 
 
 class PasswordlessPwdViewSet(APIBaseViewSet):
-    permission_classes = (PasswordlessPwdPermission, )
+    permission_classes = (PasswordlessPwdPermission,)
     http_method_names = ["head", "options", "get", "post", ]
 
     def get_serializer_class(self):
@@ -25,6 +25,7 @@ class PasswordlessPwdViewSet(APIBaseViewSet):
     def credential(self, request, *args, **kwargs):
         user = self.request.user
         if request.method == "GET":
+            user_backup_credentials_data = []
             if not user or isinstance(user, AnonymousUser):
                 email = self.request.query_params.get("email")
                 if not email:
@@ -33,9 +34,18 @@ class PasswordlessPwdViewSet(APIBaseViewSet):
                     user = self.user_service.retrieve_by_email(email=email)
                 except UserDoesNotExistException:
                     raise NotFound
+            user_backup_credentials = self.backup_credential_service.list_backup_credentials(**{
+                "user_id": user.user_id
+            })
+            for backup_credential in user_backup_credentials:
+                user_backup_credentials_data.append({
+                    "credential_id": backup_credential.fd_credential_id,
+                    "random": backup_credential.fd_random
+                })
             return Response(status=status.HTTP_200_OK, data={
                 "credential_id": user.fd_credential_id,
-                "random": user.fd_random
+                "random": user.fd_random,
+                "backup_keys": user_backup_credentials_data
             })
 
         elif request.method == "POST":
@@ -52,4 +62,3 @@ class PasswordlessPwdViewSet(APIBaseViewSet):
                 "credential_id": user.fd_credential_id,
                 "random": user.fd_random
             })
-

@@ -5,9 +5,9 @@ from locker_server.shared.constants.enterprise_members import E_MEMBER_ROLE_PRIM
 class AdminEnterpriseMemberPermission(AdminEnterprisePermission):
 
     def has_permission(self, request, view):
-        return self.is_auth(request) and request.user.is_supper_admin
+        return self.is_auth(request) and request.user.is_super_admin
 
     def has_object_permission(self, request, view, obj):
         if view.action in ["list", "retrieve", "update", "activated", "destroy"]:
-            return request.user.is_supper_admin
+            return request.user.is_super_admin
         return super().has_object_permission(request, view, obj)

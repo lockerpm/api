@@ -1,3 +1,5 @@
+import ast
+
 from locker_server.core.entities.user.user import User
 
 
@@ -6,6 +8,7 @@ class BackupCredential(object):
                  master_password: str = None, master_password_hint: str = "", key: str = None,
                  public_key: str = None, private_key: str = None, creation_date: float = 0,
                  fd_credential_id: str = None, fd_random: str = None, kdf: int = 0, kdf_iterations: int = 0,
+                 security_keys: str = None
                  ):
         self._backup_credential_id = backup_credential_id
         self._creation_date = creation_date
@@ -19,6 +22,7 @@ class BackupCredential(object):
         self._kdf_iterations = kdf_iterations
         self._kdf = kdf
         self._user = user
+        self._security_keys = security_keys
 
     @property
     def backup_credential_id(self):
@@ -67,3 +71,9 @@ class BackupCredential(object):
     @property
     def kdf(self):
         return self._kdf
+
+    @property
+    def security_keys(self):
+        if not self._security_keys:
+            return []
+        return ast.literal_eval(str(self._security_keys))

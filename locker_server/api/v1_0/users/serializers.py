@@ -19,6 +19,8 @@ class UserMeSerializer(serializers.Serializer):
             "pwd_user_id": str(instance.user_id),
             "language": instance.language,
             "is_passwordless": self.context.get("is_passwordless_func")(instance.user_id),
+            "sync_all_platforms": instance.sync_all_platforms,
+            "is_password_changed": instance.is_password_changed,
             "avatar": instance.get_avatar()
 
         }
@@ -49,6 +51,7 @@ class UserUpdateMeSerializer(serializers.Serializer):
     scores = UserScoreUpdateSerializer(allow_null=True, required=False, many=False)
     language = serializers.ChoiceField(choices=[LANG_ENGLISH, LANG_VIETNAM], required=False)
     name = serializers.CharField(required=False, max_length=512, allow_blank=False)
+    sync_all_platforms = serializers.BooleanField(required=False)
 
     def to_internal_value(self, data):
         name = data.get("name")

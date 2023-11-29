@@ -21,6 +21,8 @@ class AbstractBackupCredentialORM(models.Model):
     fd_credential_id = models.CharField(max_length=255, null=True)
     fd_random = models.CharField(max_length=128, null=True)
 
+    # Security keys info
+    security_keys = models.TextField(null=True, default=None)
     user = models.ForeignKey(locker_server_settings.LS_USER_MODEL, on_delete=models.CASCADE,
                              related_name="user_backup_credentials")
 

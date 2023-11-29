@@ -17,7 +17,8 @@ class User(object):
                  fd_credential_id: str = None, fd_random: str = None,
                  onboarding_process: str = DEFAULT_ONBOARDING_PROCESS, saas_source: str = None,
                  email: str = None, full_name: str = None, language: str = LANG_ENGLISH,
-                 is_factor2: bool = False, base32_secret_factor2: str = "", is_supper_admin: bool = False):
+                 is_factor2: bool = False, base32_secret_factor2: str = "", is_super_admin: bool = False,
+                 sync_all_platforms: bool = False, is_password_changed: bool = True):
         self._user_id = user_id
         self._internal_id = internal_id
         self._creation_date = creation_date
@@ -54,7 +55,9 @@ class User(object):
         self._language = language
         self._is_factor2 = is_factor2
         self._base32_secret_factor2 = base32_secret_factor2
-        self._is_supper_admin = is_supper_admin
+        self._is_super_admin = is_super_admin
+        self._sync_all_platforms = sync_all_platforms
+        self._is_password_changed = is_password_changed
 
     def __str__(self):
         return f"<User object {self._user_id}>"
@@ -208,8 +211,16 @@ class User(object):
         return self._base32_secret_factor2
 
     @property
-    def is_supper_admin(self):
-        return self._is_supper_admin
+    def is_super_admin(self):
+        return self._is_super_admin
+
+    @property
+    def sync_all_platforms(self):
+        return self._sync_all_platforms
+
+    @property
+    def is_password_changed(self):
+        return self._is_password_changed
 
     def get_avatar(self):
         return get_avatar(self.email)

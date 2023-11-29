@@ -1,10 +1,28 @@
 from rest_framework import serializers
 
+from locker_server.core.entities.enterprise.member.enterprise_member import EnterpriseMember
 from locker_server.shared.constants.ciphers import KDF_TYPE
 from locker_server.shared.constants.enterprise_members import ENTERPRISE_LIST_ROLE, E_MEMBER_ROLE_MEMBER
 
 
 class ListEnterpriseSerializer(serializers.Serializer):
+    def to_representation(self, instance: EnterpriseMember):
+        enterprise = instance.enterprise
+        data = {
+            "id": enterprise.enterprise_id,
+            "organization_id": enterprise.enterprise_id,
+            "name": enterprise.name,
+            "description": enterprise.description,
+            "creation_date": enterprise.creation_date,
+            "revision_date": enterprise.revision_date,
+            "locked": enterprise.locked,
+            "avatar": enterprise.avatar,
+            "role": instance.role.name
+        }
+        return data
+
+
+class DetailEnterpriseSerializer(serializers.Serializer):
     def to_representation(self, instance):
         data = {
             "id": instance.enterprise_id,
@@ -15,21 +33,13 @@ class ListEnterpriseSerializer(serializers.Serializer):
             "revision_date": instance.revision_date,
             "locked": instance.locked,
             "avatar": instance.avatar,
-        }
-        return data
-
-
-class DetailEnterpriseSerializer(ListEnterpriseSerializer):
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data.update({
             "enterprise_name": instance.enterprise_name,
             "enterprise_address1": instance.enterprise_name,
             "enterprise_address2": instance.enterprise_name,
             "enterprise_phone": instance.enterprise_phone,
             "enterprise_country": instance.enterprise_country,
             "enterprise_postal_code": instance.enterprise_postal_code,
-        })
+        }
         return data
 
 

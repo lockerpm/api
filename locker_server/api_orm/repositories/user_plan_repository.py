@@ -19,7 +19,8 @@ from locker_server.core.entities.user_plan.pm_user_plan_family import PMUserPlan
 from locker_server.core.exceptions.payment_exception import PaymentMethodNotSupportException
 from locker_server.core.repositories.user_plan_repository import UserPlanRepository
 from locker_server.shared.constants.ciphers import *
-from locker_server.shared.constants.enterprise_members import E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_STATUS_CONFIRMED
+from locker_server.shared.constants.enterprise_members import E_MEMBER_ROLE_PRIMARY_ADMIN, E_MEMBER_STATUS_CONFIRMED, \
+    E_MEMBER_ROLE_MEMBER, E_MEMBER_ROLE_ADMIN
 from locker_server.shared.constants.transactions import *
 from locker_server.shared.external_services.payment_method.payment_method_factory import PaymentMethodFactory
 from locker_server.shared.log.cylog import CyLog
@@ -128,7 +129,10 @@ class UserPlanORMRepository(UserPlanRepository):
             pm_stripe_subscription__isnull=True
         ).exclude(
             pm_plan__alias=PLAN_TYPE_PM_FREE
-        ).exclude(end_period__isnull=True).filter(end_period__lte=now()).annotate(
+        ).exclude(end_period__isnull=True).exclude(
+            user__enterprise_members__role_id__in=[E_MEMBER_ROLE_MEMBER, E_MEMBER_ROLE_ADMIN],
+            user__enterprise_members__status=E_MEMBER_STATUS_CONFIRMED
+        ).filter(end_period__lte=now()).annotate(
             family_members_count=Count('user__pm_plan_family')
         ).filter(family_members_count__lt=1).select_related('user')
         return [

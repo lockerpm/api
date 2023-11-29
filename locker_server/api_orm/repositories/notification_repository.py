@@ -27,6 +27,7 @@ class NotificationORMRepository(NotificationRepository):
                 notifications_orm = notifications_orm.filter(read=False)
         if scope_param:
             notifications_orm = notifications_orm.filter(scope=scope_param)
+        notifications_orm = notifications_orm.order_by("-publish_time")
         return [
             ModelParser.notification_parser().parse_notification(notification_orm=notification_orm)
             for notification_orm in notifications_orm

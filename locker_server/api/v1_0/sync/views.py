@@ -65,6 +65,8 @@ class SyncPwdViewSet(APIBaseViewSet):
     @action(methods=["get"], detail=False)
     def sync(self, request, *args, **kwargs):
         user = self.request.user
+        access_token = self.request.auth.access_token
+        decode_token = self.auth_service.decode_token(value=access_token, secret=settings.SECRET_KEY)
         self.check_pwd_session_auth(request=request)
 
         paging_param = self.request.query_params.get("paging", "0")
@@ -121,6 +123,9 @@ class SyncPwdViewSet(APIBaseViewSet):
         if settings.SELF_HOSTED:
             sync_data["profile"]["email"] = user.email
             sync_data["profile"]["name"] = user.full_name
+        sync_data["profile"].update({
+            "key": decode_token.get("credential_key", user.key)
+        })
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)
         cache.set(cache_key, sync_data, SYNC_CACHE_TIMEOUT)
         return Response(status=status.HTTP_200_OK, data=sync_data)
@@ -256,11 +261,16 @@ class SyncPwdViewSet(APIBaseViewSet):
     def sync_profile_detail(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
+        access_token = self.request.auth.access_token
+        decode_token = self.auth_service.decode_token(value=access_token, secret=settings.SECRET_KEY)
         serializer = SyncProfileSerializer(user, many=False, context=self.get_serializer_context())
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         if settings.SELF_HOSTED:
             result["email"] = user.email
             result["name"] = user.full_name
+        result.update({
+            "key": decode_token.get("credential_key", user.key)
+        })
         return Response(status=status.HTTP_200_OK, data=result)
 
     @action(methods=["get"], detail=False)

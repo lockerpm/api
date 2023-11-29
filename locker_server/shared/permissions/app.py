@@ -27,7 +27,7 @@ class AppBasePermission(BasePermission):
     @staticmethod
     def is_super_admin(request):
         try:
-            return request.user and request.user.is_supper_admin
+            return request.user and request.user.is_super_admin
         except AttributeError:
             return False
 
