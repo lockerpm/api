@@ -51,6 +51,12 @@ class SyncPwdViewSet(APIBaseViewSet):
         except FolderDoesNotExistException:
             raise NotFound
 
+    def get_credential_key(self):
+        access_token = self.request.auth.access_token
+        decode_token = self.auth_service.decode_token(value=access_token, secret=settings.SECRET_KEY)
+        credential_key = decode_token.get("credential_key", self.request.user.key)
+        return credential_key
+
     def get_collection_obj(self):
         user = self.request.user
         try:
@@ -65,8 +71,6 @@ class SyncPwdViewSet(APIBaseViewSet):
     @action(methods=["get"], detail=False)
     def sync(self, request, *args, **kwargs):
         user = self.request.user
-        access_token = self.request.auth.access_token
-        decode_token = self.auth_service.decode_token(value=access_token, secret=settings.SECRET_KEY)
         self.check_pwd_session_auth(request=request)
 
         paging_param = self.request.query_params.get("paging", "0")
@@ -77,6 +81,9 @@ class SyncPwdViewSet(APIBaseViewSet):
         cache_key = self.user_service.get_sync_cache_key(user_id=user.user_id, page=page_param, size=page_size_param)
         response_cache_data = cache.get(cache_key)
         if response_cache_data:
+            response_cache_data["profile"].update({
+                "key": self.get_credential_key()
+            })
             return Response(status=status.HTTP_200_OK, data=response_cache_data)
 
         policies = self.enterprise_service.list_policies_by_user(user_id=user.user_id)
@@ -124,7 +131,7 @@ class SyncPwdViewSet(APIBaseViewSet):
             sync_data["profile"]["email"] = user.email
             sync_data["profile"]["name"] = user.full_name
         sync_data["profile"].update({
-            "key": decode_token.get("credential_key", user.key)
+            "key": self.get_credential_key()
         })
         sync_data = camel_snake_data(sync_data, snake_to_camel=True)
         cache.set(cache_key, sync_data, SYNC_CACHE_TIMEOUT)
@@ -261,15 +268,13 @@ class SyncPwdViewSet(APIBaseViewSet):
     def sync_profile_detail(self, request, *args, **kwargs):
         user = self.request.user
         self.check_pwd_session_auth(request=request)
-        access_token = self.request.auth.access_token
-        decode_token = self.auth_service.decode_token(value=access_token, secret=settings.SECRET_KEY)
         serializer = SyncProfileSerializer(user, many=False, context=self.get_serializer_context())
         result = camel_snake_data(serializer.data, snake_to_camel=True)
         if settings.SELF_HOSTED:
             result["email"] = user.email
             result["name"] = user.full_name
         result.update({
-            "key": decode_token.get("credential_key", user.key)
+            "key": self.get_credential_key()
         })
         return Response(status=status.HTTP_200_OK, data=result)
 

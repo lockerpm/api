@@ -20,7 +20,7 @@ class BackupCredentialORM(AbstractBackupCredentialORM):
             fd_credential_id=data.get("fd_credential_id"),
             fd_random=data.get("fd_random"),
             user_id=data.get("user_id"),
-            security_keys=data.get("security_keys")
+            name=data.get("name")
         )
         raw_master_password = data.get("master_password") or data.get("master_password_hash")
         if raw_master_password is not None:

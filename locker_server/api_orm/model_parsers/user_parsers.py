@@ -136,5 +136,6 @@ class UserParser:
             kdf_iterations=backup_credential_orm.kdf_iterations,
             kdf=backup_credential_orm.kdf,
             user=cls.parse_user(user_orm=backup_credential_orm.user),
-            security_keys=backup_credential_orm.security_keys
+            name=backup_credential_orm.name,
+            last_use_date=backup_credential_orm.last_use_date
         )

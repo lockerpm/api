@@ -15,6 +15,7 @@ class AbstractBackupCredentialORM(models.Model):
     public_key = models.TextField(null=True)
     private_key = models.TextField(null=True)
     creation_date = models.FloatField()
+    last_use_date = models.FloatField(null=True)
     kdf = models.IntegerField(default=0)
     kdf_iterations = models.IntegerField(default=DEFAULT_KDF_ITERATIONS)
     # Passwordless config
@@ -22,7 +23,7 @@ class AbstractBackupCredentialORM(models.Model):
     fd_random = models.CharField(max_length=128, null=True)
 
     # Security keys info
-    security_keys = models.TextField(null=True, default=None)
+    name = models.CharField(max_length=128, null=True, default=None)
     user = models.ForeignKey(locker_server_settings.LS_USER_MODEL, on_delete=models.CASCADE,
                              related_name="user_backup_credentials")
 
