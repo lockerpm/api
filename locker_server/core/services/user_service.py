@@ -288,6 +288,16 @@ class UserService:
             user_id=user_id, require_enterprise_member_status=require_enterprise_member_status
         )
 
+    def is_enterprise_require_passwordless(self, user_id: int,
+                                           require_enterprise_member_status: str = E_MEMBER_STATUS_CONFIRMED) -> bool:
+        is_in_enterprise = self.user_repository.is_in_enterprise(user_id=user_id)
+        if is_in_enterprise:
+            return self.is_require_passwordless(
+                user_id=user_id,
+                require_enterprise_member_status=require_enterprise_member_status
+            )
+        return False
+
     def is_block_by_2fa_policy(self, user_id: int, is_factor2: bool) -> bool:
         return self.user_repository.is_block_by_2fa_policy(user_id=user_id, is_factor2=is_factor2)
 
@@ -486,7 +496,7 @@ class UserService:
             if self.auth_repository.check_master_password(user=user, raw_password=master_password_hash) is False:
                 raise UserAuthFailedException
         if login_method and login_method == LOGIN_METHOD_PASSWORD and \
-                self.is_require_passwordless(user_id=user.user_id) is True:
+                self.is_enterprise_require_passwordless(user_id=user.user_id) is True:
             raise UserAuthFailedPasswordlessRequiredException
         self.user_repository.change_master_password(
             user=user, new_master_password_hash=new_master_password_hash,

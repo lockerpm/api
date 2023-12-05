@@ -125,11 +125,14 @@ class EnterprisePwdViewSet(APIBaseViewSet):
 
     def destroy(self, request, *args, **kwargs):
         enterprise = self.get_object()
-        # Cancel the plan of the owner
-        primary_admin = self.enterprise_service.get_primary_member(
-            enterprise_id=enterprise.enterprise_id
-        )
-        self.user_service.cancel_plan(user=primary_admin, immediately=True)
+        try:
+            # Cancel the plan of the owner
+            primary_admin = self.enterprise_service.get_primary_member(
+                enterprise_id=enterprise.enterprise_id
+            )
+            self.user_service.cancel_plan(user=primary_admin.user, immediately=True)
+        except EnterpriseMemberPrimaryDoesNotExistException:
+            pass
 
         self.enterprise_service.delete_enterprise_complete(
             enterprise=enterprise

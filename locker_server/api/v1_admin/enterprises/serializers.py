@@ -37,4 +37,4 @@ class CreateEnterpriseSerializer(serializers.Serializer):
     enterprise_phone = serializers.CharField(max_length=128, required=False, allow_blank=True)
     enterprise_country = serializers.CharField(max_length=128, required=False, allow_blank=True)
     enterprise_postal_code = serializers.CharField(max_length=16, required=False, allow_blank=True)
-    primary_admin = serializers.EmailField(required=False, allow_null=True, allow_blank=True, default="")
+    primary_admin = serializers.EmailField(required=False, allow_null=True)

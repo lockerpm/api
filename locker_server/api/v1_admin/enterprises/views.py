@@ -16,7 +16,7 @@ from locker_server.api.permissions.admin_permissions.admin_enterprise_permission
 
 class AdminEnterpriseViewSet(APIBaseViewSet):
     permission_classes = (AdminEnterprisePermission,)
-    http_method_names = ["head", "options", "get", "post", "put", "delete"]
+    http_method_names = ["head", "options", "get", "post"]
     lookup_value_regex = r'[0-9a-z-]+'
 
     def get_serializer_class(self):
