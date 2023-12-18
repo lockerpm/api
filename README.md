@@ -1,5 +1,8 @@
 ![Locker Password Manager](https://raw.githubusercontent.com/lockerpm/.github/main/images/locker2.png)
 
+> Archived
+>
+> This repository is archived, please go to https://github.com/lockerpm/core-api for future development.
 
 ## Locker API
 Locker API is a project that serves as the backend for the Locker Password Manager, an end-to-end encryption software that allows users to securely store and manage their sensitive data and secrets. This repository contains the server-side code and functionalities that enable users to interact with the Locker through API calls.
